@@ -24,6 +24,15 @@ type HubNodeInfo struct {
 	CreatedAt string
 }
 
+// ServiceInfo
+type ServiceInfo struct {
+	ServiceName    string
+	Listen         string
+	Acceptors      uint64
+	MaxClients     uint64
+	CurrentClients uint64
+	ShutdownCount  uint64
+}
 type Broker struct {
 	core.ServiceManager
 	nodeName string // Node name

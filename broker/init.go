@@ -14,7 +14,6 @@ package broker
 
 import (
 	"github.com/cloustone/sentel/broker/api"
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
 	"github.com/cloustone/sentel/core"
@@ -26,10 +25,6 @@ import (
 func RunWithConfigFile(fileName string) error {
 	glog.Info("Starting mqtt broker...")
 
-	// Check all registered service
-	if err := base.CheckAllRegisteredServices(); err != nil {
-		return err
-	}
 	// Get configuration
 	config, err := core.NewWithConfigFile(fileName)
 	if err != nil {
