@@ -46,6 +46,6 @@ func init() {
 	for group, values := range defaultConfigs {
 		core.RegisterConfig(group, values)
 	}
-	core.RegisterService("api", nil, &ApiServiceFactory{})
-	core.RegisterService("notify", nil, &NotifyServiceFactory{})
+	core.RegisterService("api", &ApiServiceFactory{})
+	core.RegisterService("notify", &NotifyServiceFactory{})
 }

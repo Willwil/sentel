@@ -46,6 +46,6 @@ func init() {
 	for group, values := range defaultConfigs {
 		core.RegisterConfig(group, values)
 	}
-	core.RegisterService("api", api.Configs, &api.ApiServiceFactory{})
-	core.RegisterService("collector", collector.Configs, &collector.CollectorServiceFactory{})
+	core.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
+	core.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
 }

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/core"
@@ -71,58 +72,70 @@ func (m *CollectorServiceFactory) New(name string, c core.Config, ch chan core.S
 }
 
 // Name
-func (s *CollectorService) Name() string {
+func (this *CollectorService) Name() string {
 	return "collector"
 }
 
 // Start
-func (s *CollectorService) Start() error {
-	partitionList, err := s.consumer.Partitions("ceilometer")
-	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := s.consumer.ConsumePartition("ceilometer", int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		s.wg.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer s.wg.Done()
-			for msg := range pc.Messages() {
-				s.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(pc)
-	}
-	s.wg.Wait()
+func (this *CollectorService) Start() error {
+	this.subscribeTopic(TopicNameNode)
+	this.subscribeTopic(TopicNameClient)
+	this.subscribeTopic(TopicNameSession)
+	this.subscribeTopic(TopicNameSubscription)
+	this.subscribeTopic(TopicNamePublish)
+	this.subscribeTopic(TopicNameMetric)
+	this.subscribeTopic(TopicNameStats)
+	this.wg.Wait()
 	return nil
 }
 
 // Stop
-func (s *CollectorService) Stop() {
-	s.consumer.Close()
+func (this *CollectorService) Stop() {
+	this.consumer.Close()
 }
 
 // handleNotifications handle notification from kafka
-func (s *CollectorService) handleNotifications(topic string, value []byte) error {
-	if err := handleTopicObject(s, context.Background(), topic, value); err != nil {
+func (this *CollectorService) handleNotifications(topic string, value []byte) error {
+	if err := handleTopicObject(this, context.Background(), topic, value); err != nil {
 		glog.Error(err)
 		return err
 	}
 	return nil
 }
 
-func (s *CollectorService) getDatabase() (*mgo.Database, error) {
-	session, err := mgo.Dial(s.mongoHosts)
+func (this *CollectorService) getDatabase() (*mgo.Database, error) {
+	session, err := mgo.DialWithTimeout(this.mongoHosts, 2*time.Second)
 	if err != nil {
-		glog.Fatalf("Failed to connect with mongo:%s", s.mongoHosts)
+		glog.Fatalf("Failed to connect with mongo:%s", this.mongoHosts)
 		return nil, err
 	}
 	session.SetMode(mgo.Monotonic, true)
 	return session.DB("iothub"), nil
+}
+
+// subscribeTopc subscribe topics from apiserver
+func (this *CollectorService) subscribeTopic(topic string) error {
+	partitionList, err := this.consumer.Partitions(topic)
+	if err != nil {
+		return fmt.Errorf("Failed to get list of partions:%v", err)
+		return err
+	}
+
+	for partition := range partitionList {
+		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+		if err != nil {
+			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
+			continue
+		}
+		defer pc.AsyncClose()
+		this.wg.Add(1)
+
+		go func(sarama.PartitionConsumer) {
+			defer this.wg.Done()
+			for msg := range pc.Messages() {
+				this.handleNotifications(string(msg.Topic), msg.Value)
+			}
+		}(pc)
+	}
+	return nil
 }

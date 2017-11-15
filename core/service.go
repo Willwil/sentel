@@ -42,7 +42,15 @@ var (
 )
 
 // RegisterService register service with name and protocol specified
-func RegisterService(name string, configs map[string]string, factory ServiceFactory) {
+func RegisterService(name string, factory ServiceFactory) {
+	if _, ok := _serviceFactories[name]; ok {
+		glog.Errorf("Service '%s' is not registered", name)
+	}
+	_serviceFactories[name] = factory
+}
+
+// RegisterServiceWithConfig register service with name and configuration
+func RegisterServiceWithConfig(name string, factory ServiceFactory, configs map[string]string) {
 	if _, ok := _serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is not registered", name)
 	}

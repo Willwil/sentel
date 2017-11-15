@@ -46,6 +46,6 @@ func init() {
 	for group, values := range defaultConfigs {
 		core.RegisterConfig(group, values)
 	}
-	core.RegisterService("indicator", indicator.Configs, &indicator.IndicatorServiceFactory{})
-	core.RegisterService("executor", executor.Configs, &executor.ExecutorServiceFactory{})
+	core.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
+	core.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
 }
