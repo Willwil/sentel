@@ -122,9 +122,6 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 
 // Run launch all serices and wait to terminate
 func (s *ServiceManager) Run() error {
-	if err := CheckAllRegisteredServices(); err != nil {
-		return err
-	}
 	// Run all service
 	glog.Infof("There are %d service in iothub", len(s.services))
 	for _, service := range s.services {

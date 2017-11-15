@@ -13,16 +13,17 @@
 package conductor
 
 var defaultConfigs = map[string]map[string]string{
-	"condutor": {
+	"conductor": {
 		"host":     "localhost:4145",
 		"loglevel": "debug",
-		"kafka":    "",
-		"services": "api,kafka",
+		"kafka":    "localhost:9092",
+		"mongo":    "localhost:27017",
+		"services": "indicator,executor",
 	},
-	"api": {
-		"listen": "localhost:8080",
+	"indicator": {
+		"kafka": "localhost:9092",
 	},
-	"kafka": {
+	"executor": {
 		"listen": "localhost:",
 	},
 }

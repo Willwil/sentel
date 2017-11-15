@@ -14,10 +14,10 @@ package indicator
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/core"
@@ -41,25 +41,18 @@ type IndicatorServiceFactory struct{}
 // New create apiService service factory
 func (m *IndicatorServiceFactory) New(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	// check mongo db configuration
-	hosts, err := c.String("conductor", "mongo")
-	if err != nil || hosts == "" {
-		return nil, errors.New("Invalid mongo configuration")
-	}
-	// try connect with mongo db
-	if session, err := mgo.Dial(hosts); err != nil {
+	hosts := c.MustString("conductor", "mongo")
+	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
+	if err != nil {
 		return nil, err
-	} else {
-		session.Close()
 	}
+	defer session.Close()
 
 	// kafka
-	khosts, err := c.String(name, "hosts")
-	if err != nil || khosts == "" {
-		return nil, errors.New("Invalid kafka configuration")
-	}
+	khosts := c.MustString(name, "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
+		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
 	return &IndicatorService{
