@@ -59,7 +59,7 @@ func addRule(ctx echo.Context) error {
 	}
 	// Notify kafka
 	util.AsyncProduceMessage(ctx.(*apiContext).config,
-		"todo",
+		"rule",
 		util.TopicNameRule,
 		&util.RuleTopic{
 			RuleId:    rule.Id,
@@ -83,7 +83,7 @@ func deleteRule(ctx echo.Context) error {
 	}
 	// Notify kafka
 	util.AsyncProduceMessage(ctx.(*apiContext).config,
-		"todo",
+		"rule",
 		util.TopicNameRule,
 		&util.RuleTopic{
 			RuleId: id,
@@ -117,7 +117,7 @@ func updateRule(ctx echo.Context) error {
 	}
 	// Notify kafka
 	util.AsyncProduceMessage(ctx.(*apiContext).config,
-		"todo",
+		"rule",
 		util.TopicNameRule,
 		&util.RuleTopic{
 			RuleId:    rule.Id,

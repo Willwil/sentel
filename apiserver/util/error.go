@@ -12,14 +12,14 @@
 
 package util
 
-type SentelError struct {
+type ApiError struct {
 	Code        int    `json:"code"`
 	Description string `json:"description"`
 	Err         error
 }
 
-func NewError(code int, desc string) SentelError {
-	return SentelError{
+func NewError(code int, desc string) ApiError {
+	return ApiError{
 		Code:        code,
 		Description: desc,
 	}
@@ -113,6 +113,6 @@ var (
 	ErrorGatewayTimeout                             = NewError(10075, "Gateway timeout")
 )
 
-func (e *SentelError) Error() string {
+func (e *ApiError) Error() string {
 	return e.Description
 }

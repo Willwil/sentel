@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	apiserver "github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -73,14 +74,32 @@ func (this *NotifyService) Name() string {
 
 // Start
 func (this *NotifyService) Start() error {
-	partitionList, err := this.consumer.Partitions("apiserver")
+	if err := this.subscribeTopic(apiserver.TopicNameTenant); err != nil {
+		return err
+	}
+	if err := this.subscribeTopic(apiserver.TopicNameProduct); err != nil {
+		return err
+	}
+	this.wg.Wait()
+	return nil
+}
+
+// Stop
+func (this *NotifyService) Stop() {
+	this.consumer.Close()
+	this.wg.Wait()
+}
+
+// subscribeTopc subscribe topics from apiserver
+func (this *NotifyService) subscribeTopic(topic string) error {
+	partitionList, err := this.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
 		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := this.consumer.ConsumePartition("apiserver", int32(partition), sarama.OffsetNewest)
+		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
@@ -95,20 +114,13 @@ func (this *NotifyService) Start() error {
 			}
 		}(pc)
 	}
-	this.wg.Wait()
 	return nil
-}
-
-// Stop
-func (this *NotifyService) Stop() {
-	this.consumer.Close()
-	this.wg.Wait()
 }
 
 // handleNotifications handle notification from kafka
 func (this *NotifyService) handleNotifications(topic string, value []byte) error {
 	switch topic {
-	case "tenant":
+	case apiserver.TopicNameTenant:
 		obj := &tenantNotify{}
 		if err := json.Unmarshal(value, obj); err != nil {
 			return err

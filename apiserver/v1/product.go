@@ -70,7 +70,7 @@ func registerProduct(ctx echo.Context) error {
 
 	// Notify kafka
 	util.AsyncProduceMessage(ctx.(*apiContext).config,
-		"todo",
+		"product",
 		util.TopicNameProduct,
 		&util.ProductTopic{
 			ProductId:   dp.Id,
@@ -121,7 +121,7 @@ func updateProduct(ctx echo.Context) error {
 	}
 	// Notify kafka
 	util.AsyncProduceMessage(ctx.(*apiContext).config,
-		"todo",
+		"product",
 		util.TopicNameProduct,
 		&util.ProductTopic{
 			ProductId:   req.Id,
