@@ -15,6 +15,7 @@ package executor
 import (
 	"errors"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/cloustone/sentel/core"
@@ -24,7 +25,7 @@ import (
 
 type ExecutorService struct {
 	config   core.Config
-	chn      chan core.ServiceCommand
+	quit     chan os.Signal
 	wg       sync.WaitGroup
 	ruleChan chan *Rule
 	engines  map[string]*ruleEngine
@@ -37,7 +38,7 @@ type ExecutorServiceFactory struct{}
 var executorService *ExecutorService
 
 // New create executor service factory
-func (m *ExecutorServiceFactory) New(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, err := c.String("conductor", "mongo")
 	if err != nil || hosts == "" {
@@ -52,7 +53,7 @@ func (m *ExecutorServiceFactory) New(name string, c core.Config, ch chan core.Se
 	executorService = &ExecutorService{
 		config:   c,
 		wg:       sync.WaitGroup{},
-		chn:      ch,
+		quit:     quit,
 		ruleChan: make(chan *Rule),
 		engines:  make(map[string]*ruleEngine),
 		mutex:    sync.Mutex{},
@@ -73,7 +74,7 @@ func (s *ExecutorService) Start() error {
 		select {
 		case r := <-s.ruleChan:
 			s.handleRule(r)
-		case <-s.chn:
+		case <-s.quit:
 			break
 		}
 	}(s)
@@ -82,7 +83,7 @@ func (s *ExecutorService) Start() error {
 
 // Stop
 func (s *ExecutorService) Stop() {
-	s.chn <- 1
+	//s.chn <- 1
 	s.wg.Wait()
 
 	// stop all ruleEngine

@@ -15,6 +15,7 @@ package indicator
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -29,7 +30,7 @@ import (
 
 type IndicatorService struct {
 	config     core.Config
-	chn        chan core.ServiceCommand
+	quit       chan os.Signal
 	wg         sync.WaitGroup
 	consumer   sarama.Consumer
 	mongoHosts string // mongo hosts
@@ -39,7 +40,7 @@ type IndicatorService struct {
 type IndicatorServiceFactory struct{}
 
 // New create apiService service factory
-func (m *IndicatorServiceFactory) New(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
@@ -49,7 +50,7 @@ func (m *IndicatorServiceFactory) New(name string, c core.Config, ch chan core.S
 	defer session.Close()
 
 	// kafka
-	khosts := c.MustString(name, "kafka")
+	khosts := c.MustString("conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
@@ -58,7 +59,7 @@ func (m *IndicatorServiceFactory) New(name string, c core.Config, ch chan core.S
 	return &IndicatorService{
 		config:     c,
 		wg:         sync.WaitGroup{},
-		chn:        ch,
+		quit:       quit,
 		consumer:   consumer,
 		mongoHosts: hosts,
 	}, nil

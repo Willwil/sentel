@@ -14,6 +14,7 @@ package api
 
 import (
 	"errors"
+	"os"
 	"sync"
 
 	mgo "gopkg.in/mgo.v2"
@@ -24,7 +25,7 @@ import (
 
 type ApiService struct {
 	config  core.Config
-	chn     chan core.ServiceCommand
+	quit    chan os.Signal
 	wg      sync.WaitGroup
 	address string
 	echo    *echo.Echo
@@ -47,7 +48,7 @@ type ApiServiceFactory struct{}
 const APIHEAD = "api/v1/"
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, err := c.String("ceilometer", "mongo")
 	if err != nil || hosts == "" {
@@ -121,7 +122,7 @@ func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.Ser
 	return &ApiService{
 		config:  c,
 		wg:      sync.WaitGroup{},
-		chn:     ch,
+		quit:    quit,
 		address: address,
 		echo:    e,
 	}, nil

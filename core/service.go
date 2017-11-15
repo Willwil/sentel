@@ -14,6 +14,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -22,11 +23,6 @@ import (
 
 type ServiceCommand int
 
-const (
-	ServiceCommandStart = 0
-	ServiceCommandStop  = 1
-)
-
 type Service interface {
 	Name() string
 	Start() error
@@ -34,7 +30,7 @@ type Service interface {
 }
 
 type ServiceFactory interface {
-	New(name string, c Config, ch chan ServiceCommand) (Service, error)
+	New(c Config, quit chan os.Signal) (Service, error)
 }
 
 var (
@@ -59,11 +55,11 @@ func RegisterServiceWithConfig(name string, factory ServiceFactory, configs map[
 }
 
 // CreateService create service instance according to service name
-func CreateService(name string, c Config, ch chan ServiceCommand) (Service, error) {
+func CreateService(name string, c Config, ch chan os.Signal) (Service, error) {
 	glog.Infof("Creating service '%s'...", name)
 
 	if factory, ok := _serviceFactories[name]; ok && factory != nil {
-		return _serviceFactories[name].New(name, c, ch)
+		return _serviceFactories[name].New(c, ch)
 	}
 	return nil, fmt.Errorf("Invalid service '%s'", name)
 }
@@ -81,9 +77,9 @@ func CheckAllRegisteredServices() error {
 
 type ServiceManager struct {
 	sync.Once
-	Config   Config                         // Global config
-	Services map[string]Service             // All service created by config.Protocols
-	chs      map[string]chan ServiceCommand // Notification channel for each service
+	Config   Config                    // Global config
+	Services map[string]Service        // All service created by config.Protocols
+	quits    map[string]chan os.Signal // Notification channel for each service
 }
 
 const serviceManagerVersion = "0.1"
@@ -103,7 +99,7 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 	}
 	mgr := &ServiceManager{
 		Config:   c,
-		chs:      make(map[string]chan ServiceCommand),
+		quits:    make(map[string]chan os.Signal),
 		Services: make(map[string]Service),
 	}
 	// Get supported configs
@@ -113,14 +109,14 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 	for _, name := range services {
 		// Format service name
 		name = strings.Trim(name, " ")
-		ch := make(chan ServiceCommand)
-		service, err := CreateService(name, c, ch)
+		quit := make(chan os.Signal)
+		service, err := CreateService(name, c, quit)
 		if err != nil {
 			glog.Errorf("%s", err)
 		} else {
 			glog.Infof("Create service '%s' successfully", name)
 			mgr.Services[name] = service
-			mgr.chs[name] = ch
+			mgr.quits[name] = quit
 		}
 	}
 	_serviceManager = mgr
@@ -136,8 +132,8 @@ func (s *ServiceManager) Run() error {
 		go service.Start()
 	}
 	// Wait all service to terminate in main context
-	for name, ch := range s.chs {
-		<-ch
+	for name, quit := range s.quits {
+		<-quit
 		glog.Info("Servide(%s) is terminated", name)
 	}
 	return nil
@@ -151,14 +147,14 @@ func (s *ServiceManager) StartService(name string) error {
 			return fmt.Errorf("The service '%s' has already been started", name)
 		}
 	}
-	ch := make(chan ServiceCommand)
-	service, err := CreateService(name, s.Config, ch)
+	quit := make(chan os.Signal)
+	service, err := CreateService(name, s.Config, quit)
 	if err != nil {
 		glog.Errorf("%s", err)
 	} else {
 		glog.Infof("Create service '%s' success", name)
 		s.Services[name] = service
-		s.chs[name] = ch
+		s.quits[name] = quit
 	}
 	return nil
 }
@@ -169,7 +165,7 @@ func (s *ServiceManager) StopService(id string) error {
 		if name == id && service != nil {
 			service.Stop()
 			s.Services[name] = nil
-			close(s.chs[name])
+			close(s.quits[name])
 		}
 	}
 	return nil

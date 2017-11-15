@@ -15,6 +15,7 @@ package api
 import (
 	"fmt"
 	"net"
+	"os"
 	"sync"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -28,7 +29,7 @@ import (
 
 type ApiService struct {
 	config   core.Config
-	chn      chan core.ServiceCommand
+	quit     chan os.Signal
 	wg       sync.WaitGroup
 	listener net.Listener
 	srv      *grpc.Server
@@ -38,9 +39,9 @@ type ApiService struct {
 type ApiServiceFactory struct{}
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	address := ":50051"
-	server := &ApiService{config: c, wg: sync.WaitGroup{}}
+	server := &ApiService{quit: quit, config: c, wg: sync.WaitGroup{}}
 
 	if addr, err := c.String("authlet", "address"); err == nil && address != "" {
 		address = addr

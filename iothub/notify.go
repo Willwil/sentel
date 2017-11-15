@@ -15,6 +15,7 @@ package iothub
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 
@@ -39,7 +40,7 @@ type tenantNotify struct {
 
 type NotifyService struct {
 	config   core.Config
-	chn      chan core.ServiceCommand
+	quit     chan os.Signal
 	wg       sync.WaitGroup
 	consumer sarama.Consumer
 }
@@ -48,7 +49,7 @@ type NotifyService struct {
 type NotifyServiceFactory struct{}
 
 // New create apiService service factory
-func (m *NotifyServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
 	khosts, err := c.String("iothub", "kafka")
 	if err != nil {
@@ -62,7 +63,7 @@ func (m *NotifyServiceFactory) New(protocol string, c core.Config, ch chan core.
 	return &NotifyService{
 		config:   c,
 		wg:       sync.WaitGroup{},
-		chn:      ch,
+		quit:     quit,
 		consumer: consumer,
 	}, nil
 }

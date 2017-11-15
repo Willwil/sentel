@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strings"
 	"sync"
 
@@ -36,7 +37,7 @@ const (
 // MQTT service declaration
 type mqtt struct {
 	config     core.Config
-	chn        chan core.ServiceCommand
+	quit       chan os.Signal
 	index      int64
 	sessions   map[string]base.Session
 	mutex      sync.Mutex // Maybe not so good
@@ -61,7 +62,7 @@ type MqttFactory struct {
 }
 
 // New create mqtt service factory
-func (m *MqttFactory) New(serviceName string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	var localAddrs []string = []string{}
 	var s Storage
 
@@ -86,7 +87,7 @@ func (m *MqttFactory) New(serviceName string, c core.Config, ch chan core.Servic
 	}
 
 	t := &mqtt{config: c,
-		chn:        ch,
+		quit:       quit,
 		index:      -1,
 		sessions:   make(map[string]base.Session),
 		protocol:   m.Protocol,
@@ -204,7 +205,7 @@ func (m *mqtt) Start() error {
 		}(session)
 	}
 	// notify main
-	m.chn <- 1
+	// m.quit <- 1
 	return nil
 }
 

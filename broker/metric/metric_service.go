@@ -13,6 +13,7 @@
 package metric
 
 import (
+	"os"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -22,7 +23,7 @@ import (
 
 type MetricService struct {
 	config    core.Config
-	chn       chan core.ServiceCommand
+	quit      chan os.Signal
 	keepalive *time.Ticker
 	stat      *time.Ticker
 	name      string
@@ -34,10 +35,11 @@ type MetricService struct {
 type MetricServiceFactory struct{}
 
 // New create apiService service factory
-func (m *MetricServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// Get node ip, name and created time
 	return &MetricService{
 		config: c,
+		quit:   quit,
 	}, nil
 }
 

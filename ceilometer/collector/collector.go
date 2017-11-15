@@ -16,6 +16,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -28,7 +29,7 @@ import (
 
 type CollectorService struct {
 	config     core.Config
-	chn        chan core.ServiceCommand
+	quit       chan os.Signal
 	wg         sync.WaitGroup
 	consumer   sarama.Consumer
 	mongoHosts string // mongo hosts
@@ -38,7 +39,7 @@ type CollectorService struct {
 type CollectorServiceFactory struct{}
 
 // New create apiService service factory
-func (m *CollectorServiceFactory) New(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, err := c.String("ceilometer", "mongo")
 	if err != nil || hosts == "" {
@@ -52,10 +53,7 @@ func (m *CollectorServiceFactory) New(name string, c core.Config, ch chan core.S
 	session.Close()
 
 	// kafka
-	khosts, err := c.String(name, "hosts")
-	if err != nil || khosts == "" {
-		return nil, errors.New("Invalid kafka configuration")
-	}
+	khosts := c.MustString("collector", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
@@ -64,7 +62,7 @@ func (m *CollectorServiceFactory) New(name string, c core.Config, ch chan core.S
 	return &CollectorService{
 		config:     c,
 		wg:         sync.WaitGroup{},
-		chn:        ch,
+		quit:       quit,
 		consumer:   consumer,
 		mongoHosts: hosts,
 	}, nil

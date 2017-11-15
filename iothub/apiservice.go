@@ -15,6 +15,7 @@ package iothub
 import (
 	"errors"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -27,7 +28,7 @@ import (
 
 type ApiService struct {
 	config  core.Config
-	chn     chan core.ServiceCommand
+	quit    chan os.Signal
 	wg      sync.WaitGroup
 	address string
 	echo    *echo.Echo
@@ -50,7 +51,7 @@ type ApiServiceFactory struct{}
 const APIHEAD = "iothub/api/v1/"
 
 // New create apiService service factory
-func (this *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, err := c.String("iothub", "mongo")
 	if err != nil || hosts == "" {
@@ -90,7 +91,7 @@ func (this *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.
 	return &ApiService{
 		config:  c,
 		wg:      sync.WaitGroup{},
-		chn:     ch,
+		quit:    quit,
 		address: address,
 		echo:    e,
 	}, nil
