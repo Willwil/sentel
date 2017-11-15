@@ -16,7 +16,7 @@ var defaultConfigs = map[string]map[string]string{
 	"broker": {
 		"loglevel": "debug",
 		"kafka":    "localhost:9092",
-		"services": "mqtt:tcp,mqtt:ws, mqtt:ssl, api",
+		"services": "mqtt:tcp,api,auth",
 	},
 	"storage": {
 		"repository": "local",

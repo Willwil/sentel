@@ -49,11 +49,19 @@ type mqtt struct {
 	metrics    *base.Metrics
 }
 
+const (
+	MqttProtocolTcp = "tcp"
+	MqttProtocolWs  = "ws"
+	MqttProtocolTls = "tls"
+)
+
 // MqttFactory
-type MqttFactory struct{}
+type MqttFactory struct {
+	Protocol string
+}
 
 // New create mqtt service factory
-func (m *MqttFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
+func (m *MqttFactory) New(serviceName string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	var localAddrs []string = []string{}
 	var s Storage
 
@@ -81,7 +89,7 @@ func (m *MqttFactory) New(protocol string, c core.Config, ch chan core.ServiceCo
 		chn:        ch,
 		index:      -1,
 		sessions:   make(map[string]base.Session),
-		protocol:   protocol,
+		protocol:   m.Protocol,
 		localAddrs: localAddrs,
 		storage:    s,
 		stats:      base.NewStats(true),
@@ -93,7 +101,9 @@ func (m *MqttFactory) New(protocol string, c core.Config, ch chan core.ServiceCo
 // MQTT Service
 
 // Name
-func (m *mqtt) Name() string { return "matt" }
+func (m *mqtt) Name() string {
+	return "mqtt:" + m.protocol
+}
 
 func (m *mqtt) NewSession(conn net.Conn) (base.Session, error) {
 	id := m.createSessionId()

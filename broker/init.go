@@ -44,7 +44,9 @@ func init() {
 	for group, values := range defaultConfigs {
 		core.RegisterConfig(group, values)
 	}
-	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{})
+	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
+	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
+	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
 	core.RegisterService("api", &api.ApiServiceFactory{})
 	core.RegisterService("metric", &metric.MetricServiceFactory{})
 }
