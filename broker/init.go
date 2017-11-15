@@ -36,7 +36,7 @@ func RunWithConfigFile(fileName string) error {
 		return err
 	}
 	// Create service manager according to the configuration
-	mgr, err := base.NewServiceManager(config)
+	mgr, err := core.NewServiceManager("broker", config)
 	if err != nil {
 		glog.Fatal("Failed to launch ServiceManager")
 		return err
@@ -49,9 +49,7 @@ func init() {
 	for group, values := range defaultConfigs {
 		core.RegisterConfig(group, values)
 	}
-	base.RegisterService("mqtt:tcp", mqtt.Configs, &mqtt.MqttFactory{})
-	base.RegisterService("mqtt:ssl", mqtt.Configs, &mqtt.MqttFactory{})
-	base.RegisterService("mqtt:ws", mqtt.Configs, &mqtt.MqttFactory{})
-	base.RegisterService("api", api.Configs, &api.ApiServiceFactory{})
-	base.RegisterService("metric", metric.Configs, &metric.MetricServiceFactory{})
+	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{})
+	core.RegisterService("api", &api.ApiServiceFactory{})
+	core.RegisterService("metric", &metric.MetricServiceFactory{})
 }

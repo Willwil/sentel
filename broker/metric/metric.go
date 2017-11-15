@@ -22,7 +22,7 @@ import (
 
 type MetricService struct {
 	config    core.Config
-	chn       chan base.ServiceCommand
+	chn       chan core.ServiceCommand
 	keepalive *time.Ticker
 	stat      *time.Ticker
 	name      string
@@ -34,18 +34,23 @@ type MetricService struct {
 type MetricServiceFactory struct{}
 
 // New create apiService service factory
-func (m *MetricServiceFactory) New(protocol string, c core.Config, ch chan base.ServiceCommand) (base.Service, error) {
+func (m *MetricServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	// Get node ip, name and created time
 	return &MetricService{
 		config: c,
 	}, nil
 }
 
-// Name
+// Info
 func (s *MetricService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "report-service",
 	}
+}
+
+// Name
+func (s *MetricService) Name() string {
+	return "metric"
 }
 
 // Start
@@ -78,9 +83,9 @@ func (s *MetricService) Stop() {
 
 // reportHubStats report current iothub stats
 func (s *MetricService) reportHubStats() {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	// Stats
-	stats := mgr.GetStats("mqtt")
+	stats := broker.GetStats("mqtt")
 	collector.AsyncReport(s.config, collector.TopicNameStats,
 		&collector.Stats{
 			NodeName: s.name,
@@ -89,7 +94,7 @@ func (s *MetricService) reportHubStats() {
 		})
 
 	// Metrics
-	metrics := mgr.GetMetrics("mqtt")
+	metrics := broker.GetMetrics("mqtt")
 	collector.AsyncReport(s.config, collector.TopicNameMetric,
 		&collector.Metric{
 			NodeName: s.name,
@@ -100,9 +105,9 @@ func (s *MetricService) reportHubStats() {
 
 // reportKeepalive report node information to cluster manager
 func (s *MetricService) reportKeepalive() {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	// Node
-	node := mgr.GetNodeInfo()
+	node := broker.GetNodeInfo()
 	collector.AsyncReport(s.config, collector.TopicNameNode,
 		&collector.Node{
 			NodeName:  node.NodeName,

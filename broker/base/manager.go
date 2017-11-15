@@ -12,13 +12,10 @@
 package base
 
 import (
-	"errors"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/cloustone/sentel/core"
-	"github.com/golang/glog"
 )
 
 type HubNodeInfo struct {
@@ -27,112 +24,25 @@ type HubNodeInfo struct {
 	CreatedAt string
 }
 
-type ServiceCommand int
-
-const (
-	ServiceCommandStart = 0
-	ServiceCommandStop  = 1
-)
-
-type ServiceManager struct {
-	sync.Once
-	nodeName string                         // Node name
-	config   core.Config                    // Global config
-	services map[string]Service             // All service created by config.Protocols
-	chs      map[string]chan ServiceCommand // Notification channel for each service
+type Broker struct {
+	core.ServiceManager
+	nodeName string // Node name
 }
 
-const serviceManagerVersion = "0.1"
+const BrokerVersion = "0.1"
 
 var (
-	_serviceManager *ServiceManager
+	_broker *Broker
 )
 
-// GetServiceManager create service manager and all supported service
+// GetBroker create service manager and all supported service
 // The function should be called in service
-func GetServiceManager() *ServiceManager { return _serviceManager }
-
-// NewServiceManager create ServiceManager only in main context
-func NewServiceManager(c core.Config) (*ServiceManager, error) {
-	if _serviceManager != nil {
-		return _serviceManager, errors.New("NewServiceManager had been called many times")
-	}
-	mgr := &ServiceManager{
-		config:   c,
-		chs:      make(map[string]chan ServiceCommand),
-		services: make(map[string]Service),
-	}
-	// Get supported configs
-	items := c.MustString("broker", "services")
-	services := strings.Split(items, ",")
-	// Create service for each protocol
-	for _, name := range services {
-		// Format service name
-		name = strings.Trim(name, " ")
-		ch := make(chan ServiceCommand)
-		service, err := CreateService(name, c, ch)
-		if err != nil {
-			glog.Errorf("%s", err)
-		} else {
-			glog.Infof("Create service '%s' successfully", name)
-			mgr.services[name] = service
-			mgr.chs[name] = ch
-		}
-	}
-	_serviceManager = mgr
-	return _serviceManager, nil
-}
-
-// Run launch all serices and wait to terminate
-func (s *ServiceManager) Run() error {
-	// Run all service
-	for _, service := range s.services {
-		go service.Start()
-	}
-	// Wait all service to terminate in main context
-	for name, ch := range s.chs {
-		<-ch
-		glog.Info("Servide(%s) is terminated", name)
-	}
-	return nil
-}
-
-// StartService launch specified service
-func (s *ServiceManager) StartService(name string) error {
-	// Return error if service has already been started
-	for id, service := range s.services {
-		if strings.IndexAny(id, name) >= 0 && service != nil {
-			return fmt.Errorf("The service '%s' has already been started", name)
-		}
-	}
-	ch := make(chan ServiceCommand)
-	service, err := CreateService(name, s.config, ch)
-	if err != nil {
-		glog.Errorf("%s", err)
-	} else {
-		glog.Infof("Create service '%s' success", name)
-		s.services[name] = service
-		s.chs[name] = ch
-	}
-	return nil
-}
-
-// StopService stop specified service
-func (s *ServiceManager) StopService(id string) error {
-	for name, service := range s.services {
-		if name == id && service != nil {
-			service.Stop()
-			s.services[name] = nil
-			close(s.chs[name])
-		}
-	}
-	return nil
-}
+func GetBroker() *Broker { return _broker }
 
 // GetServicesByName return service instance by name, or matched by part of name
-func (s *ServiceManager) GetServicesByName(name string) []Service {
-	services := []Service{}
-	for k, service := range s.services {
+func (this *Broker) GetServicesByName(name string) []core.Service {
+	services := []core.Service{}
+	for k, service := range this.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			services = append(services, service)
 		}
@@ -141,9 +51,9 @@ func (s *ServiceManager) GetServicesByName(name string) []Service {
 }
 
 // GetAllProtocolServices() return all protocol services
-func (s *ServiceManager) GetAllProtocolServices() []ProtocolService {
+func (this *Broker) GetAllProtocolServices() []ProtocolService {
 	services := []ProtocolService{}
-	for _, service := range s.services {
+	for _, service := range this.Services {
 		if p, ok := service.(ProtocolService); ok {
 			services = append(services, p)
 		}
@@ -152,9 +62,9 @@ func (s *ServiceManager) GetAllProtocolServices() []ProtocolService {
 }
 
 // GetProtocolServiceByname return protocol services by name
-func (s *ServiceManager) GetProtocolServices(name string) []ProtocolService {
+func (this *Broker) GetProtocolServices(name string) []ProtocolService {
 	services := []ProtocolService{}
-	for k, service := range s.services {
+	for k, service := range this.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			if p, ok := service.(ProtocolService); ok {
 				services = append(services, p)
@@ -165,19 +75,19 @@ func (s *ServiceManager) GetProtocolServices(name string) []ProtocolService {
 }
 
 // Node info
-func (s *ServiceManager) GetNodeInfo() *HubNodeInfo {
+func (this *Broker) GetNodeInfo() *HubNodeInfo {
 	return &HubNodeInfo{}
 }
 
 // Version
-func (s *ServiceManager) GetVersion() string {
-	return serviceManagerVersion
+func (this *Broker) GetVersion() string {
+	return BrokerVersion
 }
 
 // GetStats return server's stats
-func (s *ServiceManager) GetStats(serviceName string) map[string]uint64 {
+func (this *Broker) GetStats(serviceName string) map[string]uint64 {
 	allstats := NewStats(false)
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		stats := service.GetStats()
@@ -187,9 +97,9 @@ func (s *ServiceManager) GetStats(serviceName string) map[string]uint64 {
 }
 
 // GetMetrics return server metrics
-func (s *ServiceManager) GetMetrics(serviceName string) map[string]uint64 {
+func (this *Broker) GetMetrics(serviceName string) map[string]uint64 {
 	allmetrics := NewMetrics(false)
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		metrics := service.GetMetrics()
@@ -199,9 +109,9 @@ func (s *ServiceManager) GetMetrics(serviceName string) map[string]uint64 {
 }
 
 // GetClients return clients list withspecified service
-func (s *ServiceManager) GetClients(serviceName string) []*ClientInfo {
+func (this *Broker) GetClients(serviceName string) []*ClientInfo {
 	clients := []*ClientInfo{}
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetClients()
@@ -211,8 +121,8 @@ func (s *ServiceManager) GetClients(serviceName string) []*ClientInfo {
 }
 
 // GeteClient return client info with specified client id
-func (s *ServiceManager) GetClient(serviceName string, id string) *ClientInfo {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) GetClient(serviceName string, id string) *ClientInfo {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if client := service.GetClient(id); client != nil {
@@ -223,8 +133,8 @@ func (s *ServiceManager) GetClient(serviceName string, id string) *ClientInfo {
 }
 
 // Kickoff Client killoff a client from specified service
-func (s *ServiceManager) KickoffClient(serviceName string, id string) error {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) KickoffClient(serviceName string, id string) error {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if err := service.KickoffClient(id); err == nil {
@@ -235,9 +145,9 @@ func (s *ServiceManager) KickoffClient(serviceName string, id string) error {
 }
 
 // GetSessions return all sessions information for specified service
-func (s *ServiceManager) GetSessions(serviceName string, conditions map[string]bool) []*SessionInfo {
+func (this *Broker) GetSessions(serviceName string, conditions map[string]bool) []*SessionInfo {
 	sessions := []*SessionInfo{}
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetSessions(conditions)
@@ -248,8 +158,8 @@ func (s *ServiceManager) GetSessions(serviceName string, conditions map[string]b
 }
 
 // GetSession return specified session information with session id
-func (s *ServiceManager) GetSession(serviceName string, id string) *SessionInfo {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) GetSession(serviceName string, id string) *SessionInfo {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if info := service.GetSession(id); info != nil {
@@ -260,9 +170,9 @@ func (s *ServiceManager) GetSession(serviceName string, id string) *SessionInfo 
 }
 
 // GetRoutes return route table information for specified service
-func (s *ServiceManager) GetRoutes(serviceName string) []*RouteInfo {
+func (this *Broker) GetRoutes(serviceName string) []*RouteInfo {
 	routes := []*RouteInfo{}
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetRoutes()
@@ -272,8 +182,8 @@ func (s *ServiceManager) GetRoutes(serviceName string) []*RouteInfo {
 }
 
 // GetRoute return route information for specified topic
-func (s *ServiceManager) GetRoute(serviceName string, topic string) *RouteInfo {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) GetRoute(serviceName string, topic string) *RouteInfo {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		route := service.GetRoute(topic)
@@ -285,9 +195,9 @@ func (s *ServiceManager) GetRoute(serviceName string, topic string) *RouteInfo {
 }
 
 // GetTopics return topic informaiton for specified service
-func (s *ServiceManager) GetTopics(serviceName string) []*TopicInfo {
+func (this *Broker) GetTopics(serviceName string) []*TopicInfo {
 	topics := []*TopicInfo{}
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetTopics()
@@ -297,8 +207,8 @@ func (s *ServiceManager) GetTopics(serviceName string) []*TopicInfo {
 }
 
 // GetTopic return topic information for specified topic
-func (s *ServiceManager) GetTopic(serviceName string, topic string) *TopicInfo {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) GetTopic(serviceName string, topic string) *TopicInfo {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		info := service.GetTopic(topic)
@@ -310,9 +220,9 @@ func (s *ServiceManager) GetTopic(serviceName string, topic string) *TopicInfo {
 }
 
 // GetSubscriptions return subscription informaiton for specified service
-func (s *ServiceManager) GetSubscriptions(serviceName string) []*SubscriptionInfo {
+func (this *Broker) GetSubscriptions(serviceName string) []*SubscriptionInfo {
 	subs := []*SubscriptionInfo{}
-	services := s.GetProtocolServices(serviceName)
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetSubscriptions()
@@ -322,8 +232,8 @@ func (s *ServiceManager) GetSubscriptions(serviceName string) []*SubscriptionInf
 }
 
 // GetSubscription return subscription information for specified topic
-func (s *ServiceManager) GetSubscription(serviceName string, sub string) *SubscriptionInfo {
-	services := s.GetProtocolServices(serviceName)
+func (this *Broker) GetSubscription(serviceName string, sub string) *SubscriptionInfo {
+	services := this.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		info := service.GetSubscription(sub)
@@ -335,11 +245,11 @@ func (s *ServiceManager) GetSubscription(serviceName string, sub string) *Subscr
 }
 
 // GetAllServiceInfo return all service information
-func (s *ServiceManager) GetAllServiceInfo() []*ServiceInfo {
+func (this *Broker) GetAllServiceInfo() []*ServiceInfo {
 	services := []*ServiceInfo{}
 
-	for _, service := range s.services {
-		services = append(services, service.Info())
-	}
+	//	for _, service := range this.Services {
+	//		services = append(services, service.Info())
+	//	}
 	return services
 }

@@ -11,7 +11,11 @@
 
 package base
 
-import "io"
+import (
+	"io"
+
+	"github.com/cloustone/sentel/core"
+)
 
 // ClientInfo
 type ClientInfo struct {
@@ -101,7 +105,7 @@ type Session interface {
 	// Info return session information
 	Info() *SessionInfo
 	// GetService get the service ower for current session
-	Service() Service
+	Service() core.Service
 	// Handle indicate service to handle the packet
 	Handle() error
 	// Destroy will release current session

@@ -129,7 +129,7 @@ func newMqttSession(m *mqtt, conn net.Conn, id string) (*mqttSession, error) {
 }
 
 func (s *mqttSession) Identifier() string    { return s.id }
-func (s *mqttSession) Service() base.Service { return s.mgr }
+func (s *mqttSession) Service() core.Service { return s.mgr }
 func (s *mqttSession) RegisterObserver(o base.SessionObserver) {
 	if s.observer != nil {
 		glog.Error("MqttSession register multiple observer")

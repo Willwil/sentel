@@ -28,7 +28,7 @@ import (
 
 type ApiService struct {
 	config   core.Config
-	chn      chan base.ServiceCommand
+	chn      chan core.ServiceCommand
 	wg       sync.WaitGroup
 	listener net.Listener
 	srv      *grpc.Server
@@ -38,7 +38,7 @@ type ApiService struct {
 type ApiServiceFactory struct{}
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan base.ServiceCommand) (base.Service, error) {
+func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	address := ":50051"
 	server := &ApiService{config: c, wg: sync.WaitGroup{}}
 
@@ -60,6 +60,11 @@ func (m *ApiServiceFactory) New(protocol string, c core.Config, ch chan base.Ser
 }
 
 // Name
+func (s *ApiService) Name() string {
+	return "api"
+}
+
+// Info
 func (s *ApiService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "apiservice",
@@ -88,7 +93,7 @@ func (s *ApiService) Wait() {
 }
 
 func (s *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
-	version := base.GetServiceManager().GetVersion()
+	version := base.GetBroker().GetVersion()
 	return &VersionReply{Version: version}, nil
 }
 
@@ -102,7 +107,7 @@ func (s *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*Cluster
 
 // Routes delegate routes command
 func (s *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	reply := &RoutesReply{
 		Routes: []*RouteInfo{},
 		Header: &ReplyMessageHeader{Success: true},
@@ -110,12 +115,12 @@ func (s *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesRep
 
 	switch req.Category {
 	case "list":
-		routes := mgr.GetRoutes(req.Service)
+		routes := broker.GetRoutes(req.Service)
 		for _, route := range routes {
 			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
 		}
 	case "show":
-		route := mgr.GetRoute(req.Service, req.Topic)
+		route := broker.GetRoute(req.Service, req.Topic)
 		if route != nil {
 			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
 		}
@@ -131,13 +136,13 @@ func (s *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusRep
 
 // Broker delegate broker command implementation in sentel
 func (s *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	switch req.Category {
 	case "stats":
-		stats := mgr.GetStats(req.Service)
+		stats := broker.GetStats(req.Service)
 		return &BrokerReply{Stats: stats}, nil
 	case "metrics":
-		metrics := mgr.GetMetrics(req.Service)
+		metrics := broker.GetMetrics(req.Service)
 		return &BrokerReply{Metrics: metrics}, nil
 	default:
 	}
@@ -150,14 +155,14 @@ func (s *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*Plugins
 
 // Services delegate  services command
 func (s *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	reply := &ServicesReply{
 		Header:   &ReplyMessageHeader{Success: true},
 		Services: []*ServiceInfo{},
 	}
 	switch req.Category {
 	case "list":
-		services := mgr.GetAllServiceInfo()
+		services := broker.GetAllServiceInfo()
 		for _, service := range services {
 			reply.Services = append(reply.Services,
 				&ServiceInfo{
@@ -179,14 +184,14 @@ func (s *ApiService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 
 //Subscriptions delete subscriptions command
 func (s *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
 		Subscriptions: []*SubscriptionInfo{},
 	}
 	switch req.Category {
 	case "list":
-		subs := mgr.GetSubscriptions(req.Service)
+		subs := broker.GetSubscriptions(req.Service)
 		for _, sub := range subs {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -196,7 +201,7 @@ func (s *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 				})
 		}
 	case "show":
-		sub := mgr.GetSubscription(req.Service, req.Subscription)
+		sub := broker.GetSubscription(req.Service, req.Subscription)
 		if sub != nil {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -215,12 +220,12 @@ func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		Clients: []*ClientInfo{},
 		Header:  &ReplyMessageHeader{Success: true},
 	}
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 
 	switch req.Category {
 	case "list":
 		// Get all client information for specified service
-		clients := mgr.GetClients(req.Service)
+		clients := broker.GetClients(req.Service)
 		for _, client := range clients {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
@@ -232,7 +237,7 @@ func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		}
 	case "show":
 		// Get client information for specified client id
-		if client := mgr.GetClient(req.Service, req.ClientId); client != nil {
+		if client := broker.GetClient(req.Service, req.ClientId); client != nil {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
 					UserName:     client.UserName,
@@ -242,7 +247,7 @@ func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 				})
 		}
 	case "kick":
-		if err := mgr.KickoffClient(req.Service, req.ClientId); err != nil {
+		if err := broker.KickoffClient(req.Service, req.ClientId); err != nil {
 			reply.Header.Success = false
 			reply.Header.Reason = fmt.Sprintf("%v", err)
 		}
@@ -254,14 +259,14 @@ func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 
 // Sessions delegate client sessions command
 func (s *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
 		Sessions: []*SessionInfo{},
 	}
 	switch req.Category {
 	case "list":
-		sessions := mgr.GetSessions(req.Service, req.Conditions)
+		sessions := broker.GetSessions(req.Service, req.Conditions)
 		for _, session := range sessions {
 			reply.Sessions = append(reply.Sessions,
 				&SessionInfo{
@@ -278,7 +283,7 @@ func (s *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 				})
 		}
 	case "show":
-		session := mgr.GetSession(req.Service, req.ClientId)
+		session := broker.GetSession(req.Service, req.ClientId)
 		if session != nil {
 			reply.Sessions = append(reply.Sessions,
 				&SessionInfo{
@@ -299,14 +304,14 @@ func (s *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 }
 
 func (s *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
-	mgr := base.GetServiceManager()
+	broker := base.GetBroker()
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},
 		Topics: []*TopicInfo{},
 	}
 	switch req.Category {
 	case "list":
-		topics := mgr.GetTopics(req.Service)
+		topics := broker.GetTopics(req.Service)
 		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -315,7 +320,7 @@ func (s *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 				})
 		}
 	case "show":
-		topic := mgr.GetTopic(req.Service, req.Topic)
+		topic := broker.GetTopic(req.Service, req.Topic)
 		if topic != nil {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{

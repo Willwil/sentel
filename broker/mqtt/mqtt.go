@@ -36,7 +36,7 @@ const (
 // MQTT service declaration
 type mqtt struct {
 	config     core.Config
-	chn        chan base.ServiceCommand
+	chn        chan core.ServiceCommand
 	index      int64
 	sessions   map[string]base.Session
 	mutex      sync.Mutex // Maybe not so good
@@ -53,7 +53,7 @@ type mqtt struct {
 type MqttFactory struct{}
 
 // New create mqtt service factory
-func (m *MqttFactory) New(protocol string, c core.Config, ch chan base.ServiceCommand) (base.Service, error) {
+func (m *MqttFactory) New(protocol string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	var localAddrs []string = []string{}
 	var s Storage
 

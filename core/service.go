@@ -81,9 +81,8 @@ func CheckAllRegisteredServices() error {
 
 type ServiceManager struct {
 	sync.Once
-	nodeName string                         // Node name
-	config   Config                         // Global config
-	services map[string]Service             // All service created by config.Protocols
+	Config   Config                         // Global config
+	Services map[string]Service             // All service created by config.Protocols
 	chs      map[string]chan ServiceCommand // Notification channel for each service
 }
 
@@ -103,9 +102,9 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 		return _serviceManager, errors.New("NewServiceManager had been called many times")
 	}
 	mgr := &ServiceManager{
-		config:   c,
+		Config:   c,
 		chs:      make(map[string]chan ServiceCommand),
-		services: make(map[string]Service),
+		Services: make(map[string]Service),
 	}
 	// Get supported configs
 	items := c.MustString(name, "services")
@@ -120,7 +119,7 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 			glog.Errorf("%s", err)
 		} else {
 			glog.Infof("Create service '%s' successfully", name)
-			mgr.services[name] = service
+			mgr.Services[name] = service
 			mgr.chs[name] = ch
 		}
 	}
@@ -131,8 +130,8 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 // Run launch all serices and wait to terminate
 func (s *ServiceManager) Run() error {
 	// Run all service
-	glog.Infof("There are %d service in iothub", len(s.services))
-	for _, service := range s.services {
+	glog.Infof("There are %d service in iothub", len(s.Services))
+	for _, service := range s.Services {
 		glog.Infof("Starting service:'%s'...", service.Name())
 		go service.Start()
 	}
@@ -147,18 +146,18 @@ func (s *ServiceManager) Run() error {
 // StartService launch specified service
 func (s *ServiceManager) StartService(name string) error {
 	// Return error if service has already been started
-	for id, service := range s.services {
+	for id, service := range s.Services {
 		if strings.IndexAny(id, name) >= 0 && service != nil {
 			return fmt.Errorf("The service '%s' has already been started", name)
 		}
 	}
 	ch := make(chan ServiceCommand)
-	service, err := CreateService(name, s.config, ch)
+	service, err := CreateService(name, s.Config, ch)
 	if err != nil {
 		glog.Errorf("%s", err)
 	} else {
 		glog.Infof("Create service '%s' success", name)
-		s.services[name] = service
+		s.Services[name] = service
 		s.chs[name] = ch
 	}
 	return nil
@@ -166,10 +165,10 @@ func (s *ServiceManager) StartService(name string) error {
 
 // StopService stop specified service
 func (s *ServiceManager) StopService(id string) error {
-	for name, service := range s.services {
+	for name, service := range s.Services {
 		if name == id && service != nil {
 			service.Stop()
-			s.services[name] = nil
+			s.Services[name] = nil
 			close(s.chs[name])
 		}
 	}
@@ -179,7 +178,7 @@ func (s *ServiceManager) StopService(id string) error {
 // GetServicesByName return service instance by name, or matched by part of name
 func (s *ServiceManager) GetServicesByName(name string) []Service {
 	services := []Service{}
-	for k, service := range s.services {
+	for k, service := range s.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			services = append(services, service)
 		}

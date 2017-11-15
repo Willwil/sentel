@@ -29,14 +29,8 @@ type ServiceInfo struct {
 	CurrentClients uint64
 	ShutdownCount  uint64
 }
-type Service interface {
-	Info() *ServiceInfo
-	Start() error
-	Stop()
-}
-
 type ServiceFactory interface {
-	New(name string, c core.Config, ch chan ServiceCommand) (Service, error)
+	New(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error)
 }
 
 var (
@@ -53,7 +47,7 @@ func RegisterService(name string, configs map[string]string, factory ServiceFact
 }
 
 // CreateService create service instance according to service name
-func CreateService(name string, c core.Config, ch chan ServiceCommand) (Service, error) {
+func CreateService(name string, c core.Config, ch chan core.ServiceCommand) (core.Service, error) {
 	glog.Infof("Creating service '%s'...", name)
 
 	if factory, ok := _serviceFactories[name]; ok && factory != nil {
