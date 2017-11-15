@@ -462,7 +462,8 @@ func (s *mqttSession) handleConnect() error {
 			// Resume last session   // fix me ssddn
 			s.storage.UpdateSession(s)
 			// Notify other mqtt node to release resource
-			base.AsyncProduceMessage(s.config,
+			core.AsyncProduceMessage(s.config,
+				"session",
 				TopicNameSession,
 				&SessionTopic{
 					Launcher:  s.conn.LocalAddr().String(),

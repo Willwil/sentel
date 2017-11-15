@@ -9,20 +9,24 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-
-package base
+package core
 
 import (
+	"errors"
 	"strings"
 	"time"
-
-	"github.com/cloustone/sentel/core"
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/glog"
 )
 
-func SyncProduceMessage(c core.Config, topic string, value sarama.Encoder) error {
+func SyncProduceMessage(cfg Config, topic string, key string, value sarama.Encoder) error {
+	// Get kafka server
+	kafka, err := cfg.String("kafka", "hosts")
+	if err != nil || kafka == "" {
+		return errors.New("Invalid kafka configuration")
+	}
+
 	//	sarama.Logger = c.Logger()
 
 	config := sarama.NewConfig()
@@ -32,25 +36,30 @@ func SyncProduceMessage(c core.Config, topic string, value sarama.Encoder) error
 
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder("mqttbroker"), // Improved
+		Key:   sarama.StringEncoder(key),
 		Value: value,
 	}
 
-	server, _ := c.String("mqttbroker", "kafka")
-	producer, err := sarama.NewSyncProducer(strings.Split(server, ","), config)
+	producer, err := sarama.NewSyncProducer(strings.Split(kafka, ","), config)
 	if err != nil {
-		glog.Errorf("Failed to produce message:%s", err)
+		glog.Errorf("Failed to produce message:%s", err.Error())
 		return err
 	}
 	defer producer.Close()
 
 	if _, _, err := producer.SendMessage(msg); err != nil {
-		glog.Errorf("Failed to send producer message:%s", err)
+		glog.Errorf("Failed to send producer message:%s", err.Error())
 	}
 	return err
 }
 
-func AsyncProduceMessage(c core.Config, topic string, value sarama.Encoder) error {
+func AsyncProduceMessage(cfg Config, key string, topic string, value sarama.Encoder) error {
+	// Get kafka server
+	kafka, err := cfg.String("kafka", "hosts")
+	if err != nil || kafka == "" {
+		return errors.New("Invalid kafka configuration")
+	}
+
 	//	sarama.Logger = c.Logger()
 
 	config := sarama.NewConfig()
@@ -61,15 +70,13 @@ func AsyncProduceMessage(c core.Config, topic string, value sarama.Encoder) erro
 
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder("mqttbroker"), // Improved
+		Key:   sarama.StringEncoder(key),
 		Value: value,
 	}
 
-	server, _ := c.String("mqttbroker", "kafka")
-
-	producer, err := sarama.NewAsyncProducer(strings.Split(server, ","), config)
+	producer, err := sarama.NewAsyncProducer(strings.Split(kafka, ","), config)
 	if err != nil {
-		glog.Errorf("Failed to produce message:%s", err)
+		glog.Errorf("Failed to produce message:%s", err.Error())
 		return err
 	}
 	defer producer.Close()
