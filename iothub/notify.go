@@ -39,9 +39,7 @@ type tenantNotify struct {
 }
 
 type NotifyService struct {
-	config   core.Config
-	quit     chan os.Signal
-	wg       sync.WaitGroup
+	core.ServiceBase
 	consumer sarama.Consumer
 }
 
@@ -51,19 +49,18 @@ type NotifyServiceFactory struct{}
 // New create apiService service factory
 func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
-	khosts, err := c.String("iothub", "kafka")
-	if err != nil {
-		return nil, err
-	}
+	khosts := c.MustString("iothub", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
 	return &NotifyService{
-		config:   c,
-		wg:       sync.WaitGroup{},
-		quit:     quit,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
 		consumer: consumer,
 	}, nil
 }
@@ -81,14 +78,14 @@ func (this *NotifyService) Start() error {
 	if err := this.subscribeTopic(apiserver.TopicNameProduct); err != nil {
 		return err
 	}
-	this.wg.Wait()
+	this.WaitGroup.Wait()
 	return nil
 }
 
 // Stop
 func (this *NotifyService) Stop() {
 	this.consumer.Close()
-	this.wg.Wait()
+	this.WaitGroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
@@ -106,10 +103,10 @@ func (this *NotifyService) subscribeTopic(topic string) error {
 			continue
 		}
 		defer pc.AsyncClose()
-		this.wg.Add(1)
+		this.WaitGroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer this.wg.Done()
+			defer this.WaitGroup.Done()
 			for msg := range pc.Messages() {
 				this.handleNotifications(string(msg.Topic), msg.Value)
 			}

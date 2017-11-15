@@ -21,8 +21,6 @@ import (
 	"github.com/golang/glog"
 )
 
-type ServiceCommand int
-
 type Service interface {
 	Name() string
 	Start() error

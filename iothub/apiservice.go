@@ -27,9 +27,7 @@ import (
 )
 
 type ApiService struct {
-	config  core.Config
-	quit    chan os.Signal
-	wg      sync.WaitGroup
+	core.ServiceBase
 	address string
 	echo    *echo.Echo
 }
@@ -89,9 +87,11 @@ func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 	e.PUT(APIHEAD+"broker/:id", updateBrokerStatus)
 
 	return &ApiService{
-		config:  c,
-		wg:      sync.WaitGroup{},
-		quit:    quit,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
 		address: address,
 		echo:    e,
 	}, nil
@@ -107,14 +107,14 @@ func (this *ApiService) Name() string {
 func (this *ApiService) Start() error {
 	go func(s *ApiService) {
 		this.echo.Start(this.address)
-		this.wg.Add(1)
+		this.WaitGroup.Add(1)
 	}(this)
 	return nil
 }
 
 // Stop
 func (this *ApiService) Stop() {
-	this.wg.Wait()
+	this.WaitGroup.Wait()
 }
 
 // Tenant
