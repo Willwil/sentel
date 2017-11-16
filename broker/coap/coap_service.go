@@ -29,14 +29,12 @@ const (
 	protocolName = "coap"
 )
 
-type coap struct {
-	config     core.Config
-	chn        chan base.ServiceCommand
+type coapService struct {
+	core.ServiceBase
 	index      int64
 	sessions   map[string]base.Session
 	mutex      sync.Mutex // Maybe not so good
 	protocol   uint8
-	wg         sync.WaitGroup
 	localAddrs []string
 }
 
@@ -60,8 +58,12 @@ func (m *CoapFactory) New(protocol string, c core.Config, ch chan base.ServiceCo
 	if len(localAddrs) == 0 {
 		return nil, errors.New("Failed to get local address")
 	}
-	t := &coap{config: c,
-		chn:        ch,
+	t := &coapService{
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			Quit:      ch,
+			WaitGroup: sync.WaitGroup{},
+		},
 		index:      -1,
 		sessions:   make(map[string]base.Session),
 		protocol:   2,
@@ -72,36 +74,36 @@ func (m *CoapFactory) New(protocol string, c core.Config, ch chan base.ServiceCo
 
 // MQTT Service
 
-func (m *coap) NewSession(conn net.Conn) (base.Session, error) {
-	id := m.CreateSessionId()
+func (this *coapService) NewSession(conn net.Conn) (base.Session, error) {
+	id := this.CreateSessionId()
 	s, err := newCoapSession(m, conn, id)
 	return s, err
 }
 
 // CreateSessionId create id for new session
-func (m *coap) CreateSessionId() string {
+func (this *coapService) CreateSessionId() string {
 	return uuid.NewV4().String()
 }
 
 // GetSessionTotalCount get total session count
-func (m *coap) GetSessionTotalCount() int64 {
-	return int64(len(m.sessions))
+func (this *coapService) GetSessionTotalCount() int64 {
+	return int64(len(this.sessions))
 }
 
-func (m *coap) RemoveSession(s base.Session) {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-	m.sessions[s.Identifier()] = nil
+func (this *coapService) RemoveSession(s base.Session) {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	this.sessions[s.Identifier()] = nil
 }
-func (m *coap) RegisterSession(s base.Session) {
-	m.mutex.Lock()
-	m.sessions[s.Identifier()] = s
-	m.mutex.Unlock()
+func (this *coapService) RegisterSession(s base.Session) {
+	this.mutex.Lock()
+	this.sessions[s.Identifier()] = s
+	this.mutex.Unlock()
 }
 
 // Start
-func (m *coap) Start() error {
-	host, _ := m.config.String("coap", "host")
+func (this *coapService) Start() error {
+	host, _ := this.config.String("coap", "host")
 
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
@@ -114,48 +116,48 @@ func (m *coap) Start() error {
 		if err != nil {
 			continue
 		}
-		session, err := m.NewSession(conn)
+		session, err := this.NewSession(conn)
 		if err != nil {
 			glog.Error("Mqtt create session failed")
 			return err
 		}
 		glog.Infof("Mqtt new connection:%s", session.Identifier())
-		m.RegisterSession(session)
+		this.RegisterSession(session)
 		go session.Handle()
 	}
 	// notify main
-	m.chn <- 1
+	// this.chn <- 1
 	return nil
 }
 
-func (m *coap) Stop() {}
+func (this *coapService) Stop() {}
 
 // Name
-func (m *coap) Info() *base.ServiceInfo {
+func (this *coapService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "coap",
 	}
 }
 
-func (m *coap) GetMetrics() *base.Metrics            { return nil }
-func (m *coap) GetStats() *base.Stats                { return nil }
-func (m *coap) GetClients() []*base.ClientInfo       { return nil }
-func (m *coap) GetClient(id string) *base.ClientInfo { return nil }
-func (m *coap) KickoffClient(id string) error        { return nil }
+func (this *coapService) GetMetrics() *base.Metrics            { return nil }
+func (this *coapService) GetStats() *base.Stats                { return nil }
+func (this *coapService) GetClients() []*base.ClientInfo       { return nil }
+func (this *coapService) GetClient(id string) *base.ClientInfo { return nil }
+func (this *coapService) KickoffClient(id string) error        { return nil }
 
-func (m *coap) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
-func (m *coap) GetSession(id string) *base.SessionInfo                     { return nil }
+func (this *coapService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
+func (this *coapService) GetSession(id string) *base.SessionInfo                     { return nil }
 
-func (m *coap) GetRoutes() []*base.RouteInfo { return nil }
-func (m *coap) GetRoute() *base.RouteInfo    { return nil }
+func (this *coapService) GetRoutes() []*base.RouteInfo { return nil }
+func (this *coapService) GetRoute() *base.RouteInfo    { return nil }
 
 // Topic info
-func (m *coap) GetTopics() []*base.TopicInfo       { return nil }
-func (m *coap) GetTopic(id string) *base.TopicInfo { return nil }
+func (this *coapService) GetTopics() []*base.TopicInfo       { return nil }
+func (this *coapService) GetTopic(id string) *base.TopicInfo { return nil }
 
 // SubscriptionInfo
-func (m *coap) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
-func (m *coap) GetSubscription(id string) *base.SubscriptionInfo { return nil }
+func (this *coapService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
+func (this *coapService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
 
 // Service Info
-func (m *coap) GetServiceInfo() *base.ServiceInfo { return nil }
+func (this *coapService) GetServiceInfo() *base.ServiceInfo { return nil }

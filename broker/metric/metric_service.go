@@ -14,6 +14,7 @@ package metric
 
 import (
 	"os"
+	"sync"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -22,8 +23,7 @@ import (
 )
 
 type MetricService struct {
-	config    core.Config
-	quit      chan os.Signal
+	core.ServiceBase
 	keepalive *time.Ticker
 	stat      *time.Ticker
 	name      string
@@ -35,82 +35,85 @@ type MetricService struct {
 type MetricServiceFactory struct{}
 
 // New create apiService service factory
-func (m *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (this *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// Get node ip, name and created time
 	return &MetricService{
-		config: c,
-		quit:   quit,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			Quit:      quit,
+			WaitGroup: sync.WaitGroup{},
+		},
 	}, nil
 }
 
 // Info
-func (s *MetricService) Info() *base.ServiceInfo {
+func (this *MetricService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "report-service",
 	}
 }
 
 // Name
-func (s *MetricService) Name() string {
+func (this *MetricService) Name() string {
 	return "metric"
 }
 
 // Start
-func (s *MetricService) Start() error {
+func (this *MetricService) Start() error {
 	// Launch timer scheduler
-	duration, err := s.config.Int("mqttbroker", "report_duration")
+	duration, err := this.Config.Int("mqttbroker", "report_duration")
 	if err != nil {
 		duration = 2
 	}
-	s.keepalive = time.NewTicker(1 * time.Second)
-	s.stat = time.NewTicker(time.Duration(duration) * time.Second)
+	this.keepalive = time.NewTicker(1 * time.Second)
+	this.stat = time.NewTicker(time.Duration(duration) * time.Second)
 	go func(*MetricService) {
 		for {
 			select {
-			case <-s.keepalive.C:
-				s.reportKeepalive()
-			case <-s.stat.C:
-				s.reportHubStats()
+			case <-this.keepalive.C:
+				this.reportKeepalive()
+			case <-this.stat.C:
+				this.reportHubStats()
 			}
 		}
-	}(s)
+	}(this)
 	return nil
 }
 
 // Stop
-func (s *MetricService) Stop() {
-	s.keepalive.Stop()
-	s.stat.Stop()
+func (this *MetricService) Stop() {
+	this.keepalive.Stop()
+	this.stat.Stop()
 }
 
 // reportHubStats report current iothub stats
-func (s *MetricService) reportHubStats() {
+func (this *MetricService) reportHubStats() {
 	broker := base.GetBroker()
 	// Stats
 	stats := broker.GetStats("mqtt")
-	collector.AsyncReport(s.config, collector.TopicNameStats,
+	collector.AsyncReport(this.Config, collector.TopicNameStats,
 		&collector.Stats{
-			NodeName: s.name,
+			NodeName: this.name,
 			Service:  "mqtt",
 			Values:   stats,
 		})
 
 	// Metrics
 	metrics := broker.GetMetrics("mqtt")
-	collector.AsyncReport(s.config, collector.TopicNameMetric,
+	collector.AsyncReport(this.Config, collector.TopicNameMetric,
 		&collector.Metric{
-			NodeName: s.name,
+			NodeName: this.name,
 			Service:  "mqtt",
 			Values:   metrics,
 		})
 }
 
 // reportKeepalive report node information to cluster manager
-func (s *MetricService) reportKeepalive() {
+func (this *MetricService) reportKeepalive() {
 	broker := base.GetBroker()
 	// Node
 	node := broker.GetNodeInfo()
-	collector.AsyncReport(s.config, collector.TopicNameNode,
+	collector.AsyncReport(this.Config, collector.TopicNameNode,
 		&collector.Node{
 			NodeName:  node.NodeName,
 			NodeIp:    node.NodeIp,

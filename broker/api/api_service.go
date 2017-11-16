@@ -28,9 +28,7 @@ import (
 )
 
 type ApiService struct {
-	config   core.Config
-	quit     chan os.Signal
-	wg       sync.WaitGroup
+	core.ServiceBase
 	listener net.Listener
 	srv      *grpc.Server
 }
@@ -40,14 +38,16 @@ type ApiServiceFactory struct{}
 
 // New create apiService service factory
 func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	address := ":50051"
-	server := &ApiService{quit: quit, config: c, wg: sync.WaitGroup{}}
-
-	if addr, err := c.String("authlet", "address"); err == nil && address != "" {
-		address = addr
+	server := &ApiService{
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			Quit:      quit,
+			WaitGroup: sync.WaitGroup{},
+		},
 	}
 
-	lis, err := net.Listen("tcp", address)
+	listen := c.MustString("authlet", "listen")
+	lis, err := net.Listen("tcp", listen)
 	if err != nil {
 		glog.Fatal("Failed to listen: %v", err)
 		return nil, err
@@ -61,53 +61,53 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 }
 
 // Name
-func (s *ApiService) Name() string {
+func (this *ApiService) Name() string {
 	return "api"
 }
 
 // Info
-func (s *ApiService) Info() *base.ServiceInfo {
+func (this *ApiService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "apiservice",
 	}
 }
 
 // Start
-func (s *ApiService) Start() error {
-	go func(s *ApiService) {
-		s.srv.Serve(s.listener)
-		s.wg.Add(1)
-	}(s)
+func (this *ApiService) Start() error {
+	go func(this *ApiService) {
+		this.srv.Serve(this.listener)
+		this.WaitGroup.Add(1)
+	}(this)
 	return nil
 }
 
 // Stop
-func (s *ApiService) Stop() {
-	s.listener.Close()
-	s.wg.Wait()
+func (this *ApiService) Stop() {
+	this.listener.Close()
+	this.WaitGroup.Wait()
 }
 
 //
 // Wait
-func (s *ApiService) Wait() {
-	s.wg.Wait()
+func (this *ApiService) Wait() {
+	this.WaitGroup.Wait()
 }
 
-func (s *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
+func (this *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
 	version := base.GetBroker().GetVersion()
 	return &VersionReply{Version: version}, nil
 }
 
-func (s *ApiService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
+func (this *ApiService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
 	return nil, nil
 }
 
-func (s *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
+func (this *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
 	return nil, nil
 }
 
 // Routes delegate routes command
-func (s *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
+func (this *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
 	broker := base.GetBroker()
 	reply := &RoutesReply{
 		Routes: []*RouteInfo{},
@@ -131,12 +131,12 @@ func (s *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesRep
 	return reply, nil
 }
 
-func (s *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
+func (this *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
 	return nil, nil
 }
 
 // Broker delegate broker command implementation in sentel
-func (s *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
+func (this *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
 	broker := base.GetBroker()
 	switch req.Category {
 	case "stats":
@@ -150,12 +150,12 @@ func (s *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerRep
 	return nil, fmt.Errorf("Invalid broker request with categoru:%s", req.Category)
 }
 
-func (s *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
+func (this *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
 	return nil, nil
 }
 
 // Services delegate  services command
-func (s *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
+func (this *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
 	broker := base.GetBroker()
 	reply := &ServicesReply{
 		Header:   &ReplyMessageHeader{Success: true},
@@ -184,7 +184,7 @@ func (s *ApiService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 }
 
 //Subscriptions delete subscriptions command
-func (s *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
+func (this *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
 	broker := base.GetBroker()
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
@@ -216,7 +216,7 @@ func (s *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 }
 
 // Clients delegate clients command implementation in sentel
-func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
+func (this *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
 	reply := &ClientsReply{
 		Clients: []*ClientInfo{},
 		Header:  &ReplyMessageHeader{Success: true},
@@ -259,7 +259,7 @@ func (s *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 }
 
 // Sessions delegate client sessions command
-func (s *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
+func (this *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
 	broker := base.GetBroker()
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
@@ -304,7 +304,7 @@ func (s *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 	return reply, nil
 }
 
-func (s *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
+func (this *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
 	broker := base.GetBroker()
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},
