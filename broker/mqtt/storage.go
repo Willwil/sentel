@@ -126,8 +126,12 @@ func registerStorage(name string, s storageFactory) {
 }
 
 // NewStorage lookup registered storage list, create a new storage instance
-func NewStorage(name string, c core.Config) (Storage, error) {
-	if _allStorage[name] == nil {
+func NewStorage(c core.Config) (Storage, error) {
+	name, err := c.String("storage", "name")
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := _allStorage[name]; !ok {
 		return nil, fmt.Errorf("Storage %s is not registered", name)
 	}
 	return _allStorage[name].New(c)

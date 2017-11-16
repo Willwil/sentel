@@ -40,12 +40,12 @@ type mqtt struct {
 	index      int64
 	sessions   map[string]base.Session
 	mutex      sync.Mutex // Maybe not so good
-	inpacket   *mqttPacket
 	localAddrs []string
 	storage    Storage
 	protocol   string
 	stats      *base.Stats
 	metrics    *base.Metrics
+	consumer   sarama.Consumer
 }
 
 const (
@@ -61,10 +61,8 @@ type MqttFactory struct {
 
 // New create mqtt service factory
 func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	var localAddrs []string = []string{}
-	var s Storage
-
 	// Get all local ip address
+	localAddrs := []string{}
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		glog.Errorf("Failed to get local interface:%s", err)
@@ -72,16 +70,20 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 	}
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.To4() != nil {
-			localAddrs = append(localAddrs, ipnet.IP.String())
+			return nil, errors.New("Failed to get local address")
 		}
 	}
-	if len(localAddrs) == 0 {
-		return nil, errors.New("Failed to get local address")
-	}
+
 	// Create storage
-	name := c.MustString("storage", "name")
-	if s, err = NewStorage(name, c); err != nil {
+	s, err := NewStorage(c)
+	if err != nil {
 		return nil, errors.New("Failed to create storage in mqtt")
+	}
+	// kafka
+	khosts := c.MustString("broker", "kafka")
+	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
+	if err != nil {
+		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
 	t := &mqtt{
@@ -97,6 +99,7 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 		storage:    s,
 		stats:      base.NewStats(true),
 		metrics:    base.NewMetrics(true),
+		consumer:   consumer,
 	}
 	return t, nil
 }
@@ -172,20 +175,14 @@ func (this *mqtt) GetServiceInfo() *base.ServiceInfo { return nil }
 
 // Start is mainloop for mqtt service
 func (this *mqtt) Start() error {
-	host, _ := this.Config.String(this.protocol, "listen")
+	this.subscribeTopic("session")
 
+	host, _ := this.Config.String(this.protocol, "listen")
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
 		glog.Errorf("Mqtt listen failed:%s", err)
 		return err
 	}
-	// Launch montor
-	// TODO:how to wait the monitor to be terminated
-	if err := this.launchMqttMonitor(); err != nil {
-		glog.Errorf("Mqtt monitor failed, reason:%s", err)
-		//return err
-	}
-
 	glog.Infof("Mqtt server is listening on '%s'...", host)
 	for {
 		conn, err := listen.Accept()
@@ -217,22 +214,19 @@ func (this *mqtt) Stop() {
 
 // launchMqttMonitor
 func (this *mqtt) launchMqttMonitor() error {
-	glog.Info("Luanching mqtt monitor...")
-	//sarama.Logger = glog
-	khosts := this.Config.MustString("broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
+	return nil
+}
 
-	partitionList, err := consumer.Partitions("iothub-mqtt")
+// subscribeTopc subscribe topics from apiserver
+func (this *mqtt) subscribeTopic(topic string) error {
+	partitionList, err := this.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
 		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := consumer.ConsumePartition("mqttbroker", int32(partition), sarama.OffsetNewest)
+		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
@@ -247,8 +241,6 @@ func (this *mqtt) launchMqttMonitor() error {
 			}
 		}(pc)
 	}
-	this.WaitGroup.Wait()
-	consumer.Close()
 	return nil
 }
 
