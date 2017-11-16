@@ -35,7 +35,7 @@ const (
 )
 
 // MQTT service declaration
-type mqtt struct {
+type mqttService struct {
 	core.ServiceBase
 	index      int64
 	sessions   map[string]base.Session
@@ -86,7 +86,7 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
-	t := &mqtt{
+	t := &mqttService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			Quit:      quit,
@@ -107,74 +107,74 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 // MQTT Service
 
 // Name
-func (this *mqtt) Name() string {
+func (this *mqttService) Name() string {
 	return "mqtt:" + this.protocol
 }
 
-func (this *mqtt) NewSession(conn net.Conn) (base.Session, error) {
+func (this *mqttService) NewSession(conn net.Conn) (base.Session, error) {
 	id := this.createSessionId()
 	s, err := newMqttSession(this, conn, id)
 	return s, err
 }
 
 // CreateSessionId create id for new session
-func (this *mqtt) createSessionId() string {
+func (this *mqttService) createSessionId() string {
 	return uuid.NewV4().String()
 }
 
 // GetSessionTotalCount get total session count
-func (this *mqtt) getSessionTotalCount() int64 {
+func (this *mqttService) getSessionTotalCount() int64 {
 	return int64(len(this.sessions))
 }
 
-func (this *mqtt) removeSession(s base.Session) {
+func (this *mqttService) removeSession(s base.Session) {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	this.sessions[s.Identifier()] = nil
 }
-func (this *mqtt) registerSession(s base.Session) {
+func (this *mqttService) registerSession(s base.Session) {
 	this.mutex.Lock()
 	this.sessions[s.Identifier()] = s
 	this.mutex.Unlock()
 }
 
 // Info
-func (this *mqtt) Info() *base.ServiceInfo {
+func (this *mqttService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "mqtt",
 	}
 }
 
 // Stats and Metrics
-func (this *mqtt) GetStats() *base.Stats     { return this.stats }
-func (this *mqtt) GetMetrics() *base.Metrics { return this.metrics }
+func (this *mqttService) GetStats() *base.Stats     { return this.stats }
+func (this *mqttService) GetMetrics() *base.Metrics { return this.metrics }
 
 // Client
-func (this *mqtt) GetClients() []*base.ClientInfo       { return nil }
-func (this *mqtt) GetClient(id string) *base.ClientInfo { return nil }
-func (this *mqtt) KickoffClient(id string) error        { return nil }
+func (this *mqttService) GetClients() []*base.ClientInfo       { return nil }
+func (this *mqttService) GetClient(id string) *base.ClientInfo { return nil }
+func (this *mqttService) KickoffClient(id string) error        { return nil }
 
 // Session Info
-func (this *mqtt) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
-func (this *mqtt) GetSession(id string) *base.SessionInfo                     { return nil }
+func (this *mqttService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
+func (this *mqttService) GetSession(id string) *base.SessionInfo                     { return nil }
 
 // Route Info
-func (this *mqtt) GetRoutes() []*base.RouteInfo { return nil }
-func (this *mqtt) GetRoute() *base.RouteInfo    { return nil }
+func (this *mqttService) GetRoutes() []*base.RouteInfo { return nil }
+func (this *mqttService) GetRoute() *base.RouteInfo    { return nil }
 
 // Topic info
-func (this *mqtt) GetTopics() []*base.TopicInfo       { return nil }
-func (this *mqtt) GetTopic(id string) *base.TopicInfo { return nil }
+func (this *mqttService) GetTopics() []*base.TopicInfo       { return nil }
+func (this *mqttService) GetTopic(id string) *base.TopicInfo { return nil }
 
 // SubscriptionInfo
-func (this *mqtt) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
-func (this *mqtt) GetSubscription(id string) *base.SubscriptionInfo { return nil }
+func (this *mqttService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
+func (this *mqttService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
 
 // Service Info
-func (this *mqtt) GetServiceInfo() *base.ServiceInfo { return nil }
+func (this *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
 
 // Start is mainloop for mqtt service
-func (this *mqtt) Start() error {
+func (this *mqttService) Start() error {
 	this.subscribeTopic("session")
 
 	host, _ := this.Config.String(this.protocol, "listen")
@@ -209,16 +209,16 @@ func (this *mqtt) Start() error {
 }
 
 // Stop
-func (this *mqtt) Stop() {
+func (this *mqttService) Stop() {
 }
 
 // launchMqttMonitor
-func (this *mqtt) launchMqttMonitor() error {
+func (this *mqttService) launchMqttMonitor() error {
 	return nil
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (this *mqtt) subscribeTopic(topic string) error {
+func (this *mqttService) subscribeTopic(topic string) error {
 	partitionList, err := this.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
@@ -245,7 +245,7 @@ func (this *mqtt) subscribeTopic(topic string) error {
 }
 
 // handleNotifications handle notification from kafka
-func (this *mqtt) handleNotifications(topic string, value []byte) error {
+func (this *mqttService) handleNotifications(topic string, value []byte) error {
 	switch topic {
 	case TopicNameSession:
 		return this.handleSessionNotifications(value)
@@ -254,7 +254,7 @@ func (this *mqtt) handleNotifications(topic string, value []byte) error {
 }
 
 // handleSessionNotifications handle session notification  from kafka
-func (this *mqtt) handleSessionNotifications(value []byte) error {
+func (this *mqttService) handleSessionNotifications(value []byte) error {
 	// Decode value received form other mqtt node
 	var topics []SessionTopic
 	if err := json.Unmarshal(value, &topics); err != nil {

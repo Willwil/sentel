@@ -52,7 +52,7 @@ const (
 )
 
 type mqttSession struct {
-	mgr               *mqtt
+	mgr               *mqttService
 	config            core.Config
 	storage           Storage
 	authapi           auth.IAuthAPI
@@ -88,7 +88,7 @@ type mqttSession struct {
 }
 
 // newMqttSession create new session  for each client connection
-func newMqttSession(m *mqtt, conn net.Conn, id string) (*mqttSession, error) {
+func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, error) {
 	// Get session message queue size, if it is not set, default is 10
 	qsize, err := m.Config.Int(m.protocol, "session_queue_size")
 	if err != nil {
