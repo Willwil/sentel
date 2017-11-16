@@ -14,10 +14,11 @@ package ceilometer
 
 var defaultConfigs = map[string]map[string]string{
 	"ceilometer": {
-		"loglevel": "debug",
-		"kafka":    "localhost:9092",
-		"services": "api,collector",
-		"mongo":    "locahost:27017",
+		"loglevel":        "debug",
+		"kafka":           "localhost:9092",
+		"services":        "api,collector",
+		"mongo":           "locahost:27017",
+		"connect_timeout": "5",
 	},
 	"api": {
 		"listen": "localhost:8080",

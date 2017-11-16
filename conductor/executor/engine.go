@@ -14,7 +14,6 @@ package executor
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -54,9 +53,9 @@ type ruleEngine struct {
 
 // newRuleEngine create a engine according to product id and configuration
 func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
-	khosts, err := c.String("conductor", "kafka")
-	if err != nil || khosts == "" {
-		return nil, errors.New("Invalid kafka configuration")
+	khosts, err := core.GetServiceEndpoint(c, "conductor", "kafka")
+	if err != nil {
+		return nil, err
 	}
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {

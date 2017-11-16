@@ -16,12 +16,14 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
+// ExecutorService manage all rule engine and execute rule
 type ExecutorService struct {
 	core.ServiceBase
 	ruleChan chan *Rule
@@ -37,12 +39,14 @@ var executorService *ExecutorService
 // New create executor service factory
 func (this *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
-	hosts := c.MustString("conductor", "mongo")
-	if session, err := mgo.Dial(hosts); err != nil {
+	hosts, _ := core.GetServiceEndpoint(c, "conductor", "mongo")
+	timeout := c.MustInt("conductor", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
+	if err != nil {
 		return nil, err
-	} else {
-		session.Close()
 	}
+	session.Close()
+
 	executorService = &ExecutorService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
@@ -89,6 +93,7 @@ func (this *ExecutorService) Stop() {
 	}
 }
 
+// handleRule process incomming rule
 func (this *ExecutorService) handleRule(r *Rule) error {
 	// Get engine instance according to product id
 	if _, ok := this.engines[r.ProductId]; !ok { // not found

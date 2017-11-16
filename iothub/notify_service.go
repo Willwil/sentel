@@ -49,7 +49,7 @@ type NotifyServiceFactory struct{}
 // New create apiService service factory
 func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
-	khosts := c.MustString("iothub", "kafka")
+	khosts, err := core.GetServiceEndpoint(c, "iothub", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)

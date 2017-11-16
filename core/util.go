@@ -8,22 +8,19 @@
 //  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
-//  under the License.
 
-package conductor
+package core
 
-var defaultConfigs = map[string]map[string]string{
-	"conductor": {
-		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
-		"mongo":           "localhost:27017",
-		"services":        "indicator,executor",
-		"connect_timeout": "5",
-	},
-	"indicator": {
-		"kafka": "localhost:9092",
-	},
-	"executor": {
-		"listen": "localhost:",
-	},
+import "fmt"
+
+// GetServiceEndpoint return service address and port
+// It will lookup cluster manager(k8s) to find endpoint, if failed,
+// get endpoint from local configuration
+func GetServiceEndpoint(c Config, serviceName string, endpointName string) (string, error) {
+	// Now, just return from local configurations
+	result, err := c.String(serviceName, endpointName)
+	if err != nil || result == "" {
+		return "", fmt.Errorf("No service endpoint:'%s' found", endpointName)
+	}
+	return result, nil
 }

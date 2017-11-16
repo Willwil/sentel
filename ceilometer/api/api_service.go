@@ -25,8 +25,7 @@ import (
 
 type ApiService struct {
 	core.ServiceBase
-	address string
-	echo    *echo.Echo
+	echo *echo.Echo
 }
 
 type apiContext struct {
@@ -48,15 +47,15 @@ const APIHEAD = "api/v1/"
 // New create apiService service factory
 func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
-	hosts := c.MustString("ceilometer", "mongo")
-	session, err := mgo.DialWithTimeout(hosts, 2*time.Second)
+	hosts, _ := core.GetServiceEndpoint(c, "ceilometer", "mongo")
+	timeout := c.MustInt("ceilometer", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	session.Close()
 
 	// Create echo instance and setup router
-	addr := c.MustString("ceilometer", "listen")
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
@@ -115,8 +114,7 @@ func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		address: addr,
-		echo:    e,
+		echo: e,
 	}, nil
 
 }
@@ -129,7 +127,8 @@ func (this *ApiService) Name() string {
 // Start
 func (this *ApiService) Start() error {
 	go func(this *ApiService) {
-		this.echo.Start(this.address)
+		addr := this.Config.MustString("api", "listen")
+		this.echo.Start(addr)
 		this.WaitGroup.Add(1)
 	}(this)
 	return nil

@@ -13,7 +13,6 @@
 package iothub
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"sync"
@@ -28,8 +27,7 @@ import (
 
 type ApiService struct {
 	core.ServiceBase
-	address string
-	echo    *echo.Echo
+	echo *echo.Echo
 }
 
 type apiContext struct {
@@ -51,22 +49,14 @@ const APIHEAD = "iothub/api/v1/"
 // New create apiService service factory
 func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts, err := c.String("iothub", "mongo")
-	if err != nil || hosts == "" {
-		return nil, errors.New("Invalid mongo configuration")
-	}
-
-	// try connect with mongo db
-	session, err := mgo.Dial(hosts)
+	hosts, _ := core.GetServiceEndpoint(c, "iothub", "mongo")
+	timeout := c.MustInt("api", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	session.Close()
 
-	address := "localhost:8080"
-	if addr, err := c.String("api", "listen"); err == nil && address != "" {
-		address = addr
-	}
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -92,8 +82,7 @@ func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		address: address,
-		echo:    e,
+		echo: e,
 	}, nil
 
 }
@@ -106,7 +95,8 @@ func (this *ApiService) Name() string {
 // Start
 func (this *ApiService) Start() error {
 	go func(s *ApiService) {
-		this.echo.Start(this.address)
+		addr := this.Config.MustString("api", "listen")
+		this.echo.Start(addr)
 		this.WaitGroup.Add(1)
 	}(this)
 	return nil

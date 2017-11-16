@@ -80,7 +80,7 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 		return nil, errors.New("Failed to create storage in mqtt")
 	}
 	// kafka
-	khosts := c.MustString("broker", "kafka")
+	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)

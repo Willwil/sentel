@@ -30,8 +30,7 @@ import (
 
 type IndicatorService struct {
 	core.ServiceBase
-	consumer   sarama.Consumer
-	mongoHosts string // mongo hosts
+	consumer sarama.Consumer
 }
 
 // IndicatorServiceFactory
@@ -40,15 +39,16 @@ type IndicatorServiceFactory struct{}
 // New create apiService service factory
 func (this *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts := c.MustString("conductor", "mongo")
-	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
+	hosts, _ := core.GetServiceEndpoint(c, "conductor", "mongo")
+	timeout := c.MustInt("conductor", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	defer session.Close()
 
 	// kafka
-	khosts := c.MustString("conductor", "kafka")
+	khosts, _ := core.GetServiceEndpoint(c, "conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
@@ -60,8 +60,7 @@ func (this *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (co
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer:   consumer,
-		mongoHosts: hosts,
+		consumer: consumer,
 	}, nil
 
 }

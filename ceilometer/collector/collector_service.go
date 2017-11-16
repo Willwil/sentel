@@ -14,7 +14,6 @@ package collector
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -41,19 +40,16 @@ type CollectorServiceFactory struct{}
 // New create apiService service factory
 func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts, err := c.String("ceilometer", "mongo")
-	if err != nil || hosts == "" {
-		return nil, errors.New("Invalid mongo configuration")
-	}
-	// try connect with mongo db
-	session, err := mgo.Dial(hosts)
+	hosts, _ := core.GetServiceEndpoint(c, "collector", "mongo")
+	timeout := c.MustInt("collector", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	session.Close()
 
 	// kafka
-	khosts := c.MustString("collector", "kafka")
+	khosts, _ := core.GetServiceEndpoint(c, "collector", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
