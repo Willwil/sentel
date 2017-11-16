@@ -57,8 +57,6 @@ func main() {
 }
 
 func init() {
-	for group, values := range defaultConfigs {
-		core.RegisterConfig(group, values)
-	}
+	core.RegisterConfigGroup(defaultConfigs)
 	apiserver.RegisterApiManager(v1api.NewApiManager())
 }

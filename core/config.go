@@ -160,3 +160,10 @@ func RegisterConfig(sectionName string, items map[string]string) {
 		_allConfigSections[sectionName] = section
 	}
 }
+
+// RegisterConfigGropu reigster all group's subconfigurations
+func RegisterConfigGroup(configs map[string]map[string]string) {
+	for group, values := range configs {
+		RegisterConfig(group, values)
+	}
+}

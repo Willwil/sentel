@@ -43,9 +43,7 @@ func RunWithConfigFile(fileName string) error {
 
 // init initialize default configurations and services
 func init() {
-	for group, values := range defaultConfigs {
-		core.RegisterConfig(group, values)
-	}
+	core.RegisterConfigGroup(defaultConfigs)
 	core.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
 	core.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
 }

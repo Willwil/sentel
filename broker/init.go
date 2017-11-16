@@ -41,9 +41,7 @@ func RunWithConfigFile(fileName string) error {
 
 // init initialize default configurations and services before startup
 func init() {
-	for group, values := range defaultConfigs {
-		core.RegisterConfig(group, values)
-	}
+	core.RegisterConfigGroup(defaultConfigs)
 	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
 	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
 	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
