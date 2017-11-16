@@ -13,9 +13,9 @@
 package api
 
 import (
-	"errors"
 	"os"
 	"sync"
+	"time"
 
 	mgo "gopkg.in/mgo.v2"
 
@@ -24,9 +24,7 @@ import (
 )
 
 type ApiService struct {
-	config  core.Config
-	quit    chan os.Signal
-	wg      sync.WaitGroup
+	core.ServiceBase
 	address string
 	echo    *echo.Echo
 }
@@ -48,25 +46,17 @@ type ApiServiceFactory struct{}
 const APIHEAD = "api/v1/"
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	// check mongo db configuration
-	hosts, err := c.String("ceilometer", "mongo")
-	if err != nil || hosts == "" {
-		return nil, errors.New("Invalid mongo configuration")
-	}
-
+func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
-	session, err := mgo.Dial(hosts)
+	hosts := c.MustString("ceilometer", "mongo")
+	session, err := mgo.DialWithTimeout(hosts, 2*time.Second)
 	if err != nil {
 		return nil, err
 	}
 	session.Close()
 
-	address := "localhost:8080"
-	if addr, err := c.String("ceilometer", "listen"); err == nil && address != "" {
-		address = addr
-	}
 	// Create echo instance and setup router
+	addr := c.MustString("ceilometer", "listen")
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
@@ -120,30 +110,32 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	e.GET(APIHEAD+"nodes/:nodeName/stats", getNodeStatsInfo)
 
 	return &ApiService{
-		config:  c,
-		wg:      sync.WaitGroup{},
-		quit:    quit,
-		address: address,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
+		address: addr,
 		echo:    e,
 	}, nil
 
 }
 
 // Name
-func (s *ApiService) Name() string {
-	return "restapi-service"
+func (this *ApiService) Name() string {
+	return "api"
 }
 
 // Start
-func (s *ApiService) Start() error {
-	go func(s *ApiService) {
-		s.echo.Start(s.address)
-		s.wg.Add(1)
-	}(s)
+func (this *ApiService) Start() error {
+	go func(this *ApiService) {
+		this.echo.Start(this.address)
+		this.WaitGroup.Add(1)
+	}(this)
 	return nil
 }
 
 // Stop
-func (s *ApiService) Stop() {
-	s.wg.Wait()
+func (this *ApiService) Stop() {
+	this.WaitGroup.Wait()
 }

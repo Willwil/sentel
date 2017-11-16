@@ -29,9 +29,7 @@ import (
 )
 
 type IndicatorService struct {
-	config     core.Config
-	quit       chan os.Signal
-	wg         sync.WaitGroup
+	core.ServiceBase
 	consumer   sarama.Consumer
 	mongoHosts string // mongo hosts
 }
@@ -40,7 +38,7 @@ type IndicatorService struct {
 type IndicatorServiceFactory struct{}
 
 // New create apiService service factory
-func (m *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (this *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
@@ -57,9 +55,11 @@ func (m *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	}
 
 	return &IndicatorService{
-		config:     c,
-		wg:         sync.WaitGroup{},
-		quit:       quit,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
 		consumer:   consumer,
 		mongoHosts: hosts,
 	}, nil
@@ -67,40 +67,47 @@ func (m *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 }
 
 // Name
-func (s *IndicatorService) Name() string {
+func (this *IndicatorService) Name() string {
 	return "indicator"
 }
 
 // Start
-func (s *IndicatorService) Start() error {
-	partitionList, err := s.consumer.Partitions("conductor")
+func (this *IndicatorService) Start() error {
+	this.subscribeTopic("rule")
+	this.WaitGroup.Wait()
+	return nil
+}
+
+// Stop
+func (this *IndicatorService) Stop() {
+	this.consumer.Close()
+}
+
+// subscribeTopc subscribe topics from apiserver
+func (this *IndicatorService) subscribeTopic(topic string) error {
+	partitionList, err := this.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
+		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := s.consumer.ConsumePartition("rule", int32(partition), sarama.OffsetNewest)
+		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
 		}
 		defer pc.AsyncClose()
-		s.wg.Add(1)
+		this.WaitGroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer s.wg.Done()
+			defer this.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				s.handleNotifications(string(msg.Topic), msg.Value)
+				this.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
 	}
-	s.wg.Wait()
 	return nil
-}
-
-// Stop
-func (s *IndicatorService) Stop() {
-	s.consumer.Close()
 }
 
 type ruleTopic struct {
@@ -111,7 +118,7 @@ type ruleTopic struct {
 }
 
 // handleNotifications handle notification from kafka
-func (s *IndicatorService) handleNotifications(topic string, value []byte) error {
+func (this *IndicatorService) handleNotifications(topic string, value []byte) error {
 	rule := ruleTopic{}
 	if err := json.Unmarshal(value, &topic); err != nil {
 		return err

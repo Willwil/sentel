@@ -13,7 +13,6 @@
 package executor
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -24,9 +23,7 @@ import (
 )
 
 type ExecutorService struct {
-	config   core.Config
-	quit     chan os.Signal
-	wg       sync.WaitGroup
+	core.ServiceBase
 	ruleChan chan *Rule
 	engines  map[string]*ruleEngine
 	mutex    sync.Mutex
@@ -38,22 +35,20 @@ type ExecutorServiceFactory struct{}
 var executorService *ExecutorService
 
 // New create executor service factory
-func (m *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	// check mongo db configuration
-	hosts, err := c.String("conductor", "mongo")
-	if err != nil || hosts == "" {
-		return nil, errors.New("Invalid mongo configuration")
-	}
+func (this *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
+	hosts := c.MustString("conductor", "mongo")
 	if session, err := mgo.Dial(hosts); err != nil {
 		return nil, err
 	} else {
 		session.Close()
 	}
 	executorService = &ExecutorService{
-		config:   c,
-		wg:       sync.WaitGroup{},
-		quit:     quit,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
 		ruleChan: make(chan *Rule),
 		engines:  make(map[string]*ruleEngine),
 		mutex:    sync.Mutex{},
@@ -62,49 +57,49 @@ func (m *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 }
 
 // Name
-func (s *ExecutorService) Name() string {
+func (this *ExecutorService) Name() string {
 	return "executor"
 }
 
 // Start
-func (s *ExecutorService) Start() error {
+func (this *ExecutorService) Start() error {
 	// start rule channel
 	go func(s *ExecutorService) {
-		s.wg.Add(1)
+		s.WaitGroup.Add(1)
 		select {
 		case r := <-s.ruleChan:
 			s.handleRule(r)
-		case <-s.quit:
+		case <-s.Quit:
 			break
 		}
-	}(s)
+	}(this)
 	return nil
 }
 
 // Stop
-func (s *ExecutorService) Stop() {
+func (this *ExecutorService) Stop() {
 	//s.chn <- 1
-	s.wg.Wait()
+	this.WaitGroup.Wait()
 
 	// stop all ruleEngine
-	for _, engine := range s.engines {
+	for _, engine := range this.engines {
 		if engine != nil {
 			engine.stop()
 		}
 	}
 }
 
-func (s *ExecutorService) handleRule(r *Rule) error {
+func (this *ExecutorService) handleRule(r *Rule) error {
 	// Get engine instance according to product id
-	if _, ok := s.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(s.config, r.ProductId)
+	if _, ok := this.engines[r.ProductId]; !ok { // not found
+		engine, err := newRuleEngine(this.Config, r.ProductId)
 		if err != nil {
 			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
 			return err
 		}
-		s.engines[r.ProductId] = engine
+		this.engines[r.ProductId] = engine
 	}
-	engine := s.engines[r.ProductId]
+	engine := this.engines[r.ProductId]
 
 	switch r.Action {
 	case RuleActionNew:
