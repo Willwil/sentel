@@ -16,7 +16,7 @@ import "time"
 
 // Tenant
 type Tenant struct {
-	Id        string
+	Name      string
 	Password  string
 	CreatedAt time.Time
 	UpdatedAt time.Time

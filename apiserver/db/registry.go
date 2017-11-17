@@ -13,6 +13,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -28,6 +29,10 @@ const (
 	dbNameProducts = "products"
 	dbNameTenants  = "tenants"
 	dbNameRules    = "rules"
+)
+
+var (
+	ErrorNotFound = errors.New("not found")
 )
 
 // Registry is wraper of mongo database about for iot object
@@ -78,27 +83,30 @@ func (r *Registry) CheckTenantNameAvailable(id string) error {
 // AddTenant insert a tenant into registry
 func (r *Registry) RegisterTenant(t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	if err := c.Find(bson.M{"Id": t.Id}).One(nil); err == nil {
-		return fmt.Errorf("Tenant %s already exist", t.Id)
+	if err := c.Find(bson.M{"Name": t.Name}).One(nil); err == nil {
+		return fmt.Errorf("Tenant %s already exist", t.Name)
 	}
 	return c.Insert(t, nil)
 }
 
 func (r *Registry) DeleteTenant(id string) error {
 	c := r.db.C(dbNameTenants)
-	return c.Remove(bson.M{"Id": id})
+	return c.Remove(bson.M{"Name": id})
 }
 
 func (r *Registry) GetTenant(id string) (*Tenant, error) {
 	c := r.db.C(dbNameTenants)
-	t := &Tenant{}
-	err := c.Find(bson.M{"Id": id}).One(t)
-	return t, err
+	t := Tenant{}
+	err := c.Find(bson.M{"Name": id}).One(&t)
+	if err != nil {
+		return nil, ErrorNotFound
+	}
+	return &t, nil
 }
 
 func (r *Registry) UpdateTenant(id string, t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	return c.Update(bson.M{"Id": id}, t)
+	return c.Update(bson.M{"Name": id}, t)
 }
 
 // Product

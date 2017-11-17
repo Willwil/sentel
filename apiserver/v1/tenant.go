@@ -26,7 +26,7 @@ import (
 )
 
 type tenantAddRequest struct {
-	Id       string `json:"id"`
+	Name     string `json:"username"`
 	Password string `json:"password"`
 }
 
@@ -43,13 +43,16 @@ func loginTenant(ctx echo.Context) error {
 	defer r.Release()
 
 	tenant, err := r.GetTenant(name)
-	if err != nil || tenant.Password != pwd {
+	if err == db.ErrorNotFound {
+		return ctx.JSON(http.StatusNotFound, &response{Message: err.Error()})
+	}
+	if pwd != tenant.Password {
 		return echo.ErrUnauthorized
 	}
 
 	// Authorized
 	claims := &jwtApiClaims{
-		Name: tenant.Id,
+		Name: tenant.Name,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 		},
@@ -81,13 +84,13 @@ func registerTenant(ctx echo.Context) error {
 	defer r.Release()
 
 	t := db.Tenant{
-		Id:        req.Id,
+		Name:      req.Name,
 		Password:  req.Password,
 		CreatedAt: time.Now(),
 	}
 
 	// Check name available
-	if err := r.CheckTenantNameAvailable(req.Id); err != nil {
+	if err := r.CheckTenantNameAvailable(req.Name); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Message: "Same tenant identifier already exist"})
 	}
 	if err := r.RegisterTenant(&t); err != nil {
@@ -98,7 +101,7 @@ func registerTenant(ctx echo.Context) error {
 		"tenant",
 		util.TopicNameTenant,
 		&util.TenantTopic{
-			TenantId: req.Id,
+			TenantId: req.Name,
 			Action:   util.ObjectActionRegister,
 		})
 
@@ -170,12 +173,12 @@ func updateTenant(ctx echo.Context) error {
 	defer r.Release()
 
 	t := db.Tenant{
-		Id:        req.Id,
+		Name:      req.Name,
 		Password:  req.Password,
 		UpdatedAt: time.Now(),
 	}
 
-	if err := r.UpdateTenant(req.Id, &t); err != nil {
+	if err := r.UpdateTenant(req.Name, &t); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
 	// Notify kafka
@@ -183,7 +186,7 @@ func updateTenant(ctx echo.Context) error {
 		"tenant",
 		util.TopicNameTenant,
 		&util.TenantTopic{
-			TenantId: req.Id,
+			TenantId: req.Name,
 			Action:   util.ObjectActionUpdate,
 		})
 
