@@ -91,16 +91,16 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 
 	config := mw.JWTConfig{
 		Claims:     &jwtApiClaims{},
-		SigningKey: []byte("secrect"),
+		SigningKey: []byte("secret"),
 	}
 
 	// Login
-	p.echo.POST("/api/v1/login", login)
+	p.echo.POST("/api/v1/tenant", registerTenant)
+	p.echo.POST("/api/v1/login", loginTenant)
 
 	// Tenant
 	g := p.echo.Group("/api/v1/tenants")
 	g.Use(mw.JWTWithConfig(config))
-	g.POST("/api/v1/tenants/:id", addTenant)
 	g.DELETE("/api/v1/tenants/:id", deleteTenant)
 	g.GET("/api/v1/tenants/:id", getTenant)
 	g.PUT("/api/v1/tenants/:id", updateTenant)

@@ -31,7 +31,7 @@ type tenantAddRequest struct {
 }
 
 // Get a device twin
-func login(ctx echo.Context) error {
+func loginTenant(ctx echo.Context) error {
 	name := ctx.FormValue("username")
 	pwd := ctx.FormValue("password")
 
@@ -67,7 +67,7 @@ func login(ctx echo.Context) error {
 }
 
 // addTenant add a new tenant
-func addTenant(ctx echo.Context) error {
+func registerTenant(ctx echo.Context) error {
 	req := new(tenantAddRequest)
 	if err := ctx.Bind(req); err != nil {
 		glog.Error("addTenant:%s", err.Error())
