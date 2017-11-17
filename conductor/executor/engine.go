@@ -53,10 +53,7 @@ type ruleEngine struct {
 
 // newRuleEngine create a engine according to product id and configuration
 func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
-	khosts, err := core.GetServiceEndpoint(c, "conductor", "kafka")
-	if err != nil {
-		return nil, err
-	}
+	khosts, _ := core.GetServiceEndpoint(c, "conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
@@ -80,13 +77,22 @@ func (p *ruleEngine) start() error {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
 
-	// start connection with kafka
-	partitionList, err := p.consumer.Partitions("conductor")
+	topic := fmt.Sprintf(publishTopicUrl, p.productId)
+	if err := p.subscribeTopic(topic); err != nil {
+		return err
+	}
+	p.started = true
+	return nil
+}
+
+// subscribeTopc subscribe topics from apiserver
+func (p *ruleEngine) subscribeTopic(topic string) error {
+	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
+		return err
 	}
 
-	topic := fmt.Sprintf(publishTopicUrl, p.productId)
 	for partition := range partitionList {
 		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
@@ -111,7 +117,6 @@ func (p *ruleEngine) start() error {
 			}
 		}(pc)
 	}
-	p.started = true
 	return nil
 }
 

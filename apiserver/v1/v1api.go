@@ -83,9 +83,12 @@ func (this *v1apiManager) Initialize(c core.Config) error {
 	this.echo.Use(mw.Logger())
 
 	// Initialize api routes
+
+	// Tenant
 	this.echo.POST("/api/v1/tenants/:id", addTenant)
 	this.echo.DELETE("/api/v1/tenants/:id", deleteTenant)
 	this.echo.GET("/api/v1/tenants/:id", getTenant)
+	this.echo.PUT("/api/v1/tenants/:id", updateTenant)
 
 	// Product Api
 	this.echo.POST("api/v1/products/:id", registerProduct)

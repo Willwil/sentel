@@ -16,8 +16,10 @@ import "time"
 
 // Tenant
 type Tenant struct {
-	Id   string
-	Name string
+	Id        string
+	Password  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // Product

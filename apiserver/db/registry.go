@@ -69,10 +69,10 @@ func (r *Registry) Release() {
 // Tenant
 
 // CheckTenantNamveAvailable return true if name is available
-func (r *Registry) CheckTenantNameAvailable(t *Tenant) bool {
+func (r *Registry) CheckTenantNameAvailable(id string) error {
 	c := r.db.C(dbNameTenants)
-	err := c.Find(bson.M{"Id": t.Id}).One(nil)
-	return err != nil
+	err := c.Find(bson.M{"Id": id}).One(nil)
+	return err
 }
 
 // AddTenant insert a tenant into registry
@@ -84,14 +84,21 @@ func (r *Registry) RegisterTenant(t *Tenant) error {
 	return c.Insert(t, nil)
 }
 
-func (r *Registry) DeleteTenant(t *Tenant) error {
+func (r *Registry) DeleteTenant(id string) error {
 	c := r.db.C(dbNameTenants)
-	return c.Remove(bson.M{"Id": t.Id})
+	return c.Remove(bson.M{"Id": id})
 }
 
-func (r *Registry) GetTenant(t *Tenant) error {
+func (r *Registry) GetTenant(id string) (*Tenant, error) {
 	c := r.db.C(dbNameTenants)
-	return c.Remove(bson.M{"Id": t.Id})
+	t := &Tenant{}
+	err := c.Find(bson.M{"Id": id}).One(t)
+	return t, err
+}
+
+func (r *Registry) UpdateTenant(id string, t *Tenant) error {
+	c := r.db.C(dbNameTenants)
+	return c.Update(bson.M{"Id": id}, t)
 }
 
 // Product

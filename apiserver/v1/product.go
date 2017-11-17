@@ -40,7 +40,6 @@ type productAddRequest struct {
 }
 
 func registerProduct(ctx echo.Context) error {
-	glog.Infof("addProduct called from %s", ctx.Request().RemoteAddr)
 	// Get product
 	req := new(productAddRequest)
 	if err := ctx.Bind(req); err != nil {

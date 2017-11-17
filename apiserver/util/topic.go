@@ -31,64 +31,49 @@ const (
 	ObjectActionUpdate     = "update"
 )
 
-type TenantTopic struct{}
+// TopicBase
+type TopicBase struct {
+	encoded []byte
+	err     error
+}
+
+func (p *TopicBase) ensureEncoded() {
+	if p.encoded == nil && p.err == nil {
+		p.encoded, p.err = json.Marshal(p)
+	}
+}
+
+func (p *TopicBase) Length() int {
+	p.ensureEncoded()
+	return len(p.encoded)
+}
+
+func (p *TopicBase) Encode() ([]byte, error) {
+	p.ensureEncoded()
+	return p.encoded, p.err
+}
 
 // ProductTopic
 type ProductTopic struct {
+	TopicBase
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Action      string `json:"action"`
 	TenantId    string `json:"tenantId"`
-
-	encoded []byte
-	err     error
-}
-
-func (p *ProductTopic) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *ProductTopic) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *ProductTopic) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
 }
 
 // DeviceTopic
 type DeviceTopic struct {
+	TopicBase
 	DeviceId     string `json:deviceId"`
 	DeviceSecret string `json:deviceKey"`
 	Action       string `json:"action"`
 	ProductId    string `json:"productId"`
-
-	encoded []byte
-	err     error
-}
-
-func (p *DeviceTopic) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *DeviceTopic) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *DeviceTopic) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
 }
 
 // RuleTopic
 type RuleTopic struct {
+	TopicBase
 	ProductId string `json:"productId"`
 	RuleId    string `json:"ruleId"`
 	Action    string `json:"action"`
@@ -96,18 +81,11 @@ type RuleTopic struct {
 	err       error
 }
 
-func (p *RuleTopic) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *RuleTopic) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *RuleTopic) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
+// Tenantopic
+type TenantTopic struct {
+	TopicBase
+	TenantId string `json:"productId"`
+	Action   string `json:"action"`
+	encoded  []byte
+	err      error
 }

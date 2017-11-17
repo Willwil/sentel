@@ -14,30 +14,141 @@ package v1
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/cloustone/sentel/apiserver/db"
+	"github.com/cloustone/sentel/apiserver/util"
+	"github.com/golang/glog"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
 
+type tenantAddRequest struct {
+	Id       string `json:"id"`
+	Password string `json:"password"`
+}
+
 // addTenant add a new tenant
 func addTenant(ctx echo.Context) error {
-	// Make security check, for add content, no security policy
-
+	req := new(tenantAddRequest)
+	if err := ctx.Bind(req); err != nil {
+		glog.Error("addTenant:%s", err.Error())
+		return ctx.JSON(http.StatusBadRequest, &response{Message: err.Error()})
+	}
 	// Get registry store instance by context
-	config := ctx.(*apiContext).config
-	r, _ := db.NewRegistry(config)
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
 	defer r.Release()
 
-	//id := c.Param("id")
-	//	r.DeleteDevice(id)
-	return ctx.NoContent(http.StatusNoContent)
+	t := db.Tenant{
+		Id:        req.Id,
+		Password:  req.Password,
+		CreatedAt: time.Now(),
+	}
+
+	// Check name available
+	if err := r.CheckTenantNameAvailable(req.Id); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &response{Message: "Same tenant identifier already exist"})
+	}
+	if err := r.RegisterTenant(&t); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	// Notify kafka
+	util.AsyncProduceMessage(ctx.(*apiContext).config,
+		"tenant",
+		util.TopicNameTenant,
+		&util.TenantTopic{
+			TenantId: req.Id,
+			Action:   util.ObjectActionRegister,
+		})
+
+	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &t})
 }
 
+// deleteTenant delete tenant
 func deleteTenant(ctx echo.Context) error {
-	return nil
+	id := ctx.Param("id")
+	// Get registry store instance by context
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	defer r.Release()
+
+	if err := r.DeleteTenant(id); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	// Notify kafka
+	util.AsyncProduceMessage(ctx.(*apiContext).config,
+		"tenant",
+		util.TopicNameTenant,
+		&util.TenantTopic{
+			TenantId: id,
+			Action:   util.ObjectActionDelete,
+		})
+
+	return ctx.JSON(http.StatusOK, &response{})
 }
 
+// getTenant return tenant's information
 func getTenant(ctx echo.Context) error {
-	return nil
+	id := ctx.Param("id")
+	// Get registry store instance by context
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	defer r.Release()
+
+	if err := r.DeleteTenant(id); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	// Notify kafka
+	util.AsyncProduceMessage(ctx.(*apiContext).config,
+		"tenant",
+		util.TopicNameTenant,
+		&util.TenantTopic{
+			TenantId: id,
+			Action:   util.ObjectActionDelete,
+		})
+
+	return ctx.JSON(http.StatusOK, &response{})
+}
+
+// updateTenant update tenant's information
+func updateTenant(ctx echo.Context) error {
+	req := new(tenantAddRequest)
+	if err := ctx.Bind(req); err != nil {
+		glog.Error("updateTenant:%s", err.Error())
+		return ctx.JSON(http.StatusBadRequest, &response{Message: err.Error()})
+	}
+	// Get registry store instance by context
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	defer r.Release()
+
+	t := db.Tenant{
+		Id:        req.Id,
+		Password:  req.Password,
+		UpdatedAt: time.Now(),
+	}
+
+	if err := r.UpdateTenant(req.Id, &t); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	// Notify kafka
+	util.AsyncProduceMessage(ctx.(*apiContext).config,
+		"tenant",
+		util.TopicNameTenant,
+		&util.TenantTopic{
+			TenantId: req.Id,
+			Action:   util.ObjectActionUpdate,
+		})
+
+	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &t})
 }
