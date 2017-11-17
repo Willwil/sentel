@@ -13,6 +13,7 @@
 package api
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -51,7 +52,7 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	timeout := c.MustInt("ceilometer", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Failed to connect with mongo:'%s'", err.Error())
 	}
 	session.Close()
 

@@ -102,7 +102,7 @@ func (c *globalConfig) MustInt(section string, key string) int {
 	val := _allConfigSections[section].items[key]
 	n, err := strconv.Atoi(val)
 	if err != nil {
-		glog.Fatal("Invalid configuration item:%s:%s", section, key)
+		glog.Fatalf("Invalid configuration item:%s:%s", section, key)
 		os.Exit(0)
 	}
 	return n

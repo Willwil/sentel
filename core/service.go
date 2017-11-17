@@ -64,7 +64,7 @@ func CreateService(name string, c Config, ch chan os.Signal) (Service, error) {
 
 // RunWithConfigFile create and start server
 func RunWithConfigFile(serverName string, fileName string) error {
-	glog.Info("Starting '%s' server...", serverName)
+	glog.Infof("Starting '%s' server...", serverName)
 
 	// Check all registered service
 	if err := CheckAllRegisteredServices(); err != nil {
@@ -99,6 +99,7 @@ type ServiceManager struct {
 	Config   Config                    // Global config
 	Services map[string]Service        // All service created by config.Protocols
 	quits    map[string]chan os.Signal // Notification channel for each service
+	name     string                    // Name of service manager
 }
 
 const serviceManagerVersion = "0.1"
@@ -120,6 +121,7 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 		Config:   c,
 		quits:    make(map[string]chan os.Signal),
 		Services: make(map[string]Service),
+		name:     name,
 	}
 	// Get supported configs
 	items := c.MustString(name, "services")
@@ -131,7 +133,8 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 		quit := make(chan os.Signal)
 		service, err := CreateService(name, c, quit)
 		if err != nil {
-			glog.Errorf("%s", err)
+			// If one of service is not started, must return
+			return nil, err
 		} else {
 			glog.Infof("Create service '%s' successfully", name)
 			mgr.Services[name] = service
@@ -143,15 +146,15 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 }
 
 // Run launch all serices and wait to terminate
-func (s *ServiceManager) Run() error {
+func (p *ServiceManager) Run() error {
 	// Run all service
-	glog.Infof("There are %d service in iothub", len(s.Services))
-	for _, service := range s.Services {
+	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
+	for _, service := range p.Services {
 		glog.Infof("Starting service:'%s'...", service.Name())
 		go service.Start()
 	}
 	// Wait all service to terminate in main context
-	for name, quit := range s.quits {
+	for name, quit := range p.quits {
 		<-quit
 		glog.Info("Servide(%s) is terminated", name)
 	}
@@ -159,41 +162,41 @@ func (s *ServiceManager) Run() error {
 }
 
 // StartService launch specified service
-func (s *ServiceManager) StartService(name string) error {
+func (p *ServiceManager) StartService(name string) error {
 	// Return error if service has already been started
-	for id, service := range s.Services {
+	for id, service := range p.Services {
 		if strings.IndexAny(id, name) >= 0 && service != nil {
 			return fmt.Errorf("The service '%s' has already been started", name)
 		}
 	}
 	quit := make(chan os.Signal)
-	service, err := CreateService(name, s.Config, quit)
+	service, err := CreateService(name, p.Config, quit)
 	if err != nil {
 		glog.Errorf("%s", err)
 	} else {
 		glog.Infof("Create service '%s' success", name)
-		s.Services[name] = service
-		s.quits[name] = quit
+		p.Services[name] = service
+		p.quits[name] = quit
 	}
 	return nil
 }
 
 // StopService stop specified service
-func (s *ServiceManager) StopService(id string) error {
-	for name, service := range s.Services {
+func (p *ServiceManager) StopService(id string) error {
+	for name, service := range p.Services {
 		if name == id && service != nil {
 			service.Stop()
-			s.Services[name] = nil
-			close(s.quits[name])
+			p.Services[name] = nil
+			close(p.quits[name])
 		}
 	}
 	return nil
 }
 
 // GetServicesByName return service instance by name, or matched by part of name
-func (s *ServiceManager) GetServicesByName(name string) []Service {
+func (p *ServiceManager) GetServicesByName(name string) []Service {
 	services := []Service{}
-	for k, service := range s.Services {
+	for k, service := range p.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			services = append(services, service)
 		}

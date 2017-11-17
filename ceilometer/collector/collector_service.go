@@ -27,11 +27,8 @@ import (
 )
 
 type CollectorService struct {
-	config     core.Config
-	quit       chan os.Signal
-	wg         sync.WaitGroup
-	consumer   sarama.Consumer
-	mongoHosts string // mongo hosts
+	core.ServiceBase
+	consumer sarama.Consumer
 }
 
 // CollectorServiceFactory
@@ -41,7 +38,7 @@ type CollectorServiceFactory struct{}
 func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "collector", "mongo")
-	timeout := c.MustInt("collector", "connect_timeout")
+	timeout := c.MustInt("ceilometer", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -49,18 +46,19 @@ func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	session.Close()
 
 	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "collector", "kafka")
+	khosts, _ := core.GetServiceEndpoint(c, "ceilometer", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
 	}
 
 	return &CollectorService{
-		config:     c,
-		wg:         sync.WaitGroup{},
-		quit:       quit,
-		consumer:   consumer,
-		mongoHosts: hosts,
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
+		consumer: consumer,
 	}, nil
 
 }
@@ -79,7 +77,7 @@ func (p *CollectorService) Start() error {
 	p.subscribeTopic(TopicNamePublish)
 	p.subscribeTopic(TopicNameMetric)
 	p.subscribeTopic(TopicNameStats)
-	p.wg.Wait()
+	p.WaitGroup.Wait()
 	return nil
 }
 
@@ -98,9 +96,11 @@ func (p *CollectorService) handleNotifications(topic string, value []byte) error
 }
 
 func (p *CollectorService) getDatabase() (*mgo.Database, error) {
-	session, err := mgo.DialWithTimeout(p.mongoHosts, 2*time.Second)
+	// check mongo db configuration
+	hosts, _ := core.GetServiceEndpoint(p.Config, "collector", "mongo")
+	timeout := p.Config.MustInt("ceilometer", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
-		glog.Fatalf("Failed to connect with mongo:%s", p.mongoHosts)
 		return nil, err
 	}
 	session.SetMode(mgo.Monotonic, true)
@@ -122,10 +122,10 @@ func (p *CollectorService) subscribeTopic(topic string) error {
 			continue
 		}
 		defer pc.AsyncClose()
-		p.wg.Add(1)
+		p.WaitGroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer p.wg.Done()
+			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
