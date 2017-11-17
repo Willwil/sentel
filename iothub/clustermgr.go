@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -77,9 +77,9 @@ func newClusterManager(c core.Config) (*clusterManager, error) {
 }
 
 // createBrokers create a number of brokers for tenant
-func (this *clusterManager) createBrokers(tid string, count int32) ([]*Broker, error) {
+func (p *clusterManager) createBrokers(tid string, count int32) ([]*Broker, error) {
 	podname := "broker-" + tid
-	deploymentsClient := this.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
+	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	deployment := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sentel-broker",
@@ -120,7 +120,7 @@ func (this *clusterManager) createBrokers(tid string, count int32) ([]*Broker, e
 	time.Sleep(5 * time.Second) // TODO
 
 	// get pod list
-	pods, err := this.clientset.CoreV1().Pods(podname).List(metav1.ListOptions{})
+	pods, err := p.clientset.CoreV1().Pods(podname).List(metav1.ListOptions{})
 	if err != nil {
 		glog.Fatalf("Failed to get pod list for tenant(%s)", tid)
 		return nil, err
@@ -142,20 +142,20 @@ func (this *clusterManager) createBrokers(tid string, count int32) ([]*Broker, e
 }
 
 // startBroker start specified node
-func (this *clusterManager) startBroker(b *Broker) error {
+func (p *clusterManager) startBroker(b *Broker) error {
 	return nil
 }
 
 // stopBroker stop specified node
-func (this *clusterManager) stopBroker(b *Broker) error {
+func (p *clusterManager) stopBroker(b *Broker) error {
 	return nil
 }
 
 // deleteBrokers stop and delete brokers for tenant
-func (this *clusterManager) deleteBrokers(tid string) error {
+func (p *clusterManager) deleteBrokers(tid string) error {
 	podname := "broker-" + tid
 	deletePolicy := metav1.DeletePropagationForeground
-	deploymentsClient := this.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
+	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 
 	return deploymentsClient.Delete(podname, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
@@ -163,14 +163,14 @@ func (this *clusterManager) deleteBrokers(tid string) error {
 }
 
 // deleteBroker stop and delete specified broker
-func (this *clusterManager) deleteBroker(b *Broker) error {
+func (p *clusterManager) deleteBroker(b *Broker) error {
 	return nil
 }
 
 // rollbackBrokers rollback tenant's brokers
-func (this *clusterManager) rollbackTenantBrokers(t *Tenant) error {
+func (p *clusterManager) rollbackTenantBrokers(t *Tenant) error {
 	podname := "broker-" + t.id
-	deploymentsClient := this.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
+	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		result, getErr := deploymentsClient.Get(podname, metav1.GetOptions{})
 		if getErr != nil {

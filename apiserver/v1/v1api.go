@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -60,80 +60,82 @@ func NewApiManager() apiserver.ApiManager {
 }
 
 // GetVersion return api's version
-func (this *v1apiManager) GetVersion() string { return this.version }
+func (p *v1apiManager) GetVersion() string { return p.version }
 
 // Run loop to wait api server to terminate
-func (this *v1apiManager) Run() error {
-	address := this.config.MustString("apiserver", "listen")
-	return this.echo.Start(address)
+func (p *v1apiManager) Run() error {
+	address := p.config.MustString("apiserver", "listen")
+	return p.echo.Start(address)
 }
 
 // Initialize initialize api manager with configuration
-func (this *v1apiManager) Initialize(c core.Config) error {
-	this.config = c
-	this.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
+func (p *v1apiManager) Initialize(c core.Config) error {
+	p.config = c
+	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
 			cc := &apiContext{Context: e, config: c}
 			return h(cc)
 		}
 	})
 	// Initialize middleware
-	this.echo.Use(middleware.ApiVersion(this.version))
-	this.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
-	this.echo.Use(mw.Logger())
+	p.echo.Use(middleware.ApiVersion(p.version))
+	p.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
+	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
+		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
+	}))
 
 	// Initialize api routes
 
 	// Tenant
-	this.echo.POST("/api/v1/tenants/:id", addTenant)
-	this.echo.DELETE("/api/v1/tenants/:id", deleteTenant)
-	this.echo.GET("/api/v1/tenants/:id", getTenant)
-	this.echo.PUT("/api/v1/tenants/:id", updateTenant)
+	p.echo.POST("/api/v1/tenants/:id", addTenant)
+	p.echo.DELETE("/api/v1/tenants/:id", deleteTenant)
+	p.echo.GET("/api/v1/tenants/:id", getTenant)
+	p.echo.PUT("/api/v1/tenants/:id", updateTenant)
 
 	// Product Api
-	this.echo.POST("api/v1/products/:id", registerProduct)
-	this.echo.DELETE("/api/v1/products/:id", deleteProduct)
-	this.echo.GET("/api/v1/products/:id", getProduct)
-	this.echo.GET("/api/v1/products/:id/devices", getProductDevices)
+	p.echo.POST("api/v1/products/:id", registerProduct)
+	p.echo.DELETE("/api/v1/products/:id", deleteProduct)
+	p.echo.GET("/api/v1/products/:id", getProduct)
+	p.echo.GET("/api/v1/products/:id/devices", getProductDevices)
 
 	// Rule
-	this.echo.POST("api/v1/rules/", addRule)
-	this.echo.DELETE("/api/v1/rules/:id", deleteRule)
-	this.echo.GET("/api/v1/rules/:id", getRule)
-	this.echo.PATCH("/api/v1/rules/:id", updateRule)
+	p.echo.POST("api/v1/rules/", addRule)
+	p.echo.DELETE("/api/v1/rules/:id", deleteRule)
+	p.echo.GET("/api/v1/rules/:id", getRule)
+	p.echo.PATCH("/api/v1/rules/:id", updateRule)
 
 	// Device Api
-	this.echo.POST("api/v1/devices/:id", registerDevice)
-	this.echo.GET("/devices/:id", getDevice)
-	this.echo.DELETE("api/v1/devices/:id", deleteDevice)
-	this.echo.PUT("api/v1/devices/:id", updateDevice)
-	this.echo.DELETE("api/v1/devices/:id/commands", purgeCommandQueue)
-	this.echo.GET("api/v1/devices/", getMultipleDevices)
-	this.echo.POST("api/v1/devices/query", queryDevices)
+	p.echo.POST("api/v1/devices/:id", registerDevice)
+	p.echo.GET("/devices/:id", getDevice)
+	p.echo.DELETE("api/v1/devices/:id", deleteDevice)
+	p.echo.PUT("api/v1/devices/:id", updateDevice)
+	p.echo.DELETE("api/v1/devices/:id/commands", purgeCommandQueue)
+	p.echo.GET("api/v1/devices/", getMultipleDevices)
+	p.echo.POST("api/v1/devices/query", queryDevices)
 
 	// Statics Api
-	this.echo.GET("api/v1/statistics/devices", getRegistryStatistics)
-	this.echo.GET("api/v1/statistics/service", getServiceStatistics)
+	p.echo.GET("api/v1/statistics/devices", getRegistryStatistics)
+	p.echo.GET("api/v1/statistics/service", getServiceStatistics)
 
 	// Device Twin Api
-	this.echo.GET("api/v1/twins/:id", getDeviceTwin)
-	this.echo.POST("api/v1/twins/:id/methods", invokeDeviceMethod)
-	this.echo.PATCH("api/v1/twins/:id", updateDeviceTwin)
+	p.echo.GET("api/v1/twins/:id", getDeviceTwin)
+	p.echo.POST("api/v1/twins/:id/methods", invokeDeviceMethod)
+	p.echo.PATCH("api/v1/twins/:id", updateDeviceTwin)
 
-	// Http Runtithis. Api
-	this.echo.POST("api/v1/devices/:id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
-	this.echo.DELETE("api/v1/devices/:id/messages/devicesBound/:etag", completeDeviceBoundNotification)
+	// Http Runtip. Api
+	p.echo.POST("api/v1/devices/:id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
+	p.echo.DELETE("api/v1/devices/:id/messages/devicesBound/:etag", completeDeviceBoundNotification)
 
-	this.echo.POST("api/v1/devices/:ideviceId/files", createFileUploadSasUri)
-	this.echo.GET("api/v1/devices/:id/message/deviceBound", receiveDeviceBoundNotification)
-	this.echo.POST("api/v1/devices/:deviceId/files/notifications", updateFileUploadStatus)
-	this.echo.POST("api/v1/devices/:id/messages/event", sendDeviceEvent)
+	p.echo.POST("api/v1/devices/:ideviceId/files", createFileUploadSasUri)
+	p.echo.GET("api/v1/devices/:id/message/deviceBound", receiveDeviceBoundNotification)
+	p.echo.POST("api/v1/devices/:deviceId/files/notifications", updateFileUploadStatus)
+	p.echo.POST("api/v1/devices/:id/messages/event", sendDeviceEvent)
 
 	// Job Api
-	this.echo.POST("api/v1/jobs/:jobid/cancel", cancelJob)
-	this.echo.PUT("api/v1/jobs/:jobid", createJob)
-	this.echo.GET("api/v1/jobs/:jobid", getJob)
-	this.echo.GET("api/v1/jobs/query", queryJobs)
+	p.echo.POST("api/v1/jobs/:jobid/cancel", cancelJob)
+	p.echo.PUT("api/v1/jobs/:jobid", createJob)
+	p.echo.GET("api/v1/jobs/:jobid", getJob)
+	p.echo.GET("api/v1/jobs/query", queryJobs)
 
 	return nil
 }

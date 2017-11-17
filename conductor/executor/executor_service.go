@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -37,7 +37,7 @@ type ExecutorServiceFactory struct{}
 var executorService *ExecutorService
 
 // New create executor service factory
-func (this *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
 	hosts, _ := core.GetServiceEndpoint(c, "conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -61,12 +61,12 @@ func (this *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (cor
 }
 
 // Name
-func (this *ExecutorService) Name() string {
+func (p *ExecutorService) Name() string {
 	return "executor"
 }
 
 // Start
-func (this *ExecutorService) Start() error {
+func (p *ExecutorService) Start() error {
 	// start rule channel
 	go func(s *ExecutorService) {
 		s.WaitGroup.Add(1)
@@ -76,17 +76,17 @@ func (this *ExecutorService) Start() error {
 		case <-s.Quit:
 			break
 		}
-	}(this)
+	}(p)
 	return nil
 }
 
 // Stop
-func (this *ExecutorService) Stop() {
+func (p *ExecutorService) Stop() {
 	//s.chn <- 1
-	this.WaitGroup.Wait()
+	p.WaitGroup.Wait()
 
 	// stop all ruleEngine
-	for _, engine := range this.engines {
+	for _, engine := range p.engines {
 		if engine != nil {
 			engine.stop()
 		}
@@ -94,17 +94,17 @@ func (this *ExecutorService) Stop() {
 }
 
 // handleRule process incomming rule
-func (this *ExecutorService) handleRule(r *Rule) error {
+func (p *ExecutorService) handleRule(r *Rule) error {
 	// Get engine instance according to product id
-	if _, ok := this.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(this.Config, r.ProductId)
+	if _, ok := p.engines[r.ProductId]; !ok { // not found
+		engine, err := newRuleEngine(p.Config, r.ProductId)
 		if err != nil {
 			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
 			return err
 		}
-		this.engines[r.ProductId] = engine
+		p.engines[r.ProductId] = engine
 	}
-	engine := this.engines[r.ProductId]
+	engine := p.engines[r.ProductId]
 
 	switch r.Action {
 	case RuleActionNew:

@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -66,41 +66,41 @@ func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 }
 
 // Name
-func (this *CollectorService) Name() string {
+func (p *CollectorService) Name() string {
 	return "collector"
 }
 
 // Start
-func (this *CollectorService) Start() error {
-	this.subscribeTopic(TopicNameNode)
-	this.subscribeTopic(TopicNameClient)
-	this.subscribeTopic(TopicNameSession)
-	this.subscribeTopic(TopicNameSubscription)
-	this.subscribeTopic(TopicNamePublish)
-	this.subscribeTopic(TopicNameMetric)
-	this.subscribeTopic(TopicNameStats)
-	this.wg.Wait()
+func (p *CollectorService) Start() error {
+	p.subscribeTopic(TopicNameNode)
+	p.subscribeTopic(TopicNameClient)
+	p.subscribeTopic(TopicNameSession)
+	p.subscribeTopic(TopicNameSubscription)
+	p.subscribeTopic(TopicNamePublish)
+	p.subscribeTopic(TopicNameMetric)
+	p.subscribeTopic(TopicNameStats)
+	p.wg.Wait()
 	return nil
 }
 
 // Stop
-func (this *CollectorService) Stop() {
-	this.consumer.Close()
+func (p *CollectorService) Stop() {
+	p.consumer.Close()
 }
 
 // handleNotifications handle notification from kafka
-func (this *CollectorService) handleNotifications(topic string, value []byte) error {
-	if err := handleTopicObject(this, context.Background(), topic, value); err != nil {
+func (p *CollectorService) handleNotifications(topic string, value []byte) error {
+	if err := handleTopicObject(p, context.Background(), topic, value); err != nil {
 		glog.Error(err)
 		return err
 	}
 	return nil
 }
 
-func (this *CollectorService) getDatabase() (*mgo.Database, error) {
-	session, err := mgo.DialWithTimeout(this.mongoHosts, 2*time.Second)
+func (p *CollectorService) getDatabase() (*mgo.Database, error) {
+	session, err := mgo.DialWithTimeout(p.mongoHosts, 2*time.Second)
 	if err != nil {
-		glog.Fatalf("Failed to connect with mongo:%s", this.mongoHosts)
+		glog.Fatalf("Failed to connect with mongo:%s", p.mongoHosts)
 		return nil, err
 	}
 	session.SetMode(mgo.Monotonic, true)
@@ -108,26 +108,26 @@ func (this *CollectorService) getDatabase() (*mgo.Database, error) {
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (this *CollectorService) subscribeTopic(topic string) error {
-	partitionList, err := this.consumer.Partitions(topic)
+func (p *CollectorService) subscribeTopic(topic string) error {
+	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
 		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
 		}
 		defer pc.AsyncClose()
-		this.wg.Add(1)
+		p.wg.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer this.wg.Done()
+			defer p.wg.Done()
 			for msg := range pc.Messages() {
-				this.handleNotifications(string(msg.Topic), msg.Value)
+				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
 	}

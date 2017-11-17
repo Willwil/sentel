@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -66,49 +66,49 @@ func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 }
 
 // Name
-func (this *NotifyService) Name() string {
+func (p *NotifyService) Name() string {
 	return "notify"
 }
 
 // Start
-func (this *NotifyService) Start() error {
-	if err := this.subscribeTopic(apiserver.TopicNameTenant); err != nil {
+func (p *NotifyService) Start() error {
+	if err := p.subscribeTopic(apiserver.TopicNameTenant); err != nil {
 		return err
 	}
-	if err := this.subscribeTopic(apiserver.TopicNameProduct); err != nil {
+	if err := p.subscribeTopic(apiserver.TopicNameProduct); err != nil {
 		return err
 	}
-	this.WaitGroup.Wait()
+	p.WaitGroup.Wait()
 	return nil
 }
 
 // Stop
-func (this *NotifyService) Stop() {
-	this.consumer.Close()
-	this.WaitGroup.Wait()
+func (p *NotifyService) Stop() {
+	p.consumer.Close()
+	p.WaitGroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (this *NotifyService) subscribeTopic(topic string) error {
-	partitionList, err := this.consumer.Partitions(topic)
+func (p *NotifyService) subscribeTopic(topic string) error {
+	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
 		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
 		}
 		defer pc.AsyncClose()
-		this.WaitGroup.Add(1)
+		p.WaitGroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer this.WaitGroup.Done()
+			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				this.handleNotifications(string(msg.Topic), msg.Value)
+				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
 	}
@@ -116,21 +116,21 @@ func (this *NotifyService) subscribeTopic(topic string) error {
 }
 
 // handleNotifications handle notification from kafka
-func (this *NotifyService) handleNotifications(topic string, value []byte) error {
+func (p *NotifyService) handleNotifications(topic string, value []byte) error {
 	switch topic {
 	case apiserver.TopicNameTenant:
 		obj := &tenantNotify{}
 		if err := json.Unmarshal(value, obj); err != nil {
 			return err
 		}
-		return this.handleTenantNotify(obj)
+		return p.handleTenantNotify(obj)
 	}
 
 	return nil
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (this *NotifyService) handleTenantNotify(tf *tenantNotify) error {
+func (p *NotifyService) handleTenantNotify(tf *tenantNotify) error {
 	glog.Infof("iothub-notifyservice: tenant(%s) notification received", tf.id)
 
 	hub := getIothub()

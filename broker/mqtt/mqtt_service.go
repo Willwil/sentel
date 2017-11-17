@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -60,7 +60,7 @@ type MqttFactory struct {
 }
 
 // New create mqtt service factory
-func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// Get all local ip address
 	localAddrs := []string{}
 	addrs, err := net.InterfaceAddrs()
@@ -94,7 +94,7 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 		},
 		index:      -1,
 		sessions:   make(map[string]base.Session),
-		protocol:   this.Protocol,
+		protocol:   p.Protocol,
 		localAddrs: localAddrs,
 		storage:    s,
 		stats:      base.NewStats(true),
@@ -107,77 +107,77 @@ func (this *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, 
 // MQTT Service
 
 // Name
-func (this *mqttService) Name() string {
-	return "mqtt:" + this.protocol
+func (p *mqttService) Name() string {
+	return "mqtt:" + p.protocol
 }
 
-func (this *mqttService) NewSession(conn net.Conn) (base.Session, error) {
-	id := this.createSessionId()
-	s, err := newMqttSession(this, conn, id)
+func (p *mqttService) NewSession(conn net.Conn) (base.Session, error) {
+	id := p.createSessionId()
+	s, err := newMqttSession(p, conn, id)
 	return s, err
 }
 
 // CreateSessionId create id for new session
-func (this *mqttService) createSessionId() string {
+func (p *mqttService) createSessionId() string {
 	return uuid.NewV4().String()
 }
 
 // GetSessionTotalCount get total session count
-func (this *mqttService) getSessionTotalCount() int64 {
-	return int64(len(this.sessions))
+func (p *mqttService) getSessionTotalCount() int64 {
+	return int64(len(p.sessions))
 }
 
-func (this *mqttService) removeSession(s base.Session) {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	this.sessions[s.Identifier()] = nil
+func (p *mqttService) removeSession(s base.Session) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	p.sessions[s.Identifier()] = nil
 }
-func (this *mqttService) registerSession(s base.Session) {
-	this.mutex.Lock()
-	this.sessions[s.Identifier()] = s
-	this.mutex.Unlock()
+func (p *mqttService) registerSession(s base.Session) {
+	p.mutex.Lock()
+	p.sessions[s.Identifier()] = s
+	p.mutex.Unlock()
 }
 
 // Info
-func (this *mqttService) Info() *base.ServiceInfo {
+func (p *mqttService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "mqtt",
 	}
 }
 
 // Stats and Metrics
-func (this *mqttService) GetStats() *base.Stats     { return this.stats }
-func (this *mqttService) GetMetrics() *base.Metrics { return this.metrics }
+func (p *mqttService) GetStats() *base.Stats     { return p.stats }
+func (p *mqttService) GetMetrics() *base.Metrics { return p.metrics }
 
 // Client
-func (this *mqttService) GetClients() []*base.ClientInfo       { return nil }
-func (this *mqttService) GetClient(id string) *base.ClientInfo { return nil }
-func (this *mqttService) KickoffClient(id string) error        { return nil }
+func (p *mqttService) GetClients() []*base.ClientInfo       { return nil }
+func (p *mqttService) GetClient(id string) *base.ClientInfo { return nil }
+func (p *mqttService) KickoffClient(id string) error        { return nil }
 
 // Session Info
-func (this *mqttService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
-func (this *mqttService) GetSession(id string) *base.SessionInfo                     { return nil }
+func (p *mqttService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
+func (p *mqttService) GetSession(id string) *base.SessionInfo                     { return nil }
 
 // Route Info
-func (this *mqttService) GetRoutes() []*base.RouteInfo { return nil }
-func (this *mqttService) GetRoute() *base.RouteInfo    { return nil }
+func (p *mqttService) GetRoutes() []*base.RouteInfo { return nil }
+func (p *mqttService) GetRoute() *base.RouteInfo    { return nil }
 
 // Topic info
-func (this *mqttService) GetTopics() []*base.TopicInfo       { return nil }
-func (this *mqttService) GetTopic(id string) *base.TopicInfo { return nil }
+func (p *mqttService) GetTopics() []*base.TopicInfo       { return nil }
+func (p *mqttService) GetTopic(id string) *base.TopicInfo { return nil }
 
 // SubscriptionInfo
-func (this *mqttService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
-func (this *mqttService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
+func (p *mqttService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
+func (p *mqttService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
 
 // Service Info
-func (this *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
+func (p *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
 
 // Start is mainloop for mqtt service
-func (this *mqttService) Start() error {
-	this.subscribeTopic("session")
+func (p *mqttService) Start() error {
+	p.subscribeTopic("session")
 
-	host, _ := this.Config.String(this.protocol, "listen")
+	host, _ := p.Config.String(p.protocol, "listen")
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
 		glog.Errorf("Mqtt listen failed:%s", err)
@@ -189,12 +189,12 @@ func (this *mqttService) Start() error {
 		if err != nil {
 			continue
 		}
-		session, err := this.NewSession(conn)
+		session, err := p.NewSession(conn)
 		if err != nil {
 			glog.Errorf("Mqtt create session failed:%s", err)
 			return err
 		}
-		this.registerSession(session)
+		p.registerSession(session)
 		go func(s base.Session) {
 			err := s.Handle()
 			if err != nil {
@@ -204,40 +204,40 @@ func (this *mqttService) Start() error {
 		}(session)
 	}
 	// notify main
-	// this.quit <- 1
+	// p.quit <- 1
 	return nil
 }
 
 // Stop
-func (this *mqttService) Stop() {
+func (p *mqttService) Stop() {
 }
 
 // launchMqttMonitor
-func (this *mqttService) launchMqttMonitor() error {
+func (p *mqttService) launchMqttMonitor() error {
 	return nil
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (this *mqttService) subscribeTopic(topic string) error {
-	partitionList, err := this.consumer.Partitions(topic)
+func (p *mqttService) subscribeTopic(topic string) error {
+	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
 		return err
 	}
 
 	for partition := range partitionList {
-		pc, err := this.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
 			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 			continue
 		}
 		defer pc.AsyncClose()
-		this.WaitGroup.Add(1)
+		p.WaitGroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer this.WaitGroup.Done()
+			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				this.handleNotifications(string(msg.Topic), msg.Value)
+				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
 	}
@@ -245,16 +245,16 @@ func (this *mqttService) subscribeTopic(topic string) error {
 }
 
 // handleNotifications handle notification from kafka
-func (this *mqttService) handleNotifications(topic string, value []byte) error {
+func (p *mqttService) handleNotifications(topic string, value []byte) error {
 	switch topic {
 	case TopicNameSession:
-		return this.handleSessionNotifications(value)
+		return p.handleSessionNotifications(value)
 	}
 	return nil
 }
 
 // handleSessionNotifications handle session notification  from kafka
-func (this *mqttService) handleSessionNotifications(value []byte) error {
+func (p *mqttService) handleSessionNotifications(value []byte) error {
 	// Decode value received form other mqtt node
 	var topics []SessionTopic
 	if err := json.Unmarshal(value, &topics); err != nil {
@@ -266,13 +266,13 @@ func (this *mqttService) handleSessionNotifications(value []byte) error {
 		switch topic.Action {
 		case ObjectActionUpdate:
 			// Only deal with notification that is not  launched by myself
-			for _, addr := range this.localAddrs {
+			for _, addr := range p.localAddrs {
 				if addr != topic.Launcher {
-					s, err := this.storage.FindSession(topic.SessionId)
+					s, err := p.storage.FindSession(topic.SessionId)
 					if err != nil {
 						s.state = topic.State
 					}
-					//this.storage.UpdateSession(&StorageSession{Id: topic.SessionId, State: topic.State})
+					//p.storage.UpdateSession(&StorageSession{Id: topic.SessionId, State: topic.State})
 				}
 			}
 		case ObjectActionDelete:

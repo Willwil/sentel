@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -61,53 +61,53 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 }
 
 // Name
-func (this *ApiService) Name() string {
+func (p *ApiService) Name() string {
 	return "api"
 }
 
 // Info
-func (this *ApiService) Info() *base.ServiceInfo {
+func (p *ApiService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "apiservice",
 	}
 }
 
 // Start
-func (this *ApiService) Start() error {
-	go func(this *ApiService) {
-		this.srv.Serve(this.listener)
-		this.WaitGroup.Add(1)
-	}(this)
+func (p *ApiService) Start() error {
+	go func(p *ApiService) {
+		p.srv.Serve(p.listener)
+		p.WaitGroup.Add(1)
+	}(p)
 	return nil
 }
 
 // Stop
-func (this *ApiService) Stop() {
-	this.listener.Close()
-	this.WaitGroup.Wait()
+func (p *ApiService) Stop() {
+	p.listener.Close()
+	p.WaitGroup.Wait()
 }
 
 //
 // Wait
-func (this *ApiService) Wait() {
-	this.WaitGroup.Wait()
+func (p *ApiService) Wait() {
+	p.WaitGroup.Wait()
 }
 
-func (this *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
+func (p *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
 	version := base.GetBroker().GetVersion()
 	return &VersionReply{Version: version}, nil
 }
 
-func (this *ApiService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
+func (p *ApiService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
 	return nil, nil
 }
 
-func (this *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
+func (p *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
 	return nil, nil
 }
 
 // Routes delegate routes command
-func (this *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
+func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
 	broker := base.GetBroker()
 	reply := &RoutesReply{
 		Routes: []*RouteInfo{},
@@ -131,12 +131,12 @@ func (this *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*Routes
 	return reply, nil
 }
 
-func (this *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
+func (p *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
 	return nil, nil
 }
 
 // Broker delegate broker command implementation in sentel
-func (this *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
+func (p *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
 	broker := base.GetBroker()
 	switch req.Category {
 	case "stats":
@@ -150,12 +150,12 @@ func (this *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*Broker
 	return nil, fmt.Errorf("Invalid broker request with categoru:%s", req.Category)
 }
 
-func (this *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
+func (p *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
 	return nil, nil
 }
 
 // Services delegate  services command
-func (this *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
+func (p *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
 	broker := base.GetBroker()
 	reply := &ServicesReply{
 		Header:   &ReplyMessageHeader{Success: true},
@@ -184,7 +184,7 @@ func (this *ApiService) Services(ctx context.Context, req *ServicesRequest) (*Se
 }
 
 //Subscriptions delete subscriptions command
-func (this *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
+func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
 	broker := base.GetBroker()
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
@@ -216,7 +216,7 @@ func (this *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReq
 }
 
 // Clients delegate clients command implementation in sentel
-func (this *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
+func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
 	reply := &ClientsReply{
 		Clients: []*ClientInfo{},
 		Header:  &ReplyMessageHeader{Success: true},
@@ -259,7 +259,7 @@ func (this *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clie
 }
 
 // Sessions delegate client sessions command
-func (this *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
+func (p *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
 	broker := base.GetBroker()
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
@@ -304,7 +304,7 @@ func (this *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*Se
 	return reply, nil
 }
 
-func (this *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
+func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
 	broker := base.GetBroker()
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},

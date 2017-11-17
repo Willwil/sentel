@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -74,36 +74,36 @@ func (m *CoapFactory) New(protocol string, c core.Config, ch chan base.ServiceCo
 
 // MQTT Service
 
-func (this *coapService) NewSession(conn net.Conn) (base.Session, error) {
-	id := this.CreateSessionId()
+func (p *coapService) NewSession(conn net.Conn) (base.Session, error) {
+	id := p.CreateSessionId()
 	s, err := newCoapSession(m, conn, id)
 	return s, err
 }
 
 // CreateSessionId create id for new session
-func (this *coapService) CreateSessionId() string {
+func (p *coapService) CreateSessionId() string {
 	return uuid.NewV4().String()
 }
 
 // GetSessionTotalCount get total session count
-func (this *coapService) GetSessionTotalCount() int64 {
-	return int64(len(this.sessions))
+func (p *coapService) GetSessionTotalCount() int64 {
+	return int64(len(p.sessions))
 }
 
-func (this *coapService) RemoveSession(s base.Session) {
-	this.mutex.Lock()
-	defer this.mutex.Unlock()
-	this.sessions[s.Identifier()] = nil
+func (p *coapService) RemoveSession(s base.Session) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	p.sessions[s.Identifier()] = nil
 }
-func (this *coapService) RegisterSession(s base.Session) {
-	this.mutex.Lock()
-	this.sessions[s.Identifier()] = s
-	this.mutex.Unlock()
+func (p *coapService) RegisterSession(s base.Session) {
+	p.mutex.Lock()
+	p.sessions[s.Identifier()] = s
+	p.mutex.Unlock()
 }
 
 // Start
-func (this *coapService) Start() error {
-	host, _ := this.config.String("coap", "host")
+func (p *coapService) Start() error {
+	host, _ := p.config.String("coap", "host")
 
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
@@ -116,48 +116,48 @@ func (this *coapService) Start() error {
 		if err != nil {
 			continue
 		}
-		session, err := this.NewSession(conn)
+		session, err := p.NewSession(conn)
 		if err != nil {
 			glog.Error("Mqtt create session failed")
 			return err
 		}
 		glog.Infof("Mqtt new connection:%s", session.Identifier())
-		this.RegisterSession(session)
+		p.RegisterSession(session)
 		go session.Handle()
 	}
 	// notify main
-	// this.chn <- 1
+	// p.chn <- 1
 	return nil
 }
 
-func (this *coapService) Stop() {}
+func (p *coapService) Stop() {}
 
 // Name
-func (this *coapService) Info() *base.ServiceInfo {
+func (p *coapService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "coap",
 	}
 }
 
-func (this *coapService) GetMetrics() *base.Metrics            { return nil }
-func (this *coapService) GetStats() *base.Stats                { return nil }
-func (this *coapService) GetClients() []*base.ClientInfo       { return nil }
-func (this *coapService) GetClient(id string) *base.ClientInfo { return nil }
-func (this *coapService) KickoffClient(id string) error        { return nil }
+func (p *coapService) GetMetrics() *base.Metrics            { return nil }
+func (p *coapService) GetStats() *base.Stats                { return nil }
+func (p *coapService) GetClients() []*base.ClientInfo       { return nil }
+func (p *coapService) GetClient(id string) *base.ClientInfo { return nil }
+func (p *coapService) KickoffClient(id string) error        { return nil }
 
-func (this *coapService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
-func (this *coapService) GetSession(id string) *base.SessionInfo                     { return nil }
+func (p *coapService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
+func (p *coapService) GetSession(id string) *base.SessionInfo                     { return nil }
 
-func (this *coapService) GetRoutes() []*base.RouteInfo { return nil }
-func (this *coapService) GetRoute() *base.RouteInfo    { return nil }
+func (p *coapService) GetRoutes() []*base.RouteInfo { return nil }
+func (p *coapService) GetRoute() *base.RouteInfo    { return nil }
 
 // Topic info
-func (this *coapService) GetTopics() []*base.TopicInfo       { return nil }
-func (this *coapService) GetTopic(id string) *base.TopicInfo { return nil }
+func (p *coapService) GetTopics() []*base.TopicInfo       { return nil }
+func (p *coapService) GetTopic(id string) *base.TopicInfo { return nil }
 
 // SubscriptionInfo
-func (this *coapService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
-func (this *coapService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
+func (p *coapService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
+func (p *coapService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
 
 // Service Info
-func (this *coapService) GetServiceInfo() *base.ServiceInfo { return nil }
+func (p *coapService) GetServiceInfo() *base.ServiceInfo { return nil }

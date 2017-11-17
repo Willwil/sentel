@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -47,7 +47,7 @@ type ApiServiceFactory struct{}
 const APIHEAD = "iothub/api/v1/"
 
 // New create apiService service factory
-func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "iothub", "mongo")
 	timeout := c.MustInt("api", "connect_timeout")
@@ -88,23 +88,23 @@ func (this *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 }
 
 // Name
-func (this *ApiService) Name() string {
+func (p *ApiService) Name() string {
 	return "api"
 }
 
 // Start
-func (this *ApiService) Start() error {
+func (p *ApiService) Start() error {
 	go func(s *ApiService) {
-		addr := this.Config.MustString("api", "listen")
-		this.echo.Start(addr)
-		this.WaitGroup.Add(1)
-	}(this)
+		addr := p.Config.MustString("api", "listen")
+		p.echo.Start(addr)
+		p.WaitGroup.Add(1)
+	}(p)
 	return nil
 }
 
 // Stop
-func (this *ApiService) Stop() {
-	this.WaitGroup.Wait()
+func (p *ApiService) Stop() {
+	p.WaitGroup.Wait()
 }
 
 // Tenant

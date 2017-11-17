@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -35,7 +35,7 @@ type MetricService struct {
 type MetricServiceFactory struct{}
 
 // New create apiService service factory
-func (this *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// Get node ip, name and created time
 	return &MetricService{
 		ServiceBase: core.ServiceBase{
@@ -47,73 +47,73 @@ func (this *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 }
 
 // Info
-func (this *MetricService) Info() *base.ServiceInfo {
+func (p *MetricService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
 		ServiceName: "report-service",
 	}
 }
 
 // Name
-func (this *MetricService) Name() string {
+func (p *MetricService) Name() string {
 	return "metric"
 }
 
 // Start
-func (this *MetricService) Start() error {
+func (p *MetricService) Start() error {
 	// Launch timer scheduler
-	duration, err := this.Config.Int("mqttbroker", "report_duration")
+	duration, err := p.Config.Int("mqttbroker", "report_duration")
 	if err != nil {
 		duration = 2
 	}
-	this.keepalive = time.NewTicker(1 * time.Second)
-	this.stat = time.NewTicker(time.Duration(duration) * time.Second)
+	p.keepalive = time.NewTicker(1 * time.Second)
+	p.stat = time.NewTicker(time.Duration(duration) * time.Second)
 	go func(*MetricService) {
 		for {
 			select {
-			case <-this.keepalive.C:
-				this.reportKeepalive()
-			case <-this.stat.C:
-				this.reportHubStats()
+			case <-p.keepalive.C:
+				p.reportKeepalive()
+			case <-p.stat.C:
+				p.reportHubStats()
 			}
 		}
-	}(this)
+	}(p)
 	return nil
 }
 
 // Stop
-func (this *MetricService) Stop() {
-	this.keepalive.Stop()
-	this.stat.Stop()
+func (p *MetricService) Stop() {
+	p.keepalive.Stop()
+	p.stat.Stop()
 }
 
 // reportHubStats report current iothub stats
-func (this *MetricService) reportHubStats() {
+func (p *MetricService) reportHubStats() {
 	broker := base.GetBroker()
 	// Stats
 	stats := broker.GetStats("mqtt")
-	collector.AsyncReport(this.Config, collector.TopicNameStats,
+	collector.AsyncReport(p.Config, collector.TopicNameStats,
 		&collector.Stats{
-			NodeName: this.name,
+			NodeName: p.name,
 			Service:  "mqtt",
 			Values:   stats,
 		})
 
 	// Metrics
 	metrics := broker.GetMetrics("mqtt")
-	collector.AsyncReport(this.Config, collector.TopicNameMetric,
+	collector.AsyncReport(p.Config, collector.TopicNameMetric,
 		&collector.Metric{
-			NodeName: this.name,
+			NodeName: p.name,
 			Service:  "mqtt",
 			Values:   metrics,
 		})
 }
 
 // reportKeepalive report node information to cluster manager
-func (this *MetricService) reportKeepalive() {
+func (p *MetricService) reportKeepalive() {
 	broker := base.GetBroker()
 	// Node
 	node := broker.GetNodeInfo()
-	collector.AsyncReport(this.Config, collector.TopicNameNode,
+	collector.AsyncReport(p.Config, collector.TopicNameNode,
 		&collector.Node{
 			NodeName:  node.NodeName,
 			NodeIp:    node.NodeIp,
