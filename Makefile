@@ -11,6 +11,8 @@ IGNORED_PACKAGES := /vendor/
 .PHONY: all
 all: build
 
+GCFLAGS  := -gcflags "-N -l"
+
 .PHONY: build
 build: .GOPATH/.ok apiserver ceilometer broker iothub conductor sentel-ctrl mqtt-cli k8s-test
 	@echo "building completed!" 
@@ -23,52 +25,52 @@ build: .GOPATH/.ok apiserver ceilometer broker iothub conductor sentel-ctrl mqtt
 .PHONY: k8s-test
 k8s-test: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
 
 
 .PHONY: ceilometer 
 ceilometer: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ceilometer
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ceilometer
 
 
 .PHONY: apiserver
 apiserver: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-apiserver
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-apiserver
 
 
 .PHONY: broker 
 broker: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-broker
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-broker
 
 .PHONY: iothub 
 iothub: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-iothub
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-iothub
 
 
 .PHONY: conductor 
 conductor: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-conductor
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-conductor
 
 .PHONY: tools
 mqtt-cli: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
 
 
 .PHONY: sentel-ctrl
 sentel-ctrl: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctrl
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctrl
 
 .PHONY: sentel-cli
 sentel-cli: .GOPATH/.ok
 	@echo $@
-	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-cli
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-cli
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
