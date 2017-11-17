@@ -57,9 +57,11 @@ func registerDevice(ctx echo.Context) error {
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Device{
-		Name:        req.DeviceName,
-		ProductKey:  req.ProductKey,
-		TimeCreated: time.Now(),
+		Id:           uuid.NewV4().String(),
+		Name:         req.DeviceName,
+		ProductKey:   req.ProductKey,
+		TimeCreated:  time.Now(),
+		TimeModified: time.Now(),
 	}
 	err = r.RegisterDevice(&dp)
 	if err != nil {

@@ -16,29 +16,11 @@ import (
 	"github.com/cloustone/sentel/ceilometer/api"
 	"github.com/cloustone/sentel/ceilometer/collector"
 	"github.com/cloustone/sentel/core"
-
-	"github.com/golang/glog"
 )
 
 // RunWithConfigFile create and start ceilometer service
 func RunWithConfigFile(fileName string) error {
-	glog.Info("Starting ceilometer server...")
-
-	// Check all registered service
-	if err := core.CheckAllRegisteredServices(); err != nil {
-		return err
-	}
-	// Get configuration
-	config, err := core.NewWithConfigFile(fileName)
-	if err != nil {
-		return err
-	}
-	// Create service manager according to the configuration
-	mgr, err := core.NewServiceManager("ceilometer", config)
-	if err != nil {
-		return err
-	}
-	return mgr.Run()
+	return core.RunWithConfigFile("ceilometer", fileName)
 }
 
 // init initialize default configurations and services

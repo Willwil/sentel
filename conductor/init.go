@@ -16,29 +16,11 @@ import (
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/conductor/indicator"
 	"github.com/cloustone/sentel/core"
-
-	"github.com/golang/glog"
 )
 
 // RunWithConfigFile create and start conductor server
 func RunWithConfigFile(fileName string) error {
-	glog.Info("Starting conductor server...")
-
-	// Check all registered service
-	if err := core.CheckAllRegisteredServices(); err != nil {
-		return err
-	}
-	// Get configuration
-	config, err := core.NewWithConfigFile(fileName)
-	if err != nil {
-		return err
-	}
-	// Create service manager according to the configuration
-	mgr, err := core.NewServiceManager("conductor", config)
-	if err != nil {
-		return err
-	}
-	return mgr.Run()
+	return core.RunWithConfigFile("conductor", fileName)
 }
 
 // init initialize default configurations and services

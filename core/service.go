@@ -62,6 +62,27 @@ func CreateService(name string, c Config, ch chan os.Signal) (Service, error) {
 	return nil, fmt.Errorf("Invalid service '%s'", name)
 }
 
+// RunWithConfigFile create and start server
+func RunWithConfigFile(serverName string, fileName string) error {
+	glog.Info("Starting '%s' server...", serverName)
+
+	// Check all registered service
+	if err := CheckAllRegisteredServices(); err != nil {
+		return err
+	}
+	// Get configuration
+	config, err := NewWithConfigFile(fileName)
+	if err != nil {
+		return err
+	}
+	// Create service manager according to the configuration
+	mgr, err := NewServiceManager(serverName, config)
+	if err != nil {
+		return err
+	}
+	return mgr.Run()
+}
+
 // CheckAllRegisteredServices check all registered service simplily
 func CheckAllRegisteredServices() error {
 	if len(_serviceFactories) == 0 {

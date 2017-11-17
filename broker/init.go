@@ -17,26 +17,11 @@ import (
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
 	"github.com/cloustone/sentel/core"
-
-	"github.com/golang/glog"
 )
 
 // RunWithConfigFile create and start broker
 func RunWithConfigFile(fileName string) error {
-	glog.Info("Starting mqtt broker...")
-
-	// Get configuration
-	config, err := core.NewWithConfigFile(fileName)
-	if err != nil {
-		return err
-	}
-	// Create service manager according to the configuration
-	mgr, err := core.NewServiceManager("broker", config)
-	if err != nil {
-		glog.Fatal("Failed to launch ServiceManager")
-		return err
-	}
-	return mgr.Run()
+	return core.RunWithConfigFile("broker", fileName)
 }
 
 // init initialize default configurations and services before startup
