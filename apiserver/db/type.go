@@ -16,8 +16,8 @@ import "time"
 
 // Tenant
 type Tenant struct {
-	Name      string
-	Password  string
+	Name      string `bson:"Name"`
+	Password  string `bson:"Password"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
