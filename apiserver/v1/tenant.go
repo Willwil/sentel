@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/db"
 	"github.com/cloustone/sentel/apiserver/util"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 
@@ -27,6 +28,42 @@ import (
 type tenantAddRequest struct {
 	Id       string `json:"id"`
 	Password string `json:"password"`
+}
+
+// Get a device twin
+func login(ctx echo.Context) error {
+	name := ctx.FormValue("username")
+	pwd := ctx.FormValue("password")
+
+	// Get registry store instance by context
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
+	}
+	defer r.Release()
+
+	tenant, err := r.GetTenant(name)
+	if err != nil || tenant.Password != pwd {
+		return echo.ErrUnauthorized
+	}
+
+	// Authorized
+	claims := &jwtApiClaims{
+		Name: tenant.Id,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+		},
+	}
+
+	// Creat token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Generate encoded token and send it as response
+	t, err := token.SignedString([]byte("secret"))
+	if err != nil {
+		return err
+	}
+	return ctx.JSON(http.StatusOK, echo.Map{"token": t})
 }
 
 // addTenant add a new tenant

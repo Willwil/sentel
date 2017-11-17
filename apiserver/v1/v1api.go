@@ -13,9 +13,9 @@ package v1
 
 import (
 	"github.com/cloustone/sentel/apiserver"
-	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/core"
 
+	"github.com/dgrijalva/jwt-go"
 	echo "github.com/labstack/echo"
 	mw "github.com/labstack/echo/middleware"
 )
@@ -51,6 +51,11 @@ type response struct {
 	Result    interface{} `json:"result"`
 }
 
+type jwtApiClaims struct {
+	jwt.StandardClaims
+	Name string `json:"name"`
+}
+
 // NewApiManager create api manager instance
 func NewApiManager() apiserver.ApiManager {
 	return &v1apiManager{
@@ -78,67 +83,83 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 		}
 	})
 	// Initialize middleware
-	p.echo.Use(middleware.ApiVersion(p.version))
+	// p.echo.Use(middleware.ApiVersion(p.version))
 	// p.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
 
-	// Initialize api routes
+	config := mw.JWTConfig{
+		Claims:     &jwtApiClaims{},
+		SigningKey: []byte("secrect"),
+	}
 
 	// Login
+	p.echo.POST("/api/v1/login", login)
 
 	// Tenant
-	// g := p.echo.Group("/api/v1/tenants",
-	p.echo.POST("/api/v1/tenants/:id", addTenant)
-	p.echo.DELETE("/api/v1/tenants/:id", deleteTenant)
-	p.echo.GET("/api/v1/tenants/:id", getTenant)
-	p.echo.PUT("/api/v1/tenants/:id", updateTenant)
+	g := p.echo.Group("/api/v1/tenants")
+	g.Use(mw.JWTWithConfig(config))
+	g.POST("/api/v1/tenants/:id", addTenant)
+	g.DELETE("/api/v1/tenants/:id", deleteTenant)
+	g.GET("/api/v1/tenants/:id", getTenant)
+	g.PUT("/api/v1/tenants/:id", updateTenant)
 
 	// Product Api
-	p.echo.POST("api/v1/products/:id", registerProduct)
-	p.echo.DELETE("/api/v1/products/:id", deleteProduct)
-	p.echo.GET("/api/v1/products/:id", getProduct)
-	p.echo.GET("/api/v1/products/:id/devices", getProductDevices)
+	g = p.echo.Group("/api/v1/products")
+	g.Use(mw.JWTWithConfig(config))
+	g.POST("api/v1/products/:id", registerProduct)
+	g.DELETE("/api/v1/products/:id", deleteProduct)
+	g.GET("/api/v1/products/:id", getProduct)
+	g.GET("/api/v1/products/:id/devices", getProductDevices)
 
 	// Rule
-	p.echo.POST("api/v1/rules/", addRule)
-	p.echo.DELETE("/api/v1/rules/:id", deleteRule)
-	p.echo.GET("/api/v1/rules/:id", getRule)
-	p.echo.PATCH("/api/v1/rules/:id", updateRule)
+	g = p.echo.Group("/api/v1/rules")
+	g.Use(mw.JWTWithConfig(config))
+	g.POST("api/v1/rules/", addRule)
+	g.DELETE("/api/v1/rules/:id", deleteRule)
+	g.GET("/api/v1/rules/:id", getRule)
+	g.PATCH("/api/v1/rules/:id", updateRule)
 
 	// Device Api
-	p.echo.POST("api/v1/devices/:id", registerDevice)
-	p.echo.GET("/devices/:id", getDevice)
-	p.echo.DELETE("api/v1/devices/:id", deleteDevice)
-	p.echo.PUT("api/v1/devices/:id", updateDevice)
-	p.echo.DELETE("api/v1/devices/:id/commands", purgeCommandQueue)
-	p.echo.GET("api/v1/devices/", getMultipleDevices)
-	p.echo.POST("api/v1/devices/query", queryDevices)
+	g = p.echo.Group("/api/v1/devices")
+	g.Use(mw.JWTWithConfig(config))
+	g.POST("api/v1/devices/:id", registerDevice)
+	g.GET("/devices/:id", getDevice)
+	g.DELETE("api/v1/devices/:id", deleteDevice)
+	g.PUT("api/v1/devices/:id", updateDevice)
+	g.DELETE("api/v1/devices/:id/commands", purgeCommandQueue)
+	g.GET("api/v1/devices/", getMultipleDevices)
+	g.POST("api/v1/devices/query", queryDevices)
+	// Http Runtip. Api
+	g.POST("api/v1/devices/:id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
+	g.DELETE("api/v1/devices/:id/messages/devicesBound/:etag", completeDeviceBoundNotification)
+
+	g.POST("api/v1/devices/:ideviceId/files", createFileUploadSasUri)
+	g.GET("api/v1/devices/:id/message/deviceBound", receiveDeviceBoundNotification)
+	g.POST("api/v1/devices/:deviceId/files/notifications", updateFileUploadStatus)
+	g.POST("api/v1/devices/:id/messages/event", sendDeviceEvent)
 
 	// Statics Api
-	p.echo.GET("api/v1/statistics/devices", getRegistryStatistics)
-	p.echo.GET("api/v1/statistics/service", getServiceStatistics)
+	g = p.echo.Group("/api/v1/statics")
+	g.Use(mw.JWTWithConfig(config))
+	g.GET("api/v1/statistics/devices", getRegistryStatistics)
+	g.GET("api/v1/statistics/service", getServiceStatistics)
 
 	// Device Twin Api
-	p.echo.GET("api/v1/twins/:id", getDeviceTwin)
-	p.echo.POST("api/v1/twins/:id/methods", invokeDeviceMethod)
-	p.echo.PATCH("api/v1/twins/:id", updateDeviceTwin)
-
-	// Http Runtip. Api
-	p.echo.POST("api/v1/devices/:id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
-	p.echo.DELETE("api/v1/devices/:id/messages/devicesBound/:etag", completeDeviceBoundNotification)
-
-	p.echo.POST("api/v1/devices/:ideviceId/files", createFileUploadSasUri)
-	p.echo.GET("api/v1/devices/:id/message/deviceBound", receiveDeviceBoundNotification)
-	p.echo.POST("api/v1/devices/:deviceId/files/notifications", updateFileUploadStatus)
-	p.echo.POST("api/v1/devices/:id/messages/event", sendDeviceEvent)
+	g = p.echo.Group("/api/v1/twins")
+	g.Use(mw.JWTWithConfig(config))
+	g.GET("api/v1/twins/:id", getDeviceTwin)
+	g.POST("api/v1/twins/:id/methods", invokeDeviceMethod)
+	g.PATCH("api/v1/twins/:id", updateDeviceTwin)
 
 	// Job Api
-	p.echo.POST("api/v1/jobs/:jobid/cancel", cancelJob)
-	p.echo.PUT("api/v1/jobs/:jobid", createJob)
-	p.echo.GET("api/v1/jobs/:jobid", getJob)
-	p.echo.GET("api/v1/jobs/query", queryJobs)
+	g = p.echo.Group("/api/v1/jobs")
+	g.Use(mw.JWTWithConfig(config))
+	g.POST("api/v1/jobs/:jobid/cancel", cancelJob)
+	g.PUT("api/v1/jobs/:jobid", createJob)
+	g.GET("api/v1/jobs/:jobid", getJob)
+	g.GET("api/v1/jobs/query", queryJobs)
 
 	return nil
 }
