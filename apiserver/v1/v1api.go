@@ -79,14 +79,17 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 	})
 	// Initialize middleware
 	p.echo.Use(middleware.ApiVersion(p.version))
-	p.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
+	// p.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
 
 	// Initialize api routes
 
+	// Login
+
 	// Tenant
+	// g := p.echo.Group("/api/v1/tenants",
 	p.echo.POST("/api/v1/tenants/:id", addTenant)
 	p.echo.DELETE("/api/v1/tenants/:id", deleteTenant)
 	p.echo.GET("/api/v1/tenants/:id", getTenant)
