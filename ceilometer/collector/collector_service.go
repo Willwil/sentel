@@ -77,13 +77,13 @@ func (p *CollectorService) Start() error {
 	p.subscribeTopic(TopicNamePublish)
 	p.subscribeTopic(TopicNameMetric)
 	p.subscribeTopic(TopicNameStats)
-	p.WaitGroup.Wait()
 	return nil
 }
 
 // Stop
 func (p *CollectorService) Stop() {
 	p.consumer.Close()
+	p.WaitGroup.Wait()
 }
 
 // handleNotifications handle notification from kafka

@@ -78,7 +78,6 @@ func (p *NotifyService) Start() error {
 	if err := p.subscribeTopic(apiserver.TopicNameProduct); err != nil {
 		return err
 	}
-	p.WaitGroup.Wait()
 	return nil
 }
 

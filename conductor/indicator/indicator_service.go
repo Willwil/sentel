@@ -73,13 +73,13 @@ func (p *IndicatorService) Name() string {
 // Start
 func (p *IndicatorService) Start() error {
 	p.subscribeTopic("rule")
-	p.WaitGroup.Wait()
 	return nil
 }
 
 // Stop
 func (p *IndicatorService) Stop() {
 	p.consumer.Close()
+	p.WaitGroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
