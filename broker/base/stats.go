@@ -34,32 +34,32 @@ func NewStats(withlock bool) *Stats {
 	}
 }
 
-func (s *Stats) Get() map[string]uint64 {
-	if s.mutex != nil {
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
+func (p *Stats) Get() map[string]uint64 {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
-	return s.stats
+	return p.stats
 }
 
-func (s *Stats) AddStat(name string, value uint64) {
-	if s.mutex != nil {
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
+func (p *Stats) AddStat(name string, value uint64) {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
-	s.stats[name] += value
+	p.stats[name] += value
 }
 
-func (s *Stats) AddStats(stats *Stats) {
-	if s.mutex != nil {
-		s.mutex.Lock()
-		defer s.mutex.Unlock()
+func (p *Stats) AddStats(statp *Stats) {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
-	for k, v := range stats.Get() {
-		if _, ok := s.stats[k]; !ok {
-			s.stats[k] = v
+	for k, v := range statp.Get() {
+		if _, ok := p.stats[k]; !ok {
+			p.stats[k] = v
 		} else {
-			s.stats[k] += v
+			p.stats[k] += v
 		}
 	}
 }

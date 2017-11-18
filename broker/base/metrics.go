@@ -34,31 +34,31 @@ func NewMetrics(withlock bool) *Metrics {
 	}
 }
 
-func (m *Metrics) Get() map[string]uint64 {
-	if m.mutex != nil {
-		m.mutex.Lock()
-		defer m.mutex.Unlock()
+func (p *Metrics) Get() map[string]uint64 {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
-	return m.metrics
+	return p.metrics
 }
-func (m *Metrics) addMetric(name string, value uint64) {
-	if m.mutex != nil {
-		m.mutex.Lock()
-		defer m.mutex.Unlock()
+func (p *Metrics) addMetric(name string, value uint64) {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
-	m.metrics[name] += value
+	p.metrics[name] += value
 }
 
-func (m *Metrics) AddMetrics(metrics *Metrics) {
-	if m.mutex != nil {
-		m.mutex.Lock()
-		defer m.mutex.Unlock()
+func (p *Metrics) AddMetrics(metrics *Metrics) {
+	if p.mutex != nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
 	}
 	for k, v := range metrics.Get() {
-		if _, ok := m.metrics[k]; !ok {
-			m.metrics[k] = v
+		if _, ok := p.metrics[k]; !ok {
+			p.metrics[k] = v
 		} else {
-			m.metrics[k] += v
+			p.metrics[k] += v
 		}
 	}
 }

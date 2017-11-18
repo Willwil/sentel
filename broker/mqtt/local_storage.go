@@ -38,123 +38,117 @@ type localStorage struct {
 }
 
 // Open local storage
-func (l *localStorage) Open() error {
+func (p *localStorage) Open() error {
 	glog.Info("local storage Open")
 
 	return nil
 }
 
 // Close local storage
-func (l *localStorage) Close() {
+func (p *localStorage) Close() {
 
 }
 
 // Backup serialize local storage
-func (l *localStorage) Backup(shutdown bool) error {
+func (p *localStorage) Backup(shutdown bool) error {
 	return nil
 }
 
 // Restore recover data from serialization
-func (l *localStorage) Restore() error {
+func (p *localStorage) Restore() error {
 	return nil
 }
 
 // FindSession find session by id
-func (l *localStorage) FindSession(id string) (*mqttSession, error) {
-	v, ok := l.sessions[id]
-	if !ok {
+func (p *localStorage) FindSession(id string) (*mqttSession, error) {
+	if _, ok := p.sessions[id]; !ok {
 		return nil, errors.New("Session id does not exist")
 	}
 
-	return v, nil
+	return p.sessions[id], nil
 }
 
 // DeleteSession delete session by id
-func (l *localStorage) DeleteSession(id string) error {
-	_, ok := l.sessions[id]
-	if !ok {
+func (p *localStorage) DeleteSession(id string) error {
+	if _, ok := p.sessions[id]; !ok {
 		return errors.New("Session id does not exist")
 	}
-
-	delete(l.sessions, id)
-
+	delete(p.sessions, id)
 	return nil
 }
 
 // UpdateSession update session
-func (l *localStorage) UpdateSession(s *mqttSession) error {
-	_, ok := l.sessions[s.id]
-	if !ok {
+func (p *localStorage) UpdateSession(s *mqttSession) error {
+	if _, ok := p.sessions[s.id]; !ok {
 		return errors.New("Session id does not exist")
 	}
-
-	l.sessions[s.id] = s
+	p.sessions[s.id] = s
 	return nil
 }
 
 // RegisterSession register new session
-func (l *localStorage) RegisterSession(s *mqttSession) error {
-	if _, ok := l.sessions[s.id]; ok {
+func (p *localStorage) RegisterSession(s *mqttSession) error {
+	if _, ok := p.sessions[s.id]; ok {
 		return errors.New("Session id already exists")
 	}
 
 	glog.Infof("RegisterSession: id is %s", s.id)
-	l.sessions[s.id] = s
+	p.sessions[s.id] = s
 	return nil
 }
 
 // Device
 // AddDevice
-// func (l *localStorage) AddDevice(d Device) error {
+// func (p *localStorage) AddDevice(d Device) error {
 // 	return nil
 // }
 
-// func (l *localStorage) DeleteDevice(id string) error {
+// func (p *localStorage) DeleteDevice(id string) error {
 // 	return nil
 // }
 
-// func (l *localStorage) UpdateDevice(d Device) error {
+// func (p *localStorage) UpdateDevice(d Device) error {
 // 	return nil
 // }
 
-// func (l *localStorage) GetDeviceState(id string) (int, error) {
+// func (p *localStorage) GetDeviceState(id string) (int, error) {
 // 	return 0, nil
 // }
 
-// func (l *localStorage) SetDeviceState(state int) error {
+// func (p *localStorage) SetDeviceState(state int) error {
 // 	return nil
 // }
 
 // // Topic
-// func (l *localStorage) TopicExist(t Topic) (bool, error) {
+// func (p *localStorage) TopicExist(t Topic) (bool, error) {
 // 	return false, nil
 // }
 
-// func (l *localStorage) AddTopic(t Topic) error {
+// func (p *localStorage) AddTopic(t Topic) error {
 // 	return nil
 // }
 
-// func (l *localStorage) DeleteTopic(id string) error {
+// func (p *localStorage) DeleteTopic(id string) error {
 // 	return nil
 // }
 
-// func (l *localStorage) UpdateTopic(t Topic) error {
+// func (p *localStorage) UpdateTopic(t Topic) error {
 // 	return nil
 // }
 
-// func (l *localStorage) AddSubscriber(t Topic, clientid string) error {
+// func (p *localStorage) AddSubscriber(t Topic, clientid string) error {
 // 	return nil
 // }
 
-// func (l *localStorage) RemoveSubscriber(t Topic, clientid string) error {
+// func (p *localStorage) RemoveSubscriber(t Topic, clientid string) error {
 // 	return nil
 // }
 
-// func (l *localStorage) GetTopicSubscribers(t Topic) ([]string, error) {
+// func (p *localStorage) GetTopicSubscribers(t Topic) ([]string, error) {
 // 	return nil, nil
 // }
 
-func (l *localStorage) findNode(node *subNode, lev string) *subNode {
+func (p *localStorage) findNode(node *subNode, lev string) *subNode {
 	for k, v := range node.children {
 		if k == lev {
 			return v
@@ -164,7 +158,7 @@ func (l *localStorage) findNode(node *subNode, lev string) *subNode {
 	return nil
 }
 
-func (l *localStorage) addNode(node *subNode, lev string) *subNode {
+func (p *localStorage) addNode(node *subNode, lev string) *subNode {
 	for k, v := range node.children {
 		if k == lev {
 			return v
@@ -183,13 +177,13 @@ func (l *localStorage) addNode(node *subNode, lev string) *subNode {
 }
 
 // Subscription
-func (l *localStorage) AddSubscription(sessionid string, topic string, qos uint8) error {
+func (p *localStorage) AddSubscription(sessionid string, topic string, qos uint8) error {
 	glog.Infof("AddSubscription: sessionid is %s, topic is %s, qos is %d", sessionid, topic, qos)
-	node := &l.root
+	node := &p.root
 	s := strings.Split(topic, "/")
 	for _, level := range s {
 		glog.Infof("AddSubscription: level is %s", level)
-		node = l.addNode(node, level)
+		node = p.addNode(node, level)
 	}
 
 	glog.Infof("AddSubscription: session id is %s", sessionid)
@@ -201,15 +195,15 @@ func (l *localStorage) AddSubscription(sessionid string, topic string, qos uint8
 }
 
 // RetainSubscription process RETAIN flag；
-func (l *localStorage) RetainSubscription(sessionid string, topic string, qos uint8) error {
+func (p *localStorage) RetainSubscription(sessionid string, topic string, qos uint8) error {
 	return nil
 }
 
-func (l *localStorage) RemoveSubscription(sessionid string, topic string) error {
-	node := &l.root
+func (p *localStorage) RemoveSubscription(sessionid string, topic string) error {
+	node := &p.root
 	s := strings.Split(topic, "/")
 	for _, level := range s {
-		node = l.findNode(node, level)
+		node = p.findNode(node, level)
 		if node == nil {
 			return nil
 		}
@@ -223,30 +217,30 @@ func (l *localStorage) RemoveSubscription(sessionid string, topic string) error 
 }
 
 // Message Management
-func (l *localStorage) FindMessage(clientid string, mid uint16) (bool, error) {
+func (p *localStorage) FindMessage(clientid string, mid uint16) (bool, error) {
 	return false, nil
 }
 
-func (l *localStorage) StoreMessage(clientid string, msg StorageMessage) error {
+func (p *localStorage) StoreMessage(clientid string, msg StorageMessage) error {
 	return nil
 }
 
-func (l *localStorage) DeleteMessageWithValidator(clientid string, validator func(msg StorageMessage) bool) {
+func (p *localStorage) DeleteMessageWithValidator(clientid string, validator func(msg StorageMessage) bool) {
 
 }
 
-func (l *localStorage) DeleteMessage(clientid string, mid uint16, direction MessageDirection) error {
+func (p *localStorage) DeleteMessage(clientid string, mid uint16, direction MessageDirection) error {
 	return nil
 }
 
-func (l *localStorage) subProcess(clientid string, msg *StorageMessage, node *subNode, setRetain bool) error {
+func (p *localStorage) subProcess(clientid string, msg *StorageMessage, node *subNode, setRetain bool) error {
 	if msg.Retain && setRetain {
 		node.retainMsg = msg
 	}
 
 	for k, v := range node.subs {
 		glog.Infof("subProcess: session id is %s", k)
-		s, ok := l.sessions[k]
+		s, ok := p.sessions[k]
 		if !ok {
 			glog.Errorf("subProcess: sessions is nil")
 			continue
@@ -260,7 +254,7 @@ func (l *localStorage) subProcess(clientid string, msg *StorageMessage, node *su
 	return nil
 }
 
-func (l *localStorage) subSearch(clientid string, msg *StorageMessage, node *subNode, levels []string, setRetain bool) error {
+func (p *localStorage) subSearch(clientid string, msg *StorageMessage, node *subNode, levels []string, setRetain bool) error {
 	for k, v := range node.children {
 		sr := setRetain
 		if len(levels) != 0 && (k == levels[0] || k == "+") {
@@ -268,18 +262,18 @@ func (l *localStorage) subSearch(clientid string, msg *StorageMessage, node *sub
 				sr = false
 			}
 			ss := levels[1:]
-			l.subSearch(clientid, msg, v, ss, sr)
+			p.subSearch(clientid, msg, v, ss, sr)
 			if len(ss) == 0 {
-				l.subProcess(clientid, msg, v, sr)
+				p.subProcess(clientid, msg, v, sr)
 			}
 		} else if k == "#" && len(v.children) > 0 {
-			l.subProcess(clientid, msg, v, sr)
+			p.subProcess(clientid, msg, v, sr)
 		}
 	}
 	return nil
 }
 
-func (l *localStorage) QueueMessage(clientid string, msg StorageMessage) error {
+func (p *localStorage) QueueMessage(clientid string, msg StorageMessage) error {
 	glog.Infof("QueueMessage: Message Topic is %s", msg.Topic)
 	s := strings.Split(msg.Topic, "/")
 
@@ -287,35 +281,35 @@ func (l *localStorage) QueueMessage(clientid string, msg StorageMessage) error {
 		/* We have a message that needs to be retained, so ensure that the subscription
 		 * tree for its topic exists.
 		 */
-		node := &l.root
+		node := &p.root
 		for _, level := range s {
-			node = l.addNode(node, level)
+			node = p.addNode(node, level)
 		}
 	}
 
-	return l.subSearch(clientid, &msg, &l.root, s, true)
+	return p.subSearch(clientid, &msg, &p.root, s, true)
 }
 
-func (l *localStorage) GetMessageTotalCount(clientid string) int {
+func (p *localStorage) GetMessageTotalCount(clientid string) int {
 	return 0
 }
 
-func (l *localStorage) InsertMessage(clientid string, mid uint16, direction MessageDirection, msg StorageMessage) error {
+func (p *localStorage) InsertMessage(clientid string, mid uint16, direction MessageDirection, msg StorageMessage) error {
 	return nil
 }
 
-func (l *localStorage) ReleaseMessage(clientid string, mid uint16, direction MessageDirection) error {
+func (p *localStorage) ReleaseMessage(clientid string, mid uint16, direction MessageDirection) error {
 	return nil
 }
 
-func (l *localStorage) UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
+func (p *localStorage) UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
 
 }
 
 // localStorageFactory
 type localStorageFactory struct{}
 
-func (l *localStorageFactory) New(c core.Config) (Storage, error) {
+func (p *localStorageFactory) New(c core.Config) (Storage, error) {
 	d := &localStorage{
 		config:   c,
 		sessions: make(map[string]*mqttSession),

@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -49,9 +49,9 @@ var (
 func GetBroker() *Broker { return _broker }
 
 // GetServicesByName return service instance by name, or matched by part of name
-func (this *Broker) GetServicesByName(name string) []core.Service {
+func (p *Broker) GetServicesByName(name string) []core.Service {
 	services := []core.Service{}
-	for k, service := range this.Services {
+	for k, service := range p.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			services = append(services, service)
 		}
@@ -60,9 +60,9 @@ func (this *Broker) GetServicesByName(name string) []core.Service {
 }
 
 // GetAllProtocolServices() return all protocol services
-func (this *Broker) GetAllProtocolServices() []ProtocolService {
+func (p *Broker) GetAllProtocolServices() []ProtocolService {
 	services := []ProtocolService{}
-	for _, service := range this.Services {
+	for _, service := range p.Services {
 		if p, ok := service.(ProtocolService); ok {
 			services = append(services, p)
 		}
@@ -71,9 +71,9 @@ func (this *Broker) GetAllProtocolServices() []ProtocolService {
 }
 
 // GetProtocolServiceByname return protocol services by name
-func (this *Broker) GetProtocolServices(name string) []ProtocolService {
+func (p *Broker) GetProtocolServices(name string) []ProtocolService {
 	services := []ProtocolService{}
-	for k, service := range this.Services {
+	for k, service := range p.Services {
 		if strings.IndexAny(k, name) >= 0 {
 			if p, ok := service.(ProtocolService); ok {
 				services = append(services, p)
@@ -84,19 +84,19 @@ func (this *Broker) GetProtocolServices(name string) []ProtocolService {
 }
 
 // Node info
-func (this *Broker) GetNodeInfo() *HubNodeInfo {
+func (p *Broker) GetNodeInfo() *HubNodeInfo {
 	return &HubNodeInfo{}
 }
 
 // Version
-func (this *Broker) GetVersion() string {
+func (p *Broker) GetVersion() string {
 	return BrokerVersion
 }
 
 // GetStats return server's stats
-func (this *Broker) GetStats(serviceName string) map[string]uint64 {
+func (p *Broker) GetStats(serviceName string) map[string]uint64 {
 	allstats := NewStats(false)
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		stats := service.GetStats()
@@ -106,9 +106,9 @@ func (this *Broker) GetStats(serviceName string) map[string]uint64 {
 }
 
 // GetMetrics return server metrics
-func (this *Broker) GetMetrics(serviceName string) map[string]uint64 {
+func (p *Broker) GetMetrics(serviceName string) map[string]uint64 {
 	allmetrics := NewMetrics(false)
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		metrics := service.GetMetrics()
@@ -118,9 +118,9 @@ func (this *Broker) GetMetrics(serviceName string) map[string]uint64 {
 }
 
 // GetClients return clients list withspecified service
-func (this *Broker) GetClients(serviceName string) []*ClientInfo {
+func (p *Broker) GetClients(serviceName string) []*ClientInfo {
 	clients := []*ClientInfo{}
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetClients()
@@ -129,9 +129,9 @@ func (this *Broker) GetClients(serviceName string) []*ClientInfo {
 	return clients
 }
 
-// GeteClient return client info with specified client id
-func (this *Broker) GetClient(serviceName string, id string) *ClientInfo {
-	services := this.GetProtocolServices(serviceName)
+// GetClient return client info with specified client id
+func (p *Broker) GetClient(serviceName string, id string) *ClientInfo {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if client := service.GetClient(id); client != nil {
@@ -142,8 +142,8 @@ func (this *Broker) GetClient(serviceName string, id string) *ClientInfo {
 }
 
 // Kickoff Client killoff a client from specified service
-func (this *Broker) KickoffClient(serviceName string, id string) error {
-	services := this.GetProtocolServices(serviceName)
+func (p *Broker) KickoffClient(serviceName string, id string) error {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if err := service.KickoffClient(id); err == nil {
@@ -154,9 +154,9 @@ func (this *Broker) KickoffClient(serviceName string, id string) error {
 }
 
 // GetSessions return all sessions information for specified service
-func (this *Broker) GetSessions(serviceName string, conditions map[string]bool) []*SessionInfo {
+func (p *Broker) GetSessions(serviceName string, conditions map[string]bool) []*SessionInfo {
 	sessions := []*SessionInfo{}
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetSessions(conditions)
@@ -167,8 +167,8 @@ func (this *Broker) GetSessions(serviceName string, conditions map[string]bool) 
 }
 
 // GetSession return specified session information with session id
-func (this *Broker) GetSession(serviceName string, id string) *SessionInfo {
-	services := this.GetProtocolServices(serviceName)
+func (p *Broker) GetSession(serviceName string, id string) *SessionInfo {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		if info := service.GetSession(id); info != nil {
@@ -179,9 +179,9 @@ func (this *Broker) GetSession(serviceName string, id string) *SessionInfo {
 }
 
 // GetRoutes return route table information for specified service
-func (this *Broker) GetRoutes(serviceName string) []*RouteInfo {
+func (p *Broker) GetRoutes(serviceName string) []*RouteInfo {
 	routes := []*RouteInfo{}
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetRoutes()
@@ -191,8 +191,8 @@ func (this *Broker) GetRoutes(serviceName string) []*RouteInfo {
 }
 
 // GetRoute return route information for specified topic
-func (this *Broker) GetRoute(serviceName string, topic string) *RouteInfo {
-	services := this.GetProtocolServices(serviceName)
+func (p *Broker) GetRoute(serviceName string, topic string) *RouteInfo {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		route := service.GetRoute(topic)
@@ -204,9 +204,9 @@ func (this *Broker) GetRoute(serviceName string, topic string) *RouteInfo {
 }
 
 // GetTopics return topic informaiton for specified service
-func (this *Broker) GetTopics(serviceName string) []*TopicInfo {
+func (p *Broker) GetTopics(serviceName string) []*TopicInfo {
 	topics := []*TopicInfo{}
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetTopics()
@@ -216,8 +216,8 @@ func (this *Broker) GetTopics(serviceName string) []*TopicInfo {
 }
 
 // GetTopic return topic information for specified topic
-func (this *Broker) GetTopic(serviceName string, topic string) *TopicInfo {
-	services := this.GetProtocolServices(serviceName)
+func (p *Broker) GetTopic(serviceName string, topic string) *TopicInfo {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		info := service.GetTopic(topic)
@@ -229,9 +229,9 @@ func (this *Broker) GetTopic(serviceName string, topic string) *TopicInfo {
 }
 
 // GetSubscriptions return subscription informaiton for specified service
-func (this *Broker) GetSubscriptions(serviceName string) []*SubscriptionInfo {
+func (p *Broker) GetSubscriptions(serviceName string) []*SubscriptionInfo {
 	subs := []*SubscriptionInfo{}
-	services := this.GetProtocolServices(serviceName)
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		list := service.GetSubscriptions()
@@ -241,8 +241,8 @@ func (this *Broker) GetSubscriptions(serviceName string) []*SubscriptionInfo {
 }
 
 // GetSubscription return subscription information for specified topic
-func (this *Broker) GetSubscription(serviceName string, sub string) *SubscriptionInfo {
-	services := this.GetProtocolServices(serviceName)
+func (p *Broker) GetSubscription(serviceName string, sub string) *SubscriptionInfo {
+	services := p.GetProtocolServices(serviceName)
 
 	for _, service := range services {
 		info := service.GetSubscription(sub)
@@ -254,10 +254,10 @@ func (this *Broker) GetSubscription(serviceName string, sub string) *Subscriptio
 }
 
 // GetAllServiceInfo return all service information
-func (this *Broker) GetAllServiceInfo() []*ServiceInfo {
+func (p *Broker) GetAllServiceInfo() []*ServiceInfo {
 	services := []*ServiceInfo{}
 
-	//	for _, service := range this.Services {
+	//	for _, service := range p.Services {
 	//		services = append(services, service.Info())
 	//	}
 	return services
