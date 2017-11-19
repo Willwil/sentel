@@ -37,15 +37,14 @@ const (
 // MQTT service declaration
 type mqttService struct {
 	core.ServiceBase
-	index      int64
-	sessions   map[string]base.Session
-	mutex      sync.Mutex // Maybe not so good
-	localAddrs []string
-	storage    Storage
-	protocol   string
-	stats      *base.Stats
-	metrics    *base.Metrics
-	consumer   sarama.Consumer
+	sessions   map[string]base.Session // All mqtt sessions
+	mutex      sync.Mutex              // Mutex to protect sessions
+	localAddrs []string                // Local address used to identifier wether notification come from local
+	storage    Storage                 // Storage for sessions and metadata
+	protocol   string                  // Supported protocol, such as tcp,websocket, tls
+	stats      *base.Stats             // Broker's status
+	metrics    *base.Metrics           // Broker's Metrics
+	consumer   sarama.Consumer         // Kafka client connection handle
 }
 
 const (
@@ -56,7 +55,7 @@ const (
 
 // MqttFactory
 type MqttFactory struct {
-	Protocol string
+	Protocol string // Indicate which protocol the factory to support
 }
 
 // New create mqtt service factory
@@ -92,7 +91,6 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		index:      -1,
 		sessions:   make(map[string]base.Session),
 		protocol:   p.Protocol,
 		localAddrs: localAddrs,
@@ -111,31 +109,36 @@ func (p *mqttService) Name() string {
 	return "mqtt:" + p.protocol
 }
 
-func (p *mqttService) NewSession(conn net.Conn) (base.Session, error) {
-	id := p.createSessionId()
+// newSession return mqttSession using connection
+func (p *mqttService) newSession(conn net.Conn) (base.Session, error) {
+	id := uuid.NewV4().String()
 	s, err := newMqttSession(p, conn, id)
 	return s, err
 }
 
-// CreateSessionId create id for new session
-func (p *mqttService) createSessionId() string {
-	return uuid.NewV4().String()
-}
-
-// GetSessionTotalCount get total session count
+// GetSessionTotalCount return total sessions count
 func (p *mqttService) getSessionTotalCount() int64 {
 	return int64(len(p.sessions))
 }
 
+// removeSession remove specified session from mqtt service
 func (p *mqttService) removeSession(s base.Session) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	p.sessions[s.Identifier()] = nil
+	delete(p.sessions, s.Identifier())
 }
-func (p *mqttService) registerSession(s base.Session) {
+
+// addSession add newly created session into mqtt service
+func (p *mqttService) addSession(s base.Session) error {
 	p.mutex.Lock()
-	p.sessions[s.Identifier()] = s
-	p.mutex.Unlock()
+	defer p.mutex.Unlock()
+
+	id := s.Identifier()
+	if _, ok := p.sessions[id]; ok {
+		return fmt.Errorf("Mqtt session '%s' is already regisitered", id)
+	}
+	p.sessions[id] = s
+	return nil
 }
 
 // Info
@@ -175,26 +178,28 @@ func (p *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
-	p.subscribeTopic("session")
+	if err := p.subscribeTopic("session"); err != nil {
+		return err
+	}
 
-	host, _ := p.Config.String(p.protocol, "listen")
+	host := p.Config.MustString(p.protocol, "listen")
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
 		glog.Errorf("Mqtt listen failed:%s", err)
 		return err
 	}
-	glog.Infof("Mqtt server is listening on '%s'...", host)
+	glog.Infof("Mqtt service '%s' is listening on '%s'...", p.protocol, host)
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
 			continue
 		}
-		session, err := p.NewSession(conn)
+		session, err := p.newSession(conn)
 		if err != nil {
 			glog.Errorf("Mqtt create session failed:%s", err)
 			return err
 		}
-		p.registerSession(session)
+		p.addSession(session)
 		go func(s base.Session) {
 			err := s.Handle()
 			if err != nil {
@@ -203,18 +208,11 @@ func (p *mqttService) Start() error {
 			}
 		}(session)
 	}
-	// notify main
-	// p.quit <- 1
 	return nil
 }
 
 // Stop
 func (p *mqttService) Stop() {
-}
-
-// launchMqttMonitor
-func (p *mqttService) launchMqttMonitor() error {
-	return nil
 }
 
 // subscribeTopc subscribe topics from apiserver
