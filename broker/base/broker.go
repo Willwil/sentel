@@ -48,6 +48,11 @@ var (
 // The function should be called in service
 func GetBroker() *Broker { return _broker }
 
+// GetConfig return broker's configuration
+func (p *Broker) GetConfig() core.Config {
+	return p.Config
+}
+
 // GetServicesByName return service instance by name, or matched by part of name
 func (p *Broker) GetServicesByName(name string) []core.Service {
 	services := []core.Service{}
