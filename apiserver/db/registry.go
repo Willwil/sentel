@@ -164,9 +164,11 @@ func (r *Registry) UpdateProduct(p *Product) error {
 
 // RegisterDevice add a new device into registry
 func (r *Registry) RegisterDevice(dev *Device) error {
+	glog.Infof("RegisterDevice:[%s].%s", dev.ProductId, dev)
 	c := r.db.C(dbNameDevices)
-	if err := c.Find(bson.M{"Id": dev.Id}); err == nil { // found existed device
-		return fmt.Errorf("device %s already exist", dev.Id)
+	device := Device{}
+	if err := c.Find(bson.M{"productid": dev.ProductId}).One(&device); err == nil { // found existed device
+		return fmt.Errorf("device %s already exist", dev.ProductId)
 	}
 	return c.Insert(dev)
 }
@@ -175,7 +177,7 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 func (r *Registry) GetDevice(id string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"Id": id}).One(device)
+	err := c.Find(bson.M{"productid": id}).One(device)
 	return device, err
 }
 
@@ -192,7 +194,7 @@ func (r *Registry) BulkRegisterDevice(devices []Device) error {
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(id string) error {
 	c := r.db.C(dbNameDevices)
-	return c.Remove(bson.M{"Id": id})
+	return c.Remove(bson.M{"productid": id})
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
@@ -208,7 +210,7 @@ func (r *Registry) BulkDeleteDevice(devices []string) error {
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"Id": dev.Id}, dev)
+	return c.Update(bson.M{"productid": dev.ProductId}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry
@@ -226,7 +228,7 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"Id": rule.Id}); err == nil { // found existed device
+	if err := c.Find(bson.M{"id": rule.Id}); err == nil { // found existed device
 		return fmt.Errorf("rule %s already exist", rule.Id)
 	}
 	return c.Insert(rule)

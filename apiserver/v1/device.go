@@ -39,6 +39,7 @@ type registerDeviceResponse struct {
 }
 
 // RegisterDevice register a new device in IoT hub
+// curl -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func registerDevice(ctx echo.Context) error {
 	// Get product
 	req := new(registerDeviceRequest)
@@ -53,12 +54,14 @@ func registerDevice(ctx echo.Context) error {
 	}
 	defer r.Release()
 
+	//          
 	// Insert device into registry, the created product
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Device{
 		Id:           uuid.NewV4().String(),
 		Name:         req.DeviceName,
+		ProductId:    ctx.Param("id"),
 		ProductKey:   req.ProductKey,
 		TimeCreated:  time.Now(),
 		TimeModified: time.Now(),
@@ -78,6 +81,7 @@ func registerDevice(ctx echo.Context) error {
 }
 
 // Retrieve a device from the identify registry of an IoT hub
+// curl -XDELETE "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func getDevice(ctx echo.Context) error {
 	// Get product
 	req := new(registerDeviceRequest)
@@ -113,6 +117,7 @@ func getDevice(ctx echo.Context) error {
 }
 
 // Delete the identify of a device from the identity registry of an IoT Hub
+// curl -XDELETE "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func deleteDevice(ctx echo.Context) error {
 	// Get product
 	req := new(registerDeviceRequest)
@@ -157,6 +162,7 @@ type updateDeviceResponse struct {
 }
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
+// curl -XPUT -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func updateDevice(ctx echo.Context) error {
 	// Get product
 	req := new(updateDeviceRequest)
@@ -174,8 +180,8 @@ func updateDevice(ctx echo.Context) error {
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Device{
-		Id:           ctx.Param("id"),
 		Name:         req.DeviceName,
+		ProductId:    ctx.Param("id"),
 		ProductKey:   req.ProductKey,
 		DeviceStatus: req.DeviceStatus,
 		DeviceSecret: req.DeviceSecret,
