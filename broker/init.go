@@ -13,6 +13,7 @@
 package broker
 
 import (
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
@@ -36,4 +37,5 @@ func init() {
 	core.RegisterService("metric", &metric.MetricServiceFactory{})
 	core.RegisterService("metadata", &metadata.MetadataServiceFactory{})
 	core.RegisterService("quto", &quto.QutoServiceFactory{})
+	core.RegisterService("event", &event.EventServiceFactory{})
 }
