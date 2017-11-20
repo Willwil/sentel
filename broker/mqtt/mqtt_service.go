@@ -105,18 +105,6 @@ func (p *mqttService) Name() string {
 	return "mqtt:" + p.protocol
 }
 
-// newSession return mqttSession using connection
-func (p *mqttService) newSession(conn net.Conn) (base.Session, error) {
-	id := uuid.NewV4().String()
-	s, err := newMqttSession(p, conn, id)
-	return s, err
-}
-
-// GetSessionTotalCount return total sessions count
-func (p *mqttService) getSessionTotalCount() int64 {
-	return int64(len(p.sessions))
-}
-
 // removeSession remove specified session from mqtt service
 func (p *mqttService) removeSession(s base.Session) {
 	p.mutex.Lock()
@@ -186,7 +174,9 @@ func (p *mqttService) Start() error {
 		if err != nil {
 			continue
 		}
-		session, err := p.newSession(conn)
+
+		id := uuid.NewV4().String()
+		session, err := newMqttSession(p, conn, id)
 		if err != nil {
 			glog.Errorf("Mqtt create session failed:%s", err)
 			return err

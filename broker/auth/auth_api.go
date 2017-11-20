@@ -12,25 +12,7 @@
 
 package auth
 
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/broker/base"
-)
-
-const (
-	AclActionNone  = ""
-	AclActionRead  = "r"
-	AclActionWrite = "w"
-)
-
-const (
-	AuthServiceVersion = "0.1"
-)
-
-var (
-	ErrorAclDenied = errors.New("access control denied")
-)
+import "github.com/cloustone/sentel/broker/base"
 
 // GetVersion return authentication service's version
 func GetVersion() string {
