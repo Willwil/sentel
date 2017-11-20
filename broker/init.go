@@ -17,6 +17,7 @@ import (
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
+	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/core"
 )
 
@@ -34,4 +35,5 @@ func init() {
 	core.RegisterService("api", &api.ApiServiceFactory{})
 	core.RegisterService("metric", &metric.MetricServiceFactory{})
 	core.RegisterService("metadata", &metadata.MetadataServiceFactory{})
+	core.RegisterService("quto", &quto.QutoServiceFactory{})
 }
