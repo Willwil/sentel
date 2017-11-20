@@ -12,9 +12,6 @@
 
 package quto
 
-type Quto struct {
-}
-
 // GetShadowDeviceStatus return shadow device's status
 func GetQuto(clientId string) (*Quto, error) {
 	// broker := base.GetBroker()
