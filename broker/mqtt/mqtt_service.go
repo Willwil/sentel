@@ -254,7 +254,7 @@ func (p *mqttService) handleSessionNotifications(value []byte) error {
 	// Get local ip address
 	for _, topic := range topics {
 		switch topic.Action {
-		case ObjectActionUpdate:
+		case core.TopicActionUpdate:
 			// Only deal with notification that is not  launched by myself
 			for _, addr := range p.localAddrs {
 				if addr != topic.Launcher {
@@ -265,9 +265,9 @@ func (p *mqttService) handleSessionNotifications(value []byte) error {
 					//p.storage.UpdateSession(&StorageSession{Id: topic.SessionId, State: topic.State})
 				}
 			}
-		case ObjectActionDelete:
+		case core.TopicActionDelete:
 
-		case ObjectActionRegister:
+		case core.TopicActionRegister:
 		default:
 		}
 	}

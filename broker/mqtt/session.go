@@ -460,9 +460,9 @@ func (p *mqttSession) handleConnect() error {
 				"session",
 				TopicNameSession,
 				&SessionTopic{
+					TopicBase: core.TopicBase{Action: core.TopicActionUpdate},
 					Launcher:  p.conn.LocalAddr().String(),
 					SessionId: clientid,
-					Action:    ObjectActionUpdate,
 					State:     mqttStateDisconnecting,
 				})
 		}

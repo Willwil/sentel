@@ -12,6 +12,7 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"strings"
 	"time"
@@ -19,6 +20,36 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/golang/glog"
 )
+
+const (
+	TopicActionRegister   = "register"
+	TopicActionUnregister = "unregister"
+	TopicActionRetrieve   = "retrieve"
+	TopicActionDelete     = "delete"
+	TopicActionUpdate     = "update"
+)
+
+type TopicBase struct {
+	Action  string `json:"action"`
+	encoded []byte
+	err     error
+}
+
+func (p *TopicBase) ensureEncoded() {
+	if p.encoded == nil && p.err == nil {
+		p.encoded, p.err = json.Marshal(p)
+	}
+}
+
+func (p *TopicBase) Length() int {
+	p.ensureEncoded()
+	return len(p.encoded)
+}
+
+func (p *TopicBase) Encode() ([]byte, error) {
+	p.ensureEncoded()
+	return p.encoded, p.err
+}
 
 func SyncProduceMessage(cfg Config, topic string, key string, value sarama.Encoder) error {
 	// Get kafka server

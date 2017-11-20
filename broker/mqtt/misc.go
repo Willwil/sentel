@@ -12,7 +12,11 @@
 
 package mqtt
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/core"
+)
 
 var (
 	mqttErrorInvalidProtocol = errors.New("Invalid protocol")
@@ -25,3 +29,21 @@ var (
 	mqttErrorAutoFailed      = errors.New("Auth failed")
 	mqttErrorUnkown          = errors.New("Unknown error")
 )
+
+const (
+	TopicNameSession = "mqtt-session"
+)
+
+type TenantTopic struct{}
+
+type SessionTopic struct {
+	core.TopicBase
+	Launcher  string `json:"launcher"`
+	SessionId string `json:"sessionId"`
+	State     uint8  `json:"oldState"`
+}
+
+// checkTopiValidity will check topic's validity
+func checkTopicValidity(topic string) error {
+	return nil
+}
