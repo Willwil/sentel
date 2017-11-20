@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -38,7 +38,7 @@ func routesCmdHandler(cmd *cobra.Command, args []string) {
 		if len(args) == 2 {
 			req.Service = args[1]
 		}
-		if reply, err := sentelApi.Routes(req); err != nil {
+		if reply, err := brokerApi.Routes(req); err != nil {
 			fmt.Printf("Error:%v", err)
 			return
 		} else {
@@ -52,7 +52,7 @@ func routesCmdHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 		req.Topic = args[1]
-		if reply, err := sentelApi.Routes(req); err != nil {
+		if reply, err := brokerApi.Routes(req); err != nil {
 			fmt.Printf("Error:%v", err)
 			return
 		} else {

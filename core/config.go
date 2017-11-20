@@ -120,7 +120,7 @@ func (c *globalConfig) SetValue(section string, key string, valu string) {
 }
 
 // NewWithConfigFile load configurations from files
-func NewWithConfigFile(fileName string, moreFiles ...string) (Config, error) {
+func NewConfigWithFile(fileName string, moreFiles ...string) (Config, error) {
 	// load all config sections in _allConfigSections, get section and item to overide
 	cfg, err := goconfig.LoadConfigFile(fileName, moreFiles...)
 	if err == nil {

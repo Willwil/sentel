@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -34,7 +34,7 @@ func clientCmdHandler(cmd *cobra.Command, args []string) {
 	}
 	switch args[0] {
 	case "list": // Print client list
-		reply, err := sentelApi.Clients(&pb.ClientsRequest{Category: args[0]})
+		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0]})
 		if err != nil {
 			fmt.Println("Error:%v", err)
 			return
@@ -48,7 +48,7 @@ func clientCmdHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		reply, err := sentelApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
+		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
 		if err != nil {
 			fmt.Println("Error:%v", err)
 			return
@@ -74,7 +74,7 @@ func clientCmdHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		reply, err := sentelApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
+		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
 		if err != nil {
 			fmt.Println("Error:%v", err)
 			return

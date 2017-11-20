@@ -13,11 +13,11 @@
 package broker
 
 import (
-	"github.com/cloustone/sentel/broker/api"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
 	"github.com/cloustone/sentel/broker/quto"
+	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/core"
 )
 
@@ -32,7 +32,7 @@ func init() {
 	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
 	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
 	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
-	core.RegisterService("api", &api.ApiServiceFactory{})
+	core.RegisterService("rpc", &rpc.ApiServiceFactory{})
 	core.RegisterService("metric", &metric.MetricServiceFactory{})
 	core.RegisterService("metadata", &metadata.MetadataServiceFactory{})
 	core.RegisterService("quto", &quto.QutoServiceFactory{})

@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -44,7 +44,7 @@ func listAllServicesStatus(cmd *cobra.Command, args []string) {
 	req := &pb.ServicesRequest{
 		Category: "list",
 	}
-	reply, err := sentelApi.Services(req)
+	reply, err := brokerApi.Services(req)
 	if err != nil {
 		fmt.Printf("Error:%v", err)
 		return
@@ -80,7 +80,7 @@ func handleServiceCommand(cmd *cobra.Command, args []string) {
 			fmt.Println("Error:Invalid usage, please see help")
 			return
 		}
-		if _, err := sentelApi.Services(req); err != nil {
+		if _, err := brokerApi.Services(req); err != nil {
 			fmt.Println("Error:Invalid usage, please sell help")
 			return
 		}
@@ -93,7 +93,7 @@ func handleServiceCommand(cmd *cobra.Command, args []string) {
 			fmt.Println("Error:Invalid usage, please see help")
 			return
 		}
-		if _, err := sentelApi.Services(req); err != nil {
+		if _, err := brokerApi.Services(req); err != nil {
 			fmt.Println("Error:Invalid usage, please sell help")
 			return
 		}

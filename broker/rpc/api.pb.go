@@ -40,7 +40,7 @@ It has these top-level messages:
 	TopicInfo
 	ReplyMessageHeader
 */
-package api
+package rpc
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"

@@ -15,7 +15,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/commands/sentel-ctrl/api"
+	api "github.com/cloustone/sentel/broker/rpc"
+	"github.com/cloustone/sentel/core"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -31,7 +32,7 @@ var RootCmd = &cobra.Command{
 
 var (
 	cfgFile   string
-	sentelApi *api.SentelApi
+	brokerApi *api.BrokerApi
 )
 
 func init() {
@@ -59,12 +60,13 @@ func init() {
 }
 
 func Execute() error {
-	if api, err := api.NewSentelApi(); err != nil {
+	c, _ := core.NewConfigWithFile(cfgFile)
+	api, err := api.NewBrokerApi(c)
+	if err != nil {
 		return errors.New("Sentel service is not started, please start sentel at first")
-	} else {
-		sentelApi = api
-		return RootCmd.Execute()
 	}
+	brokerApi = api
+	return RootCmd.Execute()
 }
 
 func initConfig() {

@@ -22,7 +22,7 @@ func RunWithConfigFile(fileName string) error {
 	glog.Info("Starting iothub ...")
 
 	// Get configuration
-	config, err := core.NewWithConfigFile(fileName)
+	config, err := core.NewConfigWithFile(fileName)
 	if err != nil {
 		return err
 	}

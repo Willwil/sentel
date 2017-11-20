@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -37,7 +37,7 @@ func topicsCmdHandler(cmd *cobra.Command, args []string) {
 
 	switch args[0] {
 	case "list": // Print topic list
-		reply, err := sentelApi.Topics(req)
+		reply, err := brokerApi.Topics(req)
 		if err != nil {
 			fmt.Println("Error:%v", err)
 			return
@@ -51,7 +51,7 @@ func topicsCmdHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 		req.Topic = args[1]
-		if reply, err := sentelApi.Topics(req); err != nil {
+		if reply, err := brokerApi.Topics(req); err != nil {
 			fmt.Println("Error:%v", err)
 			return
 		} else if len(reply.Topics) != 1 {

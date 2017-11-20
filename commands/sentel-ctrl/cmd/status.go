@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -25,7 +25,7 @@ var statusCmd = &cobra.Command{
 	Short: "Inquery sentel server's runing status.",
 	Long:  `All software has versions.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := sentelApi.Status(&pb.StatusRequest{}); err != nil {
+		if _, err := brokerApi.Status(&pb.StatusRequest{}); err != nil {
 			fmt.Println("Error:%v", err)
 		}
 		fmt.Println("Node 'sentel@127.0.0.1' is started")

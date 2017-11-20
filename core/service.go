@@ -71,7 +71,7 @@ func RunWithConfigFile(serverName string, fileName string) error {
 		return err
 	}
 	// Get configuration
-	config, err := NewWithConfigFile(fileName)
+	config, err := NewConfigWithFile(fileName)
 	if err != nil {
 		return err
 	}

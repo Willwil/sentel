@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ func brokerHelpFunc(cmd *cobra.Command, args []string) {
 }
 
 func getBrokerStats() {
-	reply, err := sentelApi.Broker(&pb.BrokerRequest{Category: "stats"})
+	reply, err := brokerApi.Broker(&pb.BrokerRequest{Category: "stats"})
 	if err != nil {
 		fmt.Println("Error:%v", err)
 		return
@@ -56,7 +56,7 @@ func getBrokerStats() {
 }
 
 func getBrokerMetrics() {
-	reply, err := sentelApi.Broker(&pb.BrokerRequest{Category: "metrics"})
+	reply, err := brokerApi.Broker(&pb.BrokerRequest{Category: "metrics"})
 	if err != nil {
 		fmt.Println("Error:%v", err)
 		return

@@ -33,7 +33,7 @@ func main() {
 	glog.Info("Starting api server...")
 
 	// Get configuration
-	config, err := core.NewWithConfigFile(*configFileFullPath)
+	config, err := core.NewConfigWithFile(*configFileFullPath)
 	if err != nil {
 		glog.Fatal(err)
 		flag.PrintDefaults()

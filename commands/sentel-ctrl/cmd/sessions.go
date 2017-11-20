@@ -15,7 +15,7 @@ package cmd
 import (
 	"fmt"
 
-	pb "github.com/cloustone/sentel/broker/api"
+	pb "github.com/cloustone/sentel/broker/rpc"
 
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ func sessionsCmdHandler(cmd *cobra.Command, args []string) {
 				req.Conditions["transient"] = true
 			}
 		}
-		reply, err := sentelApi.Sessions(req)
+		reply, err := brokerApi.Sessions(req)
 		if err != nil {
 			fmt.Println("Error:%v", err)
 			return
@@ -70,7 +70,7 @@ func sessionsCmdHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 		req.ClientId = args[1]
-		if reply, err := sentelApi.Sessions(req); err != nil {
+		if reply, err := brokerApi.Sessions(req); err != nil {
 			fmt.Println("Error:%v", err)
 			return
 		} else if len(reply.Sessions) != 1 {
