@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package event
+package queue
 
 import (
 	"fmt"
@@ -30,20 +30,20 @@ import (
 // Broker's metadata include the following data
 // - Global broker cluster data
 // - Shadow device
-type EventService struct {
+type QueueService struct {
 	core.ServiceBase
 	consumer sarama.Consumer
 }
 
 const (
-	EventServiceName = "event"
+	QueueServiceName = "queue"
 )
 
-// EventServiceFactory
-type EventServiceFactory struct{}
+// QueueServiceFactory
+type QueueServiceFactory struct{}
 
 // New create metadata service factory
-func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -60,7 +60,7 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
-	return &EventService{
+	return &QueueService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -72,23 +72,23 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 }
 
 // Name
-func (p *EventService) Name() string {
-	return EventServiceName
+func (p *QueueService) Name() string {
+	return QueueServiceName
 }
 
 // Start
-func (p *EventService) Start() error {
+func (p *QueueService) Start() error {
 	return nil
 }
 
 // Stop
-func (p *EventService) Stop() {
+func (p *QueueService) Stop() {
 	p.consumer.Close()
 	p.WaitGroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *EventService) subscribeTopic(topic string) error {
+func (p *QueueService) subscribeTopic(topic string) error {
 	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
@@ -115,6 +115,6 @@ func (p *EventService) subscribeTopic(topic string) error {
 }
 
 // handleNotifications handle notification from kafka
-func (p *EventService) handleNotifications(topic string, value []byte) error {
+func (p *QueueService) handleNotifications(topic string, value []byte) error {
 	return nil
 }
