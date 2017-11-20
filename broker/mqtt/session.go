@@ -13,7 +13,6 @@
 package mqtt
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -55,7 +54,6 @@ type mqttSession struct {
 	mgr               *mqttService
 	config            core.Config
 	storage           Storage
-	authapi           auth.IAuthAPI
 	conn              net.Conn
 	id                string
 	clientID          string
@@ -92,10 +90,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 	if err != nil {
 		qsize = 10
 	}
-	authapi, err := auth.NewAuthApi(m.Config)
-	if err != nil {
-		return nil, err
-	}
 	var msgqsize int
 	msgqsize, err = m.Config.Int(m.protocol, "session_msg_queue_size")
 	if err != nil {
@@ -115,7 +109,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 		observer:          nil,
 		sendStopChannel:   make(chan int),
 		sendPacketChannel: make(chan *mqttPacket, qsize),
-		authapi:           authapi,
 		sendMsgChannel:    make(chan *mqttMessage, msgqsize),
 		msgs:              make([]*mqttMessage, msgqsize),
 		storedMsgs:        make([]*mqttMessage, msgqsize),
@@ -493,7 +486,7 @@ func (p *mqttSession) handleConnect() error {
 	p.storage.DeleteMessageWithValidator(
 		clientid,
 		func(msg StorageMessage) bool {
-			err := p.authapi.CheckAcl(context.Background(), clientid, username, willTopic, auth.AclActionRead)
+			err := auth.CheckAcl(clientid, username, willTopic, auth.AclActionRead)
 			if err != nil {
 				return false
 			}
@@ -665,7 +658,7 @@ func (p *mqttSession) handlePublish() error {
 	}
 	// Check for topic access
 	if p.observer != nil {
-		err := p.authapi.CheckAcl(context.Background(), p.id, p.username, topic, auth.AclActionWrite)
+		err := auth.CheckAcl(p.id, p.username, topic, auth.AclActionWrite)
 		switch err {
 		case auth.ErrorAclDenied:
 			return mqttErrorInvalidProtocol

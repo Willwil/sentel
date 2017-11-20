@@ -13,88 +13,60 @@
 package auth
 
 import (
-	"net"
+	"os"
 	"sync"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
-
-	"github.com/golang/glog"
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
+const (
+	AuthServiceName = "auth"
+)
+
+// AuthServiceFactory
+type AuthServiceFactory struct{}
+
+// New create coap service factory
+func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+	return &AuthService{
+		ServiceBase: core.ServiceBase{
+			Config:    c,
+			Quit:      quit,
+			WaitGroup: sync.WaitGroup{},
+		},
+	}, nil
+}
+
+// Authentication Service
 type AuthService struct {
-	config   core.Config
-	wg       sync.WaitGroup
-	listener net.Listener
-	srv      *grpc.Server
+	ServiceBase core.ServiceBase
 }
 
-// NewAuthService create authentication server
-func NewAuthService(c core.Config) (*AuthService, error) {
-	address := ":50051"
-	server := &AuthService{config: c, wg: sync.WaitGroup{}}
-
-	if addr, err := c.String("auth", "address"); err == nil && address != "" {
-		address = addr
-	}
-
-	lis, err := net.Listen("tcp", address)
-	if err != nil {
-		glog.Fatal("Failed to listen: %v", err)
-		return nil, err
-	}
-	server.listener = lis
-	server.srv = grpc.NewServer()
-	RegisterAuthServiceServer(server.srv, server)
-	reflection.Register(server.srv)
-	return server, nil
-}
-
-// Info
-func (s *AuthService) Info() *base.ServiceInfo {
-	return &base.ServiceInfo{
-		ServiceName: "auth",
-	}
+// Name
+func (p *AuthService) Name() string {
+	return AuthServiceName
 }
 
 // Start
-func (s *AuthService) Start() {
-	go func(s *AuthService) {
-		s.srv.Serve(s.listener)
-		s.wg.Add(1)
-	}(s)
+func (p *AuthService) Start() error {
+	return nil
 }
 
 // Stop
-func (s *AuthService) Stop() {
-	s.listener.Close()
-	s.wg.Wait()
+func (p *AuthService) Stop() {
 }
 
-// Wait
-func (s *AuthService) Wait() {
-	s.wg.Wait()
+// CheckAcl check client's access control right
+func (p *AuthService) CheckAcl(clientid string, username string, topic string, access string) error {
+	return nil
 }
 
-// Get version of Authlet service
-func (s *AuthService) GetVersion(context.Context, *AuthRequest) (*AuthReply, error) {
-	return nil, nil
+// CheckUserCrenditial check user's name and password
+func (p *AuthService) CheckUserCrenditial(username string, password string) error {
+	return nil
 }
 
-// Check acl based on client id, user name and topic
-func (s *AuthService) CheckAcl(context.Context, *AuthRequest) (*AuthReply, error) {
-	return nil, nil
-}
-
-// Check user name and password
-func (s *AuthService) CheckUserNameAndPassword(context.Context, *AuthRequest) (*AuthReply, error) {
-	return nil, nil
-}
-
-// Get PSK key
-func (s *AuthService) GetPskKey(context.Context, *AuthRequest) (*AuthReply, error) {
-	return nil, nil
+// GetPskKey return user's psk key
+func (p *AuthService) GetPskKey(hint string, identity string) (string, error) {
+	return "", nil
 }

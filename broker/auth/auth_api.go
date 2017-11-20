@@ -14,15 +14,8 @@ package auth
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
 
-	"github.com/cloustone/sentel/core"
-	"github.com/golang/glog"
-
-	"google.golang.org/grpc"
-
-	"golang.org/x/net/context"
+	"github.com/cloustone/sentel/broker/base"
 )
 
 const (
@@ -31,84 +24,36 @@ const (
 	AclActionWrite = "w"
 )
 
-// IAuthAPI ...
-type IAuthAPI interface {
-	GetVersion(ctx context.Context) int
-	CheckAcl(ctx context.Context, clientid string, username string, topic string, access string) error
-	CheckUserNameAndPassword(ctx context.Context, username string, password string) error
-	GetPskKey(ctx context.Context, hint string, identity string) (string, error)
+const (
+	AuthServiceVersion = "0.1"
+)
+
+var (
+	ErrorAclDenied = errors.New("access control denied")
+)
+
+// GetVersion return authentication service's version
+func GetVersion() string {
+	return AuthServiceVersion
 }
 
-// AuthPlugin interface for security
-type AuthApi struct {
-	config core.Config
-	client AuthServiceClient
-	conn   *grpc.ClientConn
+// CheckAcl check client's access control right
+func CheckAcl(clientid string, username string, topic string, access string) error {
+	broker := base.GetBroker()
+	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	return auth.CheckAcl(clientid, username, topic, access)
 }
 
-func (auth *AuthApi) GetVersion(ctx context.Context) int {
-	reply, _ := auth.client.GetVersion(ctx, &AuthRequest{})
-	version, _ := strconv.Atoi(reply.Version)
-	return version
+// CheckUserCrenditial check user's name and password
+func CheckUserCrenditial(username string, password string) error {
+	broker := base.GetBroker()
+	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	return auth.CheckUserCrenditial(username, password)
 }
 
-func (auth *AuthApi) CheckAcl(ctx context.Context, clientid string, username string, topic string, access string) error {
-	reply, err := auth.client.CheckAcl(ctx, &AuthRequest{
-		Clientid: clientid,
-		Username: username,
-		Topic:    topic,
-		Access:   access,
-	})
-	if err != nil || reply.Result != true {
-		return errors.New("Acl denied")
-	}
-	return nil
-}
-
-func (auth *AuthApi) CheckUserNameAndPassword(ctx context.Context, username string, password string) error {
-	reply, err := auth.client.CheckUserNameAndPassword(ctx, &AuthRequest{
-		Username: username,
-		Password: password,
-	})
-	if err != nil {
-		return err
-	}
-	if reply.Result != true {
-		return errors.New("Acl denied")
-	}
-	return nil
-}
-
-func (auth *AuthApi) GetPskKey(ctx context.Context, hint string, identity string) (string, error) {
-	reply, err := auth.client.GetPskKey(ctx, &AuthRequest{
-		Hint:     hint,
-		Username: identity,
-	})
-	return reply.Key, err
-}
-
-func (auth *AuthApi) Close() {
-	auth.conn.Close()
-}
-
-func NewAuthApi(c core.Config) (IAuthAPI, error) {
-	address := ""
-	if address, err := c.String("auth", "address"); err != nil || address == "" {
-		return nil, fmt.Errorf("Invalid autlet address:'%s'", address)
-	}
-
-	if address == "dummy" {
-		return NewDummyAuthService(), nil
-	}
-
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		glog.Fatalf("Failed to connect with authagent:%s", err)
-		return nil, err
-	}
-
-	api := &AuthApi{config: c}
-	api.client = NewAuthServiceClient(conn)
-	api.conn = conn
-	return api, nil
+// GetPskKey return user's psk key
+func GetPskKey(hint string, identity string) (string, error) {
+	broker := base.GetBroker()
+	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	return auth.GetPskKey(hint, identity)
 }

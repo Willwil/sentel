@@ -13,6 +13,7 @@
 package broker
 
 import (
+	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
@@ -31,13 +32,15 @@ func RunWithConfigFile(fileName string) error {
 // init initialize default configurations and services before startup
 func init() {
 	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
-	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
-	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
 	core.RegisterService("rpc", &rpc.ApiServiceFactory{})
 	core.RegisterService("metric", &metric.MetricServiceFactory{})
 	core.RegisterService("metadata", &metadata.MetadataServiceFactory{})
 	core.RegisterService("quto", &quto.QutoServiceFactory{})
 	core.RegisterService("event", &event.EventServiceFactory{})
 	core.RegisterService("queue", &queue.QueueServiceFactory{})
+	core.RegisterService("auth", &auth.AuthServiceFactory{})
+	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
+	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
+	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
+
 }
