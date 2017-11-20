@@ -164,20 +164,28 @@ func (r *Registry) UpdateProduct(p *Product) error {
 
 // RegisterDevice add a new device into registry
 func (r *Registry) RegisterDevice(dev *Device) error {
-	glog.Infof("RegisterDevice:[%s].%s", dev.ProductId, dev)
+	glog.Infof("RegisterDevice:[%s].%s", dev.Id, dev)
 	c := r.db.C(dbNameDevices)
 	device := Device{}
-	if err := c.Find(bson.M{"productid": dev.ProductId}).One(&device); err == nil { // found existed device
+	if err := c.Find(bson.M{"Id": dev.Id}).One(&device); err == nil { // found existed device
 		return fmt.Errorf("device %s already exist", dev.ProductId)
 	}
 	return c.Insert(dev)
 }
 
 // GetDevice retrieve a device information from registry/
+func (r *Registry) GetDevicebyField(field_name string, field_id string) (*Device, error) {
+	c := r.db.C(dbNameDevices)
+	device := &Device{}
+	err := c.Find(bson.M{field_name: field_id}).One(device)
+	return device, err
+}
+
+// GetDevice retrieve a device information from registry/
 func (r *Registry) GetDevice(id string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"productid": id}).One(device)
+	err := c.Find(bson.M{"Id": id}).One(device)
 	return device, err
 }
 
@@ -194,7 +202,7 @@ func (r *Registry) BulkRegisterDevice(devices []Device) error {
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(id string) error {
 	c := r.db.C(dbNameDevices)
-	return c.Remove(bson.M{"productid": id})
+	return c.Remove(bson.M{"Id": id})
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
@@ -210,7 +218,7 @@ func (r *Registry) BulkDeleteDevice(devices []string) error {
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"productid": dev.ProductId}, dev)
+	return c.Update(bson.M{"Id": dev.Id}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry

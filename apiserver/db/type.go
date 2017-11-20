@@ -16,42 +16,42 @@ import "time"
 
 // Tenant
 type Tenant struct {
-	Name      string `bson:"Name"`
-	Password  string `bson:"Password"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Name      string    `bson:"Name"`
+	Password  string    `bson:"Password"`
+	CreatedAt time.Time `bson:"CreatedAt"`
+	UpdatedAt time.Time `bson:"UpdatedAt"`
 }
 
 // Product
 type Product struct {
-	Id           string
-	Name         string
-	Description  string
-	TimeCreated  time.Time
-	TimeModified time.Time
-	CategoryId   string
+	Id           string    `bson:"Id"`
+	Name         string    `bson:"Name"`
+	Description  string    `bson:"Description"`
+	TimeCreated  time.Time `bson:"TimeCreated"`
+	TimeModified time.Time `bson:"TimeModified"`
+	CategoryId   string    `bson:"CategoryId"`
 }
 
 // Device
 type Device struct {
-	Id           string
-	Name         string
-	ProductId    string
-	ProductKey   string
-	DeviceStatus string
-	DeviceSecret string
-	TimeCreated  time.Time
-	TimeModified time.Time
+	Id           string    `bson:"Id"`
+	Name         string    `bson:"Name"`
+	ProductId    string    `bson:"ProductId"`
+	ProductKey   string    `bson:"productKey"`
+	DeviceStatus string    `bson:"deviceStatus"`
+	DeviceSecret string    `bson:"deviceSecret"`
+	TimeCreated  time.Time `bson:"timeCreated"`
+	TimeModified time.Time `bson:"TimeModified"`
 }
 
 // Rule
 type Rule struct {
-	Id           string
-	Name         string
-	ProductId    string
-	TimeCreated  time.Time
-	TimeModified time.Time
-	Status       string
-	Method       string
-	Target       string
+	Id           string    `bson:"Id"`
+	Name         string    `bson:"Name"`
+	ProductId    string    `bson:"ProductId"`
+	TimeCreated  time.Time `bson:"TimeCreated"`
+	TimeModified time.Time `bson:"TimeModified"`
+	Status       string    `bson:"Status"`
+	Method       string    `bson:"Method"`
+	Target       string    `bson:"Target"`
 }

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/db"
+	"github.com/golang/glog"
 
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
@@ -25,23 +26,24 @@ import (
 // Device internal definition
 type registerDeviceRequest struct {
 	requestBase
-	ProductKey string `json:"productKey"`
-	DeviceName string `json:"productName"`
+	ProductKey string `bson:"productKey"`
+	DeviceName string `bson:"productName"`
 }
 
 type registerDeviceResponse struct {
-	DeviceId     string    `json:"deviceId"`
-	DeviceName   string    `json:"deviceName"`
-	DeviceSecret string    `json:deviceSecret"`
-	DeviceStatus string    `json:deviceStatus"`
-	ProductKey   string    `json:"productKey"`
-	TimeCreated  time.Time `json:"timeCreated"`
+	DeviceId     string    `bson:"deviceId"`
+	DeviceName   string    `bson:"deviceName"`
+	DeviceSecret string    `bson:"deviceSecret"`
+	DeviceStatus string    `bson:"deviceStatus"`
+	ProductKey   string    `bson:"productKey"`
+	TimeCreated  time.Time `bson:"timeCreated"`
 }
 
 // RegisterDevice register a new device in IoT hub
 // curl -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func registerDevice(ctx echo.Context) error {
 	// Get product
+	glog.Infof("RegisterDevice ctx:[%s] :%s, %s ", ctx, ctx.ParamNames(), ctx.ParamValues())
 	req := new(registerDeviceRequest)
 	if err := ctx.Bind(req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
@@ -61,7 +63,6 @@ func registerDevice(ctx echo.Context) error {
 	dp := db.Device{
 		Id:           uuid.NewV4().String(),
 		Name:         req.DeviceName,
-		ProductId:    ctx.Param("id"),
 		ProductKey:   req.ProductKey,
 		TimeCreated:  time.Now(),
 		TimeModified: time.Now(),
@@ -83,6 +84,7 @@ func registerDevice(ctx echo.Context) error {
 // Retrieve a device from the identify registry of an IoT hub
 // curl -XDELETE "http://localhost:4145/api/v1/devices/3?api-version=v1"
 func getDevice(ctx echo.Context) error {
+	glog.Infof("getDevice ctx:[%s] :%s, %s ", ctx, ctx.ParamNames(), ctx.QueryParams())
 	// Get product
 	req := new(registerDeviceRequest)
 	if err := ctx.Bind(req); err != nil {
@@ -145,20 +147,20 @@ func deleteDevice(ctx echo.Context) error {
 
 type updateDeviceRequest struct {
 	requestBase
-	DeviceId     string `json:"deviceId"`
-	DeviceName   string `json:"productName"`
-	ProductKey   string `json:"productKey"`
-	DeviceSecret string `json:"deviceSecrt"`
-	DeviceStatus string `json:"deviceStatus"`
+	DeviceId     string `bson:"deviceId"`
+	DeviceName   string `bson:"productName"`
+	ProductKey   string `bson:"productKey"`
+	DeviceSecret string `bson:"deviceSecrt"`
+	DeviceStatus string `bson:"deviceStatus"`
 }
 type updateDeviceResponse struct {
-	DeviceId     string    `json:"deviceId"`
-	DeviceName   string    `json:"deviceName"`
-	DeviceSecret string    `json:deviceSecret"`
-	DeviceStatus string    `json:deviceStatus"`
-	ProductKey   string    `json:"productKey"`
-	TimeCreated  time.Time `json:"timeCreated"`
-	TimeModified time.Time `json:"timeModified"`
+	DeviceId     string    `bson:"deviceId"`
+	DeviceName   string    `bson:"deviceName"`
+	DeviceSecret string    `bson:deviceSecret"`
+	DeviceStatus string    `bson:deviceStatus"`
+	ProductKey   string    `bson:"productKey"`
+	TimeCreated  time.Time `bson:"timeCreated"`
+	TimeModified time.Time `bson:"timeModified"`
 }
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
