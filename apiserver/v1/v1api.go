@@ -82,32 +82,27 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 			return h(cc)
 		}
 	})
+
 	// Initialize middleware
 	// p.echo.Use(middleware.ApiVersion(p.version))
-	// p.echo.Use(mw.KeyAuthWithConfig(middleware.DefaultKeyAuthConfig))
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
-/*
-	config := mw.JWTConfig{
-		Claims:     &jwtApiClaims{},
-		SigningKey: []byte("secret"),
-	}
-*/
+
 	// Login
 	p.echo.POST("/api/v1/tenant", registerTenant)
 	p.echo.POST("/api/v1/login", loginTenant)
 
 	// Tenant
 	g := p.echo.Group("/api/v1/tenants/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.DELETE(":id", deleteTenant)
 	g.GET(":id", getTenant)
 	g.PUT(":id", updateTenant)
 
 	// Product Api
 	g = p.echo.Group("/api/v1/products/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.POST(":id", registerProduct)
 	g.DELETE(":id", deleteProduct)
 	g.GET(":id", getProduct)
@@ -115,7 +110,7 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 
 	// Rule
 	g = p.echo.Group("/api/v1/rules/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.POST("", addRule)
 	g.DELETE(":id", deleteRule)
 	g.GET(":id", getRule)
@@ -123,7 +118,7 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 
 	// Device Api
 	g = p.echo.Group("/api/v1/devices/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.POST(":id", registerDevice)
 	g.GET(":id", getDevice)
 	g.DELETE(":id", deleteDevice)
@@ -142,24 +137,42 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 
 	// Statics Api
 	g = p.echo.Group("/api/v1/statics/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.GET("devices", getRegistryStatistics)
 	g.GET("service", getServiceStatistics)
 
 	// Device Twin Api
 	g = p.echo.Group("/api/v1/twins/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.GET(":id", getDeviceTwin)
 	g.POST(":id/methods", invokeDeviceMethod)
 	g.PATCH(":id", updateDeviceTwin)
 
 	// Job Api
 	g = p.echo.Group("/api/v1/jobs/")
-	//g.Use(mw.JWTWithConfig(config))
+	p.setAuth(c, g)
 	g.POST(":jobid/cancel", cancelJob)
 	g.PUT(":jobid", createJob)
 	g.GET(":jobid", getJob)
 	g.GET("query", queryJobs)
 
 	return nil
+}
+
+// setAuth setup api group 's authentication method
+func (p *v1apiManager) setAuth(c core.Config, g *echo.Group) {
+	auth := "jwt"
+	if _, err := c.String("apiserver", "auth"); err == nil {
+		auth = c.MustString("apiserver", "auth")
+	}
+	switch auth {
+	case "jwt":
+		// Authentication config
+		config := mw.JWTConfig{
+			Claims:     &jwtApiClaims{},
+			SigningKey: []byte("secret"),
+		}
+		g.Use(mw.JWTWithConfig(config))
+	default:
+	}
 }
