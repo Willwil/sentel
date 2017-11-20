@@ -11,3 +11,68 @@
 //  under the License.
 
 package metric
+
+const (
+	InfoCleanSession       = "clean_session"
+	InfoMessageMaxInflight = "inflight_max"
+	InfoMessageInflight    = "message_in_flight"
+	InfoMessageInQueue     = "message_in_queue"
+	InfoMessageDropped     = "message_dropped"
+	InfoAwaitingRel        = "message_awaiting_rel"
+	InfoAwaitingComp       = "message_awaitng_comp"
+	InfoAwaitingAck        = "message_aiwaiting _ack"
+	InfoCreatedAt          = "created_at"
+)
+
+// Stats declarations
+const (
+	StatClientsMax         = "clients/max"
+	StatClientsCount       = "client/count"
+	StatQueuesMax          = "queues/max"
+	StatQueuesCount        = "queues/count"
+	StatRetainedMax        = "retained/max"
+	StatRetainedCount      = "retained/count"
+	StatSessionsMax        = "sessions/max"
+	StatSessionsCount      = "sessions/count"
+	StatSubscriptionsMax   = "subscriptions/max"
+	StatSubscriptionsCount = "subscriptions/count"
+	StatTopicsMax          = "topics/max"
+	StatTopicsCount        = "topic/count"
+)
+
+// Metrics declarations
+const (
+	MetricBytesReceived         = "bytes/recevied"
+	MetricBytesSent             = "bytes/sent"
+	MetricMessageDroped         = "messages/droped"
+	MetricMessageQos0Recevied   = "messages/qos0/received"
+	MetricMessageQos0Sent       = "messages/qos0/sent"
+	MetricMessageQos1Received   = "messages/qos1/recevied"
+	MetricMessageQos1Sent       = "messages/qos1/sent"
+	MetricMessageOos2Recevied   = "messages/qos2/received"
+	MetricMessageOos2Sent       = "messages/qos2/sent"
+	MetricMessageRetained       = "messages/retained"
+	MetricMessageReceived       = "messages/received"
+	MetricMessageSent           = "messages/sent"
+	MetricPacketConnack         = "packets/connack"
+	MetricPacketConnect         = "packets/connect"
+	MetricPacketDisconnect      = "packets/disconnect"
+	MetricPacketPingreq         = "packets/pingreq"
+	MetricPacketPingresp        = "packets/pingresp"
+	MetricPacketPubackRecevied  = "packets/puback/received"
+	MetricPacketPubackSent      = "packets/puback/sent"
+	MetricPacketPubcompReceived = "packets/pubcomp/received"
+	MetricPacketPubcompSent     = "packets/pubcomp/sent"
+	MetricPacketPublishReceived = "packets/publish/received"
+	MetricPacketPublishSent     = "packets/publish/sent"
+	MetricPacketPubrecReceived  = "packets/pubrec/received"
+	MetricPacketPubrecSent      = "packets/pubrec/sent"
+	MetricPacketPubrelReceived  = "packets/pubrel/received"
+	MetricPacketPubrelSent      = "packets/pubrel/sent"
+	MetricPacketReceived        = "packes/received"
+	MetricPacketSent            = "packets/sent"
+	MetricPacketSuback          = "packets/subback"
+	MetricPacketSubscribe       = "packets/subscribe"
+	MetricPacketUnsuback        = "packets/unsuback"
+	MetricPacketUnsubscribe     = "packets/unsubscribe"
+)

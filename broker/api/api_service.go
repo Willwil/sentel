@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/golang/glog"
@@ -137,13 +138,12 @@ func (p *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusRep
 
 // Broker delegate broker command implementation in sentel
 func (p *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
-	broker := base.GetBroker()
 	switch req.Category {
 	case "stats":
-		stats := broker.GetStats(req.Service)
+		stats := metric.GetStats(req.Service)
 		return &BrokerReply{Stats: stats}, nil
 	case "metrics":
-		metrics := broker.GetMetrics(req.Service)
+		metrics := metric.GetMetrics(req.Service)
 		return &BrokerReply{Metrics: metrics}, nil
 	default:
 	}

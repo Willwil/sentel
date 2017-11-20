@@ -88,9 +88,8 @@ func (p *MetricService) Stop() {
 
 // reportHubStats report current iothub stats
 func (p *MetricService) reportHubStats() {
-	broker := base.GetBroker()
 	// Stats
-	stats := broker.GetStats("mqtt")
+	stats := GetStats("mqtt")
 	collector.AsyncReport(p.Config, collector.TopicNameStats,
 		&collector.Stats{
 			NodeName: p.name,
@@ -99,7 +98,7 @@ func (p *MetricService) reportHubStats() {
 		})
 
 	// Metrics
-	metrics := broker.GetMetrics("mqtt")
+	metrics := GetMetrics("mqtt")
 	collector.AsyncReport(p.Config, collector.TopicNameMetric,
 		&collector.Metric{
 			NodeName: p.name,

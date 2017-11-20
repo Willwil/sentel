@@ -42,8 +42,6 @@ type mqttService struct {
 	localAddrs []string                // Local address used to identifier wether notification come from local
 	storage    Storage                 // Storage for sessions and metadata
 	protocol   string                  // Supported protocol, such as tcp,websocket, tls
-	stats      *base.Stats             // Broker's status
-	metrics    *base.Metrics           // Broker's Metrics
 	consumer   sarama.Consumer         // Kafka client connection handle
 }
 
@@ -95,8 +93,6 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 		protocol:   p.Protocol,
 		localAddrs: localAddrs,
 		storage:    s,
-		stats:      base.NewStats(true),
-		metrics:    base.NewMetrics(true),
 		consumer:   consumer,
 	}
 	return t, nil
@@ -147,10 +143,6 @@ func (p *mqttService) Info() *base.ServiceInfo {
 		ServiceName: "mqtt",
 	}
 }
-
-// Stats and Metrics
-func (p *mqttService) GetStats() *base.Stats     { return p.stats }
-func (p *mqttService) GetMetrics() *base.Metrics { return p.metrics }
 
 // Client
 func (p *mqttService) GetClients() []*base.ClientInfo       { return nil }

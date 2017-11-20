@@ -98,30 +98,6 @@ func (p *Broker) GetVersion() string {
 	return BrokerVersion
 }
 
-// GetStats return server's stats
-func (p *Broker) GetStats(serviceName string) map[string]uint64 {
-	allstats := NewStats(false)
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		stats := service.GetStats()
-		allstats.AddStats(stats)
-	}
-	return allstats.Get()
-}
-
-// GetMetrics return server metrics
-func (p *Broker) GetMetrics(serviceName string) map[string]uint64 {
-	allmetrics := NewMetrics(false)
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		metrics := service.GetMetrics()
-		allmetrics.AddMetrics(metrics)
-	}
-	return allmetrics.Get()
-}
-
 // GetClients return clients list withspecified service
 func (p *Broker) GetClients(serviceName string) []*ClientInfo {
 	clients := []*ClientInfo{}

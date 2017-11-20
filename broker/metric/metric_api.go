@@ -11,3 +11,13 @@
 //  under the License.
 
 package metric
+
+// GetStats return server's stats
+func GetStats(serviceName string) map[string]uint64 {
+	return nil
+}
+
+// GetMetrics return server metrics
+func GetMetrics(serviceName string) map[string]uint64 {
+	return nil
+}

@@ -79,8 +79,6 @@ type mqttSession struct {
 	sendPacketChannel chan *mqttPacket
 	sendMsgChannel    chan *mqttMessage
 	waitgroup         sync.WaitGroup
-	stats             *base.Stats
-	metrics           *base.Metrics
 
 	// resume field
 	msgs       []*mqttMessage
@@ -118,8 +116,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 		sendStopChannel:   make(chan int),
 		sendPacketChannel: make(chan *mqttPacket, qsize),
 		authapi:           authapi,
-		stats:             base.NewStats(true),
-		metrics:           base.NewMetrics(true),
 		sendMsgChannel:    make(chan *mqttMessage, msgqsize),
 		msgs:              make([]*mqttMessage, msgqsize),
 		storedMsgs:        make([]*mqttMessage, msgqsize),
@@ -136,9 +132,7 @@ func (p *mqttSession) RegisterObserver(o base.SessionObserver) {
 	}
 	p.observer = o
 }
-func (p *mqttSession) GetStats() *base.Stats     { return p.stats }
-func (p *mqttSession) GetMetrics() *base.Metrics { return p.metrics }
-func (p *mqttSession) Info() *base.SessionInfo   { return nil }
+func (p *mqttSession) Info() *base.SessionInfo { return nil }
 
 // launchPacketSendHandler launch goroutine to send packet queued for client
 func (p *mqttSession) launchPacketSendHandler() {

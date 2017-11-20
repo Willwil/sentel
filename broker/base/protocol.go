@@ -62,10 +62,6 @@ type ProtocolService interface {
 	// Service Infomation
 	GetServiceInfo() *ServiceInfo
 
-	// Stats and Metrics
-	GetStats() *Stats
-	GetMetrics() *Metrics
-
 	// Client
 	GetClients() []*ClientInfo
 	GetClient(id string) *ClientInfo
@@ -112,10 +108,6 @@ type Session interface {
 	Destroy() error
 	// RegisterObserver register observer on session
 	RegisterObserver(SessionObserver)
-	// Get Stats
-	GetStats() *Stats
-	// Get Metrics
-	GetMetrics() *Metrics
 }
 
 type Packet interface {

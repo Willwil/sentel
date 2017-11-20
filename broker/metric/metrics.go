@@ -10,38 +10,38 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package base
+package metric
 
 import "sync"
 
-// Metrics declarations
-type Metrics struct {
+// MetricBase declarations
+type metricBase struct {
 	metrics map[string]uint64
 	mutex   *sync.Mutex
 }
 
-func NewMetrics(withlock bool) *Metrics {
+func newMetricBase(withlock bool) metricBase {
 	if withlock {
-		return &Metrics{
+		return metricBase{
 			metrics: make(map[string]uint64),
 			mutex:   &sync.Mutex{},
 		}
 	} else {
-		return &Metrics{
+		return metricBase{
 			metrics: make(map[string]uint64),
 			mutex:   nil,
 		}
 	}
 }
 
-func (p *Metrics) Get() map[string]uint64 {
+func (p *metricBase) Get() map[string]uint64 {
 	if p.mutex != nil {
 		p.mutex.Lock()
 		defer p.mutex.Unlock()
 	}
 	return p.metrics
 }
-func (p *Metrics) addMetric(name string, value uint64) {
+func (p *metricBase) addMetric(name string, value uint64) {
 	if p.mutex != nil {
 		p.mutex.Lock()
 		defer p.mutex.Unlock()
@@ -49,6 +49,15 @@ func (p *Metrics) addMetric(name string, value uint64) {
 	p.metrics[name] += value
 }
 
+type Metrics struct {
+	metricBase
+}
+
+func NewMetrics(withlock bool) *Metrics {
+	return &Metrics{
+		metricBase: newMetricBase(withlock),
+	}
+}
 func (p *Metrics) AddMetrics(metrics *Metrics) {
 	if p.mutex != nil {
 		p.mutex.Lock()
@@ -60,5 +69,15 @@ func (p *Metrics) AddMetrics(metrics *Metrics) {
 		} else {
 			p.metrics[k] += v
 		}
+	}
+}
+
+type Stats struct {
+	metricBase
+}
+
+func NewStats(withlock bool) *Stats {
+	return &Stats{
+		metricBase: newMetricBase(withlock),
 	}
 }
