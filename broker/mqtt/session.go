@@ -396,23 +396,21 @@ func (p *mqttSession) handleConnect() error {
 	}
 
 	if usernameFlag > 0 {
-		if p.observer != nil {
-			err := p.observer.OnAuthenticate(p, username, password)
-			switch err {
-			case nil:
-			case base.IotErrorAuthFailed:
-				p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-				p.disconnect()
-				return err
-			default:
-				p.disconnect()
-				return err
+		err := auth.CheckUserCrenditial(username, password)
+		switch err {
+		case nil:
+		case base.IotErrorAuthFailed:
+			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
+			p.disconnect()
+			return err
+		default:
+			p.disconnect()
+			return err
 
-			}
-			// Get username and passowrd sucessfuly
-			p.username = username
-			p.password = password
 		}
+		// Get username and passowrd sucessfuly
+		p.username = username
+		p.password = password
 		// Get anonymous allow configuration
 		allowAnonymous, _ := p.config.Bool(p.mgr.protocol, "allow_anonymous")
 		if usernameFlag > 0 && allowAnonymous == false {
