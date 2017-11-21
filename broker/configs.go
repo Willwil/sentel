@@ -14,28 +14,29 @@ package broker
 
 var defaultConfigs = map[string]map[string]string{
 	"broker": {
-		"loglevel": "debug",
-		"kafka":    "localhost:9092",
-		"services": "mqtt:tcp,api,auth",
+		"loglevel":        "debug",
+		"kafka":           "localhost:9092",
+		"mongo":           "localhost:27017",
+		"connect_timeout": "5",
 	},
 	"storage": {
 		"repository": "local",
 		"loglevel":   "debug",
 	},
-	"security": {
+	"auth": {
 		"cafile":              "",
 		"capath":              "",
 		"certfile":            "",
 		"keyfile":             "",
 		"require_certificate": "false",
 	},
-	"mqttp:tcp": {
-		"listen": "localhost:1883",
+	"mqtt": {
+		"protocols": "tcp,ws,tls",
+		"tcp":       "localhost:1883",
+		"ws":        "localhost:1884",
+		"tls":       "localhost:1885",
 	},
-	"mqttp:api": {
+	"rpc": {
 		"listen": "localhost:55001",
-	},
-	"auth": {
-		"address": "dummy",
 	},
 }

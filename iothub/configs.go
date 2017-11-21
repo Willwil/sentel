@@ -14,9 +14,8 @@ package iothub
 
 var defaultConfigs = map[string]map[string]string{
 	"iothub": {
-		"services": "api,notify",
-		"mongo":    "localhost:27017",
-		"kafka":    "localhost:9092",
+		"mongo": "localhost:27017",
+		"kafka": "localhost:9092",
 	},
 	"api": {
 		"listen":   "localhost:50052",

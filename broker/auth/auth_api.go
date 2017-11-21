@@ -21,21 +21,18 @@ func GetVersion() string {
 
 // CheckAcl check client's access control right
 func CheckAcl(clientid string, username string, topic string, access string) error {
-	broker := base.GetBroker()
-	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	auth := base.GetService(AuthServiceName).(*AuthService)
 	return auth.CheckAcl(clientid, username, topic, access)
 }
 
 // CheckUserCrenditial check user's name and password
 func CheckUserCrenditial(username string, password string) error {
-	broker := base.GetBroker()
-	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	auth := base.GetService(AuthServiceName).(*AuthService)
 	return auth.CheckUserCrenditial(username, password)
 }
 
 // GetPskKey return user's psk key
 func GetPskKey(hint string, identity string) (string, error) {
-	broker := base.GetBroker()
-	auth := broker.GetServicesByName(AuthServiceName)[0].(*AuthService)
+	auth := base.GetService(AuthServiceName).(*AuthService)
 	return auth.GetPskKey(hint, identity)
 }

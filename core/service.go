@@ -32,32 +32,32 @@ type ServiceFactory interface {
 }
 
 var (
-	_serviceFactories = make(map[string]ServiceFactory)
+	serviceFactories = make(map[string]ServiceFactory)
 )
 
 // RegisterService register service with name and protocol specified
 func RegisterService(name string, factory ServiceFactory) {
-	if _, ok := _serviceFactories[name]; ok {
+	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is not registered", name)
 	}
-	_serviceFactories[name] = factory
+	serviceFactories[name] = factory
 }
 
 // RegisterServiceWithConfig register service with name and configuration
 func RegisterServiceWithConfig(name string, factory ServiceFactory, configs map[string]string) {
-	if _, ok := _serviceFactories[name]; ok {
+	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is not registered", name)
 	}
 	RegisterConfig(name, configs)
-	_serviceFactories[name] = factory
+	serviceFactories[name] = factory
 }
 
 // CreateService create service instance according to service name
 func CreateService(name string, c Config, ch chan os.Signal) (Service, error) {
 	glog.Infof("Creating service '%s'...", name)
 
-	if factory, ok := _serviceFactories[name]; ok && factory != nil {
-		return _serviceFactories[name].New(c, ch)
+	if factory, ok := serviceFactories[name]; ok && factory != nil {
+		return serviceFactories[name].New(c, ch)
 	}
 	return nil, fmt.Errorf("Invalid service '%s'", name)
 }
@@ -85,10 +85,10 @@ func RunWithConfigFile(serverName string, fileName string) error {
 
 // CheckAllRegisteredServices check all registered service simplily
 func CheckAllRegisteredServices() error {
-	if len(_serviceFactories) == 0 {
+	if len(serviceFactories) == 0 {
 		return errors.New("No service registered")
 	}
-	for name, _ := range _serviceFactories {
+	for name, _ := range serviceFactories {
 		glog.Infof("Service '%s' is registered", name)
 	}
 	return nil
@@ -105,17 +105,17 @@ type ServiceManager struct {
 const serviceManagerVersion = "0.1"
 
 var (
-	_serviceManager *ServiceManager
+	serviceManager *ServiceManager
 )
 
 // GetServiceManager create service manager and all supported service
 // The function should be called in service
-func GetServiceManager() *ServiceManager { return _serviceManager }
+func GetServiceManager() *ServiceManager { return serviceManager }
 
 // NewServiceManager create ServiceManager only in main context
 func NewServiceManager(name string, c Config) (*ServiceManager, error) {
-	if _serviceManager != nil {
-		return _serviceManager, errors.New("NewServiceManager had been called many times")
+	if serviceManager != nil {
+		return serviceManager, errors.New("NewServiceManager had been called many times")
 	}
 	mgr := &ServiceManager{
 		Config:   c,
@@ -123,17 +123,13 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 		Services: make(map[string]Service),
 		name:     name,
 	}
-	// Get supported configs
-	items := c.MustString(name, "services")
-	services := strings.Split(items, ",")
 	// Create service for each protocol
-	for _, name := range services {
+	for name, _ := range serviceFactories {
 		// Format service name
-		name = strings.Trim(name, " ")
 		quit := make(chan os.Signal)
-		service, err := CreateService(name, c, quit)
+		service, err := serviceFactories[name].New(c, quit)
 		if err != nil {
-			// If one of service is not started, must return
+			glog.Infof("Create service '%s'failed", name)
 			return nil, err
 		} else {
 			glog.Infof("Create service '%s' successfully", name)
@@ -141,8 +137,8 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 			mgr.quits[name] = quit
 		}
 	}
-	_serviceManager = mgr
-	return _serviceManager, nil
+	serviceManager = mgr
+	return serviceManager, nil
 }
 
 // Run launch all serices and wait to terminate

@@ -39,8 +39,6 @@ func init() {
 	core.RegisterService("event", &event.EventServiceFactory{})
 	core.RegisterService("queue", &queue.QueueServiceFactory{})
 	core.RegisterService("auth", &auth.AuthServiceFactory{})
-	core.RegisterService("mqtt:tcp", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTcp})
-	core.RegisterService("mqtt:ws", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolWs})
-	core.RegisterService("mqtt:tls", &mqtt.MqttFactory{Protocol: mqtt.MqttProtocolTls})
+	core.RegisterService("mqtt", &mqtt.MqttFactory{})
 
 }

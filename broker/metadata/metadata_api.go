@@ -16,14 +16,12 @@ import "github.com/cloustone/sentel/broker/base"
 
 // GetShadowDeviceStatus return shadow device's status
 func GetShadowDeviceStatus(clientId string) (*Device, error) {
-	broker := base.GetBroker()
-	meta := broker.GetServicesByName(MetadataServiceName)[0].(*MetadataService)
+	meta := base.GetService(MetadataServiceName).(*MetadataService)
 	return meta.getShadowDeviceStatus(clientId)
 }
 
 // SyncShadowDeviceStatus synchronize shadow device's status
 func SyncShadowDeviceStatus(clientId string, d *Device) error {
-	broker := base.GetBroker()
-	meta := broker.GetServicesByName(MetadataServiceName)[0].(*MetadataService)
+	meta := base.GetService(MetadataServiceName).(*MetadataService)
 	return meta.syncShadowDeviceStatus(clientId, d)
 }

@@ -47,7 +47,7 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 		},
 	}
 
-	listen := c.MustString("authlet", "listen")
+	listen := c.MustString("rpc", "listen")
 	lis, err := net.Listen("tcp", listen)
 	if err != nil {
 		glog.Fatal("Failed to listen: %v", err)

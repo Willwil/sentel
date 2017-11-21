@@ -17,7 +17,6 @@ var defaultConfigs = map[string]map[string]string{
 		"loglevel":        "debug",
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
-		"services":        "indicator,executor",
 		"connect_timeout": "5",
 	},
 	"indicator": {

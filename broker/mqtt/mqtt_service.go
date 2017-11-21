@@ -161,14 +161,33 @@ func (p *mqttService) Start() error {
 	if err := p.subscribeTopic("session"); err != nil {
 		return err
 	}
+	// Read protocol configuration for supported protocol
+	protocolConfig, err := p.Config.String("mqtt", "protocols")
+	if err != nil || protocolConfig == "" {
+		return errors.New("Invalid mqtt protocol configuration")
+	}
+	protocols := strings.Split(protocolConfig, ",")
+	if len(protocols) == 0 {
+		return errors.New("No protocol service for mqtt broker")
+	}
+	for _, protocol := range protocols {
+		host, err := p.Config.String("mqtt", protocol)
+		if err != nil {
+			return err
+		}
+		go p.startProtocolService(protocol, host)
+	}
+	return nil
+}
 
-	host := p.Config.MustString(p.protocol, "listen")
+// startProtocolService start mqtt protocol on different port
+func (p *mqttService) startProtocolService(protocol string, host string) error {
 	listen, err := net.Listen("tcp", host)
 	if err != nil {
 		glog.Errorf("Mqtt listen failed:%s", err)
 		return err
 	}
-	glog.Infof("Mqtt service '%s' is listening on '%s'...", p.protocol, host)
+	glog.Infof("Mqtt service '%s' is listening on '%s'...", protocol, host)
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
@@ -190,7 +209,6 @@ func (p *mqttService) Start() error {
 			}
 		}(session)
 	}
-	return nil
 }
 
 // Stop

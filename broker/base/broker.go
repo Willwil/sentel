@@ -48,20 +48,23 @@ var (
 // The function should be called in service
 func GetBroker() *Broker { return _broker }
 
+// GetService return specified service instance
+func GetService(name string) core.Service {
+	broker := GetBroker()
+	return broker.GetServiceByName(name)
+}
+
 // GetConfig return broker's configuration
 func (p *Broker) GetConfig() core.Config {
 	return p.Config
 }
 
 // GetServicesByName return service instance by name, or matched by part of name
-func (p *Broker) GetServicesByName(name string) []core.Service {
-	services := []core.Service{}
-	for k, service := range p.Services {
-		if strings.IndexAny(k, name) >= 0 {
-			services = append(services, service)
-		}
+func (p *Broker) GetServiceByName(name string) core.Service {
+	if _, ok := p.Services[name]; !ok {
+		panic(fmt.Sprintf("Failed to find service '%s' in broker", name))
 	}
-	return services
+	return p.Services[name]
 }
 
 // GetAllProtocolServices() return all protocol services
