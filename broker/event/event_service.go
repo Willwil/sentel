@@ -32,7 +32,16 @@ import (
 // - Shadow device
 type EventService struct {
 	core.ServiceBase
-	consumer sarama.Consumer
+	consumer    sarama.Consumer               // kafka client endpoint
+	eventChan   chan *Event                   // Event notify channel
+	subscribers map[uint8][]subscriberContext // All subscriber's contex
+	mutex       sync.Mutex                    // Mutex to lock subscribers
+}
+
+// subscriberContext hold subscriber handler and context
+type subscriberContext struct {
+	handler EventHandler
+	ctx     interface{}
 }
 
 const (
@@ -66,7 +75,9 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer: consumer,
+		consumer:    consumer,
+		eventChan:   make(chan *Event),
+		subscribers: make(map[uint8][]subscriberContext),
 	}, nil
 
 }
@@ -78,13 +89,38 @@ func (p *EventService) Name() string {
 
 // Start
 func (p *EventService) Start() error {
+	go func(p *EventService) {
+		for {
+			select {
+			case e := <-p.eventChan:
+				p.handleEvent(e)
+			case <-p.Quit:
+				return
+			}
+		}
+	}(p)
 	return nil
 }
 
 // Stop
 func (p *EventService) Stop() {
 	p.consumer.Close()
+	// quit
 	p.WaitGroup.Wait()
+}
+
+// handleEvent handle event from other service
+func (p *EventService) handleEvent(e *Event) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, ok := p.subscribers[e.Type]; !ok {
+		return
+	}
+	subscribers := p.subscribers[e.Type]
+	for _, subscriber := range subscribers {
+		go subscriber.handler(subscriber.ctx, e)
+	}
+	// TODO: notify other broker according to event type
 }
 
 // subscribeTopc subscribe topics from apiserver
@@ -119,8 +155,18 @@ func (p *EventService) handleNotifications(topic string, value []byte) error {
 	return nil
 }
 
+// publish publish event to event service
 func (p *EventService) publish(e *Event) {
+	p.eventChan <- e
 }
 
+// subscribe subcribe event from event service
 func (p *EventService) subscribe(t uint8, handler EventHandler, ctx interface{}) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, ok := p.subscribers[t]; !ok {
+		// Create handler list if not existed
+		p.subscribers[t] = []subscriberContext{}
+	}
+	p.subscribers[t] = append(p.subscribers[t], subscriberContext{handler: handler, ctx: ctx})
 }

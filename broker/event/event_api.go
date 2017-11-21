@@ -17,20 +17,20 @@ import "github.com/cloustone/sentel/broker/base"
 type EventHandler func(ctx interface{}, e *Event)
 
 const (
-	EventSessionConnected    = 1
-	EventSessionDisconnected = 2
-	EventTopicPublish        = 3
-	EventTopicSubscribe      = 4
-	EventTopicUnsubscribe    = 5
+	EventSessionCreated   = 1
+	EventSessionDestroyed = 2
+	EventTopicPublish     = 3
+	EventTopicSubscribe   = 4
+	EventTopicUnsubscribe = 5
 )
 
 type Event struct {
-	Type       uint8
-	ClientId   string
-	SessionId  string
-	Topic      string
-	Data       []byte
-	Persistent bool
+	Type       uint8  // Event type
+	ClientId   string // Client identifier where event come from
+	SessionId  string // Current Session identifier
+	Topic      string // Topic
+	Data       []byte // Topic data
+	Persistent bool   // Whether the session is persistent
 }
 
 // Publish publish event to event service
