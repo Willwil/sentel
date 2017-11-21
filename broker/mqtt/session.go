@@ -86,12 +86,12 @@ type mqttSession struct {
 // newMqttSession create new session  for each client connection
 func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, error) {
 	// Get session message queue size, if it is not set, default is 10
-	qsize, err := m.Config.Int(m.protocol, "session_queue_size")
+	qsize, err := m.Config.Int("mqtt", "session_queue_size")
 	if err != nil {
 		qsize = 10
 	}
 	var msgqsize int
-	msgqsize, err = m.Config.Int(m.protocol, "session_msg_queue_size")
+	msgqsize, err = m.Config.Int("mqtt", "session_msg_queue_size")
 	if err != nil {
 		msgqsize = 10
 	}
@@ -152,29 +152,26 @@ func (p *mqttSession) launchPacketSendHandler() {
 					}
 				}
 			case msg := <-msgChannel:
-				p.processMessage(msg)
+				p.handleOutMessage(msg)
 			case <-time.After(1 * time.Second):
-				p.processTimeout()
+				p.handleOutMessageTimeout()
 			}
 		}
 	}(p.sendStopChannel, p.sendPacketChannel, p.sendMsgChannel)
 }
 
-// processMessage proceess messages
-func (p *mqttSession) processMessage(msg *mqttMessage) error {
-
+// handleOutMessage proceess messages
+func (p *mqttSession) handleOutMessage(msg *mqttMessage) error {
 	return nil
 }
 
-// processTimeout proceess timeout
-func (p *mqttSession) processTimeout() error {
-
+// handleOutMessageTimeout proceess timeout
+func (p *mqttSession) handleOutMessageTimeout() error {
 	return nil
 }
 
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
-
 	glog.Infof("Handling session:%s", p.id)
 	defer p.Destroy()
 

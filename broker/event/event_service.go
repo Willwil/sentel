@@ -118,3 +118,9 @@ func (p *EventService) subscribeTopic(topic string) error {
 func (p *EventService) handleNotifications(topic string, value []byte) error {
 	return nil
 }
+
+func (p *EventService) publish(e *Event) {
+}
+
+func (p *EventService) subscribe(t uint8, handler EventHandler, ctx interface{}) {
+}
