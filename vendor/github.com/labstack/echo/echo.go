@@ -485,7 +485,7 @@ func (e *Echo) Add(method, path string, handler HandlerFunc, middleware ...Middl
 	return r
 }
 
-// Group creates :a new router group with prefix and optional group-level middleware.
+// Group creates a new router group with prefix and optional group-level middleware.
 func (e *Echo) Group(prefix string, m ...MiddlewareFunc) (g *Group) {
 	g = &Group{prefix: prefix, echo: e}
 	g.Use(m...)
