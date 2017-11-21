@@ -16,23 +16,6 @@ import "github.com/cloustone/sentel/broker/base"
 
 type EventHandler func(ctx interface{}, e *Event)
 
-const (
-	EventSessionCreated   = 1
-	EventSessionDestroyed = 2
-	EventTopicPublish     = 3
-	EventTopicSubscribe   = 4
-	EventTopicUnsubscribe = 5
-)
-
-type Event struct {
-	Type       uint8  // Event type
-	ClientId   string // Client identifier where event come from
-	SessionId  string // Current Session identifier
-	Topic      string // Topic
-	Data       []byte // Topic data
-	Persistent bool   // Whether the session is persistent
-}
-
 // Publish publish event to event service
 func Publish(e *Event) {
 	service := base.GetService(EventServiceName).(*EventService)

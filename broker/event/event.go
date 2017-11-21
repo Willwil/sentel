@@ -11,3 +11,28 @@
 //  under the License.
 
 package event
+
+import "github.com/cloustone/sentel/core"
+
+const (
+	EventSessionCreated   = 1
+	EventSessionDestroyed = 2
+	EventTopicPublish     = 3
+	EventTopicSubscribe   = 4
+	EventTopicUnsubscribe = 5
+)
+
+const (
+	EventBusName = "broker/event"
+)
+
+type Event struct {
+	core.TopicBase
+	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
+	Type       uint8  `json:"type"`       // Event type
+	ClientId   string `json:"clientId"`   // Client identifier where event come from
+	SessionId  string `json:"sessionId"`  // Current Session identifier
+	Topic      string `json:"topic"`      // Topic
+	Data       []byte `json:"data"`       // Topic data
+	Persistent bool   `json:"persistent"` // Whether the session is persistent
+}

@@ -13,6 +13,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -93,7 +94,7 @@ func (p *EventService) Start() error {
 		for {
 			select {
 			case e := <-p.eventChan:
-				p.handleEvent(e)
+				core.AsyncProduceMessage(p.Config, "event", EventBusName, e)
 			case <-p.Quit:
 				return
 			}
@@ -120,7 +121,6 @@ func (p *EventService) handleEvent(e *Event) {
 	for _, subscriber := range subscribers {
 		go subscriber.handler(subscriber.ctx, e)
 	}
-	// TODO: notify other broker according to event type
 }
 
 // subscribeTopc subscribe topics from apiserver
@@ -152,6 +152,15 @@ func (p *EventService) subscribeTopic(topic string) error {
 
 // handleNotifications handle notification from kafka
 func (p *EventService) handleNotifications(topic string, value []byte) error {
+	switch topic {
+	case EventBusName:
+		obj := &Event{}
+		if err := json.Unmarshal(value, obj); err != nil {
+			return err
+		}
+		p.handleEvent(obj)
+	}
+
 	return nil
 }
 

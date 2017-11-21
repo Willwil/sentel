@@ -14,9 +14,17 @@ package metadata
 
 import "time"
 
+type Session struct {
+	SessionId    string   `json:"sessionId"`
+	ClientId     string   `json:"clientId"`
+	CleanSession bool     `json:"cleanSession"`
+	CreatedAt    string   `json:"createdAt"`
+	Topics       []string `json:"topics"`
+}
+
 type Device struct {
-	DeviceId        string
-	DeviceName      string
-	CreatedAt       time.Time
-	LastConnectedAt time.Time
+	DeviceId    string    `json:"deviceId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	LastUpdated time.Time `json:"lastUpdated"`
+	Data        []byte    `json:"data"`
 }
