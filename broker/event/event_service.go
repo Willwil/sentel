@@ -90,6 +90,9 @@ func (p *EventService) Name() string {
 
 // Start
 func (p *EventService) Start() error {
+	if err := p.subscribeTopic(EventBusName); err != nil {
+		return err
+	}
 	go func(p *EventService) {
 		for {
 			select {
@@ -119,7 +122,7 @@ func (p *EventService) handleEvent(e *Event) {
 	}
 	subscribers := p.subscribers[e.Type]
 	for _, subscriber := range subscribers {
-		go subscriber.handler(subscriber.ctx, e)
+		go subscriber.handler(e, subscriber.ctx)
 	}
 }
 

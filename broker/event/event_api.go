@@ -14,7 +14,7 @@ package event
 
 import "github.com/cloustone/sentel/broker/base"
 
-type EventHandler func(ctx interface{}, e *Event)
+type EventHandler func(e *Event, ctx interface{})
 
 // Publish publish event to event service
 func Publish(e *Event) {

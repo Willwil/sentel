@@ -13,18 +13,13 @@
 package metadata
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/conductor/executor"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
 
-	"github.com/Shopify/sarama"
-	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
@@ -34,7 +29,7 @@ import (
 // - Shadow device
 type MetadataService struct {
 	core.ServiceBase
-	consumer sarama.Consumer
+	eventChan chan *event.Event
 }
 
 const (
@@ -55,20 +50,13 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 	}
 	defer session.Close()
 
-	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-
 	return &MetadataService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer: consumer,
+		eventChan: make(chan *event.Event),
 	}, nil
 
 }
@@ -80,62 +68,26 @@ func (p *MetadataService) Name() string {
 
 // Start
 func (p *MetadataService) Start() error {
+	// subscribe envent
+	event.Subscribe(event.EventSessionCreated, onEventCallback, p)
+	event.Subscribe(event.EventSessionDestroyed, onEventCallback, p)
+
+	go func(p *MetadataService) {
+		for {
+			select {
+			case e := <-p.eventChan:
+				p.handleEvent(e)
+			case <-p.Quit:
+				return
+			}
+		}
+	}(p)
 	return nil
 }
 
 // Stop
 func (p *MetadataService) Stop() {
-	p.consumer.Close()
 	p.WaitGroup.Wait()
-}
-
-// subscribeTopc subscribe topics from apiserver
-func (p *MetadataService) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
-	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
-			for msg := range pc.Messages() {
-				p.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(pc)
-	}
-	return nil
-}
-
-type ruleTopic struct {
-	RuleName  string `json:"ruleName"`
-	RuleId    string `json:"ruleId"`
-	ProductId string `json:"productId"`
-	Action    string `json:"action"`
-}
-
-// handleNotifications handle notification from kafka
-func (p *MetadataService) handleNotifications(topic string, value []byte) error {
-	rule := ruleTopic{}
-	if err := json.Unmarshal(value, &topic); err != nil {
-		return err
-	}
-	r := &executor.Rule{
-		RuleName:  rule.RuleName,
-		RuleId:    rule.RuleId,
-		ProductId: rule.ProductId,
-		Action:    rule.Action,
-	}
-	return executor.HandleRuleNotification(r)
 }
 
 // getShadowDeviceStatus return shadow device's status
@@ -146,4 +98,20 @@ func (p *MetadataService) getShadowDeviceStatus(clientId string) (*Device, error
 // syncShadowDeviceStatus synchronize shadow device's status
 func (p *MetadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
 	return nil
+}
+
+func (p *MetadataService) handleEvent(e *event.Event) {
+	switch e.Type {
+	case event.EventSessionCreated:
+	case event.EventSessionDestroyed:
+	case event.EventTopicPublish:
+	case event.EventTopicSubscribe:
+	case event.EventTopicUnsubscribe:
+	}
+}
+
+// onEventCallback will be called when notificaiton come from event service
+func onEventCallback(e *event.Event, ctx interface{}) {
+	service := ctx.(*MetadataService)
+	service.eventChan <- e
 }
