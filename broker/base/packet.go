@@ -13,6 +13,16 @@ package base
 
 import "io"
 
+type DecodeFeedback interface {
+	// SetTruncated should be called if during decoding you notice that
+	// a packet is shorter than internal layer variables
+	SetTruncated()
+}
+
+type NilDecodeFeedback struct{}
+
+func (NilDecodeFeedback) SetTruncated() {}
+
 type Packet interface {
 	// PacketType return type name of packet
 	PacketType() string

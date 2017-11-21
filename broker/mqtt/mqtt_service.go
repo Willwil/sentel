@@ -13,6 +13,7 @@
 package mqtt
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -32,6 +33,13 @@ import (
 const (
 	maxMqttConnections = 1000000
 	protocolName       = "mqtt3"
+)
+
+const (
+	mqttNetworkTcp       = "tcp"
+	mqttNetworkTls       = "tls"
+	mqttNetworkWebsocket = "ws"
+	mqttNetworkHttps     = "https"
 )
 
 // MQTT service declaration
@@ -182,7 +190,7 @@ func (p *mqttService) Start() error {
 
 // startProtocolService start mqtt protocol on different port
 func (p *mqttService) startProtocolService(protocol string, host string) error {
-	listen, err := net.Listen("tcp", host)
+	listen, err := listen(protocol, host, p.Config)
 	if err != nil {
 		glog.Errorf("Mqtt listen failed:%s", err)
 		return err
@@ -280,4 +288,31 @@ func (p *mqttService) handleSessionNotifications(value []byte) error {
 		}
 	}
 	return nil
+}
+
+func listen(network, laddr string, c core.Config) (net.Listener, error) {
+	switch network {
+	case mqttNetworkTcp:
+		return net.Listen("tcp", laddr)
+	case mqttNetworkTls:
+		if _, err := c.String("security", "crt_file"); err != nil {
+			return nil, err
+		}
+		if _, err := c.String("security", "key_file"); err != nil {
+			return nil, err
+		}
+		crt := c.MustString("security", "crt_file")
+		key := c.MustString("security", "key_file")
+		cer, err := tls.LoadX509KeyPair(crt, key)
+		if err != nil {
+			return nil, err
+		}
+		config := tls.Config{Certificates: []tls.Certificate{cer}}
+		return tls.Listen("tcp", laddr, &config)
+
+	case mqttNetworkWebsocket:
+	case mqttNetworkHttps:
+
+	}
+	return nil, fmt.Errorf("Unsupported network protocol '%s'", network)
 }

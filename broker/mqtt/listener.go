@@ -9,14 +9,4 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 
-package base
-
-type DecodeFeedback interface {
-	// SetTruncated should be called if during decoding you notice that
-	// a packet is shorter than internal layer variables
-	SetTruncated()
-}
-
-type NilDecodeFeedback struct{}
-
-func (NilDecodeFeedback) SetTruncated() {}
+package mqtt

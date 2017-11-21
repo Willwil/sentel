@@ -33,10 +33,12 @@ var defaultConfigs = map[string]map[string]string{
 	"mqtt": {
 		"protocols": "tcp,ws,tls",
 		"tcp":       "localhost:1883",
-		"ws":        "localhost:1884",
 		"tls":       "localhost:1885",
 	},
 	"rpc": {
+		"listen": "localhost:55001",
+	},
+	"http": {
 		"listen": "localhost:55001",
 	},
 }

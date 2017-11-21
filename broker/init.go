@@ -15,6 +15,7 @@ package broker
 import (
 	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/mqtt"
@@ -40,5 +41,6 @@ func init() {
 	core.RegisterService("queue", &queue.QueueServiceFactory{})
 	core.RegisterService("auth", &auth.AuthServiceFactory{})
 	core.RegisterService("mqtt", &mqtt.MqttFactory{})
+	core.RegisterService("http", &http.HttpServiceFactory{})
 
 }
