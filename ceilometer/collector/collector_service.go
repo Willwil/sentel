@@ -16,8 +16,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -82,8 +84,10 @@ func (p *CollectorService) Start() error {
 
 // Stop
 func (p *CollectorService) Stop() {
-	p.consumer.Close()
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
+	p.consumer.Close()
 }
 
 // handleNotifications handle notification from kafka

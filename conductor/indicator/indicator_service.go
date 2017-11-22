@@ -16,8 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/conductor/executor"
@@ -78,8 +80,10 @@ func (p *IndicatorService) Start() error {
 
 // Stop
 func (p *IndicatorService) Stop() {
-	p.consumer.Close()
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
+	p.consumer.Close()
 }
 
 // subscribeTopc subscribe topics from apiserver

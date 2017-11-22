@@ -16,7 +16,9 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/metric"
@@ -87,7 +89,9 @@ func (p *ApiService) Start() error {
 // Stop
 func (p *ApiService) Stop() {
 	p.listener.Close()
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
 }
 
 //

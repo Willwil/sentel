@@ -15,7 +15,9 @@ package api
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	mgo "gopkg.in/mgo.v2"
@@ -137,5 +139,7 @@ func (p *ApiService) Start() error {
 
 // Stop
 func (p *ApiService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
 }

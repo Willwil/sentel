@@ -13,16 +13,14 @@
 package quto
 
 import (
-	"fmt"
 	"os"
-	"strings"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/core"
 
-	"github.com/Shopify/sarama"
-	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
@@ -32,7 +30,6 @@ import (
 // - Shadow device
 type QutoService struct {
 	core.ServiceBase
-	consumer sarama.Consumer
 }
 
 const (
@@ -53,20 +50,12 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	}
 	defer session.Close()
 
-	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-
 	return &QutoService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer: consumer,
 	}, nil
 
 }
@@ -83,35 +72,9 @@ func (p *QutoService) Start() error {
 
 // Stop
 func (p *QutoService) Stop() {
-	p.consumer.Close()
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
-}
-
-// subscribeTopc subscribe topics from apiserver
-func (p *QutoService) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
-	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
-			for msg := range pc.Messages() {
-				p.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(pc)
-	}
-	return nil
+	close(p.Quit)
 }
 
 // handleNotifications handle notification from kafka

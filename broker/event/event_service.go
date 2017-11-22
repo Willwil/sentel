@@ -16,8 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/core"
@@ -108,9 +110,11 @@ func (p *EventService) Start() error {
 
 // Stop
 func (p *EventService) Stop() {
-	p.consumer.Close()
-	// quit
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
+	close(p.eventChan)
+	p.consumer.Close()
 }
 
 // handleEvent handle event from other service

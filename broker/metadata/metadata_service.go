@@ -14,7 +14,9 @@ package metadata
 
 import (
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/broker/event"
@@ -71,6 +73,8 @@ func (p *MetadataService) Start() error {
 	// subscribe envent
 	event.Subscribe(event.EventSessionCreated, onEventCallback, p)
 	event.Subscribe(event.EventSessionDestroyed, onEventCallback, p)
+	event.Subscribe(event.EventTopicSubscribe, onEventCallback, p)
+	event.Subscribe(event.EventTopicUnsubscribe, onEventCallback, p)
 
 	go func(p *MetadataService) {
 		for {
@@ -87,7 +91,45 @@ func (p *MetadataService) Start() error {
 
 // Stop
 func (p *MetadataService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
+	close(p.eventChan)
+}
+
+func (p *MetadataService) handleEvent(e *event.Event) {
+	switch e.Type {
+	case event.EventSessionCreated:
+		p.onEventSessionCreated(e)
+	case event.EventSessionDestroyed:
+		p.onEventSessionDestroyed(e)
+	case event.EventTopicSubscribe:
+		p.onEventTopicSubscribe(e)
+	case event.EventTopicUnsubscribe:
+		p.onEventTopicUnsubscribe(e)
+	}
+}
+
+// onEventCallback will be called when notificaiton come from event service
+func onEventCallback(e *event.Event, ctx interface{}) {
+	service := ctx.(*MetadataService)
+	service.eventChan <- e
+}
+
+// onEventSessionCreated called when EventSessionCreated event received
+func (p *MetadataService) onEventSessionCreated(e *event.Event) {
+}
+
+// onEventSessionDestroyed called when EventSessionDestroyed received
+func (p *MetadataService) onEventSessionDestroyed(e *event.Event) {
+}
+
+// onEventTopicSubscribe called when EventTopicSubscribe received
+func (p *MetadataService) onEventTopicSubscribe(e *event.Event) {
+}
+
+// onEventTopicUnsubscribe called when EventTopicUnsubscribe received
+func (p *MetadataService) onEventTopicUnsubscribe(e *event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status
@@ -98,20 +140,4 @@ func (p *MetadataService) getShadowDeviceStatus(clientId string) (*Device, error
 // syncShadowDeviceStatus synchronize shadow device's status
 func (p *MetadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
 	return nil
-}
-
-func (p *MetadataService) handleEvent(e *event.Event) {
-	switch e.Type {
-	case event.EventSessionCreated:
-	case event.EventSessionDestroyed:
-	case event.EventTopicPublish:
-	case event.EventTopicSubscribe:
-	case event.EventTopicUnsubscribe:
-	}
-}
-
-// onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*MetadataService)
-	service.eventChan <- e
 }

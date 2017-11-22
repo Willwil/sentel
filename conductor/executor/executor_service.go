@@ -15,7 +15,9 @@ package executor
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/core"
@@ -82,8 +84,9 @@ func (p *ExecutorService) Start() error {
 
 // Stop
 func (p *ExecutorService) Stop() {
-	//s.chn <- 1
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
 
 	// stop all ruleEngine
 	for _, engine := range p.engines {

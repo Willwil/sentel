@@ -16,8 +16,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/Shopify/sarama"
 	apiserver "github.com/cloustone/sentel/apiserver/util"
@@ -83,8 +85,10 @@ func (p *NotifyService) Start() error {
 
 // Stop
 func (p *NotifyService) Stop() {
-	p.consumer.Close()
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
+	close(p.Quit)
+	p.consumer.Close()
 }
 
 // subscribeTopc subscribe topics from apiserver

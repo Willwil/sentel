@@ -15,7 +15,9 @@ package coap
 import (
 	"errors"
 	"net"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
@@ -131,7 +133,11 @@ func (p *coapService) Start() error {
 	return nil
 }
 
-func (p *coapService) Stop() {}
+func (p *coapService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.WaitGroup.Wait()
+	close(p.Quit)
+}
 
 // Name
 func (p *coapService) Info() *base.ServiceInfo {

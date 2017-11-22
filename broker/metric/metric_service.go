@@ -14,7 +14,9 @@ package metric
 
 import (
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -69,13 +71,16 @@ func (p *MetricService) Start() error {
 	}
 	p.keepalive = time.NewTicker(1 * time.Second)
 	p.stat = time.NewTicker(time.Duration(duration) * time.Second)
-	go func(*MetricService) {
+	go func(p *MetricService) {
 		for {
+			p.WaitGroup.Add(1)
 			select {
 			case <-p.keepalive.C:
 				p.reportKeepalive()
 			case <-p.stat.C:
 				p.reportHubStats()
+			case <-p.Quit:
+				return
 			}
 		}
 	}(p)
@@ -84,8 +89,11 @@ func (p *MetricService) Start() error {
 
 // Stop
 func (p *MetricService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.keepalive.Stop()
 	p.stat.Stop()
+	p.WaitGroup.Wait()
+	close(p.Quit)
 }
 
 // reportHubStats report current iothub stats

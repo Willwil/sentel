@@ -19,8 +19,10 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
@@ -111,7 +113,7 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 
 // Name
 func (p *mqttService) Name() string {
-	return "mqtt:" + p.protocol
+	return ServiceName
 }
 
 // removeSession remove specified session from mqtt service
@@ -197,6 +199,8 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 		return err
 	}
 	glog.Infof("Mqtt service '%s' is listening on '%s'...", protocol, host)
+	p.WaitGroup.Add(1)
+	defer p.WaitGroup.Done()
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
@@ -210,7 +214,7 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 			return err
 		}
 		p.addSession(session)
-		go func(s base.Session) {
+		go func(s *mqttSession) {
 			err := s.Handle()
 			if err != nil {
 				conn.Close()
@@ -222,6 +226,9 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 
 // Stop
 func (p *mqttService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.WaitGroup.Wait()
+	close(p.Quit)
 }
 
 // subscribeTopc subscribe topics from apiserver

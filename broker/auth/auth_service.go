@@ -14,7 +14,9 @@ package auth
 
 import (
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/cloustone/sentel/core"
 )
@@ -39,7 +41,7 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 
 // Authentication Service
 type AuthService struct {
-	ServiceBase core.ServiceBase
+	core.ServiceBase
 }
 
 // Name
@@ -54,6 +56,9 @@ func (p *AuthService) Start() error {
 
 // Stop
 func (p *AuthService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.WaitGroup.Wait()
+	close(p.Quit)
 }
 
 // CheckAcl check client's access control right
