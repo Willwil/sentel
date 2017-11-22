@@ -21,6 +21,7 @@ const (
 	TopicPublished    = 4
 	TopicSubscribed   = 5
 	TopicUnsubscribed = 6
+	QutoChanged       = 7
 )
 
 const (
@@ -32,8 +33,10 @@ type Event struct {
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint8  `json:"type"`       // Event type
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
-	SessionId  string `json:"sessionId"`  // Current Session identifier
 	Topic      string `json:"topic"`      // Topic
 	Data       []byte `json:"data"`       // Topic data
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
+
+	// Quto
+	QutoId string `json:"qutoId"` // Qutotation identifier
 }

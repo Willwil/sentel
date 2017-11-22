@@ -136,7 +136,6 @@ func (p *MetadataService) onSessionCreated(e *event.Event) {
 		defer session.Close()
 		c := session.DB(brokerDatabase).C(sessionCollection)
 		err = c.Insert(&Session{
-			SessionId: e.SessionId,
 			ClientId:  e.ClientId,
 			CreatedAt: time.Now(),
 		})

@@ -12,9 +12,40 @@
 
 package quto
 
-// GetShadowDeviceStatus return shadow device's status
-func GetQuto(clientId string) (*Quto, error) {
-	// broker := base.GetBroker()
-	// quto := broker.GetServicesByName(QutoServiceName)[0].(*QutoService)
-	return nil, nil
+import "github.com/cloustone/sentel/broker/base"
+
+// GetQuto return object's qutotation
+func GetQuto(target, id string) (*Quto, error) {
+	quto := base.GetService(ServiceName).(*QutoService)
+	return quto.getQuto(target, id)
+}
+
+// GetQutoItem return object's qutotation
+func GetQutoItem(target, id, item string) uint64 {
+	quto := base.GetService(ServiceName).(*QutoService)
+	return quto.getQutoItem(target, id, item)
+}
+
+// SetQuto set object's qutotation
+func SetQuto(target, id string, q *Quto) {
+	quto := base.GetService(ServiceName).(*QutoService)
+	quto.setQuto(target, id, q)
+}
+
+// SetQutoItem set object item's qutotations
+func SetQutoItem(target, id, item string, value uint64) {
+	quto := base.GetService(ServiceName).(*QutoService)
+	quto.setQutoItem(target, id, item, value)
+}
+
+// AddQutoItemValue add quto items's value
+func AddQutoItem(target, id, item string, value uint64) {
+	quto := base.GetService(ServiceName).(*QutoService)
+	quto.addQutoItem(target, id, item, value)
+}
+
+// SubQutoItemValue sub quto items's value
+func SubQutoItem(target, id, item string, value uint64) {
+	quto := base.GetService(ServiceName).(*QutoService)
+	quto.subQutoItem(target, id, item, value)
 }
