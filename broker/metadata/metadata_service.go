@@ -19,8 +19,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 
 	"gopkg.in/mgo.v2"
 )
@@ -35,7 +37,10 @@ type MetadataService struct {
 }
 
 const (
-	ServiceName = "metadata"
+	ServiceName       = "metadata"
+	brokerDatabase    = "broker"
+	sessionCollection = "sessions"
+	brokerCollection  = "brokers"
 )
 
 // MetadataServiceFactory
@@ -100,13 +105,13 @@ func (p *MetadataService) Stop() {
 func (p *MetadataService) handleEvent(e *event.Event) {
 	switch e.Type {
 	case event.SessionCreated:
-		p.onEventSessionCreated(e)
+		p.onSessionCreated(e)
 	case event.SessionDestroyed:
-		p.onEventSessionDestroyed(e)
+		p.onSessionDestroyed(e)
 	case event.TopicSubscribed:
-		p.onEventTopicSubscribe(e)
+		p.onTopicSubscribe(e)
 	case event.TopicUnsubscribed:
-		p.onEventTopicUnsubscribe(e)
+		p.onTopicUnsubscribe(e)
 	}
 }
 
@@ -117,19 +122,42 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *MetadataService) onEventSessionCreated(e *event.Event) {
+func (p *MetadataService) onSessionCreated(e *event.Event) {
+	// Save session info if session is local and retained
+	if e.BrokerId == base.GetBrokerId() && e.Persistent {
+		// check mongo db configuration
+		hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
+		timeout := p.Config.MustInt("broker", "connect_timeout")
+		session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
+		if err != nil {
+			glog.Errorf("Metadata :%s", err.Error())
+			return
+		}
+		defer session.Close()
+		c := session.DB(brokerDatabase).C(sessionCollection)
+		err = c.Insert(&Session{
+			SessionId: e.SessionId,
+			ClientId:  e.ClientId,
+			CreatedAt: time.Now(),
+		})
+		if err != nil {
+			glog.Error("Metadata:%s", err.Error())
+			return
+		}
+	}
+
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *MetadataService) onEventSessionDestroyed(e *event.Event) {
+func (p *MetadataService) onSessionDestroyed(e *event.Event) {
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *MetadataService) onEventTopicSubscribe(e *event.Event) {
+func (p *MetadataService) onTopicSubscribe(e *event.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *MetadataService) onEventTopicUnsubscribe(e *event.Event) {
+func (p *MetadataService) onTopicUnsubscribe(e *event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status

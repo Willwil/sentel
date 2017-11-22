@@ -15,16 +15,15 @@ package metadata
 import "time"
 
 type Session struct {
-	SessionId    string   `json:"sessionId"`
-	ClientId     string   `json:"clientId"`
-	CleanSession bool     `json:"cleanSession"`
-	CreatedAt    string   `json:"createdAt"`
-	Topics       []string `json:"topics"`
+	SessionId string    `json:"sessionId" bson:"sessionId"`
+	ClientId  string    `json:"clientId" bson:"clientId"`
+	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
+	Topics    []string  `json:"topics" bson:"topics"`
 }
 
 type Device struct {
-	DeviceId    string    `json:"deviceId"`
-	CreatedAt   time.Time `json:"createdAt"`
-	LastUpdated time.Time `json:"lastUpdated"`
-	Data        []byte    `json:"data"`
+	DeviceId    string    `json:"deviceId" bson:"deviceId"`
+	CreatedAt   time.Time `json:"createdAt" bson:"createdAt"`
+	LastUpdated time.Time `json:"lastUpdated" bson:"lastUpdated"`
+	Data        []byte    `json:"data" bson:"data"`
 }

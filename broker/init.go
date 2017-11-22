@@ -14,6 +14,7 @@ package broker
 
 import (
 	"github.com/cloustone/sentel/broker/auth"
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
@@ -23,11 +24,29 @@ import (
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 )
 
 // RunWithConfigFile create and start broker
 func RunWithConfigFile(fileName string) error {
-	return core.RunWithConfigFile("broker", fileName)
+	glog.Infof("Starting 'broker' server...")
+
+	// Check all registered service
+	if err := core.CheckAllRegisteredServices(); err != nil {
+		return err
+	}
+	// Get configuration
+	config, err := core.NewConfigWithFile(fileName)
+	if err != nil {
+		return err
+	}
+	// Create service manager according to the configuration
+	broker, err := base.NewBroker(config)
+	if err != nil {
+		return err
+	}
+	return broker.Run()
+
 }
 
 // init initialize default configurations and services before startup

@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/cloustone/sentel/core"
+	uuid "github.com/satori/go.uuid"
 )
 
 type HubNodeInfo struct {
@@ -35,7 +36,7 @@ type ServiceInfo struct {
 }
 type Broker struct {
 	core.ServiceManager
-	nodeName string // Node name
+	brokerId string
 }
 
 const BrokerVersion = "0.1"
@@ -44,9 +45,30 @@ var (
 	_broker *Broker
 )
 
+// newBroker create global broker
+func NewBroker(c core.Config) (*Broker, error) {
+	if _broker != nil {
+		panic("Global broker had already been created")
+	}
+	serviceMgr, err := core.NewServiceManager("broker", c)
+	if err != nil {
+		return nil, err
+	}
+	_broker = &Broker{
+		ServiceManager: *serviceMgr,
+		brokerId:       uuid.NewV4().String(),
+	}
+	return _broker, nil
+}
+
 // GetBroker create service manager and all supported service
 // The function should be called in service
 func GetBroker() *Broker { return _broker }
+
+// GetBrokerId return broker's identifier
+func GetBrokerId() string {
+	return _broker.brokerId
+}
 
 // GetService return specified service instance
 func GetService(name string) core.Service {

@@ -18,6 +18,7 @@ type EventHandler func(e *Event, ctx interface{})
 
 // Publish publish event to event service
 func Notify(e *Event) {
+	e.BrokerId = base.GetBrokerId()
 	service := base.GetService(ServiceName).(*EventService)
 	service.notify(e)
 }
