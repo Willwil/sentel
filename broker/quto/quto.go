@@ -22,9 +22,9 @@ type Quto struct {
 
 // Quto Target declaration
 const (
-	Tenant  = "tenant"
-	Product = "product"
-	Device  = "device"
+	TenantTarget  = "tenant"
+	ProductTarget = "product"
+	DeviceTarget  = "device"
 )
 
 // Quto items decleation

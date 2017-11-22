@@ -13,6 +13,7 @@
 package quto
 
 import (
+	"encoding/json"
 	"os"
 	"os/signal"
 	"sync"
@@ -23,6 +24,7 @@ import (
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 
+	"github.com/go-redis/redis"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -42,6 +44,7 @@ type QutoService struct {
 	cachePolicy string
 	cacheMutex  sync.Mutex
 	lruCache    *LRUCache
+	rclient     *redis.Client
 }
 
 const (
@@ -62,6 +65,29 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	}
 	defer session.Close()
 
+	// Connect with redis if cache policy is redis
+	policy := cachePolicyLru
+	if v, err := c.String("quto", "cace_policy"); err == nil && v == cachePolicyRedis {
+		policy = cachePolicyRedis
+	}
+
+	var rclient *redis.Client = nil
+	if policy == cachePolicyRedis {
+		addr, _ := core.GetServiceEndpoint(c, "quto", "redis")
+		password := c.MustString("quto", "redis_password")
+		db := c.MustInt("quto", "redis_db")
+
+		rclient = redis.NewClient(&redis.Options{
+			Addr:     addr,
+			Password: password,
+			DB:       db,
+		})
+
+		if _, err := rclient.Ping().Result(); err != nil {
+			return nil, err
+		}
+	}
+
 	return &QutoService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
@@ -69,9 +95,10 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 			Quit:      quit,
 		},
 		eventChan:   make(chan *event.Event),
-		cachePolicy: cachePolicyLru,
+		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
 		lruCache:    NewLRUCache(5),
+		rclient:     rclient,
 	}, nil
 
 }
@@ -131,12 +158,73 @@ func (p *QutoService) handleQutoChanged(e *event.Event) {
 		return
 	}
 	// Update cach according to cach policy
+	p.setQuto(quto.Target, quto.TargetId, &quto)
+}
 
+// getCacheItem get item from ache
+func (p *QutoService) getCacheItem(key string) *Quto {
+	switch p.cachePolicy {
+	case cachePolicyLru:
+		quto, found, _ := p.lruCache.Get(key)
+		if found && quto != nil {
+			return quto.(*Quto)
+		}
+	case cachePolicyRedis:
+		val, err := p.rclient.Get(key).Result()
+		if err == nil {
+			quto := Quto{}
+			if err = json.Unmarshal([]byte(val), &quto); err == nil {
+				return &quto
+			}
+		}
+	}
+	return nil
+}
+
+// setCacheItem set cache item internal
+func (p *QutoService) setCacheItem(key string, quto *Quto) error {
+	switch p.cachePolicy {
+	case cachePolicyLru:
+		p.lruCache.Set(key, quto)
+	case cachePolicyRedis:
+		val, err := json.Marshal(quto)
+		if err != nil {
+			return err
+		}
+		p.rclient.Set(key, []byte(val), 0)
+	}
+	return nil
 }
 
 // getQuto return object's qutotation
 func (p *QutoService) getQuto(target string, id string) (*Quto, error) {
-	return nil, nil
+	key := target + "/" + id
+	// Get quto from cache at first
+	if quto := p.getCacheItem(key); quto != nil {
+		return quto, nil
+	}
+
+	// Read from database if not found in cache
+	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
+	timeout := p.Config.MustInt("broker", "connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
+	if err != nil {
+		glog.Error("quto: Access backend database failed")
+		return nil, err
+	}
+	defer session.Close()
+	c := session.DB("registry").C("qutos")
+
+	quto := Quto{}
+	if err := c.Find(bson.M{"Target": target, "TargetId": id}).One(&quto); err != nil {
+		return nil, err
+	}
+	// Set the item back to cache
+	if err := p.setCacheItem(key, &quto); err != nil {
+		glog.Error("quto: Failed to write quto back to cache")
+		// no return
+	}
+	return &quto, nil
 }
 
 // getQutoItem return object's qutotation
