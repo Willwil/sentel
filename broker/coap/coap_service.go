@@ -27,6 +27,7 @@ import (
 
 const (
 	protocolName = "coap"
+	ServiceName  = "coap"
 )
 
 type coapService struct {

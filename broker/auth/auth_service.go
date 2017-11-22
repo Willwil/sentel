@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	AuthServiceName = "auth"
+	ServiceName = "auth"
 )
 
 // AuthServiceFactory
@@ -44,7 +44,7 @@ type AuthService struct {
 
 // Name
 func (p *AuthService) Name() string {
-	return AuthServiceName
+	return ServiceName
 }
 
 // Start

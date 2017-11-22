@@ -36,7 +36,7 @@ type QutoService struct {
 }
 
 const (
-	QutoServiceName = "metadata"
+	ServiceName = "metadata"
 )
 
 // QutoServiceFactory
@@ -73,7 +73,7 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 
 // Name
 func (p *QutoService) Name() string {
-	return QutoServiceName
+	return ServiceName
 }
 
 // Start

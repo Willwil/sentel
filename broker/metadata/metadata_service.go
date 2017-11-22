@@ -33,7 +33,7 @@ type MetadataService struct {
 }
 
 const (
-	MetadataServiceName = "metadata"
+	ServiceName = "metadata"
 )
 
 // MetadataServiceFactory
@@ -63,7 +63,7 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 
 // Name
 func (p *MetadataService) Name() string {
-	return MetadataServiceName
+	return ServiceName
 }
 
 // Start

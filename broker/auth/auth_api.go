@@ -21,18 +21,18 @@ func GetVersion() string {
 
 // CheckAcl check client's access control right
 func CheckAcl(clientid string, username string, topic string, access string) error {
-	auth := base.GetService(AuthServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*AuthService)
 	return auth.CheckAcl(clientid, username, topic, access)
 }
 
 // CheckUserCrenditial check user's name and password
 func CheckUserCrenditial(username string, password string) error {
-	auth := base.GetService(AuthServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*AuthService)
 	return auth.CheckUserCrenditial(username, password)
 }
 
 // GetPskKey return user's psk key
 func GetPskKey(hint string, identity string) (string, error) {
-	auth := base.GetService(AuthServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*AuthService)
 	return auth.GetPskKey(hint, identity)
 }

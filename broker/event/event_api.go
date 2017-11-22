@@ -18,12 +18,12 @@ type EventHandler func(e *Event, ctx interface{})
 
 // Publish publish event to event service
 func Publish(e *Event) {
-	service := base.GetService(EventServiceName).(*EventService)
+	service := base.GetService(ServiceName).(*EventService)
 	service.publish(e)
 }
 
 // Subscribe subcribe event from event service
 func Subscribe(t uint8, handler EventHandler, ctx interface{}) {
-	service := base.GetService(EventServiceName).(*EventService)
+	service := base.GetService(ServiceName).(*EventService)
 	service.subscribe(t, handler, ctx)
 }

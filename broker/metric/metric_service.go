@@ -22,6 +22,8 @@ import (
 	"github.com/cloustone/sentel/core"
 )
 
+const ServiceName = "metric"
+
 type MetricService struct {
 	core.ServiceBase
 	keepalive *time.Ticker
@@ -49,13 +51,13 @@ func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 // Info
 func (p *MetricService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
-		ServiceName: "report-service",
+		ServiceName: ServiceName,
 	}
 }
 
 // Name
 func (p *MetricService) Name() string {
-	return "metric"
+	return ServiceName
 }
 
 // Start

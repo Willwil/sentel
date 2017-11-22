@@ -46,7 +46,7 @@ type subscriberContext struct {
 }
 
 const (
-	EventServiceName = "event"
+	ServiceName = "event"
 )
 
 // EventServiceFactory
@@ -85,7 +85,7 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 
 // Name
 func (p *EventService) Name() string {
-	return EventServiceName
+	return ServiceName
 }
 
 // Start

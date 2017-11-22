@@ -36,7 +36,7 @@ type HttpService struct {
 }
 
 const (
-	HttpServiceName = "metadata"
+	ServiceName = "metadata"
 )
 
 // HttpServiceFactory
@@ -73,7 +73,7 @@ func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 
 // Name
 func (p *HttpService) Name() string {
-	return HttpServiceName
+	return ServiceName
 }
 
 // Start

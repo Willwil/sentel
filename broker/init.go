@@ -33,14 +33,14 @@ func RunWithConfigFile(fileName string) error {
 // init initialize default configurations and services before startup
 func init() {
 	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterService("rpc", &rpc.ApiServiceFactory{})
-	core.RegisterService("metric", &metric.MetricServiceFactory{})
-	core.RegisterService("metadata", &metadata.MetadataServiceFactory{})
-	core.RegisterService("quto", &quto.QutoServiceFactory{})
-	core.RegisterService("event", &event.EventServiceFactory{})
-	core.RegisterService("queue", &queue.QueueServiceFactory{})
-	core.RegisterService("auth", &auth.AuthServiceFactory{})
-	core.RegisterService("mqtt", &mqtt.MqttFactory{})
-	core.RegisterService("http", &http.HttpServiceFactory{})
+	core.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
+	core.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
+	core.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
+	core.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
+	core.RegisterService(event.ServiceName, &event.EventServiceFactory{})
+	core.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
+	core.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
+	core.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
+	core.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
 
 }

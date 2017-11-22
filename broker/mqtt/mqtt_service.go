@@ -31,6 +31,7 @@ import (
 )
 
 const (
+	ServiceName        = "mqtt"
 	maxMqttConnections = 1000000
 	protocolName       = "mqtt3"
 )
@@ -136,7 +137,7 @@ func (p *mqttService) addSession(s base.Session) error {
 // Info
 func (p *mqttService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
-		ServiceName: "mqtt",
+		ServiceName: ServiceName,
 	}
 }
 

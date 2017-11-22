@@ -28,6 +28,8 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+const ServiceName = "rpc"
+
 type ApiService struct {
 	core.ServiceBase
 	listener net.Listener
@@ -63,13 +65,13 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 
 // Name
 func (p *ApiService) Name() string {
-	return "api"
+	return ServiceName
 }
 
 // Info
 func (p *ApiService) Info() *base.ServiceInfo {
 	return &base.ServiceInfo{
-		ServiceName: "apiservice",
+		ServiceName: ServiceName,
 	}
 }
 

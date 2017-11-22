@@ -36,7 +36,7 @@ type QueueService struct {
 }
 
 const (
-	QueueServiceName = "queue"
+	ServiceName = "queue"
 )
 
 // QueueServiceFactory
@@ -73,7 +73,7 @@ func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 
 // Name
 func (p *QueueService) Name() string {
-	return QueueServiceName
+	return ServiceName
 }
 
 // Start
