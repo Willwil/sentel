@@ -17,9 +17,9 @@ import "github.com/cloustone/sentel/broker/base"
 type EventHandler func(e *Event, ctx interface{})
 
 // Publish publish event to event service
-func Publish(e *Event) {
+func Notify(e *Event) {
 	service := base.GetService(ServiceName).(*EventService)
-	service.publish(e)
+	service.notify(e)
 }
 
 // Subscribe subcribe event from event service

@@ -172,7 +172,7 @@ func (p *EventService) handleNotifications(topic string, value []byte) error {
 }
 
 // publish publish event to event service
-func (p *EventService) publish(e *Event) {
+func (p *EventService) notify(e *Event) {
 	p.eventChan <- e
 }
 

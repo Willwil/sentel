@@ -71,10 +71,10 @@ func (p *MetadataService) Name() string {
 // Start
 func (p *MetadataService) Start() error {
 	// subscribe envent
-	event.Subscribe(event.EventSessionCreated, onEventCallback, p)
-	event.Subscribe(event.EventSessionDestroyed, onEventCallback, p)
-	event.Subscribe(event.EventTopicSubscribe, onEventCallback, p)
-	event.Subscribe(event.EventTopicUnsubscribe, onEventCallback, p)
+	event.Subscribe(event.SessionCreated, onEventCallback, p)
+	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
+	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
+	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
 
 	go func(p *MetadataService) {
 		for {
@@ -99,13 +99,13 @@ func (p *MetadataService) Stop() {
 
 func (p *MetadataService) handleEvent(e *event.Event) {
 	switch e.Type {
-	case event.EventSessionCreated:
+	case event.SessionCreated:
 		p.onEventSessionCreated(e)
-	case event.EventSessionDestroyed:
+	case event.SessionDestroyed:
 		p.onEventSessionDestroyed(e)
-	case event.EventTopicSubscribe:
+	case event.TopicSubscribed:
 		p.onEventTopicSubscribe(e)
-	case event.EventTopicUnsubscribe:
+	case event.TopicUnsubscribed:
 		p.onEventTopicUnsubscribe(e)
 	}
 }

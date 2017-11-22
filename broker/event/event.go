@@ -15,11 +15,12 @@ package event
 import "github.com/cloustone/sentel/core"
 
 const (
-	EventSessionCreated   = 1
-	EventSessionDestroyed = 2
-	EventTopicPublish     = 3
-	EventTopicSubscribe   = 4
-	EventTopicUnsubscribe = 5
+	SessionCreated    = 1
+	SessionDestroyed  = 2
+	SessionResumed    = 3
+	TopicPublished    = 4
+	TopicSubscribed   = 5
+	TopicUnsubscribed = 6
 )
 
 const (

@@ -23,6 +23,7 @@ import (
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
+	"github.com/cloustone/sentel/broker/event"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/golang/glog"
@@ -444,15 +445,12 @@ func (p *mqttSession) handleConnect() error {
 			// Resume last session   // fix me ssddn
 			p.storage.UpdateSession(p)
 			// Notify other mqtt node to release resource
-			core.AsyncProduceMessage(p.config,
-				"session",
-				TopicNameSession,
-				&SessionTopic{
-					TopicBase: core.TopicBase{Action: core.TopicActionUpdate},
-					Launcher:  p.conn.LocalAddr().String(),
-					SessionId: clientid,
-					State:     mqttStateDisconnecting,
-				})
+			event.Notify(&event.Event{
+				Type:       event.SessionResumed,
+				ClientId:   clientid,
+				Persistent: willRetain,
+			})
+
 		}
 
 	} else {
@@ -490,6 +488,13 @@ func (p *mqttSession) handleConnect() error {
 
 	p.state = mqttStateConnected
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
+	// Notify event service
+	event.Notify(&event.Event{
+		Type:       event.SessionCreated,
+		ClientId:   clientid,
+		Persistent: willRetain,
+	})
+
 	return err
 }
 
