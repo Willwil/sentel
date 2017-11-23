@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -82,6 +84,8 @@ type mqttSession struct {
 	// resume field
 	msgs       []*mqttMessage
 	storedMsgs []*mqttMessage
+	// authentication options
+	authOptions *auth.Options
 }
 
 // newMqttSession create new session  for each client connection
@@ -392,9 +396,14 @@ func (p *mqttSession) handleConnect() error {
 			}
 		}
 	}
+	// Parse mqtt client request options
+	p.authOptions, err = p.parseRequestOptions(clientid, username, password)
+	if err != nil {
+		return err
+	}
 
 	if usernameFlag > 0 {
-		err := auth.CheckUserCrenditial(username, password)
+		err := auth.Authenticate(p.authOptions)
 		switch err {
 		case nil:
 		case base.IotErrorAuthFailed:
@@ -479,7 +488,7 @@ func (p *mqttSession) handleConnect() error {
 	p.storage.DeleteMessageWithValidator(
 		clientid,
 		func(msg StorageMessage) bool {
-			err := auth.CheckAcl(clientid, username, willTopic, auth.AclActionRead)
+			err := auth.Authorize(clientid, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false
 			}
@@ -658,7 +667,7 @@ func (p *mqttSession) handlePublish() error {
 	}
 	// Check for topic access
 	if p.observer != nil {
-		err := auth.CheckAcl(p.id, p.username, topic, auth.AclActionWrite)
+		err := auth.Authorize(p.id, p.username, topic, auth.AclWrite, nil)
 		switch err {
 		case auth.ErrorAclDenied:
 			return mqttErrorInvalidProtocol
@@ -864,4 +873,50 @@ func (p *mqttSession) sendPublish(subQos uint8, srcQos uint8, topic string, payl
 	packet.writeBytes(payload)
 
 	return p.queuePacket(&packet)
+}
+
+// getAuthOptions return authentication options from user's request
+// mqttClientId:clientId +"|securemode=3,signmethod=hmacsha1,timestampe=xxxxx|"
+// mqttUserName:deviceName+"&"+productKey
+func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (*auth.Options, error) {
+	options := &auth.Options{}
+
+	names := strings.Split(userName, "&")
+	if len(names) != 2 {
+		return nil, fmt.Errorf("Invalid authentication user name options:'%s'", userName)
+	}
+	options.DeviceName = names[0]
+	options.ProductKey = names[1]
+
+	names = strings.Split(clientId, "|")
+	if len(names) != 2 {
+		return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", clientId)
+	}
+	options.ClientId = names[0]
+	names = strings.Split(names[1], ",")
+	for _, pair := range names {
+		values := strings.Split(pair, "=")
+		if len(values) != 2 {
+			return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+		}
+		switch values[0] {
+		case auth.SecurityMode:
+			val, err := strconv.Atoi(values[1])
+			if err != nil {
+				return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+			}
+			options.SecurityMode = val
+		case auth.SignMethod:
+			options.SignMethod = values[1]
+		case auth.Timestamp:
+			val, err := strconv.ParseUint(values[1], 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+			}
+			options.Timestamp = val
+		default:
+			return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+		}
+	}
+	return options, nil
 }

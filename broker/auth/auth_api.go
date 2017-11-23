@@ -14,25 +14,34 @@ package auth
 
 import "github.com/cloustone/sentel/broker/base"
 
+type Options struct {
+	ClientId     string
+	DeviceName   string
+	ProductKey   string
+	SecurityMode int
+	SignMethod   string
+	Timestamp    uint64
+	Password     string
+}
+
+// Keyword declarations used to parse client's request
+const (
+	SecurityMode = "securemode"
+	SignMethod   = "signmethod"
+	Timestamp    = "timestamp"
+)
+
 // GetVersion return authentication service's version
 func GetVersion() string {
 	return AuthServiceVersion
 }
 
-// CheckAcl check client's access control right
-func CheckAcl(clientid string, username string, topic string, access string) error {
+func Authorize(clientId string, userName string, topic string, access int, opt *Options) error {
 	auth := base.GetService(ServiceName).(*AuthService)
-	return auth.CheckAcl(clientid, username, topic, access)
+	return auth.authorize(clientId, userName, topic, access, opt)
 }
 
-// CheckUserCrenditial check user's name and password
-func CheckUserCrenditial(username string, password string) error {
+func Authenticate(opt *Options) error {
 	auth := base.GetService(ServiceName).(*AuthService)
-	return auth.CheckUserCrenditial(username, password)
-}
-
-// GetPskKey return user's psk key
-func GetPskKey(hint string, identity string) (string, error) {
-	auth := base.GetService(ServiceName).(*AuthService)
-	return auth.GetPskKey(hint, identity)
+	return auth.authenticate(opt)
 }

@@ -62,16 +62,11 @@ func (p *AuthService) Stop() {
 }
 
 // CheckAcl check client's access control right
-func (p *AuthService) CheckAcl(clientid string, username string, topic string, access string) error {
+func (p *AuthService) authorize(clientid string, username string, topic string, access int, opt *Options) error {
 	return nil
 }
 
 // CheckUserCrenditial check user's name and password
-func (p *AuthService) CheckUserCrenditial(username string, password string) error {
+func (p *AuthService) authenticate(opt *Options) error {
 	return nil
-}
-
-// GetPskKey return user's psk key
-func (p *AuthService) GetPskKey(hint string, identity string) (string, error) {
-	return "", nil
 }

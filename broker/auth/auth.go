@@ -15,13 +15,10 @@ package auth
 import "errors"
 
 const (
-	AclActionNone  = ""
-	AclActionRead  = "r"
-	AclActionWrite = "w"
-)
-
-const (
 	AuthServiceVersion = "0.1"
+
+	AclRead  = 1
+	AclWrite = 2
 )
 
 var (
