@@ -47,9 +47,9 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 
 	// Connect with redis if cache policy is redis
 	var rclient *redis.Client = nil
-	addr, _ := core.GetServiceEndpoint(c, "quto", "redis")
-	password := c.MustString("quto", "redis_password")
-	db := c.MustInt("quto", "redis_db")
+	addr, _ := core.GetServiceEndpoint(c, "broker", "redis")
+	password := c.MustString("broker", "redis_password")
+	db := c.MustInt("auth", "redis_db")
 
 	rclient = redis.NewClient(&redis.Options{
 		Addr:     addr,
