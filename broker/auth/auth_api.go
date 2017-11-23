@@ -12,7 +12,21 @@
 
 package auth
 
-import "github.com/cloustone/sentel/broker/base"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/broker/base"
+)
+
+const (
+	AuthServiceVersion = "0.1"
+	AclRead            = 1
+	AclWrite           = 2
+)
+
+var (
+	ErrorAuthDenied = errors.New("authentication denied")
+)
 
 type Options struct {
 	ClientId     string
@@ -20,8 +34,9 @@ type Options struct {
 	ProductKey   string
 	SecurityMode int
 	SignMethod   string
-	Timestamp    uint64
+	Timestamp    string
 	Password     string
+	DeviceSecret string
 }
 
 // Keyword declarations used to parse client's request

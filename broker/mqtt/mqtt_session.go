@@ -669,7 +669,7 @@ func (p *mqttSession) handlePublish() error {
 	if p.observer != nil {
 		err := auth.Authorize(p.id, p.username, topic, auth.AclWrite, nil)
 		switch err {
-		case auth.ErrorAclDenied:
+		case auth.ErrorAuthDenied:
 			return mqttErrorInvalidProtocol
 		default:
 			return err
@@ -909,11 +909,10 @@ func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (
 		case auth.SignMethod:
 			options.SignMethod = values[1]
 		case auth.Timestamp:
-			val, err := strconv.ParseUint(values[1], 10, 64)
-			if err != nil {
+			if _, err := strconv.ParseUint(values[1], 10, 64); err != nil {
 				return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
 			}
-			options.Timestamp = val
+			options.Timestamp = values[1]
 		default:
 			return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
 		}
