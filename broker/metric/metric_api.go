@@ -12,12 +12,34 @@
 
 package metric
 
-// GetStats return server's stats
-func GetStats(serviceName string) map[string]uint64 {
-	return nil
+import "github.com/cloustone/sentel/broker/base"
+
+// NewMetrics allocate a metrics object from metric service
+func NewMetric(serviceName string) Metric {
+	metric := base.GetService(ServiceName).(*MetricService)
+	return metric.newMetric(serviceName)
 }
 
 // GetMetrics return server metrics
-func GetMetrics(serviceName string) map[string]uint64 {
-	return nil
+func GetMetric(serviceName string) map[string]uint64 {
+	metric := base.GetService(ServiceName).(*MetricService)
+	return metric.getMetric(serviceName)
+}
+
+// FreeMetric delete metric from metric service
+func FreeMetric(serviceName string, m Metric) {
+	metric := base.GetService(ServiceName).(*MetricService)
+	metric.freeMetric(serviceName, m)
+}
+
+// NewMetrics allocate a metrics object from metric service
+func NewStats(serviceName string) Metric {
+	metric := base.GetService(ServiceName).(*MetricService)
+	return metric.newStats(serviceName)
+}
+
+// GetStats return server's stats
+func GetStats(serviceName string) map[string]uint64 {
+	metric := base.GetService(ServiceName).(*MetricService)
+	return metric.getStats(serviceName)
 }

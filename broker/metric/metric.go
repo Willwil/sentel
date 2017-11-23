@@ -12,137 +12,51 @@
 
 package metric
 
-import "sync"
-
 const (
-	InfoCleanSession       = "clean_session"
-	InfoMessageMaxInflight = "inflight_max"
-	InfoMessageInflight    = "message_in_flight"
-	InfoMessageInQueue     = "message_in_queue"
-	InfoMessageDropped     = "message_dropped"
-	InfoAwaitingRel        = "message_awaiting_rel"
-	InfoAwaitingComp       = "message_awaitng_comp"
-	InfoAwaitingAck        = "message_aiwaiting _ack"
-	InfoCreatedAt          = "created_at"
+	BytesReceived         = "bytes/recevied"
+	BytesSent             = "bytes/sent"
+	MessageMaxInflight    = "messages/inflight/max"
+	MessageInflight       = "messages/inflight"
+	MessageInQueue        = "messages/inqueue"
+	MessageAwaitingRel    = "messages/awaiting/rel"
+	MessageAwaitingComp   = "messages/awaitng/comp"
+	MessagewaitingAck     = "messages/aiwaiting/ack"
+	MessageDroped         = "messages/droped"
+	MessageQos0Recevied   = "messages/qos0/received"
+	MessageQos0Sent       = "messages/qos0/sent"
+	MessageQos1Received   = "messages/qos1/recevied"
+	MessageQos1Sent       = "messages/qos1/sent"
+	MessageOos2Recevied   = "messages/qos2/received"
+	MessageOos2Sent       = "messages/qos2/sent"
+	MessageRetained       = "messages/retained"
+	MessageReceived       = "messages/received"
+	MessageSent           = "messages/sent"
+	PacketConnack         = "packets/connack"
+	PacketConnect         = "packets/connect"
+	PacketDisconnect      = "packets/disconnect"
+	PacketPingreq         = "packets/pingreq"
+	PacketPingresp        = "packets/pingresp"
+	PacketPubackRecevied  = "packets/puback/received"
+	PacketPubackSent      = "packets/puback/sent"
+	PacketPubcompReceived = "packets/pubcomp/received"
+	PacketPubcompSent     = "packets/pubcomp/sent"
+	PacketPublishReceived = "packets/publish/received"
+	PacketPublishSent     = "packets/publish/sent"
+	PacketPubrecReceived  = "packets/pubrec/received"
+	PacketPubrecSent      = "packets/pubrec/sent"
+	PacketPubrelReceived  = "packets/pubrel/received"
+	PacketPubrelSent      = "packets/pubrel/sent"
+	PacketReceived        = "packes/received"
+	PacketSent            = "packets/sent"
+	PacketSuback          = "packets/subback"
+	PacketSubscribe       = "packets/subscribe"
+	PacketUnsuback        = "packets/unsuback"
+	PacketUnsubscribe     = "packets/unsubscribe"
 )
 
-// Stats declarations
-const (
-	StatClientsMax         = "clients/max"
-	StatClientsCount       = "client/count"
-	StatQueuesMax          = "queues/max"
-	StatQueuesCount        = "queues/count"
-	StatRetainedMax        = "retained/max"
-	StatRetainedCount      = "retained/count"
-	StatSessionsMax        = "sessions/max"
-	StatSessionsCount      = "sessions/count"
-	StatSubscriptionsMax   = "subscriptions/max"
-	StatSubscriptionsCount = "subscriptions/count"
-	StatTopicsMax          = "topics/max"
-	StatTopicsCount        = "topic/count"
-)
-
-// Metrics declarations
-const (
-	MetricBytesReceived         = "bytes/recevied"
-	MetricBytesSent             = "bytes/sent"
-	MetricMessageDroped         = "messages/droped"
-	MetricMessageQos0Recevied   = "messages/qos0/received"
-	MetricMessageQos0Sent       = "messages/qos0/sent"
-	MetricMessageQos1Received   = "messages/qos1/recevied"
-	MetricMessageQos1Sent       = "messages/qos1/sent"
-	MetricMessageOos2Recevied   = "messages/qos2/received"
-	MetricMessageOos2Sent       = "messages/qos2/sent"
-	MetricMessageRetained       = "messages/retained"
-	MetricMessageReceived       = "messages/received"
-	MetricMessageSent           = "messages/sent"
-	MetricPacketConnack         = "packets/connack"
-	MetricPacketConnect         = "packets/connect"
-	MetricPacketDisconnect      = "packets/disconnect"
-	MetricPacketPingreq         = "packets/pingreq"
-	MetricPacketPingresp        = "packets/pingresp"
-	MetricPacketPubackRecevied  = "packets/puback/received"
-	MetricPacketPubackSent      = "packets/puback/sent"
-	MetricPacketPubcompReceived = "packets/pubcomp/received"
-	MetricPacketPubcompSent     = "packets/pubcomp/sent"
-	MetricPacketPublishReceived = "packets/publish/received"
-	MetricPacketPublishSent     = "packets/publish/sent"
-	MetricPacketPubrecReceived  = "packets/pubrec/received"
-	MetricPacketPubrecSent      = "packets/pubrec/sent"
-	MetricPacketPubrelReceived  = "packets/pubrel/received"
-	MetricPacketPubrelSent      = "packets/pubrel/sent"
-	MetricPacketReceived        = "packes/received"
-	MetricPacketSent            = "packets/sent"
-	MetricPacketSuback          = "packets/subback"
-	MetricPacketSubscribe       = "packets/subscribe"
-	MetricPacketUnsuback        = "packets/unsuback"
-	MetricPacketUnsubscribe     = "packets/unsubscribe"
-)
-
-// MetricBase declarations
-type metricBase struct {
-	metrics map[string]uint64
-	mutex   *sync.Mutex
-}
-
-func newMetricBase(withlock bool) metricBase {
-	if withlock {
-		return metricBase{
-			metrics: make(map[string]uint64),
-			mutex:   &sync.Mutex{},
-		}
-	} else {
-		return metricBase{
-			metrics: make(map[string]uint64),
-			mutex:   nil,
-		}
-	}
-}
-
-func (p *metricBase) Get() map[string]uint64 {
-	if p.mutex != nil {
-		p.mutex.Lock()
-		defer p.mutex.Unlock()
-	}
-	return p.metrics
-}
-func (p *metricBase) addMetric(name string, value uint64) {
-	if p.mutex != nil {
-		p.mutex.Lock()
-		defer p.mutex.Unlock()
-	}
-	p.metrics[name] += value
-}
-
-type Metrics struct {
-	metricBase
-}
-
-func NewMetrics(withlock bool) *Metrics {
-	return &Metrics{
-		metricBase: newMetricBase(withlock),
-	}
-}
-func (p *Metrics) AddMetrics(metrics *Metrics) {
-	if p.mutex != nil {
-		p.mutex.Lock()
-		defer p.mutex.Unlock()
-	}
-	for k, v := range metrics.Get() {
-		if _, ok := p.metrics[k]; !ok {
-			p.metrics[k] = v
-		} else {
-			p.metrics[k] += v
-		}
-	}
-}
-
-type Stats struct {
-	metricBase
-}
-
-func NewStats(withlock bool) *Stats {
-	return &Stats{
-		metricBase: newMetricBase(withlock),
-	}
+type Metric interface {
+	Get() map[string]uint64
+	Add(name string, value uint64)
+	Sub(name string, value uint64)
+	AddMetric(metric Metric)
 }

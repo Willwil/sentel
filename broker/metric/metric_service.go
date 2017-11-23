@@ -13,6 +13,7 @@
 package metric
 
 import (
+	"container/list"
 	"os"
 	"os/signal"
 	"sync"
@@ -28,11 +29,15 @@ const ServiceName = "metric"
 
 type MetricService struct {
 	core.ServiceBase
-	keepalive *time.Ticker
-	stat      *time.Ticker
-	name      string
-	createdAt string
-	ip        string
+	keepalive    *time.Ticker
+	stat         *time.Ticker
+	name         string
+	createdAt    string
+	ip           string
+	metrics      map[string]*list.List
+	metricsMutex sync.Mutex
+	stats        map[string]*list.List
+	statsMutex   sync.Mutex
 }
 
 // MetricServiceFactory
@@ -47,6 +52,10 @@ func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
+		metricsMutex: sync.Mutex{},
+		metrics:      make(map[string]*list.List),
+		statsMutex:   sync.Mutex{},
+		stats:        make(map[string]*list.List),
 	}, nil
 }
 
@@ -108,7 +117,7 @@ func (p *MetricService) reportHubStats() {
 		})
 
 	// Metrics
-	metrics := GetMetrics("mqtt")
+	metrics := GetMetric("mqtt")
 	collector.AsyncReport(p.Config, collector.TopicNameMetric,
 		&collector.Metric{
 			NodeName: p.name,
@@ -128,4 +137,74 @@ func (p *MetricService) reportKeepalive() {
 			NodeIp:    node.NodeIp,
 			CreatedAt: node.CreatedAt,
 		})
+}
+
+// newMetrics allocate a metrics object from metric service
+func (p *MetricService) newMetric(serviceName string) Metric {
+	p.metricsMutex.Lock()
+	defer p.metricsMutex.Unlock()
+	if _, ok := p.metrics[serviceName]; !ok {
+		p.metrics[serviceName] = list.New()
+	}
+	metric := newMetricWithLock()
+	metric.element = p.metrics[serviceName].PushBack(metric)
+	return metric
+}
+
+// getMetric return server metrics
+func (p *MetricService) getMetric(serviceName string) map[string]uint64 {
+	result := map[string]uint64{}
+	p.metricsMutex.Lock()
+	defer p.metricsMutex.Unlock()
+
+	metric := newMetricWithLock()
+	if _, ok := p.metrics[serviceName]; ok {
+		metrics := p.metrics[serviceName]
+		for e := metrics.Front(); e != nil; e = e.Next() {
+			metric.AddMetric(e.Value.(Metric))
+		}
+		result = metric.Get()
+	}
+	return result
+}
+
+// getMetric return server metrics
+func (p *MetricService) freeMetric(serviceName string, m Metric) {
+	p.metricsMutex.Lock()
+	defer p.metricsMutex.Unlock()
+
+	if _, ok := p.metrics[serviceName]; ok {
+		mm := m.(*metricWithLock)
+		p.metrics[serviceName].Remove(mm.element)
+	}
+}
+
+// newStats allocate a stats object from metric service
+func (p *MetricService) newStats(serviceName string) Metric {
+	p.statsMutex.Lock()
+	if _, ok := p.stats[serviceName]; !ok {
+		p.stats[serviceName] = list.New()
+	}
+	stat := newMetricWithLock()
+	defer p.statsMutex.Unlock()
+	p.stats[serviceName].PushBack(stat)
+	return stat
+}
+
+// getStats return service's stats
+func (p *MetricService) getStats(serviceName string) map[string]uint64 {
+	result := map[string]uint64{}
+	p.statsMutex.Lock()
+	defer p.statsMutex.Unlock()
+
+	metric := newMetricWithLock()
+	if _, ok := p.stats[serviceName]; ok {
+		stats := p.stats[serviceName]
+		for e := stats.Front(); e != nil; e = e.Next() {
+			metric.AddMetric(e.Value.(Metric))
+		}
+		result = metric.Get()
+	}
+	return result
+
 }

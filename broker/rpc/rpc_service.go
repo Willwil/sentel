@@ -149,7 +149,7 @@ func (p *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerRep
 		stats := metric.GetStats(req.Service)
 		return &BrokerReply{Stats: stats}, nil
 	case "metrics":
-		metrics := metric.GetMetrics(req.Service)
+		metrics := metric.GetMetric(req.Service)
 		return &BrokerReply{Metrics: metrics}, nil
 	default:
 	}
