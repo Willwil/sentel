@@ -15,37 +15,13 @@ package quto
 import "github.com/cloustone/sentel/broker/base"
 
 // GetQuto return object's qutotation
-func GetQuto(target, id string) (*Quto, error) {
+func GetQuto(id string) (uint64, error) {
 	quto := base.GetService(ServiceName).(*QutoService)
-	return quto.getQuto(target, id)
+	return quto.getQuto(id)
 }
 
-// GetQutoItem return object's qutotation
-func GetQutoItem(target, id, item string) uint64 {
+// CheckQutoWithAddValue check wether the newly added value is over quto
+func CheckQuto(id string, value uint64) bool {
 	quto := base.GetService(ServiceName).(*QutoService)
-	return quto.getQutoItem(target, id, item)
-}
-
-// SetQuto set object's qutotation
-func SetQuto(target, id string, q *Quto) {
-	quto := base.GetService(ServiceName).(*QutoService)
-	quto.setQuto(target, id, q)
-}
-
-// SetQutoItem set object item's qutotations
-func SetQutoItem(target, id, item string, value uint64) {
-	quto := base.GetService(ServiceName).(*QutoService)
-	quto.setQutoItem(target, id, item, value)
-}
-
-// AddQutoItemValue add quto items's value
-func AddQutoItem(target, id, item string, value uint64) {
-	quto := base.GetService(ServiceName).(*QutoService)
-	quto.addQutoItem(target, id, item, value)
-}
-
-// SubQutoItemValue sub quto items's value
-func SubQutoItem(target, id, item string, value uint64) {
-	quto := base.GetService(ServiceName).(*QutoService)
-	quto.subQutoItem(target, id, item, value)
+	return quto.checkQuto(id, value)
 }

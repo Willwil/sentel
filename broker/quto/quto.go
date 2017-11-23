@@ -14,24 +14,14 @@ package quto
 
 // Quto Object declaration
 type Quto struct {
-	QutoId   string           `json:"qutoId" bson:"qutoId"`
-	Target   string           `json:"target" bson:"target"`
-	TargetId string           `json:"targetId" bson:"targetId"`
-	Values   map[string]int64 `json:"values" bson:"values"`
+	QutoId   string `json:"qutoId" bson:"qutoId"`
+	BrokerId string `json:"brokerId" bson:"brokerId"`
+	Key      string `json:"key" bson:"key"`
+	Value    uint64 `json:"value" bson:"value"`
 }
-
-// Quto Target declaration
-const (
-	TenantTarget  = "tenant"
-	ProductTarget = "product"
-	DeviceTarget  = "device"
-)
 
 // Quto items decleation
 const (
-	MaxTenants      = "max_tenants"
-	MaxProducts     = "max_products"
-	CurProducts     = "cur_products"
 	MaxConnections  = "max_connections"
 	CurConnections  = "cur_connections"
 	MaxPublications = "max_publications"

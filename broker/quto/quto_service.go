@@ -13,9 +13,11 @@
 package quto
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -30,8 +32,8 @@ import (
 )
 
 const (
-	cachePolicyLru   = "lru"
-	cachePolicyRedis = "redis"
+	cachePolicyMemory = "memory"
+	cachePolicyRedis  = "redis"
 )
 
 // Metaservice manage broker metadata
@@ -43,7 +45,7 @@ type QutoService struct {
 	eventChan   chan *event.Event
 	cachePolicy string
 	cacheMutex  sync.Mutex
-	lruCache    *LRUCache
+	cacheMap    map[string]uint64
 	rclient     *redis.Client
 }
 
@@ -66,7 +68,7 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	defer session.Close()
 
 	// Connect with redis if cache policy is redis
-	policy := cachePolicyLru
+	policy := cachePolicyMemory
 	if v, err := c.String("quto", "cace_policy"); err == nil && v == cachePolicyRedis {
 		policy = cachePolicyRedis
 	}
@@ -97,7 +99,7 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 		eventChan:   make(chan *event.Event),
 		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
-		lruCache:    NewLRUCache(5),
+		cacheMap:    make(map[string]uint64),
 		rclient:     rclient,
 	}, nil
 
@@ -158,50 +160,42 @@ func (p *QutoService) handleQutoChanged(e *event.Event) {
 		return
 	}
 	// Update cach according to cach policy
-	p.setQuto(quto.Target, quto.TargetId, &quto)
+	p.setCacheItem(quto.Key, quto.Value)
 }
 
 // getCacheItem get item from ache
-func (p *QutoService) getCacheItem(key string) *Quto {
+func (p *QutoService) getCacheItem(id string) (uint64, error) {
 	switch p.cachePolicy {
-	case cachePolicyLru:
-		quto, found, _ := p.lruCache.Get(key)
-		if found && quto != nil {
-			return quto.(*Quto)
+	case cachePolicyMemory:
+		if _, ok := p.cacheMap[id]; !ok {
+			return 0, fmt.Errorf("Invalid cache identifier '%s'", id)
 		}
+		return p.cacheMap[id], nil
 	case cachePolicyRedis:
-		val, err := p.rclient.Get(key).Result()
-		if err == nil {
-			quto := Quto{}
-			if err = json.Unmarshal([]byte(val), &quto); err == nil {
-				return &quto
-			}
+		val, err := p.rclient.Get(id).Result()
+		if err != nil {
+			return 0, err
 		}
+		return strconv.ParseUint(val, 10, 64)
 	}
-	return nil
+	return 0, errors.New("Invalid cache policy")
 }
 
 // setCacheItem set cache item internal
-func (p *QutoService) setCacheItem(key string, quto *Quto) error {
+func (p *QutoService) setCacheItem(id string, val uint64) {
 	switch p.cachePolicy {
-	case cachePolicyLru:
-		p.lruCache.Set(key, quto)
+	case cachePolicyMemory:
+		p.cacheMap[id] = val
 	case cachePolicyRedis:
-		val, err := json.Marshal(quto)
-		if err != nil {
-			return err
-		}
-		p.rclient.Set(key, []byte(val), 0)
+		p.rclient.Set(id, val, 0)
 	}
-	return nil
 }
 
 // getQuto return object's qutotation
-func (p *QutoService) getQuto(target string, id string) (*Quto, error) {
-	key := target + "/" + id
+func (p *QutoService) getQuto(id string) (uint64, error) {
 	// Get quto from cache at first
-	if quto := p.getCacheItem(key); quto != nil {
-		return quto, nil
+	if val, err := p.getCacheItem(id); err == nil {
+		return val, nil
 	}
 
 	// Read from database if not found in cache
@@ -210,40 +204,25 @@ func (p *QutoService) getQuto(target string, id string) (*Quto, error) {
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		glog.Error("quto: Access backend database failed")
-		return nil, err
+		return 0, err
 	}
 	defer session.Close()
 	c := session.DB("registry").C("qutos")
 
 	quto := Quto{}
-	if err := c.Find(bson.M{"Target": target, "TargetId": id}).One(&quto); err != nil {
-		return nil, err
+	if err := c.Find(bson.M{"Key": id}).One(&quto); err != nil {
+		return 0, err
 	}
 	// Set the item back to cache
-	if err := p.setCacheItem(key, &quto); err != nil {
-		glog.Error("quto: Failed to write quto back to cache")
-		// no return
+	p.setCacheItem(id, quto.Value)
+	return quto.Value, nil
+}
+
+// checkQutoWithAddValue check wether the newly added value is over quto
+func (p *QutoService) checkQuto(id string, value uint64) bool {
+	v, err := p.getCacheItem(id)
+	if err != nil {
+		return false
 	}
-	return &quto, nil
-}
-
-// getQutoItem return object's qutotation
-func (p *QutoService) getQutoItem(target, id, item string) uint64 {
-	return 0
-}
-
-// setQuto set object's qutotation
-func (p *QutoService) setQuto(target, id string, q *Quto) {
-}
-
-// setQutoItem set object item's qutotations
-func (p *QutoService) setQutoItem(taret, id, item string, value uint64) {
-}
-
-// addQutoItemValue add quto items's value
-func (p *QutoService) addQutoItem(target, id, item string, value uint64) {
-}
-
-// subQutoItemValue sub quto items's value
-func (p *QutoService) subQutoItem(target, id, item string, value uint64) {
+	return v > value
 }
