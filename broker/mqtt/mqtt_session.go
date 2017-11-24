@@ -593,14 +593,14 @@ func (p *mqttSession) handlePublish() error {
 
 	switch qos {
 	case 0:
-		err = metadata.QueueMessage(p.id, msg)
+		err = metadata.QueueMessage(p.id, &msg)
 	case 1:
-		err = metadata.QueueMessage(p.id, msg)
+		err = metadata.QueueMessage(p.id, &msg)
 		err = p.sendPubAck(mid)
 	case 2:
 		err = nil
 		if dup > 0 {
-			err = metadata.InsertMessage(p.id, mid, metadata.MessageDirectionIn, msg)
+			err = metadata.InsertMessage(p.id, mid, metadata.MessageDirectionIn, &msg)
 		}
 		if err == nil {
 			err = p.sendPubRec(mid)

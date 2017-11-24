@@ -34,6 +34,7 @@ import (
 type MetadataService struct {
 	core.ServiceBase
 	eventChan chan *event.Event
+	topicTree TopicTree
 }
 
 const (
@@ -57,6 +58,11 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 	}
 	defer session.Close()
 
+	topicTree, err := newTopicTree(c)
+	if err != nil {
+		return nil, err
+	}
+
 	return &MetadataService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
@@ -64,6 +70,7 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 			Quit:      quit,
 		},
 		eventChan: make(chan *event.Event),
+		topicTree: topicTree,
 	}, nil
 
 }
@@ -167,4 +174,59 @@ func (p *MetadataService) getShadowDeviceStatus(clientId string) (*Device, error
 // syncShadowDeviceStatus synchronize shadow device's status
 func (p *MetadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
 	return nil
+}
+
+// findSesison return session object by id if existed
+func (p *MetadataService) findSession(clientId string) (*Session, error) {
+	return p.topicTree.FindSession(clientId)
+}
+
+// deleteSession remove session specified by clientId from metadata
+func (p *MetadataService) deleteSession(clientId string) error {
+	return p.topicTree.DeleteSession(clientId)
+}
+
+// regiserSession register session into metadata
+func (p *MetadataService) registerSession(s *Session) error {
+	return p.topicTree.RegisterSession(s)
+}
+
+// addSubscription add a subscription into metadat
+func (p *MetadataService) addSubscription(clientId string, topic string, qos uint8) error {
+	return p.topicTree.AddSubscription(clientId, topic, qos)
+}
+
+// retainSubscription retain the client with topic
+func (p *MetadataService) retainSubscription(clientId string, topic string, qos uint8) error {
+	return p.topicTree.RetainSubscription(clientId, topic, qos)
+}
+
+// RmoeveSubscription remove specified topic from metadata
+func (p *MetadataService) removeSubscription(clientId string, topic string) error {
+	return p.topicTree.RemoveSubscription(clientId, topic)
+}
+
+// deleteMessageWithValidator delete message in metadata with confition
+func (p *MetadataService) deleteMessageWithValidator(clientId string, validator func(Message) bool) {
+	p.topicTree.DeleteMessageWithValidator(clientId, validator)
+}
+
+// deleteMessge delete message specified by idfrom metadata
+func (p *MetadataService) deleteMessage(clientId string, mid uint16, direction MessageDirection) error {
+	return p.topicTree.DeleteMessage(clientId, mid, direction)
+}
+
+// queueMessage save message into metadata
+func (p *MetadataService) queueMessage(clientId string, msg *Message) error {
+	return p.topicTree.QueueMessage(clientId, *msg)
+}
+
+// insertMessage insert specified message into metadata
+func (p *MetadataService) insertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
+	return p.topicTree.InsertMessage(clientId, mid, direction, *msg)
+}
+
+// releaseMessage release message from metadata
+func (p *MetadataService) releaseMessage(clientId string, mid uint16, direction MessageDirection) error {
+	return p.topicTree.ReleaseMessage(clientId, mid, direction)
 }

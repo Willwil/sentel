@@ -42,6 +42,6 @@ type TopicTree interface {
 	UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState)
 }
 
-func NewTopicTree(c core.Config) (TopicTree, error) {
+func newTopicTree(c core.Config) (TopicTree, error) {
 	return newLocalTopicTree(c)
 }

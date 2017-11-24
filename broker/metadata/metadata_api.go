@@ -26,68 +26,70 @@ func SyncShadowDeviceStatus(clientId string, d *Device) error {
 	return meta.syncShadowDeviceStatus(clientId, d)
 }
 
-func Backup(shutdown bool) error {
-	return nil
-}
-func Restore() error {
-	return nil
-}
-
-// Session
-func FindSession(id string) (*Session, error) {
-	return nil, nil
+// FindSesison return session object by clientId if existed
+func FindSession(clientId string) (*Session, error) {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.findSession(clientId)
 }
 
-func DeleteSession(id string) error {
-	return nil
+// DeleteSession remove session specified by clientId from metadata
+func DeleteSession(clientId string) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.deleteSession(clientId)
 }
 
-func UpdateSession(s *Session) error {
-	return nil
-}
+// RegiserSession register session into metadata
 func RegisterSession(s *Session) error {
-	return nil
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.registerSession(s)
 }
 
-// Subscription
-func AddSubscription(sessionid string, topic string, qos uint8) error {
-	return nil
+// AddSubscription add a subscription into metadat
+func AddSubscription(clientId string, topic string, qos uint8) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.addSubscription(clientId, topic, qos)
 }
 
-func RetainSubscription(sessionid string, topic string, qos uint8) error {
-	return nil
+// RetainSubscription retain the client with topic
+func RetainSubscription(clientId string, topic string, qos uint8) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.retainSubscription(clientId, topic, qos)
 }
 
-func RemoveSubscription(sessionid string, topic string) error {
-	return nil
+// RmoeveSubscription remove specified topic from metadata
+func RemoveSubscription(clientId string, topic string) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.removeSubscription(clientId, topic)
 }
 
-// Message Management
-func FindMessage(clientid string, mid uint16) bool {
-	return false
-}
-func StoreMessage(clientid string, msg Message) error {
-	return nil
-}
-func DeleteMessageWithValidator(clientid string, validator func(Message) bool) {
-}
-func DeleteMessage(clientid string, mid uint16, direction MessageDirection) error {
-	return nil
+// DeleteMessageWithValidator delete message in metadata with confition
+func DeleteMessageWithValidator(clientId string, validator func(Message) bool) {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	meta.deleteMessageWithValidator(clientId, validator)
 }
 
-func QueueMessage(clientid string, msg Message) error {
-	return nil
+// DeleteMessge delete message specified by idfrom metadata
+func DeleteMessage(clientId string, mid uint16, direction MessageDirection) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.deleteMessage(clientId, mid, direction)
 }
-func GetMessageTotalCount(clientid string) int {
-	return 0
+
+// QueueMessage save message into metadata
+func QueueMessage(clientId string, msg *Message) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.queueMessage(clientId, msg)
 }
-func InsertMessage(clientid string, mid uint16, direction MessageDirection, msg Message) error {
-	return nil
+
+// InsertMessage insert specified message into metadata
+func InsertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.insertMessage(clientId, mid, direction, msg)
 }
-func ReleaseMessage(clientid string, mid uint16, direction MessageDirection) error {
-	return nil
-}
-func UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
+
+// ReleaseMessage release message from metadata
+func ReleaseMessage(clientId string, mid uint16, direction MessageDirection) error {
+	meta := broker.GetService(ServiceName).(*MetadataService)
+	return meta.releaseMessage(clientId, mid, direction)
 }
 
 // Client
