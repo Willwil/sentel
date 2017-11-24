@@ -693,23 +693,19 @@ func (p *mqttSession) sendCommandWithMid(command uint8, mid uint16, dup bool) er
 
 // sendPubAck
 func (p *mqttSession) sendPubAck(mid uint16) error {
-	glog.Info("Sending PUBACK to %s with MID:%d", p.id, mid)
+	glog.Infof("Sending PUBACK to %s with MID:%d", p.id, mid)
 	return p.sendCommandWithMid(PUBACK, mid, false)
 }
 
 // sendPubRec
 func (p *mqttSession) sendPubRec(mid uint16) error {
-	glog.Info("Sending PUBRREC to %s with MID:%d", p.id, mid)
+	glog.Infof("Sending PUBRREC to %s with MID:%d", p.id, mid)
 	return p.sendCommandWithMid(PUBREC, mid, false)
 }
 
 func (p *mqttSession) sendPubComp(mid uint16) error {
-	glog.Info("Sending PUBCOMP to %s with MID:%d", p.id, mid)
+	glog.Infof("Sending PUBCOMP to %s with MID:%d", p.id, mid)
 	return p.sendCommandWithMid(PUBCOMP, mid, false)
-}
-
-func (p *mqttSession) QueueMessage(msg *mqttMessage) error {
-	return nil
 }
 
 func (p *mqttSession) updateOutMessage(mid uint16, state int) error {
