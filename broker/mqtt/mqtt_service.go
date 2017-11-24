@@ -27,7 +27,6 @@ import (
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/Shopify/sarama"
 	"github.com/golang/glog"
 )
 
@@ -39,50 +38,22 @@ const (
 // MQTT service declaration
 type mqttService struct {
 	core.ServiceBase
-	sessions   map[string]base.Session // All mqtt sessions
-	mutex      sync.Mutex              // Mutex to protect sessions
-	localAddrs []string                // Local address used to identifier wether notification come from local
-	protocol   string                  // Supported protocol, such as tcp,websocket, tls
-	consumer   sarama.Consumer         // Kafka client connection handle
+	sessions map[string]base.Session // All mqtt sessions
+	mutex    sync.Mutex              // Mutex to protect sessions
 }
 
 // MqttFactory
-type MqttFactory struct {
-	Protocol string // Indicate which protocol the factory to support
-}
+type MqttFactory struct{}
 
 // New create mqtt service factory
 func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	// Get all local ip address
-	localAddrs := []string{}
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		glog.Errorf("Failed to get local interface:%s", err)
-		return nil, err
-	}
-	for _, addr := range addrs {
-		if ipnet, ok := addr.(*net.IPNet); ok && ipnet.IP.To4() != nil {
-			return nil, errors.New("Failed to get local address")
-		}
-	}
-
-	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-
 	t := &mqttService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		sessions:   make(map[string]base.Session),
-		protocol:   p.Protocol,
-		localAddrs: localAddrs,
-		consumer:   consumer,
+		sessions: make(map[string]base.Session),
 	}
 	return t, nil
 }
