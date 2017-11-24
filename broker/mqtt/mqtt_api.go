@@ -11,3 +11,8 @@
 //  under the License.
 
 package mqtt
+
+// checkTopiValidity will check topic's validity
+func CheckTopicValidity(topic string) error {
+	return nil
+}

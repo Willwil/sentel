@@ -14,7 +14,6 @@ package mqtt
 
 import (
 	"crypto/tls"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -148,9 +147,6 @@ func (p *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
-	if err := p.subscribeTopic("session"); err != nil {
-		return err
-	}
 	// Read protocol configuration for supported protocol
 	protocolConfig, err := p.Config.String("mqtt", "protocols")
 	if err != nil || protocolConfig == "" {
@@ -208,73 +204,6 @@ func (p *mqttService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
-}
-
-// subscribeTopc subscribe topics from apiserver
-func (p *mqttService) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
-	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
-			for msg := range pc.Messages() {
-				p.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(pc)
-	}
-	return nil
-}
-
-// handleNotifications handle notification from kafka
-func (p *mqttService) handleNotifications(topic string, value []byte) error {
-	switch topic {
-	case TopicNameSession:
-		return p.handleSessionNotifications(value)
-	}
-	return nil
-}
-
-// handleSessionNotifications handle session notification  from kafka
-func (p *mqttService) handleSessionNotifications(value []byte) error {
-	// Decode value received form other mqtt node
-	var topics []SessionTopic
-	if err := json.Unmarshal(value, &topics); err != nil {
-		glog.Errorf("Mqtt session notifications failure:%s", err)
-		return err
-	}
-	// Get local ip address
-	for _, topic := range topics {
-		switch topic.Action {
-		case core.TopicActionUpdate:
-			// Only deal with notification that is not  launched by myself
-			for _, addr := range p.localAddrs {
-				if addr != topic.Launcher {
-					// s, err := p.storage.FindSession(topic.SessionId)
-					// if err != nil {
-					//		s.state = topic.State
-					// }
-					//p.storage.UpdateSession(&StorageSession{Id: topic.SessionId, State: topic.State})
-				}
-			}
-		case core.TopicActionDelete:
-
-		case core.TopicActionRegister:
-		default:
-		}
-	}
-	return nil
 }
 
 func listen(network, laddr string, c core.Config) (net.Listener, error) {

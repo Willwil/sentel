@@ -244,7 +244,7 @@ func (p *mqttSession) handleConnect() error {
 			return nil
 		}
 		willTopic = p.mountpoint + topic
-		if err := checkTopicValidity(willTopic); err != nil {
+		if err := CheckTopicValidity(willTopic); err != nil {
 			return err
 		}
 		// Get willtopic's payload
@@ -460,7 +460,7 @@ func (p *mqttSession) handleSubscribe() error {
 		if sub, err = p.inpacket.readString(); err != nil {
 			return err
 		}
-		if checkTopicValidity(sub) != nil {
+		if CheckTopicValidity(sub) != nil {
 			glog.Errorf("Invalid subscription topic %s from %s, disconnecting", sub, p.id)
 			return mqttErrorInvalidProtocol
 		}
@@ -508,7 +508,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err != nil {
 			return mqttErrorInvalidProtocol
 		}
-		if err := checkTopicValidity(sub); err != nil {
+		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
 		metadata.RemoveSubscription(p.id, sub)
@@ -537,7 +537,7 @@ func (p *mqttSession) handlePublish() error {
 	if topic, err = p.inpacket.readString(); err != nil {
 		return fmt.Errorf("Invalid topic in PUBLISH from %s", p.id)
 	}
-	if checkTopicValidity(topic) != nil {
+	if CheckTopicValidity(topic) != nil {
 		return fmt.Errorf("Invalid topic in PUBLISH(%s) from %s", topic, p.id)
 	}
 	topic = p.mountpoint + topic

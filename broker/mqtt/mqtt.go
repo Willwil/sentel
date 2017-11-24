@@ -12,6 +12,8 @@
 
 package mqtt
 
+import "errors"
+
 const (
 	ServiceName = "mqtt"
 )
@@ -49,4 +51,16 @@ const (
 	mqttProtocol31      = 1
 	mqttProtocol311     = 2
 	mqttProtocolS       = 3
+)
+
+var (
+	mqttErrorInvalidProtocol = errors.New("Invalid protocol")
+	mqttErrorInvalidVersion  = errors.New("Invalid protocol version")
+	mqttErrorConnectPending  = errors.New("Connec pending")
+	mqttErrorNoConnection    = errors.New("No connection")
+	mqttErrorConnectRefused  = errors.New("Connection Refused")
+	mqttErrorNotFound        = errors.New("Not found")
+	mqttErrorNotSupported    = errors.New("Not supported")
+	mqttErrorAutoFailed      = errors.New("Auth failed")
+	mqttErrorUnkown          = errors.New("Unknown error")
 )
