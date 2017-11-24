@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
@@ -56,7 +57,6 @@ const (
 type mqttSession struct {
 	mgr               *mqttService
 	config            core.Config
-	storage           Storage
 	conn              net.Conn
 	id                string
 	clientID          string
@@ -104,7 +104,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 	s := &mqttSession{
 		mgr:               m,
 		config:            m.Config,
-		storage:           m.storage,
 		conn:              conn,
 		id:                id,
 		bytesReceived:     0,
@@ -438,10 +437,10 @@ func (p *mqttSession) handleConnect() error {
 	}
 	conack := 0
 	// Find if the client already has an entry, p must be done after any security check
-	if found, _ := p.storage.FindSession(clientid); found != nil {
+	if found, _ := metadata.FindSession(clientid); found != nil {
 		// Found old session
-		if found.state == mqttStateInvalid {
-			glog.Errorf("Invalid session(%s) in store", found.id)
+		if found.State == mqttStateInvalid {
+			glog.Errorf("Invalid session(%s) in store", found.Id)
 		}
 		if p.protocol == mqttProtocol311 {
 			if cleanSession == 0 {
@@ -450,9 +449,9 @@ func (p *mqttSession) handleConnect() error {
 		}
 		p.cleanSession = cleanSession
 
-		if p.cleanSession == 0 && found.cleanSession == 0 {
+		if p.cleanSession == 0 && found.CleanSession == 0 {
 			// Resume last session   // fix me ssddn
-			p.storage.UpdateSession(p)
+			// metadata.UpdateSession(p)
 			// Notify other mqtt node to release resource
 			event.Notify(&event.Event{
 				Type:       event.SessionResumed,
@@ -464,7 +463,7 @@ func (p *mqttSession) handleConnect() error {
 
 	} else {
 		// Register the session in storage
-		p.storage.RegisterSession(p)
+		//metadata.RegisterSession(p)
 	}
 
 	if willMsg != nil {
@@ -485,9 +484,9 @@ func (p *mqttSession) handleConnect() error {
 
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
-	p.storage.DeleteMessageWithValidator(
+	metadata.DeleteMessageWithValidator(
 		clientid,
-		func(msg StorageMessage) bool {
+		func(msg metadata.Message) bool {
 			err := auth.Authorize(clientid, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false
@@ -529,7 +528,7 @@ func (p *mqttSession) disconnect() {
 		return
 	}
 	if p.cleanSession > 0 {
-		p.storage.DeleteSession(p.id)
+		metadata.DeleteSession(p.id)
 		p.id = ""
 	}
 	p.state = mqttStateDisconnected
@@ -577,10 +576,10 @@ func (p *mqttSession) handleSubscribe() error {
 			sub = mp + sub
 		}
 		if qos != 0x80 {
-			if err := p.storage.AddSubscription(p.id, sub, qos); err != nil {
+			if err := metadata.AddSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
-			if err := p.storage.RetainSubscription(p.id, sub, qos); err != nil {
+			if err := metadata.RetainSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
 		}
@@ -613,7 +612,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := checkTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		p.storage.RemoveSubscription(p.id, sub)
+		metadata.RemoveSubscription(p.id, sub)
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)
@@ -689,11 +688,11 @@ func (p *mqttSession) handlePublish() error {
 			}
 		}
 	}
-	msg := StorageMessage{
+	msg := metadata.Message{
 		ID:        uint(mid),
 		SourceID:  p.id,
 		Topic:     topic,
-		Direction: MessageDirectionIn,
+		Direction: metadata.MessageDirectionIn,
 		State:     0,
 		Qos:       qos,
 		Retain:    (retain > 0),
@@ -702,14 +701,14 @@ func (p *mqttSession) handlePublish() error {
 
 	switch qos {
 	case 0:
-		err = p.storage.QueueMessage(p.id, msg)
+		err = metadata.QueueMessage(p.id, msg)
 	case 1:
-		err = p.storage.QueueMessage(p.id, msg)
+		err = metadata.QueueMessage(p.id, msg)
 		err = p.sendPubAck(mid)
 	case 2:
 		err = nil
 		if dup > 0 {
-			err = p.storage.InsertMessage(p.id, mid, MessageDirectionIn, msg)
+			err = metadata.InsertMessage(p.id, mid, metadata.MessageDirectionIn, msg)
 		}
 		if err == nil {
 			err = p.sendPubRec(mid)
@@ -735,7 +734,7 @@ func (p *mqttSession) handlePubRel() error {
 		return err
 	}
 
-	p.storage.DeleteMessage(p.id, mid, MessageDirectionIn)
+	metadata.DeleteMessage(p.id, mid, metadata.MessageDirectionIn)
 	return p.sendPubComp(mid)
 }
 

@@ -51,7 +51,6 @@ type mqttService struct {
 	sessions   map[string]base.Session // All mqtt sessions
 	mutex      sync.Mutex              // Mutex to protect sessions
 	localAddrs []string                // Local address used to identifier wether notification come from local
-	storage    Storage                 // Storage for sessions and metadata
 	protocol   string                  // Supported protocol, such as tcp,websocket, tls
 	consumer   sarama.Consumer         // Kafka client connection handle
 }
@@ -82,11 +81,6 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 		}
 	}
 
-	// Create storage
-	s, err := NewStorage(c)
-	if err != nil {
-		return nil, errors.New("Failed to create storage in mqtt")
-	}
 	// kafka
 	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
@@ -103,7 +97,6 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 		sessions:   make(map[string]base.Session),
 		protocol:   p.Protocol,
 		localAddrs: localAddrs,
-		storage:    s,
 		consumer:   consumer,
 	}
 	return t, nil
@@ -282,10 +275,10 @@ func (p *mqttService) handleSessionNotifications(value []byte) error {
 			// Only deal with notification that is not  launched by myself
 			for _, addr := range p.localAddrs {
 				if addr != topic.Launcher {
-					s, err := p.storage.FindSession(topic.SessionId)
-					if err != nil {
-						s.state = topic.State
-					}
+					// s, err := p.storage.FindSession(topic.SessionId)
+					// if err != nil {
+					//		s.state = topic.State
+					// }
 					//p.storage.UpdateSession(&StorageSession{Id: topic.SessionId, State: topic.State})
 				}
 			}

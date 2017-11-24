@@ -25,3 +25,67 @@ func SyncShadowDeviceStatus(clientId string, d *Device) error {
 	meta := base.GetService(ServiceName).(*MetadataService)
 	return meta.syncShadowDeviceStatus(clientId, d)
 }
+
+func Backup(shutdown bool) error {
+	return nil
+}
+func Restore() error {
+	return nil
+}
+
+// Session
+func FindSession(id string) (*Session, error) {
+	return nil, nil
+}
+
+func DeleteSession(id string) error {
+	return nil
+}
+
+func UpdateSession(s *Session) error {
+	return nil
+}
+func RegisterSession(s *Session) error {
+	return nil
+}
+
+// Subscription
+func AddSubscription(sessionid string, topic string, qos uint8) error {
+	return nil
+}
+
+func RetainSubscription(sessionid string, topic string, qos uint8) error {
+	return nil
+}
+
+func RemoveSubscription(sessionid string, topic string) error {
+	return nil
+}
+
+// Message Management
+func FindMessage(clientid string, mid uint16) bool {
+	return false
+}
+func StoreMessage(clientid string, msg Message) error {
+	return nil
+}
+func DeleteMessageWithValidator(clientid string, validator func(Message) bool) {
+}
+func DeleteMessage(clientid string, mid uint16, direction MessageDirection) error {
+	return nil
+}
+
+func QueueMessage(clientid string, msg Message) error {
+	return nil
+}
+func GetMessageTotalCount(clientid string) int {
+	return 0
+}
+func InsertMessage(clientid string, mid uint16, direction MessageDirection, msg Message) error {
+	return nil
+}
+func ReleaseMessage(clientid string, mid uint16, direction MessageDirection) error {
+	return nil
+}
+func UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
+}

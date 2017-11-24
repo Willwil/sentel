@@ -14,11 +14,22 @@ package metadata
 
 import "time"
 
+// Session
 type Session struct {
-	SessionId string    `json:"sessionId" bson:"sessionId"`
-	ClientId  string    `json:"clientId" bson:"clientId"`
-	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
-	Topics    []string  `json:"topics" bson:"topics"`
+	Id                 string
+	Username           string
+	Password           string
+	Keepalive          uint16
+	LastMid            uint16
+	State              uint8
+	CreatedAt          time.Time
+	LastMessageInTime  time.Time
+	LastMessageOutTime time.Time
+	Ping               time.Time
+	CleanSession       uint8
+	SubscribeCount     uint32
+	Protocol           uint8
+	RefCount           uint8
 }
 
 type Device struct {
@@ -26,4 +37,27 @@ type Device struct {
 	CreatedAt   time.Time `json:"createdAt" bson:"createdAt"`
 	LastUpdated time.Time `json:"lastUpdated" bson:"lastUpdated"`
 	Data        []byte    `json:"data" bson:"data"`
+}
+
+type Topic struct {
+	Name string
+}
+
+type MessageDirection int
+type MessageState int
+
+const (
+	MessageDirectionIn  MessageDirection = 0
+	MessageDirectionOut MessageDirection = 1
+)
+
+type Message struct {
+	ID        uint
+	SourceID  string
+	Topic     string
+	Direction MessageDirection
+	State     MessageState
+	Qos       uint8
+	Retain    bool
+	Payload   []uint8
 }
