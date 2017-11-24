@@ -32,57 +32,30 @@ import (
 	"github.com/golang/glog"
 )
 
-// Mqtt session state
-const (
-	mqttStateInvalid        = 0
-	mqttStateNew            = 1
-	mqttStateConnected      = 2
-	mqttStateDisconnecting  = 3
-	mqttStateConnectAsync   = 4
-	mqttStateConnectPending = 5
-	mqttStateConnectSrv     = 6
-	mqttStateDisconnectWs   = 7
-	mqttStateDisconnected   = 8
-	mqttStateExpiring       = 9
-)
-
-// mqtt protocol
-const (
-	mqttProtocolInvalid = 0
-	mqttProtocol31      = 1
-	mqttProtocol311     = 2
-	mqttProtocolS       = 3
-)
-
 type mqttSession struct {
-	mgr               *mqttService
-	config            core.Config
-	conn              net.Conn
-	id                string
-	clientID          string
-	state             uint8
-	inpacket          mqttPacket
-	bytesReceived     int64
-	pingTime          *time.Time
-	address           string
-	keepalive         uint16
-	protocol          uint8
-	observer          base.SessionObserver
-	username          string
-	password          string
-	lastMessageIn     time.Time
-	lastMessageOut    time.Time
-	cleanSession      uint8
-	isDroping         bool
-	willMsg           *mqttMessage
-	stateMutex        sync.Mutex
-	sendStopChannel   chan int
-	sendPacketChannel chan *mqttPacket
-	sendMsgChannel    chan *mqttMessage
-	waitgroup         sync.WaitGroup
+	config         core.Config
+	conn           net.Conn
+	id             string
+	clientID       string
+	state          uint8
+	inpacket       mqttPacket
+	bytesReceived  int64
+	pingTime       *time.Time
+	address        string
+	keepalive      uint16
+	protocol       uint8
+	username       string
+	password       string
+	lastMessageIn  time.Time
+	lastMessageOut time.Time
+	cleanSession   uint8
+	isDroping      bool
+	willMsg        *mqttMessage
+	stateMutex     sync.Mutex
+	waitgroup      sync.WaitGroup
+	mountpoint     string
 
 	// resume field
-	msgs       []*mqttMessage
 	storedMsgs []*mqttMessage
 	// authentication options
 	authOptions *auth.Options
@@ -91,95 +64,34 @@ type mqttSession struct {
 // newMqttSession create new session  for each client connection
 func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, error) {
 	// Get session message queue size, if it is not set, default is 10
-	qsize, err := m.Config.Int("mqtt", "session_queue_size")
-	if err != nil {
-		qsize = 10
-	}
-	var msgqsize int
-	msgqsize, err = m.Config.Int("mqtt", "session_msg_queue_size")
+	msgqsize, err := m.Config.Int("mqtt", "session_msg_queue_size")
 	if err != nil {
 		msgqsize = 10
 	}
 
 	s := &mqttSession{
-		mgr:               m,
-		config:            m.Config,
-		conn:              conn,
-		id:                id,
-		bytesReceived:     0,
-		state:             mqttStateNew,
-		inpacket:          newMqttPacket(),
-		protocol:          mqttProtocolInvalid,
-		observer:          nil,
-		sendStopChannel:   make(chan int),
-		sendPacketChannel: make(chan *mqttPacket, qsize),
-		sendMsgChannel:    make(chan *mqttMessage, msgqsize),
-		msgs:              make([]*mqttMessage, msgqsize),
-		storedMsgs:        make([]*mqttMessage, msgqsize),
+		config:        m.Config,
+		conn:          conn,
+		id:            id,
+		bytesReceived: 0,
+		state:         mqttStateNew,
+		inpacket:      newMqttPacket(),
+		protocol:      mqttProtocolInvalid,
+		storedMsgs:    make([]*mqttMessage, msgqsize),
+		mountpoint:    "",
 	}
 
 	return s, nil
 }
 
-func (p *mqttSession) Identifier() string    { return p.id }
-func (p *mqttSession) Service() core.Service { return p.mgr }
-func (p *mqttSession) RegisterObserver(o base.SessionObserver) {
-	if p.observer != nil {
-		glog.Error("MqttSession register multiple observer")
-	}
-	p.observer = o
-}
+func (p *mqttSession) Identifier() string      { return p.id }
 func (p *mqttSession) Info() *base.SessionInfo { return nil }
-
-// launchPacketSendHandler launch goroutine to send packet queued for client
-func (p *mqttSession) launchPacketSendHandler() {
-	go func(stopChannel chan int, packetChannel chan *mqttPacket, msgChannel chan *mqttMessage) {
-		defer p.waitgroup.Add(1)
-
-		for {
-			select {
-			case <-stopChannel:
-				return
-			case packet := <-packetChannel:
-				for packet.toprocess > 0 {
-					len, err := p.conn.Write(packet.payload[packet.pos:packet.toprocess])
-					if err != nil {
-						glog.Fatal("Failed to send packet to '%s:%s'", p.id, err)
-						return
-					}
-					if len > 0 {
-						packet.toprocess -= len
-						packet.pos += len
-					} else {
-						glog.Fatal("Failed to send packet to '%s'", p.id)
-						return
-					}
-				}
-			case msg := <-msgChannel:
-				p.handleOutMessage(msg)
-			case <-time.After(1 * time.Second):
-				p.handleOutMessageTimeout()
-			}
-		}
-	}(p.sendStopChannel, p.sendPacketChannel, p.sendMsgChannel)
-}
-
-// handleOutMessage proceess messages
-func (p *mqttSession) handleOutMessage(msg *mqttMessage) error {
-	return nil
-}
-
-// handleOutMessageTimeout proceess timeout
-func (p *mqttSession) handleOutMessageTimeout() error {
-	return nil
-}
 
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
-	defer p.Destroy()
+	defer event.Notify(&event.Event{Type: event.SessionDestroyed, ClientId: p.id})
 
-	p.launchPacketSendHandler()
 	for {
 		var err error
 		if err = p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
@@ -220,18 +132,11 @@ func (p *mqttSession) Handle() error {
 // Destroy will destory the current session
 func (p *mqttSession) Destroy() error {
 	// Stop packet sender goroutine
-	p.sendStopChannel <- 1
 	p.waitgroup.Wait()
 	if p.conn != nil {
 		p.conn.Close()
 	}
-	p.mgr.removeSession(p)
 	return nil
-}
-
-// generateId generate id fro session or client
-func (p *mqttSession) generateId() string {
-	return uuid.NewV4().String()
 }
 
 // handlePingReq handle ping request packet
@@ -315,12 +220,12 @@ func (p *mqttSession) handleConnect() error {
 		if p.protocol == mqttProtocol31 {
 			p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 		} else {
-			if option, err := p.config.Bool(p.mgr.protocol, "allow_zero_length_clientid"); err != nil && (!option || cleanSession == 0) {
+			if option, err := p.config.Bool("mqtt", "allow_zero_length_clientid"); err != nil && (!option || cleanSession == 0) {
 				p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 				return errors.New("Invalid mqtt packet with client id")
 			}
 
-			clientid = p.generateId()
+			clientid = uuid.NewV4().String()
 		}
 	}
 
@@ -338,10 +243,7 @@ func (p *mqttSession) handleConnect() error {
 		if err != nil || topic == "" {
 			return nil
 		}
-		willTopic = topic
-		if p.observer != nil {
-			willTopic = p.observer.OnGetMountPoint() + topic
-		}
+		willTopic = p.mountpoint + topic
 		if err := checkTopicValidity(willTopic); err != nil {
 			return err
 		}
@@ -418,7 +320,7 @@ func (p *mqttSession) handleConnect() error {
 		p.username = username
 		p.password = password
 		// Get anonymous allow configuration
-		allowAnonymous, _ := p.config.Bool(p.mgr.protocol, "allow_anonymous")
+		allowAnonymous, _ := p.config.Bool("mqtt", "allow_anonymous")
 		if usernameFlag > 0 && allowAnonymous == false {
 			// Dont allow anonymous client connection
 			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
@@ -427,7 +329,7 @@ func (p *mqttSession) handleConnect() error {
 	}
 	// Check wether username will be used as client id,
 	// The connection request will be refused if the option is set
-	if option, err := p.config.Bool(p.mgr.protocol, "user_name_as_client_id"); err != nil && option {
+	if option, err := p.config.Bool("mqtt", "user_name_as_client_id"); err != nil && option {
 		if p.username != "" {
 			clientid = p.username
 		} else {
@@ -571,10 +473,7 @@ func (p *mqttSession) handleSubscribe() error {
 			return mqttErrorInvalidProtocol
 		}
 
-		if p.observer != nil {
-			mp := p.observer.OnGetMountPoint()
-			sub = mp + sub
-		}
+		sub = p.mountpoint + sub
 		if qos != 0x80 {
 			if err := metadata.AddSubscription(p.id, sub, qos); err != nil {
 				return err
@@ -641,9 +540,7 @@ func (p *mqttSession) handlePublish() error {
 	if checkTopicValidity(topic) != nil {
 		return fmt.Errorf("Invalid topic in PUBLISH(%s) from %s", topic, p.id)
 	}
-	if p.observer != nil && p.observer.OnGetMountPoint() != "" {
-		topic = p.observer.OnGetMountPoint() + topic
-	}
+	topic = p.mountpoint + topic
 
 	if qos > 0 {
 		mid, err = p.inpacket.readUint16()
@@ -655,7 +552,7 @@ func (p *mqttSession) handlePublish() error {
 	// Payload
 	payloadlen := p.inpacket.remainingLength - p.inpacket.pos
 	if payloadlen > 0 {
-		limitSize, _ := p.config.Int(p.mgr.protocol, "message_size_limit")
+		limitSize, _ := p.config.Int("mqtt", "message_size_limit")
 		if payloadlen > limitSize {
 			return mqttErrorInvalidProtocol
 		}
@@ -665,19 +562,17 @@ func (p *mqttSession) handlePublish() error {
 		}
 	}
 	// Check for topic access
-	if p.observer != nil {
-		err := auth.Authorize(p.id, p.username, topic, auth.AclWrite, nil)
-		switch err {
-		case auth.ErrorAuthDenied:
-			return mqttErrorInvalidProtocol
-		default:
-			return err
-		}
+	err = auth.Authorize(p.id, p.username, topic, auth.AclWrite, nil)
+	switch err {
+	case auth.ErrorAuthDenied:
+		return mqttErrorInvalidProtocol
+	default:
+		return err
 	}
 	glog.Infof("Received PUBLISH from %s(d:%d, q:%d r:%d, m:%d, '%s',..(%d)bytes",
 		p.id, dup, qos, retain, mid, topic, payloadlen)
 
-	// Check wether the message has been stored
+	// Check wether the message has been stored :TODO
 	dup = 0
 	var storedMsg *mqttMessage
 	if qos > 0 {
@@ -744,7 +639,7 @@ func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
 		command:        cmd,
 		remainingCount: 0,
 	}
-	return p.queuePacket(packet)
+	return p.writePacket(packet)
 }
 
 // sendPingRsp send ping response to client
@@ -765,7 +660,7 @@ func (p *mqttSession) sendConnAck(ack uint8, result uint8) error {
 	packet.payload[packet.pos+0] = ack
 	packet.payload[packet.pos+1] = result
 
-	return p.queuePacket(packet)
+	return p.writePacket(packet)
 }
 
 // sendSubAck send subscription acknowledge to client
@@ -781,7 +676,7 @@ func (p *mqttSession) sendSubAck(mid uint16, payload []uint8) error {
 	if len(payload) > 0 {
 		packet.writeBytes(payload)
 	}
-	return p.queuePacket(packet)
+	return p.writePacket(packet)
 }
 
 // sendCommandWithMid send command with message identifier
@@ -796,7 +691,7 @@ func (p *mqttSession) sendCommandWithMid(command uint8, mid uint16, dup bool) er
 	packet.initializePacket()
 	packet.payload[packet.pos+0] = uint8((mid & 0xFF00) >> 8)
 	packet.payload[packet.pos+1] = uint8(mid & 0xff)
-	return p.queuePacket(packet)
+	return p.writePacket(packet)
 }
 
 // sendPubAck
@@ -816,15 +711,7 @@ func (p *mqttSession) sendPubComp(mid uint16) error {
 	return p.sendCommandWithMid(PUBCOMP, mid, false)
 }
 
-func (p *mqttSession) queuePacket(packet *mqttPacket) error {
-	packet.pos = 0
-	packet.toprocess = packet.length
-	p.sendPacketChannel <- packet
-	return nil
-}
-
 func (p *mqttSession) QueueMessage(msg *mqttMessage) error {
-	p.sendMsgChannel <- msg
 	return nil
 }
 
@@ -841,7 +728,7 @@ func (p *mqttSession) sendPublish(subQos uint8, srcQos uint8, topic string, payl
 	// TODO
 
 	var qos uint8
-	if option, err := p.config.Bool(p.mgr.protocol, "upgrade_outgoing_qos"); err != nil && option {
+	if option, err := p.config.Bool("mqtt", "upgrade_outgoing_qos"); err != nil && option {
 		qos = subQos
 	} else {
 		if srcQos > subQos {
@@ -871,7 +758,25 @@ func (p *mqttSession) sendPublish(subQos uint8, srcQos uint8, topic string, payl
 	}
 	packet.writeBytes(payload)
 
-	return p.queuePacket(&packet)
+	return p.writePacket(&packet)
+}
+
+func (p *mqttSession) writePacket(packet *mqttPacket) error {
+	packet.pos = 0
+	packet.toprocess = packet.length
+	for packet.toprocess > 0 {
+		len, err := p.conn.Write(packet.payload[packet.pos:packet.toprocess])
+		if err != nil {
+			return err
+		}
+		if len > 0 {
+			packet.toprocess -= len
+			packet.pos += len
+		} else {
+			return fmt.Errorf("Failed to send packet to '%s'", p.id)
+		}
+	}
+	return nil
 }
 
 // getAuthOptions return authentication options from user's request
@@ -917,4 +822,8 @@ func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (
 		}
 	}
 	return options, nil
+}
+
+func (p *mqttSession) getMountPoint() string {
+	return p.mountpoint // TODO
 }

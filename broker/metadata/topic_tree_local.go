@@ -97,57 +97,6 @@ func (p *localTopicTree) RegisterSession(s *Session) error {
 	return nil
 }
 
-// Device
-// AddDevice
-// func (p *localTopicTree) AddDevice(d Device) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) DeleteDevice(id string) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) UpdateDevice(d Device) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) GetDeviceState(id string) (int, error) {
-// 	return 0, nil
-// }
-
-// func (p *localTopicTree) SetDeviceState(state int) error {
-// 	return nil
-// }
-
-// // Topic
-// func (p *localTopicTree) TopicExist(t Topic) (bool, error) {
-// 	return false, nil
-// }
-
-// func (p *localTopicTree) AddTopic(t Topic) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) DeleteTopic(id string) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) UpdateTopic(t Topic) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) AddSubscriber(t Topic, clientid string) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) RemoveSubscriber(t Topic, clientid string) error {
-// 	return nil
-// }
-
-// func (p *localTopicTree) GetTopicSubscribers(t Topic) ([]string, error) {
-// 	return nil, nil
-// }
-
 func (p *localTopicTree) findNode(node *subNode, lev string) *subNode {
 	for k, v := range node.children {
 		if k == lev {

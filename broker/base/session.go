@@ -11,8 +11,6 @@
 
 package base
 
-import "github.com/cloustone/sentel/core"
-
 // SessionInfo
 type SessionInfo struct {
 	ClientId           string
@@ -32,28 +30,6 @@ type Session interface {
 	Identifier() string
 	// Info return session information
 	Info() *SessionInfo
-	// GetService get the service ower for current session
-	Service() core.Service
 	// Handle indicate service to handle the packet
 	Handle() error
-	// Destroy will release current session
-	Destroy() error
-	// RegisterObserver register observer on session
-	RegisterObserver(SessionObserver)
-}
-
-type SessionObserver interface {
-	OnGetMountPoint() string
-	// Callback when session is connected
-	OnConnect(s Session, userdata interface{}) error
-	// Callback when session is disconnected
-	OnDisconnect(s Session, userdta interface{}) error
-	// Callback before session publish topic
-	OnPublish(s Session, userdata interface{}) error
-	// Callback when message arrived on session
-	OnMessage(s Session, userdata interface{}) error
-	// Callback when session received subscribe notification
-	OnSubscribe(s Session, userdata interface{}) error
-	// Callback when session received unsubscribe notification
-	OnUnsubscribe(s Session, userdata interface{}) error
 }

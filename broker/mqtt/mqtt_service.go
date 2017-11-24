@@ -33,16 +33,8 @@ import (
 )
 
 const (
-	ServiceName        = "mqtt"
 	maxMqttConnections = 1000000
 	protocolName       = "mqtt3"
-)
-
-const (
-	mqttNetworkTcp       = "tcp"
-	mqttNetworkTls       = "tls"
-	mqttNetworkWebsocket = "ws"
-	mqttNetworkHttps     = "https"
 )
 
 // MQTT service declaration
@@ -54,12 +46,6 @@ type mqttService struct {
 	protocol   string                  // Supported protocol, such as tcp,websocket, tls
 	consumer   sarama.Consumer         // Kafka client connection handle
 }
-
-const (
-	MqttProtocolTcp = "tcp"
-	MqttProtocolWs  = "ws"
-	MqttProtocolTls = "tls"
-)
 
 // MqttFactory
 type MqttFactory struct {

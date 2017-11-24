@@ -11,3 +11,27 @@
 //  under the License.
 
 package queue
+
+import (
+	"net"
+
+	"github.com/cloustone/sentel/broker/base"
+)
+
+// Allocate queue from queue service
+func NewQueue(id string, persistent bool, conn net.Conn) (Queue, error) {
+	service := base.GetService(ServiceName).(*QueueService)
+	return service.newQueue(id, persistent, conn)
+}
+
+// GetQueue return queue by queue id
+func GetQueue(id string) Queue {
+	service := base.GetService(ServiceName).(*QueueService)
+	return service.getQueue(id)
+}
+
+// FreeQueue release queue from queue service
+func FreeQueue(id string) {
+	service := base.GetService(ServiceName).(*QueueService)
+	service.freeQueue(id)
+}

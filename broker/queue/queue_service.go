@@ -14,16 +14,11 @@ package queue
 
 import (
 	"fmt"
+	"net"
 	"os"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/cloustone/sentel/core"
-
-	"github.com/Shopify/sarama"
-	"github.com/golang/glog"
-	"gopkg.in/mgo.v2"
 )
 
 // Metaservice manage broker metadata
@@ -32,7 +27,8 @@ import (
 // - Shadow device
 type QueueService struct {
 	core.ServiceBase
-	consumer sarama.Consumer
+	queues map[string]Queue
+	mutex  sync.Mutex
 }
 
 const (
@@ -44,29 +40,14 @@ type QueueServiceFactory struct{}
 
 // New create metadata service factory
 func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
-	timeout := c.MustInt("broker", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	defer session.Close()
-
-	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-
 	return &QueueService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer: consumer,
+		queues: make(map[string]Queue),
+		mutex:  sync.Mutex{},
 	}, nil
 
 }
@@ -78,43 +59,55 @@ func (p *QueueService) Name() string {
 
 // Start
 func (p *QueueService) Start() error {
+	for {
+		select {
+		case <-p.Quit:
+			return nil
+		}
+	}
 	return nil
 }
 
 // Stop
 func (p *QueueService) Stop() {
-	p.consumer.Close()
 	p.WaitGroup.Wait()
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *QueueService) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
+// newQueue allocate queue from queue service
+func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queue, error) {
+	p.mutex.Lock()
+	p.mutex.Unlock()
+
+	// check wethere the id's queue already existed
+	if _, found := p.queues[id]; found {
+		return nil, fmt.Errorf("broker: queue for '%s' already exist", id)
+	}
+
+	var q Queue
+	var err error
+	if persistent {
+		q, err = newPersistentQueue(id, conn)
+	} else {
+		q, err = newTransientQueue(id, conn)
+	}
 	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
+		return nil, err
 	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
-			for msg := range pc.Messages() {
-				p.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(pc)
-	}
-	return nil
+	p.queues[id] = q
+	return q, nil
 }
 
-// handleNotifications handle notification from kafka
-func (p *QueueService) handleNotifications(topic string, value []byte) error {
+// freeQueue release queue from queue service
+func (p *QueueService) freeQueue(id string) {
+	p.mutex.Lock()
+	p.mutex.Unlock()
+	delete(p.queues, id)
+}
+
+// getQueue return queue by id
+func (p *QueueService) getQueue(id string) Queue {
+	if _, found := p.queues[id]; found {
+		return p.queues[id]
+	}
 	return nil
 }
