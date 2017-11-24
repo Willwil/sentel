@@ -9,7 +9,7 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 
-package base
+package broker
 
 type SerializeOptions struct {
 	// Fixlengths determines whether layers should fix the values for any

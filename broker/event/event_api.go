@@ -12,19 +12,19 @@
 
 package event
 
-import "github.com/cloustone/sentel/broker/base"
+import "github.com/cloustone/sentel/broker/broker"
 
 type EventHandler func(e *Event, ctx interface{})
 
 // Publish publish event to event service
 func Notify(e *Event) {
-	e.BrokerId = base.GetBrokerId()
-	service := base.GetService(ServiceName).(*EventService)
+	e.BrokerId = broker.GetId()
+	service := broker.GetService(ServiceName).(*EventService)
 	service.notify(e)
 }
 
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
-	service := base.GetService(ServiceName).(*EventService)
+	service := broker.GetService(ServiceName).(*EventService)
 	service.subscribe(event, handler, ctx)
 }

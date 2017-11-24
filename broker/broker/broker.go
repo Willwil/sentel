@@ -9,7 +9,7 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 
-package base
+package broker
 
 import (
 	"fmt"
@@ -50,12 +50,12 @@ func NewBroker(c core.Config) (*Broker, error) {
 func GetBroker() *Broker { return _broker }
 
 // Version
-func GetBrokerVersion() string {
+func GetVersion() string {
 	return BrokerVersion
 }
 
 // GetBrokerId return broker's identifier
-func GetBrokerId() string {
+func GetId() string {
 	return _broker.brokerId
 }
 

@@ -12,16 +12,16 @@
 
 package quto
 
-import "github.com/cloustone/sentel/broker/base"
+import "github.com/cloustone/sentel/broker/broker"
 
 // GetQuto return object's qutotation
 func GetQuto(id string) (uint64, error) {
-	quto := base.GetService(ServiceName).(*QutoService)
+	quto := broker.GetService(ServiceName).(*QutoService)
 	return quto.getQuto(id)
 }
 
 // CheckQutoWithAddValue check wether the newly added value is over quto
 func CheckQuto(id string, value uint64) bool {
-	quto := base.GetService(ServiceName).(*QutoService)
+	quto := broker.GetService(ServiceName).(*QutoService)
 	return quto.checkQuto(id, value)
 }

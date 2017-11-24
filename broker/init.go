@@ -14,7 +14,7 @@ package broker
 
 import (
 	"github.com/cloustone/sentel/broker/auth"
-	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
@@ -41,7 +41,7 @@ func RunWithConfigFile(fileName string) error {
 		return err
 	}
 	// Create service manager according to the configuration
-	broker, err := base.NewBroker(config)
+	broker, err := broker.NewBroker(config)
 	if err != nil {
 		return err
 	}

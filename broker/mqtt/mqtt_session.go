@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/core"
 
@@ -91,7 +91,7 @@ func (p *mqttSession) Handle() error {
 
 	for {
 		var err error
-		if err = p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
+		if err = p.inpacket.DecodeFromReader(p.conn, broker.NilDecodeFeedback{}); err != nil {
 			glog.Error(err)
 			return err
 		}

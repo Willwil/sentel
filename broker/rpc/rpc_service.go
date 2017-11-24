@@ -20,7 +20,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/core"
@@ -95,7 +95,7 @@ func (p *ApiService) Wait() {
 }
 
 func (p *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
-	version := base.GetBrokerVersion()
+	version := broker.GetVersion()
 	return &VersionReply{Version: version}, nil
 }
 

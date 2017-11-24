@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -124,7 +124,7 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 // onEventSessionCreated called when EventSessionCreated event received
 func (p *MetadataService) onSessionCreated(e *event.Event) {
 	// Save session info if session is local and retained
-	if e.BrokerId == base.GetBrokerId() && e.Persistent {
+	if e.BrokerId == broker.GetId() && e.Persistent {
 		// check mongo db configuration
 		hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
 		timeout := p.Config.MustInt("broker", "connect_timeout")
