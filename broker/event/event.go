@@ -15,23 +15,19 @@ package event
 import "github.com/cloustone/sentel/core"
 
 const (
-	SessionCreated    = 1
-	SessionDestroyed  = 2
-	SessionResumed    = 3
-	TopicPublished    = 4
-	TopicSubscribed   = 5
-	TopicUnsubscribed = 6
-	QutoChanged       = 7
-)
-
-const (
-	EventBusName = "broker/event"
+	SessionCreated    = 0x0001
+	SessionDestroyed  = 0x0002
+	TopicPublished    = 0x0008
+	TopicSubscribed   = 0x0010
+	TopicUnsubscribed = 0x0100
+	QutoChanged       = 0x0200
+	SessionResumed    = 0x0400
 )
 
 type Event struct {
 	core.TopicBase
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
-	Type       uint8  `json:"type"`       // Event type
+	Type       uint32 `json:"type"`       // Event type
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
 	Topic      string `json:"topic"`      // Topic
 	Data       []byte `json:"data"`       // Topic data

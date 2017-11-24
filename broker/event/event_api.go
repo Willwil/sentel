@@ -24,7 +24,7 @@ func Notify(e *Event) {
 }
 
 // Subscribe subcribe event from event service
-func Subscribe(t uint8, handler EventHandler, ctx interface{}) {
+func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 	service := base.GetService(ServiceName).(*EventService)
-	service.subscribe(t, handler, ctx)
+	service.subscribe(event, handler, ctx)
 }

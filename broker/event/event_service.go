@@ -35,10 +35,10 @@ import (
 // - Shadow device
 type EventService struct {
 	core.ServiceBase
-	consumer    sarama.Consumer               // kafka client endpoint
-	eventChan   chan *Event                   // Event notify channel
-	subscribers map[uint8][]subscriberContext // All subscriber's contex
-	mutex       sync.Mutex                    // Mutex to lock subscribers
+	consumer    sarama.Consumer                // kafka client endpoint
+	eventChan   chan *Event                    // Event notify channel
+	subscribers map[uint32][]subscriberContext // All subscriber's contex
+	mutex       sync.Mutex                     // Mutex to lock subscribers
 }
 
 // subscriberContext hold subscriber handler and context
@@ -48,7 +48,9 @@ type subscriberContext struct {
 }
 
 const (
-	ServiceName = "event"
+	ServiceName        = "event"
+	mqttEventBusName   = "broker/event/mqtt"
+	brokerEventBusName = "broker/event/broker"
 )
 
 // EventServiceFactory
@@ -80,7 +82,7 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 		},
 		consumer:    consumer,
 		eventChan:   make(chan *Event),
-		subscribers: make(map[uint8][]subscriberContext),
+		subscribers: make(map[uint32][]subscriberContext),
 	}, nil
 
 }
@@ -92,14 +94,22 @@ func (p *EventService) Name() string {
 
 // Start
 func (p *EventService) Start() error {
-	if err := p.subscribeTopic(EventBusName); err != nil {
+	if err := p.subscribeTopic(mqttEventBusName); err != nil {
 		return err
 	}
+	if err := p.subscribeTopic(brokerEventBusName); err != nil {
+		return err
+	}
+
 	go func(p *EventService) {
 		for {
 			select {
 			case e := <-p.eventChan:
-				core.AsyncProduceMessage(p.Config, "event", EventBusName, e)
+				if (e.Type & 0xff) != 0 {
+					core.AsyncProduceMessage(p.Config, "event", mqttEventBusName, e)
+				} else {
+					core.AsyncProduceMessage(p.Config, "event", brokerEventBusName, e)
+				}
 			case <-p.Quit:
 				return
 			}
@@ -117,8 +127,21 @@ func (p *EventService) Stop() {
 	p.consumer.Close()
 }
 
-// handleEvent handle event from other service
-func (p *EventService) handleEvent(e *Event) {
+// handleEvent handle broker event from other service
+func (p *EventService) handleBrokerEvent(e *Event) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, ok := p.subscribers[e.Type]; !ok {
+		return
+	}
+	subscribers := p.subscribers[e.Type]
+	for _, subscriber := range subscribers {
+		go subscriber.handler(e, subscriber.ctx)
+	}
+}
+
+// handleEvent handle mqtt event from other service
+func (p *EventService) handleMqttEvent(e *Event) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.subscribers[e.Type]; !ok {
@@ -159,15 +182,16 @@ func (p *EventService) subscribeTopic(topic string) error {
 
 // handleNotifications handle notification from kafka
 func (p *EventService) handleNotifications(topic string, value []byte) error {
-	switch topic {
-	case EventBusName:
-		obj := &Event{}
-		if err := json.Unmarshal(value, obj); err != nil {
-			return err
-		}
-		p.handleEvent(obj)
+	obj := &Event{}
+	if err := json.Unmarshal(value, obj); err != nil {
+		return err
 	}
-
+	switch topic {
+	case mqttEventBusName:
+		p.handleMqttEvent(obj)
+	case brokerEventBusName:
+		p.handleBrokerEvent(obj)
+	}
 	return nil
 }
 
@@ -177,7 +201,7 @@ func (p *EventService) notify(e *Event) {
 }
 
 // subscribe subcribe event from event service
-func (p *EventService) subscribe(t uint8, handler EventHandler, ctx interface{}) {
+func (p *EventService) subscribe(t uint32, handler EventHandler, ctx interface{}) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.subscribers[t]; !ok {
