@@ -89,3 +89,23 @@ func ReleaseMessage(clientid string, mid uint16, direction MessageDirection) err
 }
 func UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
 }
+
+// Client
+func GetClients(proto string) []*ClientInfo         { return nil }
+func GetClient(proto string, id string) *ClientInfo { return nil }
+
+// Session Info
+func GetSessions(proto string, conditions map[string]bool) []*Session { return nil }
+func GetSession(proto string, id string) *Session                     { return nil }
+
+// Route Info
+func GetRoutes(proto string) []*RouteInfo            { return nil }
+func GetRoute(proto string, topic string) *RouteInfo { return nil }
+
+// Topic info
+func GetTopics(proto string) []*TopicInfo         { return nil }
+func GetTopic(proto string, id string) *TopicInfo { return nil }
+
+// SubscriptionInfo
+func GetSubscriptions(proto string) []*SubscriptionInfo         { return nil }
+func GetSubscription(proto string, id string) *SubscriptionInfo { return nil }

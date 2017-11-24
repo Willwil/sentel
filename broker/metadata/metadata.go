@@ -61,3 +61,54 @@ type Message struct {
 	Retain    bool
 	Payload   []uint8
 }
+
+// ClientInfo
+type ClientInfo struct {
+	UserName     string
+	CleanSession bool
+	PeerName     string
+	ConnectTime  string
+}
+
+// RouteInfo
+type RouteInfo struct {
+	Topic string
+	Route []string
+}
+
+// TopicInfo
+type TopicInfo struct {
+	Topic     string
+	Attribute string
+}
+
+// SubscriptionInfo
+type SubscriptionInfo struct {
+	ClientId  string
+	Topic     string
+	Attribute string
+}
+
+// ServiceInfo
+type ServiceInfo struct {
+	ServiceName    string
+	Listen         string
+	Acceptors      uint64
+	MaxClients     uint64
+	CurrentClients uint64
+	ShutdownCount  uint64
+}
+
+// SessionInfo
+type SessionInfo struct {
+	ClientId           string
+	CleanSession       bool
+	MessageMaxInflight uint64
+	MessageInflight    uint64
+	MessageInQueue     uint64
+	MessageDropped     uint64
+	AwaitingRel        uint64
+	AwaitingComp       uint64
+	AwaitingAck        uint64
+	CreatedAt          string
+}

@@ -32,7 +32,5 @@ type Event struct {
 	Topic      string `json:"topic"`      // Topic
 	Data       []byte `json:"data"`       // Topic data
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
-
-	// Quto
-	QutoId string `json:"qutoId"` // Qutotation identifier
+	QutoId     string `json:"qutoId"`     // Qutotation identifier
 }

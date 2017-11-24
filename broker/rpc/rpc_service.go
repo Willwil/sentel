@@ -21,6 +21,7 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/core"
 
@@ -70,13 +71,6 @@ func (p *ApiService) Name() string {
 	return ServiceName
 }
 
-// Info
-func (p *ApiService) Info() *base.ServiceInfo {
-	return &base.ServiceInfo{
-		ServiceName: ServiceName,
-	}
-}
-
 // Start
 func (p *ApiService) Start() error {
 	go func(p *ApiService) {
@@ -101,7 +95,7 @@ func (p *ApiService) Wait() {
 }
 
 func (p *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
-	version := base.GetBroker().GetVersion()
+	version := base.GetBrokerVersion()
 	return &VersionReply{Version: version}, nil
 }
 
@@ -115,7 +109,6 @@ func (p *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*Cluster
 
 // Routes delegate routes command
 func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
-	broker := base.GetBroker()
 	reply := &RoutesReply{
 		Routes: []*RouteInfo{},
 		Header: &ReplyMessageHeader{Success: true},
@@ -123,12 +116,12 @@ func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesRep
 
 	switch req.Category {
 	case "list":
-		routes := broker.GetRoutes(req.Service)
+		routes := metadata.GetRoutes(req.Service)
 		for _, route := range routes {
 			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
 		}
 	case "show":
-		route := broker.GetRoute(req.Service, req.Topic)
+		route := metadata.GetRoute(req.Service, req.Topic)
 		if route != nil {
 			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
 		}
@@ -162,43 +155,42 @@ func (p *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*Plugins
 
 // Services delegate  services command
 func (p *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
-	broker := base.GetBroker()
-	reply := &ServicesReply{
-		Header:   &ReplyMessageHeader{Success: true},
-		Services: []*ServiceInfo{},
-	}
-	switch req.Category {
-	case "list":
-		services := broker.GetAllServiceInfo()
-		for _, service := range services {
-			reply.Services = append(reply.Services,
-				&ServiceInfo{
-					ServiceName:    service.ServiceName,
-					Listen:         service.Listen,
-					Acceptors:      service.Acceptors,
-					MaxClients:     service.MaxClients,
-					CurrentClients: service.CurrentClients,
-					ShutdownCount:  service.ShutdownCount,
-				})
+	/*
+		reply := &ServicesReply{
+			Header:   &ReplyMessageHeader{Success: true},
+			Services: []*ServiceInfo{},
 		}
+		switch req.Category {
+		case "list":
+				services := metadata.GetAllServiceInfo()
+				for _, service := range services {
+					reply.Services = append(reply.Services,
+						&ServiceInfo{
+							ServiceName:    service.ServiceName,
+							Listen:         service.Listen,
+							Acceptors:      service.Acceptors,
+							MaxClients:     service.MaxClients,
+							CurrentClients: service.CurrentClients,
+							ShutdownCount:  service.ShutdownCount,
+						})
+				}
 
-	case "start":
-	case "stop":
-	}
-
+		case "start":
+		case "stop":
+		}
+	*/
 	return nil, nil
 }
 
 //Subscriptions delete subscriptions command
 func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
-	broker := base.GetBroker()
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
 		Subscriptions: []*SubscriptionInfo{},
 	}
 	switch req.Category {
 	case "list":
-		subs := broker.GetSubscriptions(req.Service)
+		subs := metadata.GetSubscriptions(req.Service)
 		for _, sub := range subs {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -208,7 +200,7 @@ func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 				})
 		}
 	case "show":
-		sub := broker.GetSubscription(req.Service, req.Subscription)
+		sub := metadata.GetSubscription(req.Service, req.Subscription)
 		if sub != nil {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -227,12 +219,10 @@ func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		Clients: []*ClientInfo{},
 		Header:  &ReplyMessageHeader{Success: true},
 	}
-	broker := base.GetBroker()
-
 	switch req.Category {
 	case "list":
 		// Get all client information for specified service
-		clients := broker.GetClients(req.Service)
+		clients := metadata.GetClients(req.Service)
 		for _, client := range clients {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
@@ -244,7 +234,7 @@ func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		}
 	case "show":
 		// Get client information for specified client id
-		if client := broker.GetClient(req.Service, req.ClientId); client != nil {
+		if client := metadata.GetClient(req.Service, req.ClientId); client != nil {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
 					UserName:     client.UserName,
@@ -254,10 +244,13 @@ func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 				})
 		}
 	case "kick":
-		if err := broker.KickoffClient(req.Service, req.ClientId); err != nil {
-			reply.Header.Success = false
-			reply.Header.Reason = fmt.Sprintf("%v", err)
-		}
+		/*
+			broker := base.GetBroker()
+			if err := broker.KickoffClient(req.Service, req.ClientId); err != nil {
+				reply.Header.Success = false
+				reply.Header.Reason = fmt.Sprintf("%v", err)
+			}
+		*/
 	default:
 		return nil, fmt.Errorf("Invalid category:'%s' for Clients api", req.Category)
 	}
@@ -266,59 +259,61 @@ func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 
 // Sessions delegate client sessions command
 func (p *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
-	broker := base.GetBroker()
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
 		Sessions: []*SessionInfo{},
 	}
 	switch req.Category {
 	case "list":
-		sessions := broker.GetSessions(req.Service, req.Conditions)
-		for _, session := range sessions {
-			reply.Sessions = append(reply.Sessions,
-				&SessionInfo{
-					ClientId:           session.ClientId,
-					CreatedAt:          session.CreatedAt,
-					CleanSession:       session.CleanSession,
-					MessageMaxInflight: session.MessageMaxInflight,
-					MessageInflight:    session.MessageInflight,
-					MessageInQueue:     session.MessageInQueue,
-					MessageDropped:     session.MessageDropped,
-					AwaitingRel:        session.AwaitingRel,
-					AwaitingComp:       session.AwaitingComp,
-					AwaitingAck:        session.AwaitingAck,
-				})
-		}
+		/*
+			sessions := metadata.GetSessions(req.Service, req.Conditions)
+			for _, session := range sessions {
+				reply.Sessions = append(reply.Sessions,
+					&metadata.SessionInfo{
+						ClientId:           session.ClientId,
+						CreatedAt:          session.CreatedAt,
+						CleanSession:       session.CleanSession,
+						MessageMaxInflight: session.MessageMaxInflight,
+						MessageInflight:    session.MessageInflight,
+						MessageInQueue:     session.MessageInQueue,
+						MessageDropped:     session.MessageDropped,
+						AwaitingRel:        session.AwaitingRel,
+						AwaitingComp:       session.AwaitingComp,
+						AwaitingAck:        session.AwaitingAck,
+					})
+			}
+		*/
 	case "show":
-		session := broker.GetSession(req.Service, req.ClientId)
-		if session != nil {
-			reply.Sessions = append(reply.Sessions,
-				&SessionInfo{
-					ClientId:           session.ClientId,
-					CreatedAt:          session.CreatedAt,
-					CleanSession:       session.CleanSession,
-					MessageMaxInflight: session.MessageMaxInflight,
-					MessageInflight:    session.MessageInflight,
-					MessageInQueue:     session.MessageInQueue,
-					MessageDropped:     session.MessageDropped,
-					AwaitingRel:        session.AwaitingRel,
-					AwaitingComp:       session.AwaitingComp,
-					AwaitingAck:        session.AwaitingAck,
-				})
-		}
+		/*
+			session := metadata.GetSession(req.Service, req.ClientId)
+			if session != nil {
+				reply.Sessions = append(reply.Sessions,
+					&SessionInfo{
+						ClientId:           session.ClientId,
+						CreatedAt:          session.CreatedAt,
+						CleanSession:       session.CleanSession,
+						MessageMaxInflight: session.MessageMaxInflight,
+						MessageInflight:    session.MessageInflight,
+						MessageInQueue:     session.MessageInQueue,
+						MessageDropped:     session.MessageDropped,
+						AwaitingRel:        session.AwaitingRel,
+						AwaitingComp:       session.AwaitingComp,
+						AwaitingAck:        session.AwaitingAck,
+					})
+			}
+		*/
 	}
 	return reply, nil
 }
 
 func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
-	broker := base.GetBroker()
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},
 		Topics: []*TopicInfo{},
 	}
 	switch req.Category {
 	case "list":
-		topics := broker.GetTopics(req.Service)
+		topics := metadata.GetTopics(req.Service)
 		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -327,7 +322,7 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 				})
 		}
 	case "show":
-		topic := broker.GetTopic(req.Service, req.Topic)
+		topic := metadata.GetTopic(req.Service, req.Topic)
 		if topic != nil {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{

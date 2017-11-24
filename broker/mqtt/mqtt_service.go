@@ -23,7 +23,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 
@@ -38,7 +37,7 @@ const (
 // MQTT service declaration
 type mqttService struct {
 	core.ServiceBase
-	sessions map[string]base.Session // All mqtt sessions
+	sessions map[string]*mqttSession // All mqtt sessions
 	mutex    sync.Mutex              // Mutex to protect sessions
 }
 
@@ -53,7 +52,7 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, err
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		sessions: make(map[string]base.Session),
+		sessions: make(map[string]*mqttSession),
 	}
 	return t, nil
 }
@@ -66,55 +65,25 @@ func (p *mqttService) Name() string {
 }
 
 // removeSession remove specified session from mqtt service
-func (p *mqttService) removeSession(s base.Session) {
+func (p *mqttService) removeSession(s *mqttSession) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	delete(p.sessions, s.Identifier())
+	delete(p.sessions, s.id)
 }
 
 // addSession add newly created session into mqtt service
-func (p *mqttService) addSession(s base.Session) error {
+func (p *mqttService) addSession(s *mqttSession) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	id := s.Identifier()
-	if _, ok := p.sessions[id]; ok {
-		return fmt.Errorf("Mqtt session '%s' is already regisitered", id)
+	if _, ok := p.sessions[s.id]; ok {
+		return fmt.Errorf("Mqtt session '%s' is already regisitered", s.id)
 	}
-	p.sessions[id] = s
+	p.sessions[s.id] = s
 	return nil
 }
 
-// Info
-func (p *mqttService) Info() *base.ServiceInfo {
-	return &base.ServiceInfo{
-		ServiceName: ServiceName,
-	}
-}
-
-// Client
-func (p *mqttService) GetClients() []*base.ClientInfo       { return nil }
-func (p *mqttService) GetClient(id string) *base.ClientInfo { return nil }
-func (p *mqttService) KickoffClient(id string) error        { return nil }
-
-// Session Info
-func (p *mqttService) GetSessions(conditions map[string]bool) []*base.SessionInfo { return nil }
-func (p *mqttService) GetSession(id string) *base.SessionInfo                     { return nil }
-
-// Route Info
-func (p *mqttService) GetRoutes() []*base.RouteInfo { return nil }
-func (p *mqttService) GetRoute() *base.RouteInfo    { return nil }
-
-// Topic info
-func (p *mqttService) GetTopics() []*base.TopicInfo       { return nil }
-func (p *mqttService) GetTopic(id string) *base.TopicInfo { return nil }
-
-// SubscriptionInfo
-func (p *mqttService) GetSubscriptions() []*base.SubscriptionInfo       { return nil }
-func (p *mqttService) GetSubscription(id string) *base.SubscriptionInfo { return nil }
-
-// Service Info
-func (p *mqttService) GetServiceInfo() *base.ServiceInfo { return nil }
+func (p *mqttService) KickoffClient(id string) error { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {

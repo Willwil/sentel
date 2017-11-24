@@ -20,7 +20,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/ceilometer/collector"
 	"github.com/cloustone/sentel/core"
 )
@@ -57,13 +56,6 @@ func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 		statsMutex:   sync.Mutex{},
 		stats:        make(map[string]*list.List),
 	}, nil
-}
-
-// Info
-func (p *MetricService) Info() *base.ServiceInfo {
-	return &base.ServiceInfo{
-		ServiceName: ServiceName,
-	}
 }
 
 // Name
@@ -128,15 +120,16 @@ func (p *MetricService) reportHubStats() {
 
 // reportKeepalive report node information to cluster manager
 func (p *MetricService) reportKeepalive() {
-	broker := base.GetBroker()
-	// Node
-	node := broker.GetNodeInfo()
-	collector.AsyncReport(p.Config, collector.TopicNameNode,
-		&collector.Node{
-			NodeName:  node.NodeName,
-			NodeIp:    node.NodeIp,
-			CreatedAt: node.CreatedAt,
-		})
+	/*
+		broker := base.GetBroker()
+			node := broker.GetNodeInfo()
+			collector.AsyncReport(p.Config, collector.TopicNameNode,
+				&collector.Node{
+					NodeName:  node.NodeName,
+					NodeIp:    node.NodeIp,
+					CreatedAt: node.CreatedAt,
+				})
+	*/
 }
 
 // newMetrics allocate a metrics object from metric service

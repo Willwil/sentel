@@ -84,9 +84,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 	return s, nil
 }
 
-func (p *mqttSession) Identifier() string      { return p.id }
-func (p *mqttSession) Info() *base.SessionInfo { return nil }
-
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
@@ -141,7 +138,7 @@ func (p *mqttSession) Destroy() error {
 
 // handlePingReq handle ping request packet
 func (p *mqttSession) handlePingReq() error {
-	glog.Infof("Received PINGREQ from %s", p.Identifier())
+	glog.Infof("Received PINGREQ from %s", p.id)
 	return p.sendPingRsp()
 }
 
@@ -307,7 +304,7 @@ func (p *mqttSession) handleConnect() error {
 		err := auth.Authenticate(p.authOptions)
 		switch err {
 		case nil:
-		case base.IotErrorAuthFailed:
+		case auth.ErrorAuthDenied:
 			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
 			p.disconnect()
 			return err

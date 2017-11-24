@@ -13,27 +13,11 @@ package base
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 )
 
-type HubNodeInfo struct {
-	NodeName  string
-	NodeIp    string
-	CreatedAt string
-}
-
-// ServiceInfo
-type ServiceInfo struct {
-	ServiceName    string
-	Listen         string
-	Acceptors      uint64
-	MaxClients     uint64
-	CurrentClients uint64
-	ShutdownCount  uint64
-}
 type Broker struct {
 	core.ServiceManager
 	brokerId string
@@ -65,6 +49,11 @@ func NewBroker(c core.Config) (*Broker, error) {
 // The function should be called in service
 func GetBroker() *Broker { return _broker }
 
+// Version
+func GetBrokerVersion() string {
+	return BrokerVersion
+}
+
 // GetBrokerId return broker's identifier
 func GetBrokerId() string {
 	return _broker.brokerId
@@ -87,184 +76,4 @@ func (p *Broker) GetServiceByName(name string) core.Service {
 		panic(fmt.Sprintf("Failed to find service '%s' in broker", name))
 	}
 	return p.Services[name]
-}
-
-// GetAllProtocolServices() return all protocol services
-func (p *Broker) GetAllProtocolServices() []ProtocolService {
-	services := []ProtocolService{}
-	for _, service := range p.Services {
-		if p, ok := service.(ProtocolService); ok {
-			services = append(services, p)
-		}
-	}
-	return services
-}
-
-// GetProtocolServiceByname return protocol services by name
-func (p *Broker) GetProtocolServices(name string) []ProtocolService {
-	services := []ProtocolService{}
-	for k, service := range p.Services {
-		if strings.IndexAny(k, name) >= 0 {
-			if p, ok := service.(ProtocolService); ok {
-				services = append(services, p)
-			}
-		}
-	}
-	return services
-}
-
-// Node info
-func (p *Broker) GetNodeInfo() *HubNodeInfo {
-	return &HubNodeInfo{}
-}
-
-// Version
-func (p *Broker) GetVersion() string {
-	return BrokerVersion
-}
-
-// GetClients return clients list withspecified service
-func (p *Broker) GetClients(serviceName string) []*ClientInfo {
-	clients := []*ClientInfo{}
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		list := service.GetClients()
-		clients = append(clients, list...)
-	}
-	return clients
-}
-
-// GetClient return client info with specified client id
-func (p *Broker) GetClient(serviceName string, id string) *ClientInfo {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		if client := service.GetClient(id); client != nil {
-			return client
-		}
-	}
-	return nil
-}
-
-// Kickoff Client killoff a client from specified service
-func (p *Broker) KickoffClient(serviceName string, id string) error {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		if err := service.KickoffClient(id); err == nil {
-			return nil
-		}
-	}
-	return fmt.Errorf("Failed to kick off user '%s' from service '%s'", id, serviceName)
-}
-
-// GetSessions return all sessions information for specified service
-func (p *Broker) GetSessions(serviceName string, conditions map[string]bool) []*SessionInfo {
-	sessions := []*SessionInfo{}
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		list := service.GetSessions(conditions)
-		sessions = append(sessions, list...)
-	}
-	return sessions
-
-}
-
-// GetSession return specified session information with session id
-func (p *Broker) GetSession(serviceName string, id string) *SessionInfo {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		if info := service.GetSession(id); info != nil {
-			return info
-		}
-	}
-	return nil
-}
-
-// GetRoutes return route table information for specified service
-func (p *Broker) GetRoutes(serviceName string) []*RouteInfo {
-	routes := []*RouteInfo{}
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		list := service.GetRoutes()
-		routes = append(routes, list...)
-	}
-	return routes
-}
-
-// GetRoute return route information for specified topic
-func (p *Broker) GetRoute(serviceName string, topic string) *RouteInfo {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		route := service.GetRoute(topic)
-		if route != nil {
-			return route
-		}
-	}
-	return nil
-}
-
-// GetTopics return topic informaiton for specified service
-func (p *Broker) GetTopics(serviceName string) []*TopicInfo {
-	topics := []*TopicInfo{}
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		list := service.GetTopics()
-		topics = append(topics, list...)
-	}
-	return topics
-}
-
-// GetTopic return topic information for specified topic
-func (p *Broker) GetTopic(serviceName string, topic string) *TopicInfo {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		info := service.GetTopic(topic)
-		if info != nil {
-			return info
-		}
-	}
-	return nil
-}
-
-// GetSubscriptions return subscription informaiton for specified service
-func (p *Broker) GetSubscriptions(serviceName string) []*SubscriptionInfo {
-	subs := []*SubscriptionInfo{}
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		list := service.GetSubscriptions()
-		subs = append(subs, list...)
-	}
-	return subs
-}
-
-// GetSubscription return subscription information for specified topic
-func (p *Broker) GetSubscription(serviceName string, sub string) *SubscriptionInfo {
-	services := p.GetProtocolServices(serviceName)
-
-	for _, service := range services {
-		info := service.GetSubscription(sub)
-		if info != nil {
-			return info
-		}
-	}
-	return nil
-}
-
-// GetAllServiceInfo return all service information
-func (p *Broker) GetAllServiceInfo() []*ServiceInfo {
-	services := []*ServiceInfo{}
-
-	//	for _, service := range p.Services {
-	//		services = append(services, service.Info())
-	//	}
-	return services
 }
