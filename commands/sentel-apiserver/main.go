@@ -19,6 +19,7 @@ import (
 	"github.com/cloustone/sentel/core"
 
 	"github.com/cloustone/sentel/apiserver/db"
+	"github.com/cloustone/sentel/apiserver/util"
 	v1api "github.com/cloustone/sentel/apiserver/v1"
 
 	"github.com/golang/glog"
@@ -46,6 +47,8 @@ func main() {
 		return
 	}
 	glog.Infof("Registry is initialized successfuly")
+
+	util.InitializeKafka(config)
 
 	// Create api manager using configuration
 	apiManager, err := apiserver.GetApiManager(config)

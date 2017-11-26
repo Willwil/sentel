@@ -74,7 +74,7 @@ func (p *IndicatorService) Name() string {
 
 // Start
 func (p *IndicatorService) Start() error {
-	p.subscribeTopic("rule")
+	p.subscribeTopic("product")//"rule")
 	return nil
 }
 
@@ -106,10 +106,14 @@ func (p *IndicatorService) subscribeTopic(topic string) error {
 		go func(sarama.PartitionConsumer) {
 			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
+				fmt.Printf("topic:%s, msg:%s\n", string(msg.Topic), msg.Value)
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
 	}
+	fmt.Printf("wait ....\n")
+	p.WaitGroup.Wait()
+	fmt.Printf("wait bye\n")
 	return nil
 }
 
