@@ -15,7 +15,6 @@ package broker
 import (
 	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/broker/broker"
-	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
@@ -23,6 +22,7 @@ import (
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/broker/rpc"
+	sub "github.com/cloustone/sentel/broker/subtree"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -56,10 +56,10 @@ func init() {
 	core.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
 	core.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
 	core.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
-	core.RegisterService(event.ServiceName, &event.EventServiceFactory{})
 	core.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
 	core.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
 	core.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
 	core.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
+	core.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
 
 }

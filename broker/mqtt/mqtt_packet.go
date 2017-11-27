@@ -16,7 +16,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/base"
 )
 
 const (
@@ -143,7 +143,7 @@ func (p *mqttPacket) initializePacket() error {
 }
 
 // SerializeTo writes the serialized form of the packet into the serialize buffer
-func (p *mqttPacket) SerializeTo(buf broker.SerializeBuffer, opts broker.SerializeOptions) error {
+func (p *mqttPacket) SerializeTo(buf base.SerializeBuffer, opts base.SerializeOptions) error {
 	return nil
 }
 
@@ -154,12 +154,12 @@ func (p *mqttPacket) Write(buf []byte) (int, error) {
 }
 
 // DecodeFromBytes decode given bytes into this protocol layer
-func (p *mqttPacket) DecodeFromBytes(r io.Reader, df broker.DecodeFeedback) (int, error) {
+func (p *mqttPacket) DecodeFromBytes(r io.Reader, df base.DecodeFeedback) (int, error) {
 	return 0, errors.New("Not Implementented")
 }
 
 // DecodeFromReader decode packet from given reader
-func (p *mqttPacket) DecodeFromReader(r io.Reader, df broker.DecodeFeedback) error {
+func (p *mqttPacket) DecodeFromReader(r io.Reader, df base.DecodeFeedback) error {
 	if p.command == 0 {
 		// Read command
 		if length, err := io.CopyN(p, r, 1); err != nil || length != 1 {

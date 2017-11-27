@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package event
+package broker
 
 import "github.com/cloustone/sentel/core"
 

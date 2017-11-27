@@ -147,7 +147,9 @@ func (p *ServiceManager) Run() error {
 	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
 	for _, service := range p.Services {
 		glog.Infof("Starting service:'%s'...", service.Name())
-		go service.Start()
+		if err := service.Start(); err != nil {
+			return err
+		}
 	}
 	// Wait all service to terminate in main context
 	for name, quit := range p.quits {

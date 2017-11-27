@@ -10,15 +10,49 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package metadata
+package subtree
 
 import "time"
 
-type Device struct {
-	DeviceId    string    `json:"deviceId" bson:"deviceId"`
-	CreatedAt   time.Time `json:"createdAt" bson:"createdAt"`
-	LastUpdated time.Time `json:"lastUpdated" bson:"lastUpdated"`
-	Data        []byte    `json:"data" bson:"data"`
+// Session
+type Session struct {
+	Id                 string
+	Username           string
+	Password           string
+	Keepalive          uint16
+	LastMid            uint16
+	State              uint8
+	CreatedAt          time.Time
+	LastMessageInTime  time.Time
+	LastMessageOutTime time.Time
+	Ping               time.Time
+	CleanSession       uint8
+	SubscribeCount     uint32
+	Protocol           uint8
+	RefCount           uint8
+}
+
+type Topic struct {
+	Name string
+}
+
+type MessageDirection int
+type MessageState int
+
+const (
+	MessageDirectionIn  MessageDirection = 0
+	MessageDirectionOut MessageDirection = 1
+)
+
+type Message struct {
+	ID        uint
+	SourceID  string
+	Topic     string
+	Direction MessageDirection
+	State     MessageState
+	Qos       uint8
+	Retain    bool
+	Payload   []uint8
 }
 
 // ClientInfo

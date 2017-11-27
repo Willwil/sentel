@@ -21,12 +21,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
-	"github.com/cloustone/sentel/broker/metadata"
+	subt "github.com/cloustone/sentel/broker/subtree"
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
-	"github.com/cloustone/sentel/broker/event"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/golang/glog"
@@ -87,11 +87,11 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
-	defer event.Notify(&event.Event{Type: event.SessionDestroyed, ClientId: p.id})
+	defer broker.Notify(&broker.Event{Type: broker.SessionDestroyed, ClientId: p.id})
 
 	for {
 		var err error
-		if err = p.inpacket.DecodeFromReader(p.conn, broker.NilDecodeFeedback{}); err != nil {
+		if err = p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
 			glog.Error(err)
 			return err
 		}
@@ -336,7 +336,7 @@ func (p *mqttSession) handleConnect() error {
 	}
 	conack := 0
 	// Find if the client already has an entry, p must be done after any security check
-	if found, _ := metadata.FindSession(clientid); found != nil {
+	if found, _ := subt.FindSession(clientid); found != nil {
 		// Found old session
 		if found.State == mqttStateInvalid {
 			glog.Errorf("Invalid session(%s) in store", found.Id)
@@ -350,10 +350,10 @@ func (p *mqttSession) handleConnect() error {
 
 		if p.cleanSession == 0 && found.CleanSession == 0 {
 			// Resume last session   // fix me ssddn
-			// metadata.UpdateSession(p)
+			// sub.UpdateSession(p)
 			// Notify other mqtt node to release resource
-			event.Notify(&event.Event{
-				Type:       event.SessionResumed,
+			broker.Notify(&broker.Event{
+				Type:       broker.SessionResumed,
 				ClientId:   clientid,
 				Persistent: willRetain,
 			})
@@ -362,7 +362,7 @@ func (p *mqttSession) handleConnect() error {
 
 	} else {
 		// Register the session in storage
-		//metadata.RegisterSession(p)
+		//sub.RegisterSession(p)
 	}
 
 	if willMsg != nil {
@@ -383,9 +383,9 @@ func (p *mqttSession) handleConnect() error {
 
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
-	metadata.DeleteMessageWithValidator(
+	subt.DeleteMessageWithValidator(
 		clientid,
-		func(msg metadata.Message) bool {
+		func(msg subt.Message) bool {
 			err := auth.Authorize(clientid, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false
@@ -396,8 +396,8 @@ func (p *mqttSession) handleConnect() error {
 	p.state = mqttStateConnected
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 	// Notify event service
-	event.Notify(&event.Event{
-		Type:       event.SessionCreated,
+	broker.Notify(&broker.Event{
+		Type:       broker.SessionCreated,
 		ClientId:   clientid,
 		Persistent: willRetain,
 	})
@@ -427,7 +427,7 @@ func (p *mqttSession) disconnect() {
 		return
 	}
 	if p.cleanSession > 0 {
-		metadata.DeleteSession(p.id)
+		subt.DeleteSession(p.id)
 		p.id = ""
 	}
 	p.state = mqttStateDisconnected
@@ -472,10 +472,10 @@ func (p *mqttSession) handleSubscribe() error {
 
 		sub = p.mountpoint + sub
 		if qos != 0x80 {
-			if err := metadata.AddSubscription(p.id, sub, qos); err != nil {
+			if err := subt.AddSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
-			if err := metadata.RetainSubscription(p.id, sub, qos); err != nil {
+			if err := subt.RetainSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
 		}
@@ -508,7 +508,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		metadata.RemoveSubscription(p.id, sub)
+		subt.RemoveSubscription(p.id, sub)
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)
@@ -580,11 +580,11 @@ func (p *mqttSession) handlePublish() error {
 			}
 		}
 	}
-	msg := metadata.Message{
+	msg := subt.Message{
 		ID:        uint(mid),
 		SourceID:  p.id,
 		Topic:     topic,
-		Direction: metadata.MessageDirectionIn,
+		Direction: subt.MessageDirectionIn,
 		State:     0,
 		Qos:       qos,
 		Retain:    (retain > 0),
@@ -593,14 +593,14 @@ func (p *mqttSession) handlePublish() error {
 
 	switch qos {
 	case 0:
-		err = metadata.QueueMessage(p.id, &msg)
+		err = subt.QueueMessage(p.id, &msg)
 	case 1:
-		err = metadata.QueueMessage(p.id, &msg)
+		err = subt.QueueMessage(p.id, &msg)
 		err = p.sendPubAck(mid)
 	case 2:
 		err = nil
 		if dup > 0 {
-			err = metadata.InsertMessage(p.id, mid, metadata.MessageDirectionIn, &msg)
+			err = subt.InsertMessage(p.id, mid, subt.MessageDirectionIn, &msg)
 		}
 		if err == nil {
 			err = p.sendPubRec(mid)
@@ -626,7 +626,7 @@ func (p *mqttSession) handlePubRel() error {
 		return err
 	}
 
-	metadata.DeleteMessage(p.id, mid, metadata.MessageDirectionIn)
+	subt.DeleteMessage(p.id, mid, subt.MessageDirectionIn)
 	return p.sendPubComp(mid)
 }
 
