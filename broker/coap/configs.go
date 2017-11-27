@@ -11,10 +11,3 @@
 //  under the License.
 
 package coap
-
-var Configs = map[string]string{
-	"host":               "localhost:1884",
-	"loglevel":           "debug",
-	"message_size_limit": "500",
-	"allow_anonymous":    "true",
-}

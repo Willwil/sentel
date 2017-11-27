@@ -12,12 +12,23 @@
 
 package queue
 
+type Observer interface {
+	// DataAvailable notify that data is available
+	DataAvailable()
+}
+
 type Queue interface {
+	// RegisterObesrve register an observer on queue
+	RegisterObserver(o Observer)
+
 	// Read reads data from the queue.
 	Read(b []byte) (n int, err error)
 
 	// Write writes data to the queue.
 	Write(b []byte) (n int, err error)
+
+	// Release decrease reference and return current reference count
+	Release() int
 
 	// Close closes the connection.
 	// Any blocked Read or Write operations will be unblocked and return errors.

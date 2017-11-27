@@ -21,12 +21,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
-	"github.com/cloustone/sentel/broker/metadata"
+	"github.com/cloustone/sentel/broker/queue"
+	subt "github.com/cloustone/sentel/broker/subtree"
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
-	"github.com/cloustone/sentel/broker/event"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/golang/glog"
@@ -87,11 +88,11 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
-	defer event.Notify(&event.Event{Type: event.SessionDestroyed, ClientId: p.id})
+	defer broker.Notify(&broker.Event{Type: broker.SessionDestroyed, ClientId: p.id})
 
 	for {
 		var err error
-		if err = p.inpacket.DecodeFromReader(p.conn, broker.NilDecodeFeedback{}); err != nil {
+		if err = p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
 			glog.Error(err)
 			return err
 		}
@@ -134,6 +135,11 @@ func (p *mqttSession) Destroy() error {
 		p.conn.Close()
 	}
 	return nil
+}
+
+// DataAvailable called when queue have data to deal with
+func (p *mqttSession) DataAvailable() {
+
 }
 
 // handlePingReq handle ping request packet
@@ -185,13 +191,11 @@ func (p *mqttSession) handleConnect() error {
 	if err != nil {
 		return nil
 	}
-	/*
-		if p.mgr.protocol == mqttProtocol311 {
-			if cflags&0x01 != 0x00 {
-				return errorp.New("Invalid protocol version in connect flags")
-			}
+	if p.protocol == mqttProtocol311 {
+		if cflags&0x01 != 0x00 {
+			return errors.New("Invalid protocol version in connect flags")
 		}
-	*/
+	}
 	cleanSession := (cflags & 0x02) >> 1
 	will := cflags & 0x04
 	willQos := (cflags & 0x18) >> 3
@@ -209,24 +213,23 @@ func (p *mqttSession) handleConnect() error {
 	p.keepalive = keepalive
 
 	// Deal with client identifier
-	clientid, err := p.inpacket.readString()
+	clientId, err := p.inpacket.readString()
 	if err != nil {
 		return err
 	}
-	if clientid == "" {
+	if clientId == "" {
 		if p.protocol == mqttProtocol31 {
 			p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 		} else {
-			if option, err := p.config.Bool("mqtt", "allow_zero_length_clientid"); err != nil && (!option || cleanSession == 0) {
+			option, err := p.config.Bool("mqtt", "allow_zero_length_clientId")
+			if err != nil && (!option || cleanSession == 0) {
 				p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 				return errors.New("Invalid mqtt packet with client id")
 			}
 
-			clientid = uuid.NewV4().String()
+			clientId = uuid.NewV4().String()
 		}
 	}
-
-	// TODO: clientid_prefixes check
 
 	// Deal with topc
 	var willTopic string
@@ -294,13 +297,13 @@ func (p *mqttSession) handleConnect() error {
 			}
 		}
 	}
-	// Parse mqtt client request options
-	p.authOptions, err = p.parseRequestOptions(clientid, username, password)
-	if err != nil {
-		return err
-	}
-
 	if usernameFlag > 0 {
+		// Parse mqtt client request options
+		p.authOptions, err = p.parseRequestOptions(clientId, username, password)
+		if err != nil {
+			return err
+		}
+
 		err := auth.Authenticate(p.authOptions)
 		switch err {
 		case nil:
@@ -328,43 +331,39 @@ func (p *mqttSession) handleConnect() error {
 	// The connection request will be refused if the option is set
 	if option, err := p.config.Bool("mqtt", "user_name_as_client_id"); err != nil && option {
 		if p.username != "" {
-			clientid = p.username
+			clientId = p.username
 		} else {
 			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
 			return mqttErrorInvalidProtocol
 		}
 	}
 	conack := 0
-	// Find if the client already has an entry, p must be done after any security check
-	if found, _ := metadata.FindSession(clientid); found != nil {
-		// Found old session
-		if found.State == mqttStateInvalid {
-			glog.Errorf("Invalid session(%s) in store", found.Id)
-		}
-		if p.protocol == mqttProtocol311 {
-			if cleanSession == 0 {
-				conack |= 0x01
+
+	if cleanSession == 0 {
+		// Find if the client already has an entry, p must be done after any security check
+		if found, _ := subt.FindSession(clientId); found != nil {
+			// Found old session
+			if found.State == mqttStateInvalid {
+				glog.Errorf("Invalid session(%s) in store", found.Id)
 			}
+			if p.protocol == mqttProtocol311 {
+				if cleanSession == 0 {
+					conack |= 0x01
+				}
+			}
+			p.cleanSession = cleanSession
+			if p.cleanSession == 0 && found.CleanSession == 0 {
+				// Resume last session and notify other mqtt node to release resource
+				broker.Notify(&broker.Event{
+					Type:       broker.SessionResumed,
+					ClientId:   clientId,
+					Persistent: willRetain,
+				})
+
+			}
+
 		}
-		p.cleanSession = cleanSession
-
-		if p.cleanSession == 0 && found.CleanSession == 0 {
-			// Resume last session   // fix me ssddn
-			// metadata.UpdateSession(p)
-			// Notify other mqtt node to release resource
-			event.Notify(&event.Event{
-				Type:       event.SessionResumed,
-				ClientId:   clientid,
-				Persistent: willRetain,
-			})
-
-		}
-
-	} else {
-		// Register the session in storage
-		//metadata.RegisterSession(p)
 	}
-
 	if willMsg != nil {
 		p.willMsg = willMsg
 		p.willMsg.topic = willTopic
@@ -376,17 +375,17 @@ func (p *mqttSession) handleConnect() error {
 		p.willMsg.qos = willQos
 		p.willMsg.retain = willRetain
 	}
-	p.clientID = clientid
+	p.clientID = clientId
 	p.cleanSession = cleanSession
 	p.pingTime = nil
 	p.isDroping = false
 
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
-	metadata.DeleteMessageWithValidator(
-		clientid,
-		func(msg metadata.Message) bool {
-			err := auth.Authorize(clientid, username, willTopic, auth.AclRead, nil)
+	subt.DeleteMessageWithValidator(
+		clientId,
+		func(msg subt.Message) bool {
+			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false
 			}
@@ -394,15 +393,23 @@ func (p *mqttSession) handleConnect() error {
 		})
 
 	p.state = mqttStateConnected
+	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
-	// Notify event service
-	event.Notify(&event.Event{
-		Type:       event.SessionCreated,
-		ClientId:   clientid,
-		Persistent: willRetain,
+	// Notify event service that new session created
+	broker.Notify(&broker.Event{
+		Type:       broker.SessionCreated,
+		ClientId:   clientId,
+		Persistent: (cleanSession == 0),
 	})
 
-	return err
+	// Create queue for this sesion
+	queue, err := queue.NewQueue(clientId, (cleanSession == 0))
+	if err != nil {
+		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", clientId)
+		return err
+	}
+	queue.RegisterObserver(p)
+	return nil
 }
 
 // handleDisconnect handle disconnect packet
@@ -427,7 +434,7 @@ func (p *mqttSession) disconnect() {
 		return
 	}
 	if p.cleanSession > 0 {
-		metadata.DeleteSession(p.id)
+		subt.DeleteSession(p.id)
 		p.id = ""
 	}
 	p.state = mqttStateDisconnected
@@ -472,10 +479,10 @@ func (p *mqttSession) handleSubscribe() error {
 
 		sub = p.mountpoint + sub
 		if qos != 0x80 {
-			if err := metadata.AddSubscription(p.id, sub, qos); err != nil {
+			if err := subt.AddSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
-			if err := metadata.RetainSubscription(p.id, sub, qos); err != nil {
+			if err := subt.RetainSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
 		}
@@ -508,7 +515,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		metadata.RemoveSubscription(p.id, sub)
+		subt.RemoveSubscription(p.id, sub)
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)
@@ -580,11 +587,11 @@ func (p *mqttSession) handlePublish() error {
 			}
 		}
 	}
-	msg := metadata.Message{
+	msg := subt.Message{
 		ID:        uint(mid),
 		SourceID:  p.id,
 		Topic:     topic,
-		Direction: metadata.MessageDirectionIn,
+		Direction: subt.MessageDirectionIn,
 		State:     0,
 		Qos:       qos,
 		Retain:    (retain > 0),
@@ -593,14 +600,14 @@ func (p *mqttSession) handlePublish() error {
 
 	switch qos {
 	case 0:
-		err = metadata.QueueMessage(p.id, &msg)
+		err = subt.QueueMessage(p.id, &msg)
 	case 1:
-		err = metadata.QueueMessage(p.id, &msg)
+		err = subt.QueueMessage(p.id, &msg)
 		err = p.sendPubAck(mid)
 	case 2:
 		err = nil
 		if dup > 0 {
-			err = metadata.InsertMessage(p.id, mid, metadata.MessageDirectionIn, &msg)
+			err = subt.InsertMessage(p.id, mid, subt.MessageDirectionIn, &msg)
 		}
 		if err == nil {
 			err = p.sendPubRec(mid)
@@ -626,7 +633,7 @@ func (p *mqttSession) handlePubRel() error {
 		return err
 	}
 
-	metadata.DeleteMessage(p.id, mid, metadata.MessageDirectionIn)
+	subt.DeleteMessage(p.id, mid, subt.MessageDirectionIn)
 	return p.sendPubComp(mid)
 }
 
@@ -787,31 +794,31 @@ func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (
 
 	names = strings.Split(clientId, "|")
 	if len(names) != 2 {
-		return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", clientId)
+		return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", clientId)
 	}
 	options.ClientId = names[0]
 	names = strings.Split(names[1], ",")
 	for _, pair := range names {
 		values := strings.Split(pair, "=")
 		if len(values) != 2 {
-			return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+			return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 		}
 		switch values[0] {
 		case auth.SecurityMode:
 			val, err := strconv.Atoi(values[1])
 			if err != nil {
-				return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+				return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 			}
 			options.SecurityMode = val
 		case auth.SignMethod:
 			options.SignMethod = values[1]
 		case auth.Timestamp:
 			if _, err := strconv.ParseUint(values[1], 10, 64); err != nil {
-				return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+				return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 			}
 			options.Timestamp = values[1]
 		default:
-			return nil, fmt.Errorf("Invalid authentication clientid options:'%s'", pair)
+			return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 		}
 	}
 	return options, nil

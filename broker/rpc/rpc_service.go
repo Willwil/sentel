@@ -20,9 +20,11 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
+	sub "github.com/cloustone/sentel/broker/subtree"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/golang/glog"
@@ -34,7 +36,7 @@ import (
 const ServiceName = "rpc"
 
 type ApiService struct {
-	core.ServiceBase
+	base.ServiceBase
 	listener net.Listener
 	srv      *grpc.Server
 }
@@ -43,9 +45,9 @@ type ApiService struct {
 type ApiServiceFactory struct{}
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	server := &ApiService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
@@ -107,30 +109,6 @@ func (p *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*Cluster
 	return nil, nil
 }
 
-// Routes delegate routes command
-func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
-	reply := &RoutesReply{
-		Routes: []*RouteInfo{},
-		Header: &ReplyMessageHeader{Success: true},
-	}
-
-	switch req.Category {
-	case "list":
-		routes := metadata.GetRoutes(req.Service)
-		for _, route := range routes {
-			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
-		}
-	case "show":
-		route := metadata.GetRoute(req.Service, req.Topic)
-		if route != nil {
-			reply.Routes = append(reply.Routes, &RouteInfo{Topic: route.Topic, Route: route.Route})
-		}
-	default:
-		return nil, fmt.Errorf("Invalid route command category:%s", req.Category)
-	}
-	return reply, nil
-}
-
 func (p *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
 	return nil, nil
 }
@@ -190,7 +168,7 @@ func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 	}
 	switch req.Category {
 	case "list":
-		subs := metadata.GetSubscriptions(req.Service)
+		subs := sub.GetSubscriptions(req.Service)
 		for _, sub := range subs {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -200,7 +178,7 @@ func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 				})
 		}
 	case "show":
-		sub := metadata.GetSubscription(req.Service, req.Subscription)
+		sub := sub.GetSubscription(req.Service, req.Subscription)
 		if sub != nil {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -313,7 +291,7 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 	}
 	switch req.Category {
 	case "list":
-		topics := metadata.GetTopics(req.Service)
+		topics := sub.GetTopics(req.Service)
 		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -322,7 +300,7 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 				})
 		}
 	case "show":
-		topic := metadata.GetTopic(req.Service, req.Topic)
+		topic := sub.GetTopic(req.Service, req.Topic)
 		if topic != nil {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -332,4 +310,8 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 		}
 	}
 	return reply, nil
+}
+
+func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
+	return nil, nil
 }

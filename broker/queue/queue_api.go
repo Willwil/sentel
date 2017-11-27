@@ -12,16 +12,12 @@
 
 package queue
 
-import (
-	"net"
-
-	"github.com/cloustone/sentel/broker/broker"
-)
+import "github.com/cloustone/sentel/broker/broker"
 
 // Allocate queue from queue service
-func NewQueue(id string, persistent bool, conn net.Conn) (Queue, error) {
+func NewQueue(id string, persistent bool) (Queue, error) {
 	service := broker.GetService(ServiceName).(*QueueService)
-	return service.newQueue(id, persistent, conn)
+	return service.newQueue(id, persistent)
 }
 
 // GetQueue return queue by queue id
@@ -31,7 +27,13 @@ func GetQueue(id string) Queue {
 }
 
 // FreeQueue release queue from queue service
-func FreeQueue(id string) {
+func DestroyQueue(id string) {
 	service := broker.GetService(ServiceName).(*QueueService)
-	service.freeQueue(id)
+	service.destroyQueue(id)
+}
+
+// ReleaseQueue decrease queue's reference count, and destory the queue if reference is zero
+func ReleaseQueue(id string) {
+	service := broker.GetService(ServiceName).(*QueueService)
+	service.releaseQueue(id)
 }

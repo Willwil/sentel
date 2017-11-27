@@ -22,7 +22,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 
@@ -41,8 +42,8 @@ const (
 // - Global broker cluster data
 // - Shadow device
 type QutoService struct {
-	core.ServiceBase
-	eventChan   chan *event.Event
+	base.ServiceBase
+	eventChan   chan *broker.Event
 	cachePolicy string
 	cacheMutex  sync.Mutex
 	cacheMap    map[string]uint64
@@ -57,7 +58,7 @@ const (
 type QutoServiceFactory struct{}
 
 // New create metadata service factory
-func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -91,12 +92,12 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	}
 
 	return &QutoService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		eventChan:   make(chan *event.Event),
+		eventChan:   make(chan *broker.Event),
 		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
 		cacheMap:    make(map[string]uint64),
@@ -112,7 +113,7 @@ func (p *QutoService) Name() string {
 
 // Start
 func (p *QutoService) Start() error {
-	event.Subscribe(event.QutoChanged, onEventCallback, p)
+	broker.Subscribe(broker.QutoChanged, onEventCallback, p)
 	go func(p *QutoService) {
 		for {
 			select {
@@ -135,13 +136,13 @@ func (p *QutoService) Stop() {
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
+func onEventCallback(e *broker.Event, ctx interface{}) {
 	service := ctx.(*QutoService)
 	service.eventChan <- e
 }
 
 // handleQutoChanged load changed quto into cach
-func (p *QutoService) handleQutoChanged(e *event.Event) {
+func (p *QutoService) handleQutoChanged(e *broker.Event) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")

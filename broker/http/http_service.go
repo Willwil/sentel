@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 
 	"gopkg.in/mgo.v2"
@@ -29,7 +30,7 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type HttpService struct {
-	core.ServiceBase
+	base.ServiceBase
 }
 
 const (
@@ -40,7 +41,7 @@ const (
 type HttpServiceFactory struct{}
 
 // New create metadata service factory
-func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -51,7 +52,7 @@ func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	defer session.Close()
 
 	return &HttpService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

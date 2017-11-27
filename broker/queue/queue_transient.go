@@ -13,46 +13,26 @@
 package queue
 
 import (
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/golang/glog"
 )
 
 type transientQueue struct {
 	id       string
-	conn     net.Conn
 	dataChan chan []byte
 	quit     chan os.Signal
+	observer Observer
+	ref      int
 }
 
-func newTransientQueue(id string, conn net.Conn) (Queue, error) {
+func newTransientQueue(id string) (Queue, error) {
 	q := &transientQueue{
 		id:       id,
-		conn:     conn,
 		dataChan: make(chan []byte),
 		quit:     make(chan os.Signal),
+		ref:      1,
 	}
-	go func(q *transientQueue) {
-		for {
-			select {
-			case data := <-q.dataChan:
-				wsize := 0
-				for wsize < len(data) {
-					len, err := q.conn.Write(data[wsize:])
-					if err != nil {
-						glog.Fatal("broker: queue '%s' write failed", q.id)
-						continue
-					}
-					wsize += len
-				}
-			case <-q.quit:
-				return
-			}
-		}
-	}(q)
 	return q, nil
 }
 
@@ -65,6 +45,9 @@ func (p *transientQueue) Read(b []byte) (n int, err error) {
 // after a fixed time limit; see SetDeadline and SetWriteDeadline.
 func (p *transientQueue) Write(b []byte) (n int, err error) {
 	p.dataChan <- b
+	if p.observer != nil {
+		p.observer.DataAvailable()
+	}
 	return len(b), nil
 }
 
@@ -79,3 +62,13 @@ func (p *transientQueue) Close() error {
 
 func (p *transientQueue) IsPersistent() bool { return false }
 func (p *transientQueue) Name() string       { return p.id }
+
+// RegisterObesrve register an observer on queue
+func (p *transientQueue) RegisterObserver(o Observer) {
+	p.observer = o
+}
+
+func (p *transientQueue) Release() int {
+	p.ref -= 1
+	return p.ref
+}

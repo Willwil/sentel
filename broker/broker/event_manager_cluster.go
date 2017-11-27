@@ -8,65 +8,42 @@
 //  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
-//  under the License.
 
-package event
+package broker
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
-	"time"
-
-	"github.com/cloustone/sentel/core"
 
 	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
-	"gopkg.in/mgo.v2"
 )
 
-// Metaservice manage broker metadata
-// Broker's metadata include the following data
-// - Global broker cluster data
-// - Shadow device
-type EventService struct {
-	core.ServiceBase
-	consumer    sarama.Consumer                // kafka client endpoint
-	eventChan   chan *Event                    // Event notify channel
-	subscribers map[uint32][]subscriberContext // All subscriber's contex
-	mutex       sync.Mutex                     // Mutex to lock subscribers
-}
-
-// subscriberContext hold subscriber handler and context
-type subscriberContext struct {
-	handler EventHandler
-	ctx     interface{}
+type clusterEventManager struct {
+	config         core.Config
+	brokerId       string
+	consumer       sarama.Consumer                // kafka client endpoint
+	eventChan      chan *Event                    // Event notify channel
+	subscribers    map[uint32][]subscriberContext // All subscriber's contex
+	mutex          sync.Mutex                     // Mutex to lock subscribers
+	quit           chan os.Signal
+	waitgroup      sync.WaitGroup
+	product        string
+	mqttEventBus   string
+	brokerEventBus string
 }
 
 const (
-	ServiceName        = "event"
 	mqttEventBusName   = "broker/event/mqtt"
 	brokerEventBusName = "broker/event/broker"
 )
 
-// EventServiceFactory
-type EventServiceFactory struct{}
-
-// New create metadata service factory
-func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
-	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
-	timeout := c.MustInt("broker", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	defer session.Close()
-
+// newclusterEventManager create global broker
+func newClusterEventManager(product string, c core.Config) (*clusterEventManager, error) {
 	// kafka
 	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
@@ -74,43 +51,51 @@ func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (core.Serv
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 	}
 
-	return &EventService{
-		ServiceBase: core.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		consumer:    consumer,
-		eventChan:   make(chan *Event),
-		subscribers: make(map[uint32][]subscriberContext),
+	return &clusterEventManager{
+		config:         c,
+		consumer:       consumer,
+		eventChan:      make(chan *Event),
+		subscribers:    make(map[uint32][]subscriberContext),
+		quit:           make(chan os.Signal),
+		waitgroup:      sync.WaitGroup{},
+		mqttEventBus:   product + "/event/mqtt",
+		brokerEventBus: product + "/event/broker",
 	}, nil
-
 }
 
-// Name
-func (p *EventService) Name() string {
-	return ServiceName
+// initialize
+func (p *clusterEventManager) initialize(c core.Config) error {
+	// subscribe topic from kafka
+	if err := p.subscribeKafkaTopic(p.mqttEventBus); err != nil {
+		return err
+	}
+	if err := p.subscribeKafkaTopic(p.brokerEventBus); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Start
-func (p *EventService) Start() error {
-	if err := p.subscribeTopic(mqttEventBusName); err != nil {
-		return err
-	}
-	if err := p.subscribeTopic(brokerEventBusName); err != nil {
-		return err
-	}
-
-	go func(p *EventService) {
+func (p *clusterEventManager) run() error {
+	go func(p *clusterEventManager) {
 		for {
 			select {
 			case e := <-p.eventChan:
-				if (e.Type & 0xff) != 0 {
-					core.AsyncProduceMessage(p.Config, "event", mqttEventBusName, e)
-				} else {
-					core.AsyncProduceMessage(p.Config, "event", brokerEventBusName, e)
+				// When event is received from local service, we should
+				// transeverse other service to process it at first
+				if _, found := p.subscribers[e.Type]; found {
+					subscribers := p.subscribers[e.Type]
+					for _, subscriber := range subscribers {
+						go subscriber.handler(e, subscriber.ctx)
+					}
 				}
-			case <-p.Quit:
+				// notify kafka for broker synchronization
+				if (e.Type & 0xff) != 0 {
+					core.AsyncProduceMessage(p.config, "event", mqttEventBusName, e)
+				} else {
+					core.AsyncProduceMessage(p.config, "event", brokerEventBusName, e)
+				}
+			case <-p.quit:
 				return
 			}
 		}
@@ -119,16 +104,13 @@ func (p *EventService) Start() error {
 }
 
 // Stop
-func (p *EventService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+func (p *clusterEventManager) stop() {
 	close(p.eventChan)
 	p.consumer.Close()
 }
 
 // handleEvent handle broker event from other service
-func (p *EventService) handleBrokerEvent(e *Event) {
+func (p *clusterEventManager) handleclusterEventManagerEvent(e *Event) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.subscribers[e.Type]; !ok {
@@ -141,7 +123,7 @@ func (p *EventService) handleBrokerEvent(e *Event) {
 }
 
 // handleEvent handle mqtt event from other service
-func (p *EventService) handleMqttEvent(e *Event) {
+func (p *clusterEventManager) handleMqttEvent(e *Event) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.subscribers[e.Type]; !ok {
@@ -153,8 +135,8 @@ func (p *EventService) handleMqttEvent(e *Event) {
 	}
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *EventService) subscribeTopic(topic string) error {
+// subscribeKafkaTopc subscribe topics from apiserver
+func (p *clusterEventManager) subscribeKafkaTopic(topic string) error {
 	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
@@ -168,10 +150,10 @@ func (p *EventService) subscribeTopic(topic string) error {
 			continue
 		}
 		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
+		p.waitgroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
+			defer p.waitgroup.Done()
 			for msg := range pc.Messages() {
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
@@ -181,7 +163,7 @@ func (p *EventService) subscribeTopic(topic string) error {
 }
 
 // handleNotifications handle notification from kafka
-func (p *EventService) handleNotifications(topic string, value []byte) error {
+func (p *clusterEventManager) handleNotifications(topic string, value []byte) error {
 	obj := &Event{}
 	if err := json.Unmarshal(value, obj); err != nil {
 		return err
@@ -190,18 +172,18 @@ func (p *EventService) handleNotifications(topic string, value []byte) error {
 	case mqttEventBusName:
 		p.handleMqttEvent(obj)
 	case brokerEventBusName:
-		p.handleBrokerEvent(obj)
+		p.handleclusterEventManagerEvent(obj)
 	}
 	return nil
 }
 
 // publish publish event to event service
-func (p *EventService) notify(e *Event) {
+func (p *clusterEventManager) notify(e *Event) {
 	p.eventChan <- e
 }
 
 // subscribe subcribe event from event service
-func (p *EventService) subscribe(t uint32, handler EventHandler, ctx interface{}) {
+func (p *clusterEventManager) subscribe(t uint32, handler EventHandler, ctx interface{}) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.subscribers[t]; !ok {

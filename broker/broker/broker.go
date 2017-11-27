@@ -12,68 +12,143 @@
 package broker
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 )
 
 type Broker struct {
-	core.ServiceManager
+	sync.Once
+	config   core.Config               // Global config
+	services map[string]base.Service   // All service created by config.Protocols
+	quits    map[string]chan os.Signal // Notification channel for each service
+	name     string                    // Name of service manager
 	brokerId string
+	eventmgr eventManager
 }
 
-const BrokerVersion = "0.1"
+const (
+	BrokerVersion = "0.1"
+)
 
 var (
-	_broker *Broker
+	broker           *Broker
+	serviceFactories = make(map[string]base.ServiceFactory)
+	serviceSeqs      = []string{}
 )
+
+// RegisterService register service with name and protocol specified
+func RegisterService(name string, factory base.ServiceFactory) {
+	glog.Info("Service '%s' is registered", name)
+	if _, ok := serviceFactories[name]; ok {
+		glog.Errorf("Service '%s' is already registered", name)
+	}
+	serviceFactories[name] = factory
+}
+
+// RegisterServiceWithConfig register service with name and configuration
+func RegisterServiceWithConfig(name string, factory base.ServiceFactory, configs map[string]string) {
+	if _, ok := serviceFactories[name]; ok {
+		glog.Errorf("Service '%s' is already registered", name)
+	}
+	core.RegisterConfig(name, configs)
+	serviceFactories[name] = factory
+	serviceSeqs = append(serviceSeqs, name)
+}
 
 // newBroker create global broker
 func NewBroker(c core.Config) (*Broker, error) {
-	if _broker != nil {
+	if broker != nil {
 		panic("Global broker had already been created")
 	}
-	serviceMgr, err := core.NewServiceManager("broker", c)
+	eventmgr, err := newEventManager(c)
 	if err != nil {
 		return nil, err
 	}
-	_broker = &Broker{
-		ServiceManager: *serviceMgr,
-		brokerId:       uuid.NewV4().String(),
+
+	broker = &Broker{
+		config:   c,
+		quits:    make(map[string]chan os.Signal),
+		services: make(map[string]base.Service),
+		brokerId: uuid.NewV4().String(),
+		eventmgr: eventmgr,
 	}
-	return _broker, nil
+
+	for name, _ := range serviceFactories {
+		// Format service name
+		quit := make(chan os.Signal)
+		service, err := serviceFactories[name].New(c, quit)
+		if err != nil {
+			glog.Infof("Create service '%s'failed", name)
+			return nil, err
+		} else {
+			glog.Infof("Create service '%s' successfully", name)
+			broker.services[name] = service
+			broker.quits[name] = quit
+		}
+	}
+	return broker, nil
 }
 
-// GetBroker create service manager and all supported service
-// The function should be called in service
-func GetBroker() *Broker { return _broker }
-
-// Version
-func GetVersion() string {
-	return BrokerVersion
-}
-
-// GetBrokerId return broker's identifier
-func GetId() string {
-	return _broker.brokerId
-}
-
-// GetService return specified service instance
-func GetService(name string) core.Service {
-	broker := GetBroker()
-	return broker.GetServiceByName(name)
-}
-
-// GetConfig return broker's configuration
-func (p *Broker) GetConfig() core.Config {
-	return p.Config
-}
-
-// GetServicesByName return service instance by name, or matched by part of name
-func (p *Broker) GetServiceByName(name string) core.Service {
-	if _, ok := p.Services[name]; !ok {
+// getServicesByName return service instance by name, or matched by part of name
+func (p *Broker) getServiceByName(name string) core.Service {
+	if _, ok := p.services[name]; !ok {
 		panic(fmt.Sprintf("Failed to find service '%s' in broker", name))
 	}
-	return p.Services[name]
+	return p.services[name]
+}
+
+// Start
+func (p *Broker) Run() error {
+	// initialize event manager at first
+	if err := p.eventmgr.initialize(p.config); err != nil {
+		return err
+	}
+	// start each registered services
+	for _, name := range serviceSeqs {
+		if err := broker.services[name].Start(); err != nil {
+			return err
+		}
+		glog.Infof("Starting service '%s' ...successfuly", name)
+	}
+	// start the event manager
+	if err := p.eventmgr.run(); err != nil {
+		return err
+	}
+	// Wait all service to terminate in main context<TODO>
+	for name, quit := range p.quits {
+		<-quit
+		glog.Info("Servide(%s) is terminated", name)
+	}
+
+	return nil
+}
+
+// Stop
+func (p *Broker) Stop() {
+	// Wait all service to terminate in main context<TODO>
+	for name, quit := range p.quits {
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT)
+		glog.Info("Servide(%s) is be terminating", name)
+	}
+
+}
+
+// CheckAllRegisteredServices check all registered service simplily
+func checkAllRegisteredServices() error {
+	if len(serviceFactories) == 0 {
+		return errors.New("No service registered")
+	}
+	for name, _ := range serviceFactories {
+		glog.Infof("Service '%s' is registered", name)
+	}
+	return nil
 }

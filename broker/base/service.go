@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use p file except in compliance with the License. You may obtain
+//  not use this file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -8,12 +8,27 @@
 //  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
-//  under the License.
 
-package queue
+package base
 
-type persistentQueue struct{}
+import (
+	"os"
+	"sync"
 
-func newPersistentQueue(id string) (Queue, error) {
-	return nil, nil
+	"github.com/cloustone/sentel/core"
+)
+
+type Service interface {
+	Name() string
+	Start() error
+	Stop()
+}
+
+type ServiceBase struct {
+	Config    core.Config
+	Quit      chan os.Signal
+	WaitGroup sync.WaitGroup
+}
+type ServiceFactory interface {
+	New(c core.Config, quit chan os.Signal) (Service, error)
 }

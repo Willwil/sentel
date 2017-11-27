@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package event
+package broker
 
 import "github.com/cloustone/sentel/core"
 
@@ -22,6 +22,7 @@ const (
 	TopicUnsubscribed = 0x0100
 	QutoChanged       = 0x0200
 	SessionResumed    = 0x0400
+	AuthChanged       = 0x0800
 )
 
 type Event struct {
@@ -33,4 +34,16 @@ type Event struct {
 	Data       []byte `json:"data"`       // Topic data
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	QutoId     string `json:"qutoId"`     // Qutotation identifier
+	Qos        uint8  `json:"qos"`
+}
+
+type SessionCreateEvent struct {
+	Event
+	Persistent bool `json:"persistent"` // Whether the session is persistent
+}
+
+type TopicSubscribeEvent struct {
+	Event
+	Topic string `json:"topic"` // Topic
+	Data  []byte `json:"data"`  // Topic data
 }

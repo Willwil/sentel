@@ -10,12 +10,13 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package metadata
+package subtree
 
 import (
 	"errors"
 	"strings"
 
+	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -126,7 +127,7 @@ func (p *localTopicTree) addNode(node *subNode, lev string) *subNode {
 }
 
 // Subscription
-func (p *localTopicTree) AddSubscription(sessionid string, topic string, qos uint8) error {
+func (p *localTopicTree) AddSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
 	glog.Infof("AddSubscription: sessionid is %s, topic is %s, qos is %d", sessionid, topic, qos)
 	node := &p.root
 	s := strings.Split(topic, "/")
@@ -254,6 +255,9 @@ func (p *localTopicTree) ReleaseMessage(clientid string, mid uint16, direction M
 }
 
 func (p *localTopicTree) UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
+
+}
+func (p *localTopicTree) AddTopic(clientId, topic string, data []byte) {
 
 }
 

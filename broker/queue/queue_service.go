@@ -14,10 +14,10 @@ package queue
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"sync"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 )
 
@@ -26,7 +26,7 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type QueueService struct {
-	core.ServiceBase
+	base.ServiceBase
 	queues map[string]Queue
 	mutex  sync.Mutex
 }
@@ -39,9 +39,9 @@ const (
 type QueueServiceFactory struct{}
 
 // New create metadata service factory
-func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	return &QueueService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
@@ -74,7 +74,7 @@ func (p *QueueService) Stop() {
 }
 
 // newQueue allocate queue from queue service
-func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queue, error) {
+func (p *QueueService) newQueue(id string, persistent bool) (Queue, error) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 
@@ -86,9 +86,9 @@ func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queu
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id, conn)
+		q, err = newPersistentQueue(id)
 	} else {
-		q, err = newTransientQueue(id, conn)
+		q, err = newTransientQueue(id)
 	}
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queu
 }
 
 // freeQueue release queue from queue service
-func (p *QueueService) freeQueue(id string) {
+func (p *QueueService) destroyQueue(id string) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 	delete(p.queues, id)
@@ -110,4 +110,14 @@ func (p *QueueService) getQueue(id string) Queue {
 		return p.queues[id]
 	}
 	return nil
+}
+
+// releaseQueue decrease queue's reference count, and destory the queue if reference is zero
+func (p *QueueService) releaseQueue(id string) {
+	if _, found := p.queues[id]; found {
+		q := p.queues[id]
+		if q.Release() == 0 {
+			p.destroyQueue(id)
+		}
+	}
 }
