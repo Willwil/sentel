@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/go-redis/redis"
@@ -35,7 +36,7 @@ const (
 type AuthServiceFactory struct{}
 
 // New create coap service factory
-func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -62,7 +63,7 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 	}
 
 	return &AuthService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
@@ -73,7 +74,7 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servi
 
 // Authentication Service
 type AuthService struct {
-	core.ServiceBase
+	base.ServiceBase
 	rclient *redis.Client
 }
 

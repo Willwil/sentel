@@ -23,6 +23,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 
@@ -36,7 +37,7 @@ const (
 
 // MQTT service declaration
 type mqttService struct {
-	core.ServiceBase
+	base.ServiceBase
 	sessions map[string]*mqttSession // All mqtt sessions
 	mutex    sync.Mutex              // Mutex to protect sessions
 }
@@ -45,9 +46,9 @@ type mqttService struct {
 type MqttFactory struct{}
 
 // New create mqtt service factory
-func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	t := &mqttService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},

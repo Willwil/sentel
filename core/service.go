@@ -80,7 +80,7 @@ func RunWithConfigFile(serverName string, fileName string) error {
 	if err != nil {
 		return err
 	}
-	return mgr.Run()
+	return mgr.RunAndWait()
 }
 
 // CheckAllRegisteredServices check all registered service simplily
@@ -142,7 +142,7 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 }
 
 // Run launch all serices and wait to terminate
-func (p *ServiceManager) Run() error {
+func (p *ServiceManager) RunAndWait() error {
 	// Run all service
 	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
 	for _, service := range p.Services {
@@ -155,6 +155,28 @@ func (p *ServiceManager) Run() error {
 	for name, quit := range p.quits {
 		<-quit
 		glog.Info("Servide(%s) is terminated", name)
+	}
+	return nil
+}
+
+// Run launch all serices
+func (p *ServiceManager) Run() error {
+	// Run all service
+	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
+	for _, service := range p.Services {
+		glog.Infof("Starting service:'%s'...", service.Name())
+		if err := service.Start(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// stop
+func (p *ServiceManager) stop() error {
+	for _, service := range p.Services {
+		glog.Infof("Stoping service:'%s'...", service.Name())
+		service.Stop()
 	}
 	return nil
 }

@@ -18,6 +18,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 )
 
@@ -26,7 +27,7 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type QueueService struct {
-	core.ServiceBase
+	base.ServiceBase
 	queues map[string]Queue
 	mutex  sync.Mutex
 }
@@ -39,9 +40,9 @@ const (
 type QueueServiceFactory struct{}
 
 // New create metadata service factory
-func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	return &QueueService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

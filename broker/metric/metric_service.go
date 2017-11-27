@@ -20,6 +20,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/ceilometer/collector"
 	"github.com/cloustone/sentel/core"
 )
@@ -27,7 +28,7 @@ import (
 const ServiceName = "metric"
 
 type MetricService struct {
-	core.ServiceBase
+	base.ServiceBase
 	keepalive    *time.Ticker
 	stat         *time.Ticker
 	name         string
@@ -43,10 +44,10 @@ type MetricService struct {
 type MetricServiceFactory struct{}
 
 // New create apiService service factory
-func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// Get node ip, name and created time
 	return &MetricService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},

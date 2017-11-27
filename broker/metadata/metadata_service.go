@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/core"
 
@@ -30,7 +31,7 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type MetadataService struct {
-	core.ServiceBase
+	base.ServiceBase
 	eventChan chan *broker.Event
 }
 
@@ -45,7 +46,7 @@ const (
 type MetadataServiceFactory struct{}
 
 // New create metadata service factory
-func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -56,7 +57,7 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 	defer session.Close()
 
 	return &MetadataService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

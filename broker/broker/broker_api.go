@@ -12,15 +12,41 @@
 
 package broker
 
-type EventHandler func(e *Event, ctx interface{})
+import "github.com/cloustone/sentel/core"
 
 // Publish publish event to event service
 func Notify(e *Event) {
 	e.BrokerId = GetId()
-	GetBroker().notify(e)
+	broker := GetBroker()
+	broker.eventmgr.notify(e)
 }
 
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
-	GetBroker().subscribe(event, handler, ctx)
+	broker := GetBroker()
+	broker.eventmgr.subscribe(event, handler, ctx)
+}
+
+// GetBroker create service manager and all supported service
+// The function should be called in service
+func GetBroker() *Broker { return broker }
+
+// Version
+func GetVersion() string {
+	return BrokerVersion
+}
+
+// GetBrokerId return broker's identifier
+func GetId() string {
+	return broker.brokerId
+}
+
+// GetService return specified service instance
+func GetService(name string) core.Service {
+	return broker.getServiceByName(name)
+}
+
+// GetConfig return broker's configuration
+func (p *Broker) GetConfig() core.Config {
+	return p.config
 }

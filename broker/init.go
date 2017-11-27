@@ -30,36 +30,46 @@ import (
 // RunWithConfigFile create and start broker
 func RunWithConfigFile(fileName string) error {
 	glog.Infof("Starting 'broker' server...")
-
-	// Check all registered service
-	if err := core.CheckAllRegisteredServices(); err != nil {
-		return err
-	}
+	core.RegisterConfigGroup(defaultConfigs)
 	// Get configuration
 	config, err := core.NewConfigWithFile(fileName)
 	if err != nil {
 		return err
 	}
+	broker.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
+	broker.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
+	broker.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
+	broker.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
+	broker.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
+	broker.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
+	broker.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
+	broker.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
+	broker.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
+
 	// Create service manager according to the configuration
 	broker, err := broker.NewBroker(config)
 	if err != nil {
 		return err
 	}
 	return broker.Run()
-
 }
 
-// init initialize default configurations and services before startup
-func init() {
-	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
-	core.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
-	core.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
-	core.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
-	core.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
-	core.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
-	core.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
-	core.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
-	core.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
+// RunWithConfig create and start broker from loaded configuration
+func RunWithConfig(c core.Config) error {
+	broker.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
+	broker.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
+	broker.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
+	broker.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
+	broker.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
+	broker.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
+	broker.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
+	broker.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
+	broker.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
 
+	// Create service manager according to the configuration
+	broker, err := broker.NewBroker(c)
+	if err != nil {
+		return err
+	}
+	return broker.Run()
 }

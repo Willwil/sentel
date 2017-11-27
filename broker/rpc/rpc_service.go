@@ -20,6 +20,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
@@ -35,7 +36,7 @@ import (
 const ServiceName = "rpc"
 
 type ApiService struct {
-	core.ServiceBase
+	base.ServiceBase
 	listener net.Listener
 	srv      *grpc.Server
 }
@@ -44,9 +45,9 @@ type ApiService struct {
 type ApiServiceFactory struct{}
 
 // New create apiService service factory
-func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	server := &ApiService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
