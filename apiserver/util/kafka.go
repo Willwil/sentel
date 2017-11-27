@@ -17,6 +17,7 @@ import (
 	"time"
 	"fmt"
 
+	"encoding/json"
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -105,7 +106,8 @@ func AsyncProduceMessage(cfg core.Config, key string, topic string, value sarama
 	config.Producer.Return.Successes = true
 	config.Producer.Timeout = 5 * time.Second
 
-	v := "test kafka"
+	//v := "test kafka"
+	v,_ := json.Marshal(value)
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),

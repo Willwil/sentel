@@ -106,7 +106,8 @@ func (p *IndicatorService) subscribeTopic(topic string) error {
 		go func(sarama.PartitionConsumer) {
 			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				fmt.Printf("topic:%s, msg:%s\n", string(msg.Topic), msg.Value)
+				v, err := json.Marshal(msg.Value)
+				fmt.Printf("topic:%s, msg:%s, %s, %s\n", string(msg.Topic), msg.Value, string(v), err)
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
@@ -123,13 +124,27 @@ type ruleTopic struct {
 	ProductId string `json:"productId"`
 	Action    string `json:"action"`
 }
+type ProductTopic struct {
+	//TopicBase
+	ProductId   string `json:"productId"`
+	ProductName string `json:"productName"`
+	Action      string `json:"action"`
+	TenantId    string `json:"tenantId"`
+}
 
 // handleNotifications handle notification from kafka
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
 	rule := ruleTopic{}
-	if err := json.Unmarshal(value, &topic); err != nil {
+	pd := ProductTopic{}
+/*	if err := json.Unmarshal(value, &topic); err != nil {
+		fmt.Printf("err %s\n", err)
+		return err
+	}*/
+	if err := json.Unmarshal(value, &pd); err != nil {
+		fmt.Printf("err %s\n", err)
 		return err
 	}
+	fmt.Printf("[%s]:%+v\n", topic, pd)
 	r := &executor.Rule{
 		RuleName:  rule.RuleName,
 		RuleId:    rule.RuleId,
