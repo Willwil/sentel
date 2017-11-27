@@ -35,7 +35,7 @@ func RegisterSession(s *Session) error {
 // AddSubscription add a subscription into subdat
 func AddSubscription(clientId string, topic string, qos uint8) error {
 	sub := broker.GetService(ServiceName).(*SubTreeService)
-	return sub.addSubscription(clientId, topic, qos)
+	return sub.addSubscription(clientId, topic, qos, nil)
 }
 
 // RetainSubscription retain the client with topic

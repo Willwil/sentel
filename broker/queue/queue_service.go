@@ -14,7 +14,6 @@ package queue
 
 import (
 	"fmt"
-	"net"
 	"os"
 	"sync"
 
@@ -75,7 +74,7 @@ func (p *QueueService) Stop() {
 }
 
 // newQueue allocate queue from queue service
-func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queue, error) {
+func (p *QueueService) newQueue(id string, persistent bool) (Queue, error) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 
@@ -87,9 +86,9 @@ func (p *QueueService) newQueue(id string, persistent bool, conn net.Conn) (Queu
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id, conn)
+		q, err = newPersistentQueue(id)
 	} else {
-		q, err = newTransientQueue(id, conn)
+		q, err = newTransientQueue(id)
 	}
 	if err != nil {
 		return nil, err

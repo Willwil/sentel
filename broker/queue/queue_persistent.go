@@ -12,10 +12,8 @@
 
 package queue
 
-import "net"
-
 type persistentQueue struct{}
 
-func newPersistentQueue(id string, conn net.Conn) (Queue, error) {
+func newPersistentQueue(id string) (Queue, error) {
 	return nil, nil
 }

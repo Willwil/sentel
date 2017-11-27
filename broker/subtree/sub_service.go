@@ -21,6 +21,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 
@@ -113,13 +114,15 @@ func (p *SubTreeService) Stop() {
 func (p *SubTreeService) handleEvent(e *broker.Event) {
 	switch e.Type {
 	case broker.SessionCreated:
-		p.onSessionCreated(e)
+		p.onSessionCreate(e)
 	case broker.SessionDestroyed:
-		p.onSessionDestroyed(e)
+		p.onSessionDestroy(e)
 	case broker.TopicSubscribed:
 		p.onTopicSubscribe(e)
 	case broker.TopicUnsubscribed:
 		p.onTopicUnsubscribe(e)
+	case broker.TopicPublished:
+		p.onTopicPublish(e)
 	}
 }
 
@@ -130,41 +133,52 @@ func onEventCallback(e *broker.Event, ctx interface{}) {
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *SubTreeService) onSessionCreated(e *broker.Event) {
-	// Save session info if session is local and retained
-	if e.BrokerId == broker.GetId() && e.Persistent {
-		// check mongo db configuration
-		hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
-		timeout := p.Config.MustInt("broker", "connect_timeout")
-		session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-		if err != nil {
-			glog.Errorf("Metadata :%s", err.Error())
+func (p *SubTreeService) onSessionCreate(e *broker.Event) {
+	// If session is created on other broker and is retained
+	// local queue should be created in local subscription tree
+	if e.BrokerId != broker.GetId() && e.Persistent {
+
+		// check wethe the session is already exist in subsription tree
+		// return simpily if session is already retained
+		session, err := p.topicTree.FindSession(e.ClientId)
+		if err == nil && session.Retain == true {
 			return
 		}
-		defer session.Close()
-		c := session.DB(brokerDatabase).C(sessionCollection)
-		err = c.Insert(&Session{
-			Id:        e.ClientId,
-			CreatedAt: time.Now(),
-		})
+		// create queue if not exist
+		_, err = queue.NewQueue(e.ClientId, true)
 		if err != nil {
-			glog.Error("Metadata:%s", err.Error())
-			return
+			glog.Fatalf("broker: Failed to create queue for client '%s'", e.ClientId)
 		}
 	}
 
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *SubTreeService) onSessionDestroyed(e *broker.Event) {
+func (p *SubTreeService) onSessionDestroy(e *broker.Event) {
+	glog.Infof("subtree: session(%s) is destroyed", e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
 func (p *SubTreeService) onTopicSubscribe(e *broker.Event) {
+	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, e.Topic)
+	queue := queue.GetQueue(e.ClientId)
+	if queue != nil {
+		glog.Fatalf("broker: Can not get queue for client '%s'", e.ClientId)
+		return
+	}
+	p.topicTree.AddSubscription(e.ClientId, e.Topic, e.Qos, queue)
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
 func (p *SubTreeService) onTopicUnsubscribe(e *broker.Event) {
+	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, e.Topic)
+	p.topicTree.RemoveSubscription(e.ClientId, e.Topic)
+}
+
+// onEventTopicPublish called when EventTopicPublish received
+func (p *SubTreeService) onTopicPublish(e *broker.Event) {
+	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, e.Topic)
+	p.topicTree.AddTopic(e.ClientId, e.Topic, e.Data)
 }
 
 // findSesison return session object by id if existed
@@ -183,8 +197,8 @@ func (p *SubTreeService) registerSession(s *Session) error {
 }
 
 // addSubscription add a subscription into metadat
-func (p *SubTreeService) addSubscription(clientId string, topic string, qos uint8) error {
-	return p.topicTree.AddSubscription(clientId, topic, qos)
+func (p *SubTreeService) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
+	return p.topicTree.AddSubscription(clientId, topic, qos, q)
 }
 
 // retainSubscription retain the client with topic

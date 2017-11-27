@@ -30,6 +30,7 @@ type Session struct {
 	SubscribeCount     uint32
 	Protocol           uint8
 	RefCount           uint8
+	Retain             bool
 }
 
 type Topic struct {
