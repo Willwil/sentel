@@ -28,10 +28,6 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// Metaservice manage broker metadata
-// Broker's metadata include the following data
-// - Global broker cluster data
-// - Shadow device
 type SubTreeService struct {
 	base.ServiceBase
 	eventChan chan *broker.Event

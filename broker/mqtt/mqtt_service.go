@@ -25,6 +25,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 
@@ -147,6 +148,12 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 	for {
 		conn, err := listen.Accept()
 		if err != nil {
+			continue
+		}
+		// Check wether connection over quto
+		if quto.CheckQuto(quto.MaxConnections, 1) != true {
+			glog.Error("broker: over quto, closing connection...")
+			conn.Close()
 			continue
 		}
 

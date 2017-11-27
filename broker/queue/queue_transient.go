@@ -23,7 +23,7 @@ type transientQueue struct {
 	dataChan chan []byte
 	quit     chan os.Signal
 	observer Observer
-	ref      uint32
+	ref      int
 }
 
 func newTransientQueue(id string) (Queue, error) {
@@ -68,5 +68,7 @@ func (p *transientQueue) RegisterObserver(o Observer) {
 	p.observer = o
 }
 
-func (p *transientQueue) Release() {
+func (p *transientQueue) Release() int {
+	p.ref -= 1
+	return p.ref
 }

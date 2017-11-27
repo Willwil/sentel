@@ -27,8 +27,8 @@ type Queue interface {
 	// Write writes data to the queue.
 	Write(b []byte) (n int, err error)
 
-	// Release decrease reference
-	Release()
+	// Release decrease reference and return current reference count
+	Release() int
 
 	// Close closes the connection.
 	// Any blocked Read or Write operations will be unblocked and return errors.

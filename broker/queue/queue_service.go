@@ -98,7 +98,7 @@ func (p *QueueService) newQueue(id string, persistent bool) (Queue, error) {
 }
 
 // freeQueue release queue from queue service
-func (p *QueueService) freeQueue(id string) {
+func (p *QueueService) destroyQueue(id string) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 	delete(p.queues, id)
@@ -110,4 +110,14 @@ func (p *QueueService) getQueue(id string) Queue {
 		return p.queues[id]
 	}
 	return nil
+}
+
+// releaseQueue decrease queue's reference count, and destory the queue if reference is zero
+func (p *QueueService) releaseQueue(id string) {
+	if _, found := p.queues[id]; found {
+		q := p.queues[id]
+		if q.Release() == 0 {
+			p.destroyQueue(id)
+		}
+	}
 }

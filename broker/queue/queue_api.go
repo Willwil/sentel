@@ -27,7 +27,13 @@ func GetQueue(id string) Queue {
 }
 
 // FreeQueue release queue from queue service
-func FreeQueue(id string) {
+func DestroyQueue(id string) {
 	service := broker.GetService(ServiceName).(*QueueService)
-	service.freeQueue(id)
+	service.destroyQueue(id)
+}
+
+// ReleaseQueue decrease queue's reference count, and destory the queue if reference is zero
+func ReleaseQueue(id string) {
+	service := broker.GetService(ServiceName).(*QueueService)
+	service.releaseQueue(id)
 }
