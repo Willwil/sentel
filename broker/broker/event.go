@@ -22,6 +22,7 @@ const (
 	TopicUnsubscribed = 0x0100
 	QutoChanged       = 0x0200
 	SessionResumed    = 0x0400
+	AuthChanged       = 0x0800
 )
 
 type Event struct {

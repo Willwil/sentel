@@ -24,14 +24,17 @@ import (
 )
 
 type clusterEventManager struct {
-	config      core.Config
-	brokerId    string
-	consumer    sarama.Consumer                // kafka client endpoint
-	eventChan   chan *Event                    // Event notify channel
-	subscribers map[uint32][]subscriberContext // All subscriber's contex
-	mutex       sync.Mutex                     // Mutex to lock subscribers
-	quit        chan os.Signal
-	waitgroup   sync.WaitGroup
+	config         core.Config
+	brokerId       string
+	consumer       sarama.Consumer                // kafka client endpoint
+	eventChan      chan *Event                    // Event notify channel
+	subscribers    map[uint32][]subscriberContext // All subscriber's contex
+	mutex          sync.Mutex                     // Mutex to lock subscribers
+	quit           chan os.Signal
+	waitgroup      sync.WaitGroup
+	product        string
+	mqttEventBus   string
+	brokerEventBus string
 }
 
 const (
@@ -40,7 +43,7 @@ const (
 )
 
 // newclusterEventManager create global broker
-func newClusterEventManager(c core.Config) (*clusterEventManager, error) {
+func newClusterEventManager(product string, c core.Config) (*clusterEventManager, error) {
 	// kafka
 	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
@@ -49,30 +52,31 @@ func newClusterEventManager(c core.Config) (*clusterEventManager, error) {
 	}
 
 	return &clusterEventManager{
-		config:      c,
-		consumer:    consumer,
-		eventChan:   make(chan *Event),
-		subscribers: make(map[uint32][]subscriberContext),
-		quit:        make(chan os.Signal),
-		waitgroup:   sync.WaitGroup{},
+		config:         c,
+		consumer:       consumer,
+		eventChan:      make(chan *Event),
+		subscribers:    make(map[uint32][]subscriberContext),
+		quit:           make(chan os.Signal),
+		waitgroup:      sync.WaitGroup{},
+		mqttEventBus:   product + "/event/mqtt",
+		brokerEventBus: product + "/event/broker",
 	}, nil
 }
 
 // initialize
 func (p *clusterEventManager) initialize(c core.Config) error {
+	// subscribe topic from kafka
+	if err := p.subscribeKafkaTopic(p.mqttEventBus); err != nil {
+		return err
+	}
+	if err := p.subscribeKafkaTopic(p.brokerEventBus); err != nil {
+		return err
+	}
 	return nil
 }
 
 // Start
 func (p *clusterEventManager) run() error {
-	// subscribe topic from kafka
-	if err := p.subscribeTopic(mqttEventBusName); err != nil {
-		return err
-	}
-	if err := p.subscribeTopic(brokerEventBusName); err != nil {
-		return err
-	}
-
 	go func(p *clusterEventManager) {
 		for {
 			select {
@@ -131,8 +135,8 @@ func (p *clusterEventManager) handleMqttEvent(e *Event) {
 	}
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *clusterEventManager) subscribeTopic(topic string) error {
+// subscribeKafkaTopc subscribe topics from apiserver
+func (p *clusterEventManager) subscribeKafkaTopic(topic string) error {
 	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)

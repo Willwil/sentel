@@ -87,6 +87,7 @@ func (p *SubTreeService) Start() error {
 	broker.Subscribe(broker.SessionDestroyed, onEventCallback, p)
 	broker.Subscribe(broker.TopicSubscribed, onEventCallback, p)
 	broker.Subscribe(broker.TopicUnsubscribed, onEventCallback, p)
+	broker.Subscribe(broker.TopicPublished, onEventCallback, p)
 
 	go func(p *SubTreeService) {
 		for {

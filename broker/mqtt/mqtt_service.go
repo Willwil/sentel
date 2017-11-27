@@ -24,6 +24,7 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/core"
 	uuid "github.com/satori/go.uuid"
 
@@ -38,8 +39,9 @@ const (
 // MQTT service declaration
 type mqttService struct {
 	base.ServiceBase
-	sessions map[string]*mqttSession // All mqtt sessions
-	mutex    sync.Mutex              // Mutex to protect sessions
+	sessions  map[string]*mqttSession // All mqtt sessions
+	mutex     sync.Mutex              // Mutex to protect sessions
+	eventChan chan *broker.Event
 }
 
 // MqttFactory
@@ -53,7 +55,8 @@ func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (base.Service, err
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		sessions: make(map[string]*mqttSession),
+		sessions:  make(map[string]*mqttSession),
+		eventChan: make(chan *broker.Event),
 	}
 	return t, nil
 }
@@ -104,7 +107,31 @@ func (p *mqttService) Start() error {
 		}
 		go p.startProtocolService(protocol, host)
 	}
+
+	broker.Subscribe(broker.SessionCreated, onEventCallback, p)
+
+	go func(p *mqttService) {
+		for {
+			select {
+			case e := <-p.eventChan:
+				p.handleEvent(e)
+			case <-p.Quit:
+				return
+			}
+		}
+	}(p)
+
 	return nil
+}
+
+// onEventCallback will be called when notificaiton come from event service
+func onEventCallback(e *broker.Event, ctx interface{}) {
+	service := ctx.(*mqttService)
+	service.eventChan <- e
+}
+
+// handleEvent handle register event in mqtt servicei context
+func (p *mqttService) handleEvent(e *broker.Event) {
 }
 
 // startProtocolService start mqtt protocol on different port

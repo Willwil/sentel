@@ -21,12 +21,12 @@ import (
 )
 
 type localEventManager struct {
-	brokerId    string
 	eventChan   chan *Event                    // Event notify channel
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	quit        chan os.Signal
 	waitgroup   sync.WaitGroup
+	product     string
 }
 
 const (
@@ -34,12 +34,13 @@ const (
 )
 
 // newlocalEventManager create global broker
-func newLocalEventManager(c core.Config) (*localEventManager, error) {
+func newLocalEventManager(product string, c core.Config) (*localEventManager, error) {
 	return &localEventManager{
 		eventChan:   make(chan *Event),
 		subscribers: make(map[uint32][]subscriberContext),
 		quit:        make(chan os.Signal),
 		waitgroup:   sync.WaitGroup{},
+		product:     product,
 	}, nil
 }
 

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/go-redis/redis"
@@ -68,14 +69,16 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		rclient: rclient,
+		rclient:   rclient,
+		eventChan: make(chan *broker.Event),
 	}, nil
 }
 
 // Authentication Service
 type AuthService struct {
 	base.ServiceBase
-	rclient *redis.Client
+	rclient   *redis.Client
+	eventChan chan *broker.Event
 }
 
 // Name
@@ -85,6 +88,18 @@ func (p *AuthService) Name() string {
 
 // Start
 func (p *AuthService) Start() error {
+	broker.Subscribe(broker.AuthChanged, onEventCallback, p)
+	go func(p *AuthService) {
+		for {
+			select {
+			case e := <-p.eventChan:
+				p.handleEvent(e)
+			case <-p.Quit:
+				return
+			}
+		}
+	}(p)
+
 	return nil
 }
 
@@ -107,6 +122,10 @@ func (p *AuthService) authenticate(opt *Options) error {
 		return sign(opt)
 	}
 	return fmt.Errorf("auth: Failed to get device secret key for '%s'", opt.DeviceName)
+}
+
+func (p *AuthService) handleEvent(e *broker.Event) {
+
 }
 
 // Device
@@ -146,4 +165,10 @@ func (p *AuthService) getDeviceSecretKey(opt *Options) (string, error) {
 	// Write back to redis
 	p.rclient.Set(key, dev.DeviceSecret, 0)
 	return dev.DeviceSecret, nil
+}
+
+// onEventCallback will be called when notificaiton come from event service
+func onEventCallback(e *broker.Event, ctx interface{}) {
+	service := ctx.(*AuthService)
+	service.eventChan <- e
 }

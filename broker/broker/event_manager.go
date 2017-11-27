@@ -11,10 +11,15 @@
 
 package broker
 
-import "github.com/cloustone/sentel/core"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/core"
+)
 
 type EventHandler func(e *Event, ctx interface{})
 
+// eventManager manage all events shared by brokers
 type eventManager interface {
 	initialize(c core.Config) error
 	run() error
@@ -31,9 +36,17 @@ type subscriberContext struct {
 
 // newEventManger create event manager according to deploy mode
 func newEventManager(c core.Config) (eventManager, error) {
-	if deploy, err := c.String("broker", "deployment"); err == nil && deploy == "cluster" {
-		return newClusterEventManager(c)
+	// get deployment mode and product name
+	deploy, dErr := c.String("broker", "deploy")
+	product, pErr := c.String("broker", "product")
+
+	if dErr != nil || pErr != nil {
+		return nil, errors.New("Invalid event manager options")
+	}
+
+	if deploy == "cluster" {
+		return newClusterEventManager(product, c)
 	} else {
-		return newLocalEventManager(c)
+		return newLocalEventManager(product, c)
 	}
 }

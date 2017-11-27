@@ -69,7 +69,6 @@ func NewBroker(c core.Config) (*Broker, error) {
 	if broker != nil {
 		panic("Global broker had already been created")
 	}
-
 	eventmgr, err := newEventManager(c)
 	if err != nil {
 		return nil, err
