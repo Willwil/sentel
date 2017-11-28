@@ -63,7 +63,7 @@ type mqttSession struct {
 }
 
 // newMqttSession create new session  for each client connection
-func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, error) {
+func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 	// Get session message queue size, if it is not set, default is 10
 	msgqsize, err := m.Config.Int("mqtt", "session_msg_queue_size")
 	if err != nil {
@@ -73,7 +73,6 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 	s := &mqttSession{
 		config:        m.Config,
 		conn:          conn,
-		id:            id,
 		bytesReceived: 0,
 		state:         mqttStateNew,
 		inpacket:      newMqttPacket(),

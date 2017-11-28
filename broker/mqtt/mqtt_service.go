@@ -24,25 +24,15 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/core"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/golang/glog"
-)
-
-const (
-	maxMqttConnections = 1000000
-	protocolName       = "mqtt3"
 )
 
 // MQTT service declaration
 type mqttService struct {
 	base.ServiceBase
-	sessions  map[string]*mqttSession // All mqtt sessions
-	mutex     sync.Mutex              // Mutex to protect sessions
-	eventChan chan *event.Event
 }
 
 // New create mqtt service factory
@@ -53,8 +43,6 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			Quit:      quit,
 			WaitGroup: sync.WaitGroup{},
 		},
-		sessions:  make(map[string]*mqttSession),
-		eventChan: make(chan *event.Event),
 	}
 	return t, nil
 }
@@ -67,27 +55,6 @@ func (p *mqttService) Name() string {
 }
 
 func (p *mqttService) Initialize() error { return nil }
-
-// removeSession remove specified session from mqtt service
-func (p *mqttService) removeSession(s *mqttSession) {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	delete(p.sessions, s.id)
-}
-
-// addSession add newly created session into mqtt service
-func (p *mqttService) addSession(s *mqttSession) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	if _, ok := p.sessions[s.id]; ok {
-		return fmt.Errorf("Mqtt session '%s' is already regisitered", s.id)
-	}
-	p.sessions[s.id] = s
-	return nil
-}
-
-func (p *mqttService) KickoffClient(id string) error { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
@@ -107,31 +74,15 @@ func (p *mqttService) Start() error {
 		}
 		go p.startProtocolService(protocol, host)
 	}
-
-	event.Subscribe(event.SessionCreated, onEventCallback, p)
-
 	go func(p *mqttService) {
 		for {
 			select {
-			case e := <-p.eventChan:
-				p.handleEvent(e)
 			case <-p.Quit:
 				return
 			}
 		}
 	}(p)
-
 	return nil
-}
-
-// onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*mqttService)
-	service.eventChan <- e
-}
-
-// handleEvent handle register event in mqtt servicei context
-func (p *mqttService) handleEvent(e *event.Event) {
 }
 
 // startProtocolService start mqtt protocol on different port
@@ -155,14 +106,11 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 			conn.Close()
 			continue
 		}
-
-		id := uuid.NewV4().String()
-		session, err := newMqttSession(p, conn, id)
+		session, err := newMqttSession(p, conn)
 		if err != nil {
 			glog.Errorf("Mqtt create session failed:%s", err)
 			return err
 		}
-		p.addSession(session)
 		go func(s *mqttSession) {
 			err := s.Handle()
 			if err != nil {
