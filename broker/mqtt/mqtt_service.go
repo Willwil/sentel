@@ -45,11 +45,8 @@ type mqttService struct {
 	eventChan chan *event.Event
 }
 
-// MqttFactory
-type MqttFactory struct{}
-
 // New create mqtt service factory
-func (p *MqttFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	t := &mqttService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,

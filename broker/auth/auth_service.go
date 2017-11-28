@@ -33,11 +33,8 @@ const (
 	ServiceName = "auth"
 )
 
-// AuthServiceFactory
-type AuthServiceFactory struct{}
-
 // New create coap service factory
-func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -63,7 +60,7 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 		return nil, err
 	}
 
-	return &AuthService{
+	return &authService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
@@ -75,23 +72,23 @@ func (p *AuthServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 }
 
 // Authentication Service
-type AuthService struct {
+type authService struct {
 	base.ServiceBase
 	rclient   *redis.Client
 	eventChan chan *event.Event
 }
 
 // Name
-func (p *AuthService) Name() string {
+func (p *authService) Name() string {
 	return ServiceName
 }
 
-func (p *AuthService) Initialize() error { return nil }
+func (p *authService) Initialize() error { return nil }
 
 // Start
-func (p *AuthService) Start() error {
+func (p *authService) Start() error {
 	event.Subscribe(event.AuthChanged, onEventCallback, p)
-	go func(p *AuthService) {
+	go func(p *authService) {
 		for {
 			select {
 			case e := <-p.eventChan:
@@ -106,19 +103,19 @@ func (p *AuthService) Start() error {
 }
 
 // Stop
-func (p *AuthService) Stop() {
+func (p *authService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
 }
 
 // CheckAcl check client's access control right
-func (p *AuthService) authorize(clientid string, username string, topic string, access int, opt *Options) error {
+func (p *authService) authorize(clientid string, username string, topic string, access int, opt *Options) error {
 	return nil
 }
 
 // authenticate check user's name and password
-func (p *AuthService) authenticate(opt *Options) error {
+func (p *authService) authenticate(opt *Options) error {
 	if key, err := p.getDeviceSecretKey(opt); err == nil {
 		opt.DeviceSecret = key
 		return sign(opt)
@@ -126,7 +123,7 @@ func (p *AuthService) authenticate(opt *Options) error {
 	return fmt.Errorf("auth: Failed to get device secret key for '%s'", opt.DeviceName)
 }
 
-func (p *AuthService) handleEvent(e *event.Event) {
+func (p *authService) handleEvent(e *event.Event) {
 
 }
 
@@ -143,7 +140,7 @@ type device struct {
 }
 
 // getDeviceSecretKey retrieve device secret key from cache or mongo
-func (p *AuthService) getDeviceSecretKey(opt *Options) (string, error) {
+func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
 	// Read from cache at first
 	key := opt.ProductKey + "/" + opt.DeviceName
 	if val, err := p.rclient.Get(key).Result(); err == nil {
@@ -171,6 +168,6 @@ func (p *AuthService) getDeviceSecretKey(opt *Options) (string, error) {
 
 // onEventCallback will be called when notificaiton come from event service
 func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*AuthService)
+	service := ctx.(*authService)
 	service.eventChan <- e
 }

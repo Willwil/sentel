@@ -30,7 +30,7 @@ import (
 // Broker's metadata include the following data
 // - Global broker cluster data
 // - Shadow device
-type MetadataService struct {
+type metadataService struct {
 	base.ServiceBase
 	eventChan chan *event.Event
 }
@@ -42,11 +42,8 @@ const (
 	brokerCollection  = "brokers"
 )
 
-// MetadataServiceFactory
-type MetadataServiceFactory struct{}
-
 // New create metadata service factory
-func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -56,7 +53,7 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (base.S
 	}
 	defer session.Close()
 
-	return &MetadataService{
+	return &metadataService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -68,21 +65,21 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (base.S
 }
 
 // Name
-func (p *MetadataService) Name() string {
+func (p *metadataService) Name() string {
 	return ServiceName
 }
 
-func (p *MetadataService) Initialize() error { return nil }
+func (p *metadataService) Initialize() error { return nil }
 
 // Start
-func (p *MetadataService) Start() error {
+func (p *metadataService) Start() error {
 	// subscribe envent
 	event.Subscribe(event.SessionCreated, onEventCallback, p)
 	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
 	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
 	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
 
-	go func(p *MetadataService) {
+	go func(p *metadataService) {
 		for {
 			select {
 			case e := <-p.eventChan:
@@ -96,14 +93,14 @@ func (p *MetadataService) Start() error {
 }
 
 // Stop
-func (p *MetadataService) Stop() {
+func (p *metadataService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
 	close(p.eventChan)
 }
 
-func (p *MetadataService) handleEvent(e *event.Event) {
+func (p *metadataService) handleEvent(e *event.Event) {
 	switch e.Type {
 	case event.SessionCreated:
 		p.onSessionCreated(e)
@@ -118,12 +115,12 @@ func (p *MetadataService) handleEvent(e *event.Event) {
 
 // onEventCallback will be called when notificaiton come from event service
 func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*MetadataService)
+	service := ctx.(*metadataService)
 	service.eventChan <- e
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *MetadataService) onSessionCreated(e *event.Event) {
+func (p *metadataService) onSessionCreated(e *event.Event) {
 	// Save session info if session is local and retained
 	if e.BrokerId == base.GetBrokerId() && e.Persistent {
 		// check mongo db configuration
@@ -132,23 +129,23 @@ func (p *MetadataService) onSessionCreated(e *event.Event) {
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *MetadataService) onSessionDestroyed(e *event.Event) {
+func (p *metadataService) onSessionDestroyed(e *event.Event) {
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *MetadataService) onTopicSubscribe(e *event.Event) {
+func (p *metadataService) onTopicSubscribe(e *event.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *MetadataService) onTopicUnsubscribe(e *event.Event) {
+func (p *metadataService) onTopicUnsubscribe(e *event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status
-func (p *MetadataService) getShadowDeviceStatus(clientId string) (*Device, error) {
+func (p *metadataService) getShadowDeviceStatus(clientId string) (*Device, error) {
 	return nil, nil
 }
 
 // syncShadowDeviceStatus synchronize shadow device's status
-func (p *MetadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
+func (p *metadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
 	return nil
 }

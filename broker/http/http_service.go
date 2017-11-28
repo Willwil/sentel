@@ -29,7 +29,7 @@ import (
 // Broker's metadata include the following data
 // - Global broker cluster data
 // - Shadow device
-type HttpService struct {
+type httpService struct {
 	base.ServiceBase
 }
 
@@ -37,11 +37,8 @@ const (
 	ServiceName = "metadata"
 )
 
-// HttpServiceFactory
-type HttpServiceFactory struct{}
-
 // New create metadata service factory
-func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -51,7 +48,7 @@ func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 	}
 	defer session.Close()
 
-	return &HttpService{
+	return &httpService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -62,25 +59,25 @@ func (p *HttpServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 }
 
 // Name
-func (p *HttpService) Name() string {
+func (p *httpService) Name() string {
 	return ServiceName
 }
 
-func (p *HttpService) Initialize() error { return nil }
+func (p *httpService) Initialize() error { return nil }
 
 // Start
-func (p *HttpService) Start() error {
+func (p *httpService) Start() error {
 	return nil
 }
 
 // Stop
-func (p *HttpService) Stop() {
+func (p *httpService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
 }
 
 // handleNotifications handle notification from kafka
-func (p *HttpService) handleNotifications(topic string, value []byte) error {
+func (p *httpService) handleNotifications(topic string, value []byte) error {
 	return nil
 }

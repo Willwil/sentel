@@ -24,7 +24,7 @@ import (
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/queue"
-	subt "github.com/cloustone/sentel/broker/subtree"
+	sm "github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
@@ -341,7 +341,7 @@ func (p *mqttSession) handleConnect() error {
 
 	if cleanSession == 0 {
 		// Find if the client already has an entry, p must be done after any security check
-		if found, _ := subt.FindSession(clientId); found != nil {
+		if found, _ := sm.FindSession(clientId); found != nil {
 			// Found old session
 			if found.State == mqttStateInvalid {
 				glog.Errorf("Invalid session(%s) in store", found.Id)
@@ -382,9 +382,9 @@ func (p *mqttSession) handleConnect() error {
 
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
-	subt.DeleteMessageWithValidator(
+	sm.DeleteMessageWithValidator(
 		clientId,
-		func(msg subt.Message) bool {
+		func(msg sm.Message) bool {
 			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false
@@ -434,7 +434,7 @@ func (p *mqttSession) disconnect() {
 		return
 	}
 	if p.cleanSession > 0 {
-		subt.DeleteSession(p.id)
+		sm.DeleteSession(p.id)
 		p.id = ""
 	}
 	p.state = mqttStateDisconnected
@@ -479,10 +479,10 @@ func (p *mqttSession) handleSubscribe() error {
 
 		sub = p.mountpoint + sub
 		if qos != 0x80 {
-			if err := subt.AddSubscription(p.id, sub, qos); err != nil {
+			if err := sm.AddSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
-			if err := subt.RetainSubscription(p.id, sub, qos); err != nil {
+			if err := sm.RetainSubscription(p.id, sub, qos); err != nil {
 				return err
 			}
 		}
@@ -515,7 +515,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		subt.RemoveSubscription(p.id, sub)
+		sm.RemoveSubscription(p.id, sub)
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)
@@ -587,11 +587,11 @@ func (p *mqttSession) handlePublish() error {
 			}
 		}
 	}
-	msg := subt.Message{
+	msg := sm.Message{
 		ID:        uint(mid),
 		SourceID:  p.id,
 		Topic:     topic,
-		Direction: subt.MessageDirectionIn,
+		Direction: sm.MessageDirectionIn,
 		State:     0,
 		Qos:       qos,
 		Retain:    (retain > 0),
@@ -600,14 +600,14 @@ func (p *mqttSession) handlePublish() error {
 
 	switch qos {
 	case 0:
-		err = subt.QueueMessage(p.id, &msg)
+		err = sm.QueueMessage(p.id, &msg)
 	case 1:
-		err = subt.QueueMessage(p.id, &msg)
+		err = sm.QueueMessage(p.id, &msg)
 		err = p.sendPubAck(mid)
 	case 2:
 		err = nil
 		if dup > 0 {
-			err = subt.InsertMessage(p.id, mid, subt.MessageDirectionIn, &msg)
+			err = sm.InsertMessage(p.id, mid, sm.MessageDirectionIn, &msg)
 		}
 		if err == nil {
 			err = p.sendPubRec(mid)
@@ -633,7 +633,7 @@ func (p *mqttSession) handlePubRel() error {
 		return err
 	}
 
-	subt.DeleteMessage(p.id, mid, subt.MessageDirectionIn)
+	sm.DeleteMessage(p.id, mid, sm.MessageDirectionIn)
 	return p.sendPubComp(mid)
 }
 

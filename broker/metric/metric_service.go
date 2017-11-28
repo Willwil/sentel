@@ -27,7 +27,7 @@ import (
 
 const ServiceName = "metric"
 
-type MetricService struct {
+type metricService struct {
 	base.ServiceBase
 	keepalive    *time.Ticker
 	stat         *time.Ticker
@@ -40,13 +40,10 @@ type MetricService struct {
 	statsMutex   sync.Mutex
 }
 
-// MetricServiceFactory
-type MetricServiceFactory struct{}
-
 // New create apiService service factory
-func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// Get node ip, name and created time
-	return &MetricService{
+	return &metricService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
@@ -60,14 +57,14 @@ func (p *MetricServiceFactory) New(c core.Config, quit chan os.Signal) (base.Ser
 }
 
 // Name
-func (p *MetricService) Name() string {
+func (p *metricService) Name() string {
 	return ServiceName
 }
 
-func (p *MetricService) Initialize() error { return nil }
+func (p *metricService) Initialize() error { return nil }
 
 // Start
-func (p *MetricService) Start() error {
+func (p *metricService) Start() error {
 	// Launch timer scheduler
 	duration, err := p.Config.Int("mqttbroker", "report_duration")
 	if err != nil {
@@ -75,7 +72,7 @@ func (p *MetricService) Start() error {
 	}
 	p.keepalive = time.NewTicker(1 * time.Second)
 	p.stat = time.NewTicker(time.Duration(duration) * time.Second)
-	go func(p *MetricService) {
+	go func(p *metricService) {
 		for {
 			p.WaitGroup.Add(1)
 			select {
@@ -92,7 +89,7 @@ func (p *MetricService) Start() error {
 }
 
 // Stop
-func (p *MetricService) Stop() {
+func (p *metricService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.keepalive.Stop()
 	p.stat.Stop()
@@ -101,7 +98,7 @@ func (p *MetricService) Stop() {
 }
 
 // reportHubStats report current iothub stats
-func (p *MetricService) reportHubStats() {
+func (p *metricService) reportHubStats() {
 	// Stats
 	stats := GetStats("mqtt")
 	collector.AsyncReport(p.Config, collector.TopicNameStats,
@@ -122,7 +119,7 @@ func (p *MetricService) reportHubStats() {
 }
 
 // reportKeepalive report node information to cluster manager
-func (p *MetricService) reportKeepalive() {
+func (p *metricService) reportKeepalive() {
 	/*
 		broker := base.GetBroker()
 			node := broker.GetNodeInfo()
@@ -136,7 +133,7 @@ func (p *MetricService) reportKeepalive() {
 }
 
 // newMetrics allocate a metrics object from metric service
-func (p *MetricService) newMetric(serviceName string) Metric {
+func (p *metricService) newMetric(serviceName string) Metric {
 	p.metricsMutex.Lock()
 	defer p.metricsMutex.Unlock()
 	if _, ok := p.metrics[serviceName]; !ok {
@@ -148,7 +145,7 @@ func (p *MetricService) newMetric(serviceName string) Metric {
 }
 
 // getMetric return server metrics
-func (p *MetricService) getMetric(serviceName string) map[string]uint64 {
+func (p *metricService) getMetric(serviceName string) map[string]uint64 {
 	result := map[string]uint64{}
 	p.metricsMutex.Lock()
 	defer p.metricsMutex.Unlock()
@@ -165,7 +162,7 @@ func (p *MetricService) getMetric(serviceName string) map[string]uint64 {
 }
 
 // getMetric return server metrics
-func (p *MetricService) freeMetric(serviceName string, m Metric) {
+func (p *metricService) freeMetric(serviceName string, m Metric) {
 	p.metricsMutex.Lock()
 	defer p.metricsMutex.Unlock()
 
@@ -176,7 +173,7 @@ func (p *MetricService) freeMetric(serviceName string, m Metric) {
 }
 
 // newStats allocate a stats object from metric service
-func (p *MetricService) newStats(serviceName string) Metric {
+func (p *metricService) newStats(serviceName string) Metric {
 	p.statsMutex.Lock()
 	if _, ok := p.stats[serviceName]; !ok {
 		p.stats[serviceName] = list.New()
@@ -188,7 +185,7 @@ func (p *MetricService) newStats(serviceName string) Metric {
 }
 
 // getStats return service's stats
-func (p *MetricService) getStats(serviceName string) map[string]uint64 {
+func (p *metricService) getStats(serviceName string) map[string]uint64 {
 	result := map[string]uint64{}
 	p.statsMutex.Lock()
 	defer p.statsMutex.Unlock()

@@ -16,24 +16,24 @@ import "github.com/cloustone/sentel/broker/base"
 
 // Allocate queue from queue service
 func NewQueue(id string, persistent bool) (Queue, error) {
-	service := base.GetService(ServiceName).(*QueueService)
+	service := base.GetService(ServiceName).(*queueService)
 	return service.newQueue(id, persistent)
 }
 
 // GetQueue return queue by queue id
 func GetQueue(id string) Queue {
-	service := base.GetService(ServiceName).(*QueueService)
+	service := base.GetService(ServiceName).(*queueService)
 	return service.getQueue(id)
 }
 
 // FreeQueue release queue from queue service
 func DestroyQueue(id string) {
-	service := base.GetService(ServiceName).(*QueueService)
+	service := base.GetService(ServiceName).(*queueService)
 	service.destroyQueue(id)
 }
 
 // ReleaseQueue decrease queue's reference count, and destory the queue if reference is zero
 func ReleaseQueue(id string) {
-	service := base.GetService(ServiceName).(*QueueService)
+	service := base.GetService(ServiceName).(*queueService)
 	service.releaseQueue(id)
 }

@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package subtree
+package sessionmgr
 
 import (
 	"os"
@@ -28,7 +28,7 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type SubTreeService struct {
+type sessionManager struct {
 	base.ServiceBase
 	eventChan chan *event.Event
 	topicTree TopicTree
@@ -41,11 +41,8 @@ const (
 	brokerCollection  = "brokers"
 )
 
-// SubTreeServiceFactory
-type SubServiceFactory struct{}
-
 // New create metadata service factory
-func (p *SubServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -60,7 +57,7 @@ func (p *SubServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servic
 		return nil, err
 	}
 
-	return &SubTreeService{
+	return &sessionManager{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -73,14 +70,14 @@ func (p *SubServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servic
 }
 
 // Name
-func (p *SubTreeService) Name() string {
+func (p *sessionManager) Name() string {
 	return ServiceName
 }
 
-func (p *SubTreeService) Initialize() error { return nil }
+func (p *sessionManager) Initialize() error { return nil }
 
 // Start
-func (p *SubTreeService) Start() error {
+func (p *sessionManager) Start() error {
 	// subscribe envent
 	event.Subscribe(event.SessionCreated, onEventCallback, p)
 	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
@@ -88,7 +85,7 @@ func (p *SubTreeService) Start() error {
 	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
 	event.Subscribe(event.TopicPublished, onEventCallback, p)
 
-	go func(p *SubTreeService) {
+	go func(p *sessionManager) {
 		for {
 			select {
 			case e := <-p.eventChan:
@@ -102,14 +99,14 @@ func (p *SubTreeService) Start() error {
 }
 
 // Stop
-func (p *SubTreeService) Stop() {
+func (p *sessionManager) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
 	close(p.eventChan)
 }
 
-func (p *SubTreeService) handleEvent(e *event.Event) {
+func (p *sessionManager) handleEvent(e *event.Event) {
 	switch e.Type {
 	case event.SessionCreated:
 		p.onSessionCreate(e)
@@ -126,12 +123,12 @@ func (p *SubTreeService) handleEvent(e *event.Event) {
 
 // onEventCallback will be called when notificaiton come from event service
 func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*SubTreeService)
+	service := ctx.(*sessionManager)
 	service.eventChan <- e
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *SubTreeService) onSessionCreate(e *event.Event) {
+func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
 	if e.BrokerId != base.GetBrokerId() && e.Persistent {
@@ -152,12 +149,12 @@ func (p *SubTreeService) onSessionCreate(e *event.Event) {
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *SubTreeService) onSessionDestroy(e *event.Event) {
+func (p *sessionManager) onSessionDestroy(e *event.Event) {
 	glog.Infof("subtree: session(%s) is destroyed", e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *SubTreeService) onTopicSubscribe(e *event.Event) {
+func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, e.Topic)
 	queue := queue.GetQueue(e.ClientId)
 	if queue != nil {
@@ -168,68 +165,68 @@ func (p *SubTreeService) onTopicSubscribe(e *event.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *SubTreeService) onTopicUnsubscribe(e *event.Event) {
+func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, e.Topic)
 	p.topicTree.RemoveSubscription(e.ClientId, e.Topic)
 }
 
 // onEventTopicPublish called when EventTopicPublish received
-func (p *SubTreeService) onTopicPublish(e *event.Event) {
+func (p *sessionManager) onTopicPublish(e *event.Event) {
 	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, e.Topic)
 	p.topicTree.AddTopic(e.ClientId, e.Topic, e.Data)
 }
 
 // findSesison return session object by id if existed
-func (p *SubTreeService) findSession(clientId string) (*Session, error) {
+func (p *sessionManager) findSession(clientId string) (*Session, error) {
 	return p.topicTree.FindSession(clientId)
 }
 
 // deleteSession remove session specified by clientId from metadata
-func (p *SubTreeService) deleteSession(clientId string) error {
+func (p *sessionManager) deleteSession(clientId string) error {
 	return p.topicTree.DeleteSession(clientId)
 }
 
 // regiserSession register session into metadata
-func (p *SubTreeService) registerSession(s *Session) error {
+func (p *sessionManager) registerSession(s *Session) error {
 	return p.topicTree.RegisterSession(s)
 }
 
 // addSubscription add a subscription into metadat
-func (p *SubTreeService) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
+func (p *sessionManager) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
 	return p.topicTree.AddSubscription(clientId, topic, qos, q)
 }
 
 // retainSubscription retain the client with topic
-func (p *SubTreeService) retainSubscription(clientId string, topic string, qos uint8) error {
+func (p *sessionManager) retainSubscription(clientId string, topic string, qos uint8) error {
 	return p.topicTree.RetainSubscription(clientId, topic, qos)
 }
 
 // RmoeveSubscription remove specified topic from metadata
-func (p *SubTreeService) removeSubscription(clientId string, topic string) error {
+func (p *sessionManager) removeSubscription(clientId string, topic string) error {
 	return p.topicTree.RemoveSubscription(clientId, topic)
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
-func (p *SubTreeService) deleteMessageWithValidator(clientId string, validator func(Message) bool) {
+func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(Message) bool) {
 	p.topicTree.DeleteMessageWithValidator(clientId, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
-func (p *SubTreeService) deleteMessage(clientId string, mid uint16, direction MessageDirection) error {
+func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction MessageDirection) error {
 	return p.topicTree.DeleteMessage(clientId, mid, direction)
 }
 
 // queueMessage save message into metadata
-func (p *SubTreeService) queueMessage(clientId string, msg *Message) error {
+func (p *sessionManager) queueMessage(clientId string, msg *Message) error {
 	return p.topicTree.QueueMessage(clientId, *msg)
 }
 
 // insertMessage insert specified message into metadata
-func (p *SubTreeService) insertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
+func (p *sessionManager) insertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
 	return p.topicTree.InsertMessage(clientId, mid, direction, *msg)
 }
 
 // releaseMessage release message from metadata
-func (p *SubTreeService) releaseMessage(clientId string, mid uint16, direction MessageDirection) error {
+func (p *sessionManager) releaseMessage(clientId string, mid uint16, direction MessageDirection) error {
 	return p.topicTree.ReleaseMessage(clientId, mid, direction)
 }

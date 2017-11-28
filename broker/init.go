@@ -22,7 +22,7 @@ import (
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/broker/rpc"
-	sub "github.com/cloustone/sentel/broker/subtree"
+	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -36,40 +36,19 @@ func RunWithConfigFile(fileName string) error {
 	if err != nil {
 		return err
 	}
-	registerService(event.ServiceName, &event.EventServiceFactory{})
-	registerService(queue.ServiceName, &queue.QueueServiceFactory{})
-	registerService(auth.ServiceName, &auth.AuthServiceFactory{})
-	registerService(rpc.ServiceName, &rpc.ApiServiceFactory{})
-	registerService(metric.ServiceName, &metric.MetricServiceFactory{})
-	registerService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
-	registerService(quto.ServiceName, &quto.QutoServiceFactory{})
-	registerService(mqtt.ServiceName, &mqtt.MqttFactory{})
-	registerService(http.ServiceName, &http.HttpServiceFactory{})
-	registerService(sub.ServiceName, &sub.SubServiceFactory{})
+	registerService(event.ServiceName, event.New)
+	registerService(queue.ServiceName, queue.New)
+	registerService(sessionmgr.ServiceName, sessionmgr.New)
+	registerService(auth.ServiceName, auth.New)
+	registerService(rpc.ServiceName, rpc.New)
+	registerService(metric.ServiceName, metric.New)
+	registerService(metadata.ServiceName, metadata.New)
+	registerService(quto.ServiceName, quto.New)
+	registerService(mqtt.ServiceName, mqtt.New)
+	registerService(http.ServiceName, http.New)
 
 	// Create service manager according to the configuration
 	broker, err := NewBroker(config)
-	if err != nil {
-		return err
-	}
-	return broker.Run()
-}
-
-// RunWithConfig create and start broker from loaded configuration
-func RunWithConfig(c core.Config) error {
-	registerService(event.ServiceName, &event.EventServiceFactory{})
-	registerService(queue.ServiceName, &queue.QueueServiceFactory{})
-	registerService(auth.ServiceName, &auth.AuthServiceFactory{})
-	registerService(rpc.ServiceName, &rpc.ApiServiceFactory{})
-	registerService(metric.ServiceName, &metric.MetricServiceFactory{})
-	registerService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
-	registerService(quto.ServiceName, &quto.QutoServiceFactory{})
-	registerService(mqtt.ServiceName, &mqtt.MqttFactory{})
-	registerService(http.ServiceName, &http.HttpServiceFactory{})
-	registerService(sub.ServiceName, &sub.SubServiceFactory{})
-
-	// Create service manager according to the configuration
-	broker, err := NewBroker(c)
 	if err != nil {
 		return err
 	}

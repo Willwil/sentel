@@ -29,11 +29,7 @@ const (
 	ServiceName = "event"
 )
 
-// eventServiceFactory
-type EventServiceFactory struct{}
-
-// New create metadata service factory
-func (p *EventServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	eventmgr, err := newEventManager(c)
 	if err != nil {
 		return nil, err

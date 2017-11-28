@@ -25,7 +25,7 @@ import (
 // Broker's metadata include the following data
 // - Global broker cluster data
 // - Shadow device
-type QueueService struct {
+type queueService struct {
 	base.ServiceBase
 	queues map[string]Queue
 	mutex  sync.Mutex
@@ -35,12 +35,9 @@ const (
 	ServiceName = "queue"
 )
 
-// QueueServiceFactory
-type QueueServiceFactory struct{}
-
 // New create metadata service factory
-func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
-	return &QueueService{
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+	return &queueService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -53,14 +50,14 @@ func (p *QueueServiceFactory) New(c core.Config, quit chan os.Signal) (base.Serv
 }
 
 // Name
-func (p *QueueService) Name() string {
+func (p *queueService) Name() string {
 	return ServiceName
 }
 
-func (p *QueueService) Initialize() error { return nil }
+func (p *queueService) Initialize() error { return nil }
 
 // Start
-func (p *QueueService) Start() error {
+func (p *queueService) Start() error {
 	for {
 		select {
 		case <-p.Quit:
@@ -71,12 +68,12 @@ func (p *QueueService) Start() error {
 }
 
 // Stop
-func (p *QueueService) Stop() {
+func (p *queueService) Stop() {
 	p.WaitGroup.Wait()
 }
 
 // newQueue allocate queue from queue service
-func (p *QueueService) newQueue(id string, persistent bool) (Queue, error) {
+func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 
@@ -100,14 +97,14 @@ func (p *QueueService) newQueue(id string, persistent bool) (Queue, error) {
 }
 
 // freeQueue release queue from queue service
-func (p *QueueService) destroyQueue(id string) {
+func (p *queueService) destroyQueue(id string) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 	delete(p.queues, id)
 }
 
 // getQueue return queue by id
-func (p *QueueService) getQueue(id string) Queue {
+func (p *queueService) getQueue(id string) Queue {
 	if _, found := p.queues[id]; found {
 		return p.queues[id]
 	}
@@ -115,7 +112,7 @@ func (p *QueueService) getQueue(id string) Queue {
 }
 
 // releaseQueue decrease queue's reference count, and destory the queue if reference is zero
-func (p *QueueService) releaseQueue(id string) {
+func (p *queueService) releaseQueue(id string) {
 	if _, found := p.queues[id]; found {
 		q := p.queues[id]
 		if q.Release() == 0 {

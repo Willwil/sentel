@@ -78,7 +78,7 @@ func NewBroker(c core.Config) (*Broker, error) {
 	for name, _ := range serviceFactories {
 		// Format service name
 		quit := make(chan os.Signal)
-		service, err := serviceFactories[name].New(c, quit)
+		service, err := serviceFactories[name](c, quit)
 		if err != nil {
 			glog.Infof("Create service '%s'failed", name)
 			return nil, err

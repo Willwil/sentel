@@ -52,11 +52,11 @@ func GetVersion() string {
 }
 
 func Authorize(clientId string, userName string, topic string, access int, opt *Options) error {
-	auth := base.GetService(ServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*authService)
 	return auth.authorize(clientId, userName, topic, access, opt)
 }
 
 func Authenticate(opt *Options) error {
-	auth := base.GetService(ServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*authService)
 	return auth.authenticate(opt)
 }

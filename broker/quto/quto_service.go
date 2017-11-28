@@ -37,11 +37,7 @@ const (
 	cachePolicyRedis  = "redis"
 )
 
-// Metaservice manage broker metadata
-// Broker's metadata include the following data
-// - Global broker cluster data
-// - Shadow device
-type QutoService struct {
+type qutoServie struct {
 	base.ServiceBase
 	eventChan   chan *event.Event
 	cachePolicy string
@@ -54,11 +50,8 @@ const (
 	ServiceName = "metadata"
 )
 
-// QutoServiceFactory
-type QutoServiceFactory struct{}
-
 // New create metadata service factory
-func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -91,7 +84,7 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 		}
 	}
 
-	return &QutoService{
+	return &qutoServie{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -107,16 +100,16 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 }
 
 // Name
-func (p *QutoService) Name() string {
+func (p *qutoServie) Name() string {
 	return ServiceName
 }
 
-func (p *QutoService) Initialize() error { return nil }
+func (p *qutoServie) Initialize() error { return nil }
 
 // Start
-func (p *QutoService) Start() error {
+func (p *qutoServie) Start() error {
 	event.Subscribe(event.QutoChanged, onEventCallback, p)
-	go func(p *QutoService) {
+	go func(p *qutoServie) {
 		for {
 			select {
 			case e := <-p.eventChan:
@@ -130,7 +123,7 @@ func (p *QutoService) Start() error {
 }
 
 // Stop
-func (p *QutoService) Stop() {
+func (p *qutoServie) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
@@ -139,12 +132,12 @@ func (p *QutoService) Stop() {
 
 // onEventCallback will be called when notificaiton come from event service
 func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*QutoService)
+	service := ctx.(*qutoServie)
 	service.eventChan <- e
 }
 
 // handleQutoChanged load changed quto into cach
-func (p *QutoService) handleQutoChanged(e *event.Event) {
+func (p *qutoServie) handleQutoChanged(e *event.Event) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")
@@ -167,7 +160,7 @@ func (p *QutoService) handleQutoChanged(e *event.Event) {
 }
 
 // getCacheItem get item from ache
-func (p *QutoService) getCacheItem(id string) (uint64, error) {
+func (p *qutoServie) getCacheItem(id string) (uint64, error) {
 	switch p.cachePolicy {
 	case cachePolicyMemory:
 		if _, ok := p.cacheMap[id]; !ok {
@@ -185,7 +178,7 @@ func (p *QutoService) getCacheItem(id string) (uint64, error) {
 }
 
 // setCacheItem set cache item internal
-func (p *QutoService) setCacheItem(id string, val uint64) {
+func (p *qutoServie) setCacheItem(id string, val uint64) {
 	switch p.cachePolicy {
 	case cachePolicyMemory:
 		p.cacheMap[id] = val
@@ -195,7 +188,7 @@ func (p *QutoService) setCacheItem(id string, val uint64) {
 }
 
 // getQuto return object's qutotation
-func (p *QutoService) getQuto(id string) (uint64, error) {
+func (p *qutoServie) getQuto(id string) (uint64, error) {
 	// Get quto from cache at first
 	if val, err := p.getCacheItem(id); err == nil {
 		return val, nil
@@ -222,7 +215,7 @@ func (p *QutoService) getQuto(id string) (uint64, error) {
 }
 
 // checkQutoWithAddValue check wether the newly added value is over quto
-func (p *QutoService) checkQuto(id string, value uint64) bool {
+func (p *qutoServie) checkQuto(id string, value uint64) bool {
 	v, err := p.getCacheItem(id)
 	if err != nil {
 		return false

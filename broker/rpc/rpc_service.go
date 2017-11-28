@@ -23,7 +23,7 @@ import (
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
-	sub "github.com/cloustone/sentel/broker/subtree"
+	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/golang/glog"
@@ -34,18 +34,15 @@ import (
 
 const ServiceName = "rpc"
 
-type ApiService struct {
+type rpcService struct {
 	base.ServiceBase
 	listener net.Listener
 	srv      *grpc.Server
 }
 
-// ApiServiceFactory
-type ApiServiceFactory struct{}
-
 // New create apiService service factory
-func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (base.Service, error) {
-	server := &ApiService{
+func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+	server := &rpcService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			Quit:      quit,
@@ -68,15 +65,15 @@ func (m *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servic
 }
 
 // Name
-func (p *ApiService) Name() string {
+func (p *rpcService) Name() string {
 	return ServiceName
 }
 
-func (p *ApiService) Initialize() error { return nil }
+func (p *rpcService) Initialize() error { return nil }
 
 // Start
-func (p *ApiService) Start() error {
-	go func(p *ApiService) {
+func (p *rpcService) Start() error {
+	go func(p *rpcService) {
 		p.srv.Serve(p.listener)
 		p.WaitGroup.Add(1)
 	}(p)
@@ -84,7 +81,7 @@ func (p *ApiService) Start() error {
 }
 
 // Stop
-func (p *ApiService) Stop() {
+func (p *rpcService) Stop() {
 	p.listener.Close()
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
@@ -93,29 +90,29 @@ func (p *ApiService) Stop() {
 
 //
 // Wait
-func (p *ApiService) Wait() {
+func (p *rpcService) Wait() {
 	p.WaitGroup.Wait()
 }
 
-func (p *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
+func (p *rpcService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
 	version := "0.1"
 	return &VersionReply{Version: version}, nil
 }
 
-func (p *ApiService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
+func (p *rpcService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
 	return nil, nil
 }
 
-func (p *ApiService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
+func (p *rpcService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
 	return nil, nil
 }
 
-func (p *ApiService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
+func (p *rpcService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
 	return nil, nil
 }
 
 // Broker delegate broker command implementation in sentel
-func (p *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
+func (p *rpcService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
 	switch req.Category {
 	case "stats":
 		stats := metric.GetStats(req.Service)
@@ -128,12 +125,12 @@ func (p *ApiService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerRep
 	return nil, fmt.Errorf("Invalid broker request with categoru:%s", req.Category)
 }
 
-func (p *ApiService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
+func (p *rpcService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
 	return nil, nil
 }
 
 // Services delegate  services command
-func (p *ApiService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
+func (p *rpcService) Services(ctx context.Context, req *ServicesRequest) (*ServicesReply, error) {
 	/*
 		reply := &ServicesReply{
 			Header:   &ReplyMessageHeader{Success: true},
@@ -162,14 +159,14 @@ func (p *ApiService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 }
 
 //Subscriptions delete subscriptions command
-func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
+func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
 		Subscriptions: []*SubscriptionInfo{},
 	}
 	switch req.Category {
 	case "list":
-		subs := sub.GetSubscriptions(req.Service)
+		subs := sessionmgr.GetSubscriptions(req.Service)
 		for _, sub := range subs {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -179,7 +176,7 @@ func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 				})
 		}
 	case "show":
-		sub := sub.GetSubscription(req.Service, req.Subscription)
+		sub := sessionmgr.GetSubscription(req.Service, req.Subscription)
 		if sub != nil {
 			reply.Subscriptions = append(reply.Subscriptions,
 				&SubscriptionInfo{
@@ -193,7 +190,7 @@ func (p *ApiService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 }
 
 // Clients delegate clients command implementation in sentel
-func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
+func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
 	reply := &ClientsReply{
 		Clients: []*ClientInfo{},
 		Header:  &ReplyMessageHeader{Success: true},
@@ -237,7 +234,7 @@ func (p *ApiService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 }
 
 // Sessions delegate client sessions command
-func (p *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
+func (p *rpcService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
 		Sessions: []*SessionInfo{},
@@ -285,14 +282,14 @@ func (p *ApiService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 	return reply, nil
 }
 
-func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
+func (p *rpcService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},
 		Topics: []*TopicInfo{},
 	}
 	switch req.Category {
 	case "list":
-		topics := sub.GetTopics(req.Service)
+		topics := sessionmgr.GetTopics(req.Service)
 		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -301,7 +298,7 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 				})
 		}
 	case "show":
-		topic := sub.GetTopic(req.Service, req.Topic)
+		topic := sessionmgr.GetTopic(req.Service, req.Topic)
 		if topic != nil {
 			reply.Topics = append(reply.Topics,
 				&TopicInfo{
@@ -313,6 +310,6 @@ func (p *ApiService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 	return reply, nil
 }
 
-func (p *ApiService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
+func (p *rpcService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
 	return nil, nil
 }
