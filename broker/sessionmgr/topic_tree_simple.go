@@ -13,119 +13,124 @@
 package sessionmgr
 
 import (
+	"errors"
+	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
 
+// subLeaf is subscription leaf
 type subLeaf struct {
-	qos uint8
+	qos    uint8
+	msgs   []*Message  // All retained messages
+	queue  queue.Queue // Topic subscriber
+	retain bool
 }
 
+// usbNode is subscription node in topic tree
 type subNode struct {
-	level     string
-	children  map[string]*subNode
-	subs      map[string]*subLeaf
-	retainMsg *Message
+	level    string              // Topic level for the node
+	children map[string]*subNode // Childern subscription topic
+	subs     map[string]*subLeaf
 }
 
+// simpleTopicTree manage all subscripted topic
 type simpleTopicTree struct {
-	root subNode
+	root  subNode    // Root node
+	mutex sync.Mutex // Mutex for concurrence context
 }
 
-func (p *simpleTopicTree) findNode(node *subNode, lev string) *subNode {
-	for k, v := range node.children {
-		if k == lev {
-			return v
+// findNode return sub node with specified topic
+func (p *simpleTopicTree) findNode(node *subNode, topic string) *subNode {
+	if n, found := node.children[topic]; found {
+		return n
+	}
+	return nil
+}
+
+// addNode add a sub node in root node
+func (p *simpleTopicTree) addNode(node *subNode, level string, q queue.Queue) *subNode {
+	if _, found := node.children[level]; !found {
+		n := &subNode{
+			level:    level,
+			children: make(map[string]*subNode),
+			subs:     make(map[string]*subLeaf),
 		}
+		node.children[level] = n
 	}
-	return nil
+	return node.children[level]
 }
 
-func (p *simpleTopicTree) addNode(node *subNode, lev string) *subNode {
-	for k, v := range node.children {
-		if k == lev {
-			return v
-		}
+// addSubscription add subsription into topic tree
+func (p *simpleTopicTree) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
+	glog.Infof("topictree:addSubscription: clientId is %s, topic is %s, qos is %d", clientId, topic, qos)
+
+	// Get topic slice
+	topics := strings.Split(topic, "/")
+	if len(topics) == 0 {
+		return errors.New("Invalid topic")
 	}
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-	tmp := &subNode{
-		level:    lev,
-		children: make(map[string]*subNode),
-		subs:     make(map[string]*subLeaf),
-	}
-
-	node.children[lev] = tmp
-
-	return tmp
-}
-
-// Subscription
-func (p *simpleTopicTree) addSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
-	glog.Infof("AddSubscription: sessionid is %s, topic is %s, qos is %d", sessionid, topic, qos)
 	node := &p.root
-	s := strings.Split(topic, "/")
-	for _, level := range s {
-		glog.Infof("AddSubscription: level is %s", level)
-		node = p.addNode(node, level)
+	for _, level := range topics {
+		node = p.addNode(node, level, q)
 	}
 
-	glog.Infof("AddSubscription: session id is %s", sessionid)
-	node.subs[sessionid] = &subLeaf{
-		qos: qos,
+	node.subs[clientId] = &subLeaf{
+		qos:   qos,
+		queue: q,
+		msgs:  []*Message{},
 	}
-
 	return nil
 }
 
-// RetainSubscription process RETAIN flag；
-func (p *simpleTopicTree) retainSubscription(sessionid string, topic string) error {
-	return nil
-}
+// retainSubscription retain the subscription
+func (p *simpleTopicTree) retainSubscription(clientId string, topic string) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-func (p *simpleTopicTree) removeSubscription(sessionid string, topic string) error {
 	node := &p.root
-	s := strings.Split(topic, "/")
-	for _, level := range s {
+	topics := strings.Split(topic, "/")
+	for _, level := range topics {
 		node = p.findNode(node, level)
 		if node == nil {
-			return nil
+			return fmt.Errorf("topic tree: invalid topic '%s'", topic)
 		}
 	}
-
-	if _, ok := node.subs[sessionid]; ok {
-		delete(node.subs, sessionid)
+	if leaf, found := node.subs[clientId]; found {
+		leaf.retain = true
+		return nil
 	}
-
-	return nil
+	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 }
 
-func (p *simpleTopicTree) subProcess(clientid string, msg *Message, node *subNode, setRetain bool) error {
-	/*
-		if msg.Retain && setRetain {
-			node.retainMsg = msg
-		}
+// removeSubscription remove subscription from topic tree
+func (p *simpleTopicTree) removeSubscription(clientId string, topic string) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
-		for k, v := range node.subs {
-			glog.Infof("subProcess: session id is %s", k)
-			s, ok := p.sessions[k]
-			if !ok {
-				glog.Errorf("subProcess: sessions is nil")
-				continue
-			}
-			// if s.id == clientid {
-			// 	continue
-			// }
-
-			//s.sendPublish(v.qos, msg.Qos, msg.Topic, msg.Payload)
+	node := &p.root
+	topics := strings.Split(topic, "/")
+	for _, level := range topics {
+		node = p.findNode(node, level)
+		if node == nil {
+			return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
 		}
-	*/
-	return nil
+	}
+	if _, ok := node.subs[clientId]; ok {
+		delete(node.subs, clientId)
+		return nil
+	}
+	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 }
 
-func (p *simpleTopicTree) subSearch(clientid string, msg *Message, node *subNode, levels []string, setRetain bool) error {
+func (p *simpleTopicTree) searchNode(node *subNode, levels []string, setRetain bool) *subNode {
 	for k, v := range node.children {
 		sr := setRetain
 		if len(levels) != 0 && (k == levels[0] || k == "+") {
@@ -133,36 +138,28 @@ func (p *simpleTopicTree) subSearch(clientid string, msg *Message, node *subNode
 				sr = false
 			}
 			ss := levels[1:]
-			p.subSearch(clientid, msg, v, ss, sr)
+			p.searchNode(v, ss, sr)
 			if len(ss) == 0 {
-				p.subProcess(clientid, msg, v, sr)
+				return v
 			}
 		} else if k == "#" && len(v.children) > 0 {
-			p.subProcess(clientid, msg, v, sr)
+			return v
 		}
 	}
 	return nil
 }
 
-func (p *simpleTopicTree) queueMessage(clientid string, msg Message) error {
-	glog.Infof("QueueMessage: Message Topic is %s", msg.Topic)
-	s := strings.Split(msg.Topic, "/")
-
-	if msg.Retain {
-		/* We have a message that needs to be retained, so ensure that the subscription
-		 * tree for its topic exists.
-		 */
-		node := &p.root
-		for _, level := range s {
-			node = p.addNode(node, level)
+// addMessage publish a message on topic tree
+func (p *simpleTopicTree) addMessage(clientId, topic string, data []byte) {
+	levels := strings.Split(topic, "/")
+	node := p.searchNode(&p.root, levels, true)
+	if node != nil {
+		for _, leaf := range node.subs {
+			glog.Infof("topic tree: publishing message with client id '%s'", clientId)
+			q := leaf.queue
+			q.Write(data)
 		}
 	}
-
-	return p.subSearch(clientid, &msg, &p.root, s, true)
-}
-
-func (p *simpleTopicTree) addMessage(clientId, topic string, data []byte) {
-
 }
 
 // retainMessage retain message on specified topic
@@ -177,9 +174,6 @@ func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator 
 func (p *simpleTopicTree) deleteMessage(clientId string, mid uint16) error {
 	return nil
 }
-
-// simpleTopicTreeFactory
-type simpleTopicTreeFactory struct{}
 
 func newSimpleTopicTree(c core.Config) (topicTree, error) {
 	d := &simpleTopicTree{
