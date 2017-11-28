@@ -38,6 +38,7 @@ type Event struct {
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	QutoId     string `json:"qutoId"`     // Qutotation identifier
 	Qos        uint8  `json:"qos"`
+	Retain     bool   `json:"retain"`
 }
 
 type SessionCreateEvent struct {

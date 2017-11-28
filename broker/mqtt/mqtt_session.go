@@ -357,7 +357,7 @@ func (p *mqttSession) handleConnect() error {
 				event.Notify(&event.Event{
 					Type:       event.SessionResumed,
 					ClientId:   clientId,
-					Persistent: willRetain,
+					Persistent: (cleanSession == 0),
 				})
 
 			}
@@ -396,11 +396,7 @@ func (p *mqttSession) handleConnect() error {
 	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 	// Notify event service that new session created
-	event.Notify(&event.Event{
-		Type:       event.SessionCreated,
-		ClientId:   clientId,
-		Persistent: (cleanSession == 0),
-	})
+	event.Notify(&event.Event{Type: event.SessionCreated, ClientId: clientId, Persistent: (cleanSession == 0)})
 
 	// Create queue for this sesion
 	queue, err := queue.NewQueue(clientId, (cleanSession == 0))
@@ -434,7 +430,8 @@ func (p *mqttSession) disconnect() {
 		return
 	}
 	if p.cleanSession > 0 {
-		sm.DeleteSession(p.id)
+		// Delete session
+		event.Notify(&event.Event{Type: event.SessionDestroyed, ClientId: p.id})
 		p.id = ""
 	}
 	p.state = mqttStateDisconnected
@@ -479,12 +476,7 @@ func (p *mqttSession) handleSubscribe() error {
 
 		sub = p.mountpoint + sub
 		if qos != 0x80 {
-			if err := sm.AddSubscription(p.id, sub, qos); err != nil {
-				return err
-			}
-			if err := sm.RetainSubscription(p.id, sub, qos); err != nil {
-				return err
-			}
+			event.Notify(&event.Event{Type: event.TopicSubscribed, ClientId: p.id, Topic: sub, Qos: qos, Retain: true})
 		}
 		payload = append(payload, qos)
 	}
@@ -515,7 +507,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		sm.RemoveSubscription(p.id, sub)
+		event.Notify(&event.Event{Type: event.TopicUnsubscribed, ClientId: p.id, Topic: sub})
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)

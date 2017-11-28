@@ -39,7 +39,6 @@ const (
 )
 
 var (
-	broker           *Broker
 	serviceFactories = make(map[string]base.ServiceFactory)
 	serviceSeqs      = []string{}
 )
@@ -65,10 +64,7 @@ func registerServiceWithConfig(name string, factory base.ServiceFactory, configs
 
 // newBroker create global broker
 func NewBroker(c core.Config) (*Broker, error) {
-	if broker != nil {
-		panic("Global broker had already been created")
-	}
-	broker = &Broker{
+	broker := &Broker{
 		config:   c,
 		quits:    make(map[string]chan os.Signal),
 		services: make(map[string]base.Service),
@@ -104,7 +100,7 @@ func (p *Broker) getServiceByName(name string) core.Service {
 func (p *Broker) Run() error {
 	// initialize event manager at first
 	for _, name := range serviceSeqs {
-		if err := broker.services[name].Initialize(); err != nil {
+		if err := p.services[name].Initialize(); err != nil {
 			return err
 		}
 		glog.Infof("Initializing service '%s' ...successfuly", name)
@@ -112,7 +108,7 @@ func (p *Broker) Run() error {
 
 	// start each registered services
 	for _, name := range serviceSeqs {
-		if err := broker.services[name].Start(); err != nil {
+		if err := p.services[name].Start(); err != nil {
 			return err
 		}
 		glog.Infof("Starting service '%s' ...successfuly", name)
