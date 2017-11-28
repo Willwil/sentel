@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
@@ -198,7 +197,7 @@ func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 	switch req.Category {
 	case "list":
 		// Get all client information for specified service
-		clients := metadata.GetClients(req.Service)
+		clients := sessionmgr.GetClients(req.Service)
 		for _, client := range clients {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
@@ -210,7 +209,7 @@ func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		}
 	case "show":
 		// Get client information for specified client id
-		if client := metadata.GetClient(req.Service, req.ClientId); client != nil {
+		if client := sessionmgr.GetClient(req.Service, req.ClientId); client != nil {
 			reply.Clients = append(reply.Clients,
 				&ClientInfo{
 					UserName:     client.UserName,

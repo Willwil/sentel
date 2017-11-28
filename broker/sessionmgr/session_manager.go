@@ -13,6 +13,7 @@
 package sessionmgr
 
 import (
+	"errors"
 	"os"
 	"os/signal"
 	"sync"
@@ -32,6 +33,8 @@ type sessionManager struct {
 	base.ServiceBase
 	eventChan chan *event.Event
 	tree      topicTree
+	sessions  map[string]*Session
+	mutex     sync.Mutex
 }
 
 const (
@@ -65,6 +68,8 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		},
 		eventChan: make(chan *event.Event),
 		tree:      topicTree,
+		sessions:  make(map[string]*Session),
+		mutex:     sync.Mutex{},
 	}, nil
 
 }
@@ -136,7 +141,7 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 
 		// check wethe the session is already exist in subsription tree
 		// return simpily if session is already retained
-		session, err := p.tree.findSession(e.ClientId)
+		session, err := p.findSession(e.ClientId)
 		if err == nil && session.Retain == true {
 			return
 		}
@@ -177,22 +182,42 @@ func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 func (p *sessionManager) onTopicPublish(e *event.Event) {
 	detail := e.Detail.(*event.TopicPublishType)
 	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, detail.Topic)
-	p.tree.addTopic(e.ClientId, detail.Topic, detail.Payload)
+	p.tree.addMessage(e.ClientId, detail.Topic, detail.Payload)
 }
 
 // findSesison return session object by id if existed
 func (p *sessionManager) findSession(clientId string) (*Session, error) {
-	return p.tree.findSession(clientId)
+	if _, ok := p.sessions[clientId]; !ok {
+		return nil, errors.New("Session id does not exist")
+	}
+
+	return p.sessions[clientId], nil
+
 }
 
 // deleteSession remove session specified by clientId from metadata
 func (p *sessionManager) deleteSession(clientId string) error {
-	return p.tree.deleteSession(clientId)
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, ok := p.sessions[clientId]; !ok {
+		return errors.New("Session id does not exist")
+	}
+	delete(p.sessions, clientId)
+	return nil
 }
 
 // regiserSession register session into metadata
 func (p *sessionManager) registerSession(s *Session) error {
-	return p.tree.registerSession(s)
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, ok := p.sessions[s.Id]; ok {
+		return errors.New("Session id already exists")
+	}
+
+	glog.Infof("RegisterSession: id is %s", s.Id)
+	p.sessions[s.Id] = s
+	return nil
+
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
@@ -201,11 +226,14 @@ func (p *sessionManager) deleteMessageWithValidator(clientId string, validator f
 }
 
 // deleteMessge delete message specified by idfrom metadata
-func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction MessageDirection) error {
-	return p.tree.deleteMessage(clientId, mid, direction)
+func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction uint8) error {
+	return p.tree.deleteMessage(clientId, mid)
+	return nil
 }
 
 // releaseMessage release message from metadata
-func (p *sessionManager) releaseMessage(clientId string, mid uint16, direction MessageDirection) error {
-	return p.tree.releaseMessage(clientId, mid, direction)
+func (p *sessionManager) releaseMessage(clientId string, mid uint16, direction uint8) error {
+	//return p.tree.releaseMessage(clientId, mid, direction)
+	return nil
+
 }

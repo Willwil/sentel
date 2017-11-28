@@ -13,7 +13,6 @@
 package sessionmgr
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/cloustone/sentel/broker/queue"
@@ -32,61 +31,20 @@ type subNode struct {
 	retainMsg *Message
 }
 
-type localTopicTree struct {
-	config   core.Config
-	sessions map[string]*Session
-	root     subNode
+type simpleTopicTree struct {
+	root subNode
 }
 
-// FindSession find session by id
-func (p *localTopicTree) findSession(id string) (*Session, error) {
-	if _, ok := p.sessions[id]; !ok {
-		return nil, errors.New("Session id does not exist")
-	}
-
-	return p.sessions[id], nil
-}
-
-// DeleteSession delete session by id
-func (p *localTopicTree) deleteSession(id string) error {
-	if _, ok := p.sessions[id]; !ok {
-		return errors.New("Session id does not exist")
-	}
-	delete(p.sessions, id)
-	return nil
-}
-
-// UpdateSession update session
-func (p *localTopicTree) updateSession(s *Session) error {
-	if _, ok := p.sessions[s.Id]; !ok {
-		return errors.New("Session id does not exist")
-	}
-	p.sessions[s.Id] = s
-	return nil
-}
-
-// RegisterSession register new session
-func (p *localTopicTree) registerSession(s *Session) error {
-	if _, ok := p.sessions[s.Id]; ok {
-		return errors.New("Session id already exists")
-	}
-
-	glog.Infof("RegisterSession: id is %s", s.Id)
-	p.sessions[s.Id] = s
-	return nil
-}
-
-func (p *localTopicTree) findNode(node *subNode, lev string) *subNode {
+func (p *simpleTopicTree) findNode(node *subNode, lev string) *subNode {
 	for k, v := range node.children {
 		if k == lev {
 			return v
 		}
 	}
-
 	return nil
 }
 
-func (p *localTopicTree) addNode(node *subNode, lev string) *subNode {
+func (p *simpleTopicTree) addNode(node *subNode, lev string) *subNode {
 	for k, v := range node.children {
 		if k == lev {
 			return v
@@ -105,7 +63,7 @@ func (p *localTopicTree) addNode(node *subNode, lev string) *subNode {
 }
 
 // Subscription
-func (p *localTopicTree) addSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
+func (p *simpleTopicTree) addSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
 	glog.Infof("AddSubscription: sessionid is %s, topic is %s, qos is %d", sessionid, topic, qos)
 	node := &p.root
 	s := strings.Split(topic, "/")
@@ -123,11 +81,11 @@ func (p *localTopicTree) addSubscription(sessionid string, topic string, qos uin
 }
 
 // RetainSubscription process RETAIN flag；
-func (p *localTopicTree) retainSubscription(sessionid string, topic string, qos uint8) error {
+func (p *simpleTopicTree) retainSubscription(sessionid string, topic string) error {
 	return nil
 }
 
-func (p *localTopicTree) removeSubscription(sessionid string, topic string) error {
+func (p *simpleTopicTree) removeSubscription(sessionid string, topic string) error {
 	node := &p.root
 	s := strings.Split(topic, "/")
 	for _, level := range s {
@@ -144,24 +102,7 @@ func (p *localTopicTree) removeSubscription(sessionid string, topic string) erro
 	return nil
 }
 
-// Message Management
-func (p *localTopicTree) findMessage(clientid string, mid uint16) (*Message, error) {
-	return nil, nil
-}
-
-func (p *localTopicTree) storeMessage(clientid string, msg Message) error {
-	return nil
-}
-
-func (p *localTopicTree) deleteMessageWithValidator(clientid string, validator func(msg Message) bool) {
-
-}
-
-func (p *localTopicTree) deleteMessage(clientid string, mid uint16, direction MessageDirection) error {
-	return nil
-}
-
-func (p *localTopicTree) subProcess(clientid string, msg *Message, node *subNode, setRetain bool) error {
+func (p *simpleTopicTree) subProcess(clientid string, msg *Message, node *subNode, setRetain bool) error {
 	/*
 		if msg.Retain && setRetain {
 			node.retainMsg = msg
@@ -184,7 +125,7 @@ func (p *localTopicTree) subProcess(clientid string, msg *Message, node *subNode
 	return nil
 }
 
-func (p *localTopicTree) subSearch(clientid string, msg *Message, node *subNode, levels []string, setRetain bool) error {
+func (p *simpleTopicTree) subSearch(clientid string, msg *Message, node *subNode, levels []string, setRetain bool) error {
 	for k, v := range node.children {
 		sr := setRetain
 		if len(levels) != 0 && (k == levels[0] || k == "+") {
@@ -203,7 +144,7 @@ func (p *localTopicTree) subSearch(clientid string, msg *Message, node *subNode,
 	return nil
 }
 
-func (p *localTopicTree) queueMessage(clientid string, msg Message) error {
+func (p *simpleTopicTree) queueMessage(clientid string, msg Message) error {
 	glog.Infof("QueueMessage: Message Topic is %s", msg.Topic)
 	s := strings.Split(msg.Topic, "/")
 
@@ -220,32 +161,28 @@ func (p *localTopicTree) queueMessage(clientid string, msg Message) error {
 	return p.subSearch(clientid, &msg, &p.root, s, true)
 }
 
-func (p *localTopicTree) getMessageTotalCount(clientid string) int {
-	return 0
+func (p *simpleTopicTree) addMessage(clientId, topic string, data []byte) {
+
 }
 
-func (p *localTopicTree) insertMessage(clientid string, mid uint16, direction MessageDirection, msg Message) error {
+// retainMessage retain message on specified topic
+func (p *simpleTopicTree) retainMessage(clientId, msg *Message) {
+}
+
+// DeleteMessageWithValidator delete message in subdata with condition
+func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator func(Message) bool) {
+}
+
+// DeleteMessge delete message specified by idfrom subdata
+func (p *simpleTopicTree) deleteMessage(clientId string, mid uint16) error {
 	return nil
 }
 
-func (p *localTopicTree) releaseMessage(clientid string, mid uint16, direction MessageDirection) error {
-	return nil
-}
+// simpleTopicTreeFactory
+type simpleTopicTreeFactory struct{}
 
-func (p *localTopicTree) updateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
-
-}
-func (p *localTopicTree) addTopic(clientId, topic string, data []byte) {
-
-}
-
-// localTopicTreeFactory
-type localTopicTreeFactory struct{}
-
-func newLocalTopicTree(c core.Config) (topicTree, error) {
-	d := &localTopicTree{
-		config:   c,
-		sessions: make(map[string]*Session),
+func newSimpleTopicTree(c core.Config) (topicTree, error) {
+	d := &simpleTopicTree{
 		root: subNode{
 			level:    "root",
 			children: make(map[string]*subNode),

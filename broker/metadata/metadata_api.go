@@ -25,7 +25,3 @@ func SyncShadowDeviceStatus(clientId string, d *Device) error {
 	meta := base.GetService(ServiceName).(*metadataService)
 	return meta.syncShadowDeviceStatus(clientId, d)
 }
-
-// Client
-func GetClients(proto string) []*ClientInfo         { return nil }
-func GetClient(proto string, id string) *ClientInfo { return nil }

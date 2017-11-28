@@ -597,7 +597,7 @@ func (p *mqttSession) handlePublish() error {
 		event.Notify(&event.Event{Type: event.TopicPublished, ClientId: p.id, Detail: detail})
 	case 1:
 		event.Notify(&event.Event{Type: event.TopicPublished, ClientId: p.id, Detail: detail})
-		err = p.sendPubAck(mid)
+		err = p.sendPubAck(mid) // TODO
 	case 2:
 		err = errors.New("MQTT qos 2 is not supported now")
 	default:

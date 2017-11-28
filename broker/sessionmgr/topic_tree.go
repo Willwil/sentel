@@ -18,36 +18,29 @@ import (
 )
 
 type topicTree interface {
-	// Session
-	findSession(id string) (*Session, error)
-	deleteSession(id string) error
-	updateSession(s *Session) error
-	registerSession(s *Session) error
+	// addSubscription add a subscription and context in topic tree
+	addSubscription(clientId, topic string, qos uint8, q queue.Queue) error
 
-	// Subscription
-	addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error
-	retainSubscription(clientId string, topic string, qos uint8) error
-	removeSubscription(clientId string, topic string) error
+	// removeSubscription remove a subscription from topic tree
+	removeSubscription(clientId, topic string) error
 
-	// Message Management
-	findMessage(clientId string, mid uint16) (*Message, error)
-	storeMessage(clientId string, msg Message) error
+	// retainSubscription make a retain process on specified topic
+	retainSubscription(clientId, topic string) error
+
+	// addMessage is called when message is published on topic, find the subscriber's queue
+	// and write the data to queue that will case queue observer to read data from queue
+	addMessage(clientId, topic string, data []byte)
+
+	// retainMessage retain message on specified topic
+	retainMessage(clientId, msg *Message)
+
+	// DeleteMessageWithValidator delete message in subdata with condition
 	deleteMessageWithValidator(clientId string, validator func(Message) bool)
-	deleteMessage(clientId string, mid uint16, direction MessageDirection) error
 
-	queueMessage(clientId string, msg Message) error
-	getMessageTotalCount(clientId string) int
-	insertMessage(clientId string, mid uint16, direction MessageDirection, msg Message) error
-	releaseMessage(clientId string, mid uint16, direction MessageDirection) error
-	updateMessage(clientId string, mid uint16, direction MessageDirection, state MessageState)
-
-	// Topic
-	// AddTopic is called when topic is published, find the subscriber's queue
-	// and write the data to queue that will case queue observer to read data
-	// from queue
-	addTopic(clientId, topic string, data []byte)
+	// DeleteMessge delete message specified by idfrom subdata
+	deleteMessage(clientId string, mid uint16) error
 }
 
 func newTopicTree(c core.Config) (topicTree, error) {
-	return newLocalTopicTree(c)
+	return newSimpleTopicTree(c)
 }

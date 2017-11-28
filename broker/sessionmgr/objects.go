@@ -37,20 +37,10 @@ type Topic struct {
 	Name string
 }
 
-type MessageDirection int
-type MessageState int
-
-const (
-	MessageDirectionIn  MessageDirection = 0
-	MessageDirectionOut MessageDirection = 1
-)
-
 type Message struct {
-	ID        uint
-	SourceID  string
 	Topic     string
-	Direction MessageDirection
-	State     MessageState
+	Direction uint8
+	State     uint8
 	Qos       uint8
 	Retain    bool
 	Payload   []uint8
