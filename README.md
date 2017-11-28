@@ -22,21 +22,32 @@ Other service is not be designed till now. because the short time gola is device
 
 Features
 ==========================
-* Private IoT platform witht multiple deployment mode (standalone, cluster, cloud)* Multiple tenant management* Multiple access protocols (MQTT with websocket/TLS/TCP)* Security/High Available/High Concurrent.* Shadow Devices* OTA* High Configurability.* High Diagnosable.
+* Private IoT platform witht multiple deployment mode (standalone, cluster, cloud)* Multiple tenant management* Multiple access protocols (MQTT with websocket/TLS/TCP)* Security/High Available/High Concurrency* Shadow Devices* OTA* High Configurability.* High Diagnosablity.
 
 Architecture
 ==========================
 ![](docs/sentel-arch.png)
 
+Building
+==========================
+1.Clone from github.com  
+  git clone https://github.com/cloustone/sentel  
+2. Update kubernetes package dependency  
+  cd $GOPATH/src/github.com/cloustone/sentel  
+  git submodule init  
+  git submodule update  
+3. Building   
+make    
+make broker // for single package
+
 Technology items
 ==========================
 
-* Postgres is used to store user/product/device informations.
-* Etcd is used to manage subscription tree
+* Mongodb is used to store user/product/device informations.
 * Kafka is used to interchange message between services
 * Golang is backend language
 * Golang/echo is microservice web framework to develop REST web services
-* Golang/gb is used as software build tool
+* Golang/govendoris used as software build tool
 
 
  
