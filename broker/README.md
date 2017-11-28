@@ -19,3 +19,7 @@ Broker have following sub packages.
 * quto: quto service control quto items, such as max connections
 * rpc: rpc service provide api for local broker diag tool
 * plugins: plugin mechanism for auth and other service
+
+Architecture
+==========================
+![](../docs/images/broker_arch_simple.png)

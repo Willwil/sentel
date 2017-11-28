@@ -26,7 +26,7 @@ Features
 
 Architecture
 ==========================
-![](docs/sentel-arch.png)
+![](docs/images/sentel_arch.png)
 
 Building
 ==========================
