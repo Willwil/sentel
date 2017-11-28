@@ -85,6 +85,11 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 	return s, nil
 }
 
+// checkTopiValidity will check topic's validity
+func checkTopicValidity(topic string) error {
+	return nil
+}
+
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
@@ -244,7 +249,7 @@ func (p *mqttSession) handleConnect() error {
 			return nil
 		}
 		willTopic = p.mountpoint + topic
-		if err := CheckTopicValidity(willTopic); err != nil {
+		if err := checkTopicValidity(willTopic); err != nil {
 			return err
 		}
 		// Get willtopic's payload
@@ -461,7 +466,7 @@ func (p *mqttSession) handleSubscribe() error {
 		if sub, err = p.inpacket.readString(); err != nil {
 			return err
 		}
-		if CheckTopicValidity(sub) != nil {
+		if checkTopicValidity(sub) != nil {
 			glog.Errorf("Invalid subscription topic %s from %s, disconnecting", sub, p.id)
 			return mqttErrorInvalidProtocol
 		}
@@ -506,7 +511,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err != nil {
 			return mqttErrorInvalidProtocol
 		}
-		if err := CheckTopicValidity(sub); err != nil {
+		if err := checkTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
 		event.Notify(&event.Event{Type: event.TopicUnsubscribed, ClientId: p.id, Detail: event.TopicUnsubscribeType{Topic: sub}})
@@ -535,7 +540,7 @@ func (p *mqttSession) handlePublish() error {
 	if topic, err = p.inpacket.readString(); err != nil {
 		return fmt.Errorf("Invalid topic in PUBLISH from %s", p.id)
 	}
-	if CheckTopicValidity(topic) != nil {
+	if checkTopicValidity(topic) != nil {
 		return fmt.Errorf("Invalid topic in PUBLISH(%s) from %s", topic, p.id)
 	}
 	topic = p.mountpoint + topic
@@ -617,7 +622,7 @@ func (p *mqttSession) handlePubRel() error {
 		return err
 	}
 
-	sm.DeleteMessage(p.id, mid, sm.MessageDirectionIn)
+	//sm.DeleteMessage(p.id, mid, sm.MessageDirectionIn) // TODO:Qos2
 	return p.sendPubComp(mid)
 }
 

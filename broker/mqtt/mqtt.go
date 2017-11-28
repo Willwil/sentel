@@ -25,12 +25,6 @@ const (
 	mqttNetworkHttps     = "https"
 )
 
-const (
-	MqttProtocolTcp = "tcp"
-	MqttProtocolWs  = "ws"
-	MqttProtocolTls = "tls"
-)
-
 // Mqtt session state
 const (
 	mqttStateInvalid        = 0
@@ -64,3 +58,34 @@ var (
 	mqttErrorAutoFailed      = errors.New("Auth failed")
 	mqttErrorUnkown          = errors.New("Unknown error")
 )
+
+// Message state
+const (
+	mqttMessageStateInvalid        = 0
+	mqttMessageStatePublishQos0    = 1
+	mqttMessageStatePublishQos1    = 2
+	mqttMessageStateWaitForPubAck  = 3
+	mqttMessageStatePublishQos2    = 4
+	mqttMessageStateWaitForPubRec  = 5
+	mqttMessageStateResendPubRel   = 6
+	mqttMessageStateWaitForPubRel  = 7
+	mqttMessageStateResendPubComp  = 8
+	mqttMessageStateWaitForPubComp = 9
+	mqttMessateStateSendPubRec     = 10
+	mqttMessateStateQueued         = 11
+)
+
+// Message direction
+const (
+	mqttMessageDirectionIn  = 0
+	mqttMessageDirectionOut = 1
+)
+
+type mqttMessage struct {
+	mid       uint16
+	direction int
+	topic     string
+	payload   []uint8
+	qos       uint8
+	retain    bool
+}
