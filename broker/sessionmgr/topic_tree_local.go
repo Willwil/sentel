@@ -38,30 +38,8 @@ type localTopicTree struct {
 	root     subNode
 }
 
-// Open local storage
-func (p *localTopicTree) Open() error {
-	glog.Info("local storage Open")
-
-	return nil
-}
-
-// Close local storage
-func (p *localTopicTree) Close() {
-
-}
-
-// Backup serialize local storage
-func (p *localTopicTree) Backup(shutdown bool) error {
-	return nil
-}
-
-// Restore recover data from serialization
-func (p *localTopicTree) Restore() error {
-	return nil
-}
-
 // FindSession find session by id
-func (p *localTopicTree) FindSession(id string) (*Session, error) {
+func (p *localTopicTree) findSession(id string) (*Session, error) {
 	if _, ok := p.sessions[id]; !ok {
 		return nil, errors.New("Session id does not exist")
 	}
@@ -70,7 +48,7 @@ func (p *localTopicTree) FindSession(id string) (*Session, error) {
 }
 
 // DeleteSession delete session by id
-func (p *localTopicTree) DeleteSession(id string) error {
+func (p *localTopicTree) deleteSession(id string) error {
 	if _, ok := p.sessions[id]; !ok {
 		return errors.New("Session id does not exist")
 	}
@@ -79,7 +57,7 @@ func (p *localTopicTree) DeleteSession(id string) error {
 }
 
 // UpdateSession update session
-func (p *localTopicTree) UpdateSession(s *Session) error {
+func (p *localTopicTree) updateSession(s *Session) error {
 	if _, ok := p.sessions[s.Id]; !ok {
 		return errors.New("Session id does not exist")
 	}
@@ -88,7 +66,7 @@ func (p *localTopicTree) UpdateSession(s *Session) error {
 }
 
 // RegisterSession register new session
-func (p *localTopicTree) RegisterSession(s *Session) error {
+func (p *localTopicTree) registerSession(s *Session) error {
 	if _, ok := p.sessions[s.Id]; ok {
 		return errors.New("Session id already exists")
 	}
@@ -127,7 +105,7 @@ func (p *localTopicTree) addNode(node *subNode, lev string) *subNode {
 }
 
 // Subscription
-func (p *localTopicTree) AddSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
+func (p *localTopicTree) addSubscription(sessionid string, topic string, qos uint8, q queue.Queue) error {
 	glog.Infof("AddSubscription: sessionid is %s, topic is %s, qos is %d", sessionid, topic, qos)
 	node := &p.root
 	s := strings.Split(topic, "/")
@@ -145,11 +123,11 @@ func (p *localTopicTree) AddSubscription(sessionid string, topic string, qos uin
 }
 
 // RetainSubscription process RETAIN flag；
-func (p *localTopicTree) RetainSubscription(sessionid string, topic string, qos uint8) error {
+func (p *localTopicTree) retainSubscription(sessionid string, topic string, qos uint8) error {
 	return nil
 }
 
-func (p *localTopicTree) RemoveSubscription(sessionid string, topic string) error {
+func (p *localTopicTree) removeSubscription(sessionid string, topic string) error {
 	node := &p.root
 	s := strings.Split(topic, "/")
 	for _, level := range s {
@@ -167,19 +145,19 @@ func (p *localTopicTree) RemoveSubscription(sessionid string, topic string) erro
 }
 
 // Message Management
-func (p *localTopicTree) FindMessage(clientid string, mid uint16) (*Message, error) {
+func (p *localTopicTree) findMessage(clientid string, mid uint16) (*Message, error) {
 	return nil, nil
 }
 
-func (p *localTopicTree) StoreMessage(clientid string, msg Message) error {
+func (p *localTopicTree) storeMessage(clientid string, msg Message) error {
 	return nil
 }
 
-func (p *localTopicTree) DeleteMessageWithValidator(clientid string, validator func(msg Message) bool) {
+func (p *localTopicTree) deleteMessageWithValidator(clientid string, validator func(msg Message) bool) {
 
 }
 
-func (p *localTopicTree) DeleteMessage(clientid string, mid uint16, direction MessageDirection) error {
+func (p *localTopicTree) deleteMessage(clientid string, mid uint16, direction MessageDirection) error {
 	return nil
 }
 
@@ -225,7 +203,7 @@ func (p *localTopicTree) subSearch(clientid string, msg *Message, node *subNode,
 	return nil
 }
 
-func (p *localTopicTree) QueueMessage(clientid string, msg Message) error {
+func (p *localTopicTree) queueMessage(clientid string, msg Message) error {
 	glog.Infof("QueueMessage: Message Topic is %s", msg.Topic)
 	s := strings.Split(msg.Topic, "/")
 
@@ -242,29 +220,29 @@ func (p *localTopicTree) QueueMessage(clientid string, msg Message) error {
 	return p.subSearch(clientid, &msg, &p.root, s, true)
 }
 
-func (p *localTopicTree) GetMessageTotalCount(clientid string) int {
+func (p *localTopicTree) getMessageTotalCount(clientid string) int {
 	return 0
 }
 
-func (p *localTopicTree) InsertMessage(clientid string, mid uint16, direction MessageDirection, msg Message) error {
+func (p *localTopicTree) insertMessage(clientid string, mid uint16, direction MessageDirection, msg Message) error {
 	return nil
 }
 
-func (p *localTopicTree) ReleaseMessage(clientid string, mid uint16, direction MessageDirection) error {
+func (p *localTopicTree) releaseMessage(clientid string, mid uint16, direction MessageDirection) error {
 	return nil
 }
 
-func (p *localTopicTree) UpdateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
+func (p *localTopicTree) updateMessage(clientid string, mid uint16, direction MessageDirection, state MessageState) {
 
 }
-func (p *localTopicTree) AddTopic(clientId, topic string, data []byte) {
+func (p *localTopicTree) addTopic(clientId, topic string, data []byte) {
 
 }
 
 // localTopicTreeFactory
 type localTopicTreeFactory struct{}
 
-func newLocalTopicTree(c core.Config) (TopicTree, error) {
+func newLocalTopicTree(c core.Config) (topicTree, error) {
 	d := &localTopicTree{
 		config:   c,
 		sessions: make(map[string]*Session),

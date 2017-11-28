@@ -121,11 +121,6 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 
 // onEventSessionCreated called when EventSessionCreated event received
 func (p *metadataService) onSessionCreated(e *event.Event) {
-	// Save session info if session is local and retained
-	if e.BrokerId == base.GetBrokerId() && e.Persistent {
-		// check mongo db configuration
-	}
-
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received

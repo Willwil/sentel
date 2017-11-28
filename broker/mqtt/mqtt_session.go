@@ -476,7 +476,9 @@ func (p *mqttSession) handleSubscribe() error {
 
 		sub = p.mountpoint + sub
 		if qos != 0x80 {
-			event.Notify(&event.Event{Type: event.TopicSubscribed, ClientId: p.id, Topic: sub, Qos: qos, Retain: true})
+			event.Notify(&event.Event{Type: event.TopicSubscribed,
+				ClientId: p.id,
+				Detail:   event.TopicSubscribeType{Topic: sub, Qos: qos, Retain: true}})
 		}
 		payload = append(payload, qos)
 	}
@@ -507,7 +509,7 @@ func (p *mqttSession) handleUnsubscribe() error {
 		if err := CheckTopicValidity(sub); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.id)
 		}
-		event.Notify(&event.Event{Type: event.TopicUnsubscribed, ClientId: p.id, Topic: sub})
+		event.Notify(&event.Event{Type: event.TopicUnsubscribed, ClientId: p.id, Detail: event.TopicUnsubscribeType{Topic: sub}})
 	}
 
 	return p.sendCommandWithMid(UNSUBACK, mid, false)
@@ -579,31 +581,21 @@ func (p *mqttSession) handlePublish() error {
 			}
 		}
 	}
-	msg := sm.Message{
-		ID:        uint(mid),
-		SourceID:  p.id,
-		Topic:     topic,
-		Direction: sm.MessageDirectionIn,
-		State:     0,
-		Qos:       qos,
-		Retain:    (retain > 0),
-		Payload:   payload,
+	detail := event.TopicPublishType{
+		Topic:   topic,
+		Qos:     qos,
+		Retain:  (retain > 0),
+		Payload: payload,
 	}
 
 	switch qos {
 	case 0:
-		err = sm.QueueMessage(p.id, &msg)
+		event.Notify(&event.Event{Type: event.TopicPublished, ClientId: p.id, Detail: detail})
 	case 1:
-		err = sm.QueueMessage(p.id, &msg)
+		event.Notify(&event.Event{Type: event.TopicPublished, ClientId: p.id, Detail: detail})
 		err = p.sendPubAck(mid)
 	case 2:
-		err = nil
-		if dup > 0 {
-			err = sm.InsertMessage(p.id, mid, sm.MessageDirectionIn, &msg)
-		}
-		if err == nil {
-			err = p.sendPubRec(mid)
-		}
+		err = errors.New("MQTT qos 2 is not supported now")
 	default:
 		err = mqttErrorInvalidProtocol
 	}

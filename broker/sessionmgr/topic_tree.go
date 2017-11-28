@@ -17,37 +17,37 @@ import (
 	"github.com/cloustone/sentel/core"
 )
 
-type TopicTree interface {
+type topicTree interface {
 	// Session
-	FindSession(id string) (*Session, error)
-	DeleteSession(id string) error
-	UpdateSession(s *Session) error
-	RegisterSession(s *Session) error
+	findSession(id string) (*Session, error)
+	deleteSession(id string) error
+	updateSession(s *Session) error
+	registerSession(s *Session) error
 
 	// Subscription
-	AddSubscription(clientId string, topic string, qos uint8, q queue.Queue) error
-	RetainSubscription(clientId string, topic string, qos uint8) error
-	RemoveSubscription(clientId string, topic string) error
+	addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error
+	retainSubscription(clientId string, topic string, qos uint8) error
+	removeSubscription(clientId string, topic string) error
 
 	// Message Management
-	FindMessage(clientId string, mid uint16) (*Message, error)
-	StoreMessage(clientId string, msg Message) error
-	DeleteMessageWithValidator(clientId string, validator func(Message) bool)
-	DeleteMessage(clientId string, mid uint16, direction MessageDirection) error
+	findMessage(clientId string, mid uint16) (*Message, error)
+	storeMessage(clientId string, msg Message) error
+	deleteMessageWithValidator(clientId string, validator func(Message) bool)
+	deleteMessage(clientId string, mid uint16, direction MessageDirection) error
 
-	QueueMessage(clientId string, msg Message) error
-	GetMessageTotalCount(clientId string) int
-	InsertMessage(clientId string, mid uint16, direction MessageDirection, msg Message) error
-	ReleaseMessage(clientId string, mid uint16, direction MessageDirection) error
-	UpdateMessage(clientId string, mid uint16, direction MessageDirection, state MessageState)
+	queueMessage(clientId string, msg Message) error
+	getMessageTotalCount(clientId string) int
+	insertMessage(clientId string, mid uint16, direction MessageDirection, msg Message) error
+	releaseMessage(clientId string, mid uint16, direction MessageDirection) error
+	updateMessage(clientId string, mid uint16, direction MessageDirection, state MessageState)
 
 	// Topic
 	// AddTopic is called when topic is published, find the subscriber's queue
 	// and write the data to queue that will case queue observer to read data
 	// from queue
-	AddTopic(clientId, topic string, data []byte)
+	addTopic(clientId, topic string, data []byte)
 }
 
-func newTopicTree(c core.Config) (TopicTree, error) {
+func newTopicTree(c core.Config) (topicTree, error) {
 	return newLocalTopicTree(c)
 }

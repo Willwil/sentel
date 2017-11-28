@@ -31,7 +31,7 @@ import (
 type sessionManager struct {
 	base.ServiceBase
 	eventChan chan *event.Event
-	topicTree TopicTree
+	tree      topicTree
 }
 
 const (
@@ -64,7 +64,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			Quit:      quit,
 		},
 		eventChan: make(chan *event.Event),
-		topicTree: topicTree,
+		tree:      topicTree,
 	}, nil
 
 }
@@ -131,11 +131,12 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
-	if e.BrokerId != base.GetBrokerId() && e.Persistent {
+	detail := e.Detail.(*event.SessionCreateType)
+	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
 
 		// check wethe the session is already exist in subsription tree
 		// return simpily if session is already retained
-		session, err := p.topicTree.FindSession(e.ClientId)
+		session, err := p.tree.findSession(e.ClientId)
 		if err == nil && session.Retain == true {
 			return
 		}
@@ -155,78 +156,56 @@ func (p *sessionManager) onSessionDestroy(e *event.Event) {
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
 func (p *sessionManager) onTopicSubscribe(e *event.Event) {
-	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, e.Topic)
+	detail := e.Detail.(*event.TopicSubscribeType)
+	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
 	queue := queue.GetQueue(e.ClientId)
 	if queue != nil {
 		glog.Fatalf("broker: Can not get queue for client '%s'", e.ClientId)
 		return
 	}
-	p.topicTree.AddSubscription(e.ClientId, e.Topic, e.Qos, queue)
+	p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
 func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
-	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, e.Topic)
-	p.topicTree.RemoveSubscription(e.ClientId, e.Topic)
+	detail := e.Detail.(*event.TopicUnsubscribeType)
+	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
+	p.tree.removeSubscription(e.ClientId, detail.Topic)
 }
 
 // onEventTopicPublish called when EventTopicPublish received
 func (p *sessionManager) onTopicPublish(e *event.Event) {
-	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, e.Topic)
-	p.topicTree.AddTopic(e.ClientId, e.Topic, e.Data)
+	detail := e.Detail.(*event.TopicPublishType)
+	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, detail.Topic)
+	p.tree.addTopic(e.ClientId, detail.Topic, detail.Payload)
 }
 
 // findSesison return session object by id if existed
 func (p *sessionManager) findSession(clientId string) (*Session, error) {
-	return p.topicTree.FindSession(clientId)
+	return p.tree.findSession(clientId)
 }
 
 // deleteSession remove session specified by clientId from metadata
 func (p *sessionManager) deleteSession(clientId string) error {
-	return p.topicTree.DeleteSession(clientId)
+	return p.tree.deleteSession(clientId)
 }
 
 // regiserSession register session into metadata
 func (p *sessionManager) registerSession(s *Session) error {
-	return p.topicTree.RegisterSession(s)
-}
-
-// addSubscription add a subscription into metadat
-func (p *sessionManager) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
-	return p.topicTree.AddSubscription(clientId, topic, qos, q)
-}
-
-// retainSubscription retain the client with topic
-func (p *sessionManager) retainSubscription(clientId string, topic string, qos uint8) error {
-	return p.topicTree.RetainSubscription(clientId, topic, qos)
-}
-
-// RmoeveSubscription remove specified topic from metadata
-func (p *sessionManager) removeSubscription(clientId string, topic string) error {
-	return p.topicTree.RemoveSubscription(clientId, topic)
+	return p.tree.registerSession(s)
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
 func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(Message) bool) {
-	p.topicTree.DeleteMessageWithValidator(clientId, validator)
+	p.tree.deleteMessageWithValidator(clientId, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
 func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction MessageDirection) error {
-	return p.topicTree.DeleteMessage(clientId, mid, direction)
-}
-
-// queueMessage save message into metadata
-func (p *sessionManager) queueMessage(clientId string, msg *Message) error {
-	return p.topicTree.QueueMessage(clientId, *msg)
-}
-
-// insertMessage insert specified message into metadata
-func (p *sessionManager) insertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
-	return p.topicTree.InsertMessage(clientId, mid, direction, *msg)
+	return p.tree.deleteMessage(clientId, mid, direction)
 }
 
 // releaseMessage release message from metadata
 func (p *sessionManager) releaseMessage(clientId string, mid uint16, direction MessageDirection) error {
-	return p.topicTree.ReleaseMessage(clientId, mid, direction)
+	return p.tree.releaseMessage(clientId, mid, direction)
 }

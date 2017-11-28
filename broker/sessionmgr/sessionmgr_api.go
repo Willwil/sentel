@@ -20,34 +20,10 @@ func FindSession(clientId string) (*Session, error) {
 	return sub.findSession(clientId)
 }
 
-// DeleteSession remove session specified by clientId from subdata
-func DeleteSession(clientId string) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.deleteSession(clientId)
-}
-
 // RegiserSession register session into subdata
 func RegisterSession(s *Session) error {
 	sub := base.GetService(ServiceName).(*sessionManager)
 	return sub.registerSession(s)
-}
-
-// AddSubscription add a subscription into subdat
-func AddSubscription(clientId string, topic string, qos uint8) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.addSubscription(clientId, topic, qos, nil)
-}
-
-// RetainSubscription retain the client with topic
-func RetainSubscription(clientId string, topic string, qos uint8) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.retainSubscription(clientId, topic, qos)
-}
-
-// RmoeveSubscription remove specified topic from subdata
-func RemoveSubscription(clientId string, topic string) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.removeSubscription(clientId, topic)
 }
 
 // DeleteMessageWithValidator delete message in subdata with confition
@@ -60,18 +36,6 @@ func DeleteMessageWithValidator(clientId string, validator func(Message) bool) {
 func DeleteMessage(clientId string, mid uint16, direction MessageDirection) error {
 	sub := base.GetService(ServiceName).(*sessionManager)
 	return sub.deleteMessage(clientId, mid, direction)
-}
-
-// QueueMessage save message into subdata
-func QueueMessage(clientId string, msg *Message) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.queueMessage(clientId, msg)
-}
-
-// InsertMessage insert specified message into subdata
-func InsertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.insertMessage(clientId, mid, direction, msg)
 }
 
 // ReleaseMessage release message from subdata

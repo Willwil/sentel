@@ -151,8 +151,9 @@ func (p *qutoServie) handleQutoChanged(e *event.Event) {
 
 	// Load quto object
 	quto := Quto{}
-	if err := c.Find(bson.M{"qutoId": e.QutoId}).One(&quto); err != nil {
-		glog.Errorf("quto: Failed to get qutotation '%s'", e.QutoId)
+	detail := e.Detail.(*event.QutoChangeType)
+	if err := c.Find(bson.M{"qutoId": detail.QutoId}).One(&quto); err != nil {
+		glog.Errorf("quto: Failed to get qutotation '%s'", detail.QutoId)
 		return
 	}
 	// Update cach according to cach policy
