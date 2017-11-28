@@ -10,9 +10,12 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package broker
+package event
 
-import "github.com/cloustone/sentel/core"
+import (
+	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/core"
+)
 
 const (
 	SessionCreated    = 0x0001
@@ -46,4 +49,16 @@ type TopicSubscribeEvent struct {
 	Event
 	Topic string `json:"topic"` // Topic
 	Data  []byte `json:"data"`  // Topic data
+}
+
+// Publish publish event to event service
+func Notify(e *Event) {
+	service := base.GetService(ServiceName).(*eventService)
+	service.notify(e)
+}
+
+// Subscribe subcribe event from event service
+func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
+	service := base.GetService(ServiceName).(*eventService)
+	service.subscribe(event, handler, ctx)
 }

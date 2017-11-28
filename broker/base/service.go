@@ -20,6 +20,7 @@ import (
 
 type Service interface {
 	Name() string
+	Initialize() error
 	Start() error
 	Stop()
 }
@@ -31,4 +32,16 @@ type ServiceBase struct {
 }
 type ServiceFactory interface {
 	New(c core.Config, quit chan os.Signal) (Service, error)
+}
+
+var (
+	services = make(map[string]Service)
+)
+
+func RegisterService(name string, s Service) {
+	services[name] = s
+}
+
+func GetService(name string) Service {
+	return services[name]
 }

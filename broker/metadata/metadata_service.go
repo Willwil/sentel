@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
 
 	"gopkg.in/mgo.v2"
@@ -32,7 +32,7 @@ import (
 // - Shadow device
 type MetadataService struct {
 	base.ServiceBase
-	eventChan chan *broker.Event
+	eventChan chan *event.Event
 }
 
 const (
@@ -62,7 +62,7 @@ func (p *MetadataServiceFactory) New(c core.Config, quit chan os.Signal) (base.S
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		eventChan: make(chan *broker.Event),
+		eventChan: make(chan *event.Event),
 	}, nil
 
 }
@@ -72,13 +72,15 @@ func (p *MetadataService) Name() string {
 	return ServiceName
 }
 
+func (p *MetadataService) Initialize() error { return nil }
+
 // Start
 func (p *MetadataService) Start() error {
 	// subscribe envent
-	broker.Subscribe(broker.SessionCreated, onEventCallback, p)
-	broker.Subscribe(broker.SessionDestroyed, onEventCallback, p)
-	broker.Subscribe(broker.TopicSubscribed, onEventCallback, p)
-	broker.Subscribe(broker.TopicUnsubscribed, onEventCallback, p)
+	event.Subscribe(event.SessionCreated, onEventCallback, p)
+	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
+	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
+	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
 
 	go func(p *MetadataService) {
 		for {
@@ -101,44 +103,44 @@ func (p *MetadataService) Stop() {
 	close(p.eventChan)
 }
 
-func (p *MetadataService) handleEvent(e *broker.Event) {
+func (p *MetadataService) handleEvent(e *event.Event) {
 	switch e.Type {
-	case broker.SessionCreated:
+	case event.SessionCreated:
 		p.onSessionCreated(e)
-	case broker.SessionDestroyed:
+	case event.SessionDestroyed:
 		p.onSessionDestroyed(e)
-	case broker.TopicSubscribed:
+	case event.TopicSubscribed:
 		p.onTopicSubscribe(e)
-	case broker.TopicUnsubscribed:
+	case event.TopicUnsubscribed:
 		p.onTopicUnsubscribe(e)
 	}
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *broker.Event, ctx interface{}) {
+func onEventCallback(e *event.Event, ctx interface{}) {
 	service := ctx.(*MetadataService)
 	service.eventChan <- e
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *MetadataService) onSessionCreated(e *broker.Event) {
+func (p *MetadataService) onSessionCreated(e *event.Event) {
 	// Save session info if session is local and retained
-	if e.BrokerId == broker.GetId() && e.Persistent {
+	if e.BrokerId == base.GetBrokerId() && e.Persistent {
 		// check mongo db configuration
 	}
 
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *MetadataService) onSessionDestroyed(e *broker.Event) {
+func (p *MetadataService) onSessionDestroyed(e *event.Event) {
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *MetadataService) onTopicSubscribe(e *broker.Event) {
+func (p *MetadataService) onTopicSubscribe(e *event.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *MetadataService) onTopicUnsubscribe(e *broker.Event) {
+func (p *MetadataService) onTopicUnsubscribe(e *event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status

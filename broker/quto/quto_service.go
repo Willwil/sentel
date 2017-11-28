@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 
@@ -43,7 +43,7 @@ const (
 // - Shadow device
 type QutoService struct {
 	base.ServiceBase
-	eventChan   chan *broker.Event
+	eventChan   chan *event.Event
 	cachePolicy string
 	cacheMutex  sync.Mutex
 	cacheMap    map[string]uint64
@@ -97,7 +97,7 @@ func (p *QutoServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servi
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		eventChan:   make(chan *broker.Event),
+		eventChan:   make(chan *event.Event),
 		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
 		cacheMap:    make(map[string]uint64),
@@ -111,9 +111,11 @@ func (p *QutoService) Name() string {
 	return ServiceName
 }
 
+func (p *QutoService) Initialize() error { return nil }
+
 // Start
 func (p *QutoService) Start() error {
-	broker.Subscribe(broker.QutoChanged, onEventCallback, p)
+	event.Subscribe(event.QutoChanged, onEventCallback, p)
 	go func(p *QutoService) {
 		for {
 			select {
@@ -136,13 +138,13 @@ func (p *QutoService) Stop() {
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *broker.Event, ctx interface{}) {
+func onEventCallback(e *event.Event, ctx interface{}) {
 	service := ctx.(*QutoService)
 	service.eventChan <- e
 }
 
 // handleQutoChanged load changed quto into cach
-func (p *QutoService) handleQutoChanged(e *broker.Event) {
+func (p *QutoService) handleQutoChanged(e *event.Event) {
 	// check mongo db configuration
 	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")

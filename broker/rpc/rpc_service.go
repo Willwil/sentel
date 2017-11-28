@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/broker"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
 	sub "github.com/cloustone/sentel/broker/subtree"
@@ -73,6 +72,8 @@ func (p *ApiService) Name() string {
 	return ServiceName
 }
 
+func (p *ApiService) Initialize() error { return nil }
+
 // Start
 func (p *ApiService) Start() error {
 	go func(p *ApiService) {
@@ -97,7 +98,7 @@ func (p *ApiService) Wait() {
 }
 
 func (p *ApiService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {
-	version := broker.GetVersion()
+	version := "0.1"
 	return &VersionReply{Version: version}, nil
 }
 

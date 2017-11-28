@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -30,7 +30,7 @@ import (
 
 type SubTreeService struct {
 	base.ServiceBase
-	eventChan chan *broker.Event
+	eventChan chan *event.Event
 	topicTree TopicTree
 }
 
@@ -66,7 +66,7 @@ func (p *SubServiceFactory) New(c core.Config, quit chan os.Signal) (base.Servic
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		eventChan: make(chan *broker.Event),
+		eventChan: make(chan *event.Event),
 		topicTree: topicTree,
 	}, nil
 
@@ -77,14 +77,16 @@ func (p *SubTreeService) Name() string {
 	return ServiceName
 }
 
+func (p *SubTreeService) Initialize() error { return nil }
+
 // Start
 func (p *SubTreeService) Start() error {
 	// subscribe envent
-	broker.Subscribe(broker.SessionCreated, onEventCallback, p)
-	broker.Subscribe(broker.SessionDestroyed, onEventCallback, p)
-	broker.Subscribe(broker.TopicSubscribed, onEventCallback, p)
-	broker.Subscribe(broker.TopicUnsubscribed, onEventCallback, p)
-	broker.Subscribe(broker.TopicPublished, onEventCallback, p)
+	event.Subscribe(event.SessionCreated, onEventCallback, p)
+	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
+	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
+	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
+	event.Subscribe(event.TopicPublished, onEventCallback, p)
 
 	go func(p *SubTreeService) {
 		for {
@@ -107,32 +109,32 @@ func (p *SubTreeService) Stop() {
 	close(p.eventChan)
 }
 
-func (p *SubTreeService) handleEvent(e *broker.Event) {
+func (p *SubTreeService) handleEvent(e *event.Event) {
 	switch e.Type {
-	case broker.SessionCreated:
+	case event.SessionCreated:
 		p.onSessionCreate(e)
-	case broker.SessionDestroyed:
+	case event.SessionDestroyed:
 		p.onSessionDestroy(e)
-	case broker.TopicSubscribed:
+	case event.TopicSubscribed:
 		p.onTopicSubscribe(e)
-	case broker.TopicUnsubscribed:
+	case event.TopicUnsubscribed:
 		p.onTopicUnsubscribe(e)
-	case broker.TopicPublished:
+	case event.TopicPublished:
 		p.onTopicPublish(e)
 	}
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *broker.Event, ctx interface{}) {
+func onEventCallback(e *event.Event, ctx interface{}) {
 	service := ctx.(*SubTreeService)
 	service.eventChan <- e
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *SubTreeService) onSessionCreate(e *broker.Event) {
+func (p *SubTreeService) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
-	if e.BrokerId != broker.GetId() && e.Persistent {
+	if e.BrokerId != base.GetBrokerId() && e.Persistent {
 
 		// check wethe the session is already exist in subsription tree
 		// return simpily if session is already retained
@@ -150,12 +152,12 @@ func (p *SubTreeService) onSessionCreate(e *broker.Event) {
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *SubTreeService) onSessionDestroy(e *broker.Event) {
+func (p *SubTreeService) onSessionDestroy(e *event.Event) {
 	glog.Infof("subtree: session(%s) is destroyed", e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *SubTreeService) onTopicSubscribe(e *broker.Event) {
+func (p *SubTreeService) onTopicSubscribe(e *event.Event) {
 	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, e.Topic)
 	queue := queue.GetQueue(e.ClientId)
 	if queue != nil {
@@ -166,13 +168,13 @@ func (p *SubTreeService) onTopicSubscribe(e *broker.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *SubTreeService) onTopicUnsubscribe(e *broker.Event) {
+func (p *SubTreeService) onTopicUnsubscribe(e *event.Event) {
 	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, e.Topic)
 	p.topicTree.RemoveSubscription(e.ClientId, e.Topic)
 }
 
 // onEventTopicPublish called when EventTopicPublish received
-func (p *SubTreeService) onTopicPublish(e *broker.Event) {
+func (p *SubTreeService) onTopicPublish(e *event.Event) {
 	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, e.Topic)
 	p.topicTree.AddTopic(e.ClientId, e.Topic, e.Data)
 }

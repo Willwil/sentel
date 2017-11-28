@@ -66,6 +66,8 @@ func (p *HttpService) Name() string {
 	return ServiceName
 }
 
+func (p *HttpService) Initialize() error { return nil }
+
 // Start
 func (p *HttpService) Start() error {
 	return nil

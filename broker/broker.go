@@ -32,7 +32,6 @@ type Broker struct {
 	quits    map[string]chan os.Signal // Notification channel for each service
 	name     string                    // Name of service manager
 	brokerId string
-	eventmgr eventManager
 }
 
 const (
@@ -46,7 +45,7 @@ var (
 )
 
 // RegisterService register service with name and protocol specified
-func RegisterService(name string, factory base.ServiceFactory) {
+func registerService(name string, factory base.ServiceFactory) {
 	glog.Info("Service '%s' is registered", name)
 	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is already registered", name)
@@ -55,7 +54,7 @@ func RegisterService(name string, factory base.ServiceFactory) {
 }
 
 // RegisterServiceWithConfig register service with name and configuration
-func RegisterServiceWithConfig(name string, factory base.ServiceFactory, configs map[string]string) {
+func registerServiceWithConfig(name string, factory base.ServiceFactory, configs map[string]string) {
 	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is already registered", name)
 	}
@@ -69,17 +68,11 @@ func NewBroker(c core.Config) (*Broker, error) {
 	if broker != nil {
 		panic("Global broker had already been created")
 	}
-	eventmgr, err := newEventManager(c)
-	if err != nil {
-		return nil, err
-	}
-
 	broker = &Broker{
 		config:   c,
 		quits:    make(map[string]chan os.Signal),
 		services: make(map[string]base.Service),
 		brokerId: uuid.NewV4().String(),
-		eventmgr: eventmgr,
 	}
 
 	for name, _ := range serviceFactories {
@@ -93,6 +86,7 @@ func NewBroker(c core.Config) (*Broker, error) {
 			glog.Infof("Create service '%s' successfully", name)
 			broker.services[name] = service
 			broker.quits[name] = quit
+			base.RegisterService(name, service)
 		}
 	}
 	return broker, nil
@@ -109,19 +103,19 @@ func (p *Broker) getServiceByName(name string) core.Service {
 // Start
 func (p *Broker) Run() error {
 	// initialize event manager at first
-	if err := p.eventmgr.initialize(p.config); err != nil {
-		return err
+	for _, name := range serviceSeqs {
+		if err := broker.services[name].Initialize(); err != nil {
+			return err
+		}
+		glog.Infof("Initializing service '%s' ...successfuly", name)
 	}
+
 	// start each registered services
 	for _, name := range serviceSeqs {
 		if err := broker.services[name].Start(); err != nil {
 			return err
 		}
 		glog.Infof("Starting service '%s' ...successfuly", name)
-	}
-	// start the event manager
-	if err := p.eventmgr.run(); err != nil {
-		return err
 	}
 	// Wait all service to terminate in main context<TODO>
 	for name, quit := range p.quits {

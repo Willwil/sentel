@@ -57,6 +57,8 @@ func (p *QueueService) Name() string {
 	return ServiceName
 }
 
+func (p *QueueService) Initialize() error { return nil }
+
 // Start
 func (p *QueueService) Start() error {
 	for {

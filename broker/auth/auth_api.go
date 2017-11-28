@@ -15,7 +15,7 @@ package auth
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/base"
 )
 
 const (
@@ -52,11 +52,11 @@ func GetVersion() string {
 }
 
 func Authorize(clientId string, userName string, topic string, access int, opt *Options) error {
-	auth := broker.GetService(ServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*AuthService)
 	return auth.authorize(clientId, userName, topic, access, opt)
 }
 
 func Authenticate(opt *Options) error {
-	auth := broker.GetService(ServiceName).(*AuthService)
+	auth := base.GetService(ServiceName).(*AuthService)
 	return auth.authenticate(opt)
 }

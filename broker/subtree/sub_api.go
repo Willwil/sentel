@@ -12,71 +12,71 @@
 
 package subtree
 
-import "github.com/cloustone/sentel/broker/broker"
+import "github.com/cloustone/sentel/broker/base"
 
 // FindSesison return session object by clientId if existed
 func FindSession(clientId string) (*Session, error) {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.findSession(clientId)
 }
 
 // DeleteSession remove session specified by clientId from subdata
 func DeleteSession(clientId string) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.deleteSession(clientId)
 }
 
 // RegiserSession register session into subdata
 func RegisterSession(s *Session) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.registerSession(s)
 }
 
 // AddSubscription add a subscription into subdat
 func AddSubscription(clientId string, topic string, qos uint8) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.addSubscription(clientId, topic, qos, nil)
 }
 
 // RetainSubscription retain the client with topic
 func RetainSubscription(clientId string, topic string, qos uint8) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.retainSubscription(clientId, topic, qos)
 }
 
 // RmoeveSubscription remove specified topic from subdata
 func RemoveSubscription(clientId string, topic string) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.removeSubscription(clientId, topic)
 }
 
 // DeleteMessageWithValidator delete message in subdata with confition
 func DeleteMessageWithValidator(clientId string, validator func(Message) bool) {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	sub.deleteMessageWithValidator(clientId, validator)
 }
 
 // DeleteMessge delete message specified by idfrom subdata
 func DeleteMessage(clientId string, mid uint16, direction MessageDirection) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.deleteMessage(clientId, mid, direction)
 }
 
 // QueueMessage save message into subdata
 func QueueMessage(clientId string, msg *Message) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.queueMessage(clientId, msg)
 }
 
 // InsertMessage insert specified message into subdata
 func InsertMessage(clientId string, mid uint16, direction MessageDirection, msg *Message) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.insertMessage(clientId, mid, direction, msg)
 }
 
 // ReleaseMessage release message from subdata
 func ReleaseMessage(clientId string, mid uint16, direction MessageDirection) error {
-	sub := broker.GetService(ServiceName).(*SubTreeService)
+	sub := base.GetService(ServiceName).(*SubTreeService)
 	return sub.releaseMessage(clientId, mid, direction)
 }
 

@@ -14,7 +14,7 @@ package broker
 
 import (
 	"github.com/cloustone/sentel/broker/auth"
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/metric"
@@ -36,18 +36,19 @@ func RunWithConfigFile(fileName string) error {
 	if err != nil {
 		return err
 	}
-	broker.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
-	broker.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
-	broker.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
-	broker.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
-	broker.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
-	broker.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
-	broker.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
-	broker.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
-	broker.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
+	registerService(event.ServiceName, &event.EventServiceFactory{})
+	registerService(queue.ServiceName, &queue.QueueServiceFactory{})
+	registerService(auth.ServiceName, &auth.AuthServiceFactory{})
+	registerService(rpc.ServiceName, &rpc.ApiServiceFactory{})
+	registerService(metric.ServiceName, &metric.MetricServiceFactory{})
+	registerService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
+	registerService(quto.ServiceName, &quto.QutoServiceFactory{})
+	registerService(mqtt.ServiceName, &mqtt.MqttFactory{})
+	registerService(http.ServiceName, &http.HttpServiceFactory{})
+	registerService(sub.ServiceName, &sub.SubServiceFactory{})
 
 	// Create service manager according to the configuration
-	broker, err := broker.NewBroker(config)
+	broker, err := NewBroker(config)
 	if err != nil {
 		return err
 	}
@@ -56,18 +57,19 @@ func RunWithConfigFile(fileName string) error {
 
 // RunWithConfig create and start broker from loaded configuration
 func RunWithConfig(c core.Config) error {
-	broker.RegisterService(rpc.ServiceName, &rpc.ApiServiceFactory{})
-	broker.RegisterService(metric.ServiceName, &metric.MetricServiceFactory{})
-	broker.RegisterService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
-	broker.RegisterService(quto.ServiceName, &quto.QutoServiceFactory{})
-	broker.RegisterService(queue.ServiceName, &queue.QueueServiceFactory{})
-	broker.RegisterService(auth.ServiceName, &auth.AuthServiceFactory{})
-	broker.RegisterService(mqtt.ServiceName, &mqtt.MqttFactory{})
-	broker.RegisterService(http.ServiceName, &http.HttpServiceFactory{})
-	broker.RegisterService(sub.ServiceName, &sub.SubServiceFactory{})
+	registerService(event.ServiceName, &event.EventServiceFactory{})
+	registerService(queue.ServiceName, &queue.QueueServiceFactory{})
+	registerService(auth.ServiceName, &auth.AuthServiceFactory{})
+	registerService(rpc.ServiceName, &rpc.ApiServiceFactory{})
+	registerService(metric.ServiceName, &metric.MetricServiceFactory{})
+	registerService(metadata.ServiceName, &metadata.MetadataServiceFactory{})
+	registerService(quto.ServiceName, &quto.QutoServiceFactory{})
+	registerService(mqtt.ServiceName, &mqtt.MqttFactory{})
+	registerService(http.ServiceName, &http.HttpServiceFactory{})
+	registerService(sub.ServiceName, &sub.SubServiceFactory{})
 
 	// Create service manager according to the configuration
-	broker, err := broker.NewBroker(c)
+	broker, err := NewBroker(c)
 	if err != nil {
 		return err
 	}

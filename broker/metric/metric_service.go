@@ -64,6 +64,8 @@ func (p *MetricService) Name() string {
 	return ServiceName
 }
 
+func (p *MetricService) Initialize() error { return nil }
+
 // Start
 func (p *MetricService) Start() error {
 	// Launch timer scheduler

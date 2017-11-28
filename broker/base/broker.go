@@ -10,18 +10,14 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package quto
+package base
 
-import "github.com/cloustone/sentel/broker/base"
+var brokerId string
 
-// GetQuto return object's qutotation
-func GetQuto(id string) (uint64, error) {
-	quto := base.GetService(ServiceName).(*QutoService)
-	return quto.getQuto(id)
+func SetBrokerId(id string) {
+	brokerId = id
 }
 
-// CheckQutoWithAddValue check wether the newly added value is over quto
-func CheckQuto(id string, value uint64) bool {
-	quto := base.GetService(ServiceName).(*QutoService)
-	return quto.checkQuto(id, value)
+func GetBrokerId() string {
+	return brokerId
 }

@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/broker"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/queue"
 	subt "github.com/cloustone/sentel/broker/subtree"
 	"github.com/cloustone/sentel/core"
@@ -88,7 +88,7 @@ func newMqttSession(m *mqttService, conn net.Conn, id string) (*mqttSession, err
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.id)
-	defer broker.Notify(&broker.Event{Type: broker.SessionDestroyed, ClientId: p.id})
+	defer event.Notify(&event.Event{Type: event.SessionDestroyed, ClientId: p.id})
 
 	for {
 		var err error
@@ -354,8 +354,8 @@ func (p *mqttSession) handleConnect() error {
 			p.cleanSession = cleanSession
 			if p.cleanSession == 0 && found.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
-				broker.Notify(&broker.Event{
-					Type:       broker.SessionResumed,
+				event.Notify(&event.Event{
+					Type:       event.SessionResumed,
 					ClientId:   clientId,
 					Persistent: willRetain,
 				})
@@ -396,8 +396,8 @@ func (p *mqttSession) handleConnect() error {
 	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 	// Notify event service that new session created
-	broker.Notify(&broker.Event{
-		Type:       broker.SessionCreated,
+	event.Notify(&event.Event{
+		Type:       event.SessionCreated,
 		ClientId:   clientId,
 		Persistent: (cleanSession == 0),
 	})
