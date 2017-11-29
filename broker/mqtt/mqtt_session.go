@@ -146,6 +146,12 @@ func (p *mqttSession) DataAvailable() {
 
 }
 
+func (p *mqttSession) Id() string            { return p.clientID }
+func (p *mqttSession) BrokerId() string      { return base.GetBrokerId() }
+func (p *mqttSession) Info() *sm.SessionInfo { return nil }
+func (p *mqttSession) IsValid() bool         { return true }
+func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
+
 // handlePingReq handle ping request packet
 func (p *mqttSession) handlePingReq() error {
 	glog.Infof("Received PINGREQ from %s", p.id)
@@ -400,7 +406,9 @@ func (p *mqttSession) handleConnect() error {
 	p.state = mqttStateConnected
 	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
+
 	// Notify event service that new session created
+	sm.RegisterSession(p)
 	event.Notify(&event.Event{Type: event.SessionCreated, ClientId: clientId, Persistent: (cleanSession == 0)})
 
 	// Create queue for this sesion

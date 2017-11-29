@@ -143,18 +143,13 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 	detail := e.Detail.(*event.SessionCreateType)
 	if e.BrokerId != base.GetBrokerId() {
 		// check wethe the session is already exist in subsription tree
-		// return simpily if session is already retained
-		session, err := p.findSession(e.ClientId)
-		if err == nil && session.IsPersistent() {
-			return
-		}
-		// create queue if not exist
-		_, err = queue.NewQueue(e.ClientId, detail.Persistent)
-		if err != nil {
-			glog.Fatalf("broker: Failed to create queue for client '%s'", e.ClientId)
+		// create virtual session if not exist
+		if s, _ := p.findSession(e.ClientId); s == nil {
+			if session, _ := newVirtualSession(e.BrokerId, e.ClientId, detail.Persistent); session != nil {
+				p.registerSession(session)
+			}
 		}
 	}
-
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received

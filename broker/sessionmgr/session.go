@@ -15,6 +15,9 @@ package sessionmgr
 type Session interface {
 	// Id return identifier of session
 	Id() string
+
+	// BrokerId return session's client id
+	BrokerId() string
 	// IsPersistent return wether the session is persistent
 	IsPersistent() bool
 	// IsValidd return true if the session state valid
