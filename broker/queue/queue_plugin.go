@@ -19,16 +19,20 @@ import (
 )
 
 type queuePlugin interface {
+	// getData get a slot of data from backend
 	getData() (*queueData, error)
+	// pushData push a slot of data to backend
 	pushData(*queueData)
 }
 
 type queueData struct {
+	Id   uint32    `bson:"id"`
 	Data []byte    `bson:"data"`
 	Time time.Time `bson:"time"`
 }
 
-func newQueuePlugin(id string, c core.Config) (queuePlugin, error) {
+// newPlugin return backend queue plugin accoriding to configuration and id
+func newPlugin(id string, c core.Config) (queuePlugin, error) {
 	return newMongoQueuePlugin(id, c)
 
 }

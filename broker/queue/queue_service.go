@@ -27,8 +27,8 @@ import (
 // - Shadow device
 type queueService struct {
 	base.ServiceBase
-	queues map[string]Queue
-	mutex  sync.Mutex
+	queues map[string]Queue // All queues
+	mutex  sync.Mutex       // Mutex for queues
 }
 
 const (
@@ -91,9 +91,9 @@ func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(p.Config, id)
+		q, err = newPersistentQueue(id, p.Config)
 	} else {
-		q, err = newTransientQueue(p.Config, id)
+		q, err = newTransientQueue(id, p.Config)
 	}
 	if err != nil {
 		return nil, err

@@ -20,6 +20,7 @@ type Observer interface {
 type Queue interface {
 	// Id return identifier of queue
 	Id() string
+
 	// RegisterObesrve register an observer on queue
 	RegisterObserver(o Observer)
 

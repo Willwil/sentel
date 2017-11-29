@@ -13,24 +13,22 @@
 package queue
 
 import (
-	"os"
 	"time"
 
 	"github.com/cloustone/sentel/core"
 )
 
 type persistentQueue struct {
-	config   core.Config
-	id       string
-	dataChan chan []byte
-	quit     chan os.Signal
-	observer Observer
-	ref      int
-	plugin   queuePlugin
+	config   core.Config // Configuration
+	id       string      // Queue identifier
+	dataChan chan []byte // Data channe
+	observer Observer    // Queue observer when data is available
+	ref      int         // Ref cound
+	plugin   queuePlugin // backend queue plugin
 }
 
-func newPersistentQueue(c core.Config, id string) (Queue, error) {
-	plugin, err := newQueuePlugin(id, c)
+func newPersistentQueue(id string, c core.Config) (Queue, error) {
+	plugin, err := newPlugin(id, c)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +36,6 @@ func newPersistentQueue(c core.Config, id string) (Queue, error) {
 		config:   c,
 		id:       id,
 		dataChan: make(chan []byte),
-		quit:     make(chan os.Signal),
 		ref:      1,
 		plugin:   plugin,
 	}
