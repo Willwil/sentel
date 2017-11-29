@@ -14,7 +14,7 @@ package queue
 
 type Observer interface {
 	// DataAvailable notify that data is available
-	DataAvailable()
+	DataAvailable(q Queue, n int)
 }
 
 type Queue interface {

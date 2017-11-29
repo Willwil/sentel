@@ -37,7 +37,7 @@ type mqttSession struct {
 	config         core.Config
 	conn           net.Conn
 	id             string
-	clientID       string
+	clientId       string
 	state          uint8
 	inpacket       mqttPacket
 	bytesReceived  int64
@@ -142,11 +142,26 @@ func (p *mqttSession) Destroy() error {
 }
 
 // DataAvailable called when queue have data to deal with
-func (p *mqttSession) DataAvailable() {
-
+func (p *mqttSession) DataAvailable(q queue.Queue, size int) {
+	i := 0
+	data := []byte{}
+	for i < size {
+		bytes := []byte{}
+		n, err := q.Read(bytes)
+		if err != nil {
+			glog.Fatalf("mqtt reading error for client '%s'", p.clientId)
+			return
+		}
+		i += n
+	}
+	// Write data back to client
+	packet := newMqttPacket()
+	packet.initializePacket()
+	packet.writeBytes(data)
+	p.writePacket(&packet)
 }
 
-func (p *mqttSession) Id() string            { return p.clientID }
+func (p *mqttSession) Id() string            { return p.clientId }
 func (p *mqttSession) BrokerId() string      { return base.GetBrokerId() }
 func (p *mqttSession) Info() *sm.SessionInfo { return nil }
 func (p *mqttSession) IsValid() bool         { return true }
@@ -386,7 +401,7 @@ func (p *mqttSession) handleConnect() error {
 		p.willMsg.qos = willQos
 		p.willMsg.retain = willRetain
 	}
-	p.clientID = clientId
+	p.clientId = clientId
 	p.cleanSession = cleanSession
 	p.pingTime = nil
 	p.isDroping = false

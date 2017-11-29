@@ -12,11 +12,7 @@
 
 package queue
 
-import (
-	"os"
-	"os/signal"
-	"syscall"
-)
+import "os"
 
 type transientQueue struct {
 	id       string
@@ -39,7 +35,8 @@ func newTransientQueue(id string) (Queue, error) {
 func (p *transientQueue) Id() string { return p.id }
 
 func (p *transientQueue) Read(b []byte) (n int, err error) {
-	return 0, nil
+	data := <-p.dataChan
+	return len(data), nil
 }
 
 // Write writes data to the connection.
@@ -48,7 +45,7 @@ func (p *transientQueue) Read(b []byte) (n int, err error) {
 func (p *transientQueue) Write(b []byte) (n int, err error) {
 	p.dataChan <- b
 	if p.observer != nil {
-		p.observer.DataAvailable()
+		p.observer.DataAvailable(p, len(b))
 	}
 	return len(b), nil
 }
@@ -56,8 +53,6 @@ func (p *transientQueue) Write(b []byte) (n int, err error) {
 // Close closes the connection.
 // Any blocked Read or Write operations will be unblocked and return errors.
 func (p *transientQueue) Close() error {
-	signal.Notify(p.quit, syscall.SIGINT, syscall.SIGQUIT)
-	close(p.quit)
 	close(p.dataChan)
 	return nil
 }
@@ -70,6 +65,7 @@ func (p *transientQueue) RegisterObserver(o Observer) {
 	p.observer = o
 }
 
+// TODO
 func (p *transientQueue) Release() int {
 	p.ref -= 1
 	return p.ref
