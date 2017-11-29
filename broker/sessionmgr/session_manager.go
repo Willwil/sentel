@@ -31,12 +31,10 @@ import (
 
 type sessionManager struct {
 	base.ServiceBase
-	eventChan        chan *event.Event
-	tree             topicTree
-	sessions         map[string]Session
-	mutex            sync.Mutex
-	clientTopics     map[string][]string // All clients and subsribned topics
-	clientTopicMutex sync.Mutex          // Mutex for client and client's topics mapping
+	eventChan chan *event.Event
+	tree      topicTree
+	sessions  map[string]Session
+	mutex     sync.Mutex
 }
 
 const (
@@ -68,12 +66,10 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		eventChan:        make(chan *event.Event),
-		tree:             topicTree,
-		sessions:         make(map[string]Session),
-		mutex:            sync.Mutex{},
-		clientTopics:     make(map[string][]string),
-		clientTopicMutex: sync.Mutex{},
+		eventChan: make(chan *event.Event),
+		tree:      topicTree,
+		sessions:  make(map[string]Session),
+		mutex:     sync.Mutex{},
 	}, nil
 
 }
@@ -167,14 +163,6 @@ func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 		return
 	}
 	p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
-
-	p.clientTopicMutex.Lock()
-	if _, found := p.clientTopics[e.ClientId]; !found {
-		p.clientTopics[e.ClientId] = []string{detail.Topic}
-	} else {
-		p.clientTopics[e.ClientId] = append(p.clientTopics[e.ClientId], detail.Topic)
-	}
-	p.clientTopicMutex.Unlock()
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
@@ -182,18 +170,6 @@ func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicUnsubscribeType)
 	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
 	p.tree.removeSubscription(e.ClientId, detail.Topic)
-	p.clientTopicMutex.Lock()
-	if _, found := p.clientTopics[e.ClientId]; found {
-		list := p.clientTopics[e.ClientId]
-		for i, topic := range list {
-			if topic == detail.Topic {
-				list = append(list[:i], list[i+1:]...)
-				break
-			}
-		}
-	}
-	p.clientTopicMutex.Unlock()
-
 }
 
 // onEventTopicPublish called when EventTopicPublish received
@@ -214,13 +190,13 @@ func (p *sessionManager) findSession(clientId string) (Session, error) {
 }
 
 // deleteSession remove session specified by clientId from metadata
-func (p *sessionManager) deleteSession(clientId string) error {
+func (p *sessionManager) deleteSession(s Session) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.sessions[clientId]; !ok {
+	if _, ok := p.sessions[s.Id()]; !ok {
 		return errors.New("Session id does not exist")
 	}
-	delete(p.sessions, clientId)
+	delete(p.sessions, s.Id())
 	return nil
 }
 
@@ -235,17 +211,12 @@ func (p *sessionManager) registerSession(s Session) error {
 	glog.Infof("RegisterSession: id is %s", s.Id())
 	p.sessions[s.Id()] = s
 	return nil
-
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
 func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(*Message) bool) {
 	// Get all client's topic
-	p.clientTopicMutex.Lock()
-	defer p.clientTopicMutex.Unlock()
-	for _, topic := range p.clientTopics[clientId] {
-		p.tree.deleteMessageWithValidator(topic, validator)
-	}
+	p.tree.deleteMessageWithValidator(clientId, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
@@ -257,11 +228,4 @@ func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction ui
 			return false
 		}
 	})
-}
-
-// releaseMessage release message from metadata
-func (p *sessionManager) releaseMessage(clientId string, mid uint16, direction uint8) error {
-	//return p.tree.releaseMessage(clientId, mid, direction)
-	return nil
-
 }

@@ -21,6 +21,9 @@ type topicTree interface {
 	// addSubscription add a subscription and context in topic tree
 	addSubscription(clientId, topic string, qos uint8, q queue.Queue) error
 
+	// getSubscription return client's subscription
+	getSubscription(clientId string) []string
+
 	// removeSubscription remove a subscription from topic tree
 	removeSubscription(clientId, topic string) error
 
@@ -35,7 +38,7 @@ type topicTree interface {
 	retainMessage(clientId string, msg *Message)
 
 	// DeleteMessageWithValidator delete message in subdata with condition
-	deleteMessageWithValidator(topic string, validator func(*Message) bool)
+	deleteMessageWithValidator(clientId string, validator func(*Message) bool)
 }
 
 func newTopicTree(c core.Config) (topicTree, error) {

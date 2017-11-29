@@ -16,26 +16,32 @@ import "github.com/cloustone/sentel/broker/base"
 
 // FindSesison return session object by clientId if existed
 func FindSession(clientId string) (Session, error) {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.findSession(clientId)
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.findSession(clientId)
 }
 
-// RegiserSession register session into subdata
+// RegiserSession register session into session manager
 func RegisterSession(s Session) error {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.registerSession(s)
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.registerSession(s)
 }
 
-// DeleteMessageWithValidator delete message in subdata with condition
+// RemoveSession remove session from session manager
+func RemoveSession(s Session) error {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.deleteSession(s)
+}
+
+// DeleteMessageWithValidator delete message in session manager with condition
 func DeleteMessageWithValidator(clientId string, validator func(*Message) bool) {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	sub.deleteMessageWithValidator(clientId, validator)
+	sm := base.GetService(ServiceName).(*sessionManager)
+	sm.deleteMessageWithValidator(clientId, validator)
 }
 
-// DeleteMessge delete message specified by idfrom subdata
+// DeleteMessge delete message specified by id from session manager
 func DeleteMessage(clientId string, mid uint16, direction uint8) {
-	sub := base.GetService(ServiceName).(*sessionManager)
-	sub.deleteMessage(clientId, mid, direction)
+	sm := base.GetService(ServiceName).(*sessionManager)
+	sm.deleteMessage(clientId, mid, direction)
 }
 
 // Client

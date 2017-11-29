@@ -41,8 +41,9 @@ type subNode struct {
 
 // simpleTopicTree manage all subscripted topic
 type simpleTopicTree struct {
-	root  subNode    // Root node
-	mutex sync.Mutex // Mutex for concurrence context
+	root   subNode             // Root node
+	mutex  sync.Mutex          // Mutex for concurrence context
+	topics map[string][]string // All clients and subsribned topics
 }
 
 // findNode return sub node with specified topic
@@ -88,6 +89,11 @@ func (p *simpleTopicTree) addSubscription(clientId string, topic string, qos uin
 		qos:   qos,
 		queue: q,
 	}
+	if _, found := p.topics[clientId]; !found {
+		p.topics[clientId] = []string{topic}
+	} else {
+		p.topics[clientId] = append(p.topics[clientId], topic)
+	}
 	return nil
 }
 
@@ -124,11 +130,21 @@ func (p *simpleTopicTree) removeSubscription(clientId string, topic string) erro
 			return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
 		}
 	}
-	if _, ok := node.ctxs[clientId]; ok {
-		delete(node.ctxs, clientId)
-		return nil
+	if _, ok := node.ctxs[clientId]; !ok {
+		return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 	}
-	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+	delete(node.ctxs, clientId)
+	// Remove the topic
+	if _, found := p.topics[clientId]; found {
+		list := p.topics[clientId]
+		for i, t := range list {
+			if t == topic {
+				list = append(list[:i], list[i+1:]...)
+				break
+			}
+		}
+	}
+	return nil
 }
 
 // searchNode search specified node recursively
@@ -179,16 +195,25 @@ func (p *simpleTopicTree) retainMessage(clientId string, msg *Message) {
 }
 
 // deleteMessageWithValidator delete message in subdata with condition
-func (p *simpleTopicTree) deleteMessageWithValidator(topic string, validator func(*Message) bool) {
-	levels := strings.Split(topic, "/")
+func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator func(*Message) bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	node := p.searchNode(&p.root, levels, true)
-	for index, msg := range node.msgs {
-		if validator(msg) {
-			node.msgs = append(node.msgs[:index], node.msgs[index+1:]...)
+	for _, topic := range p.topics[clientId] {
+		levels := strings.Split(topic, "/")
+		node := p.searchNode(&p.root, levels, true)
+		for index, msg := range node.msgs {
+			if validator(msg) {
+				node.msgs = append(node.msgs[:index], node.msgs[index+1:]...)
+			}
 		}
 	}
+}
+
+// getSubscription return client's subscription
+func (p *simpleTopicTree) getSubscription(clientId string) []string {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	return p.topics[clientId]
 }
 
 func newSimpleTopicTree(c core.Config) (topicTree, error) {
@@ -197,6 +222,7 @@ func newSimpleTopicTree(c core.Config) (topicTree, error) {
 			level:    "root",
 			children: make(map[string]*subNode),
 		},
+		topics: make(map[string][]string),
 	}
 	return d, nil
 }
