@@ -39,6 +39,7 @@ type Topic struct {
 
 type Message struct {
 	Topic     string
+	Id        uint16
 	Direction uint8
 	State     uint8
 	Qos       uint8

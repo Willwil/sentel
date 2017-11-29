@@ -388,7 +388,7 @@ func (p *mqttSession) handleConnect() error {
 	// Assuming a possible change of username
 	sm.DeleteMessageWithValidator(
 		clientId,
-		func(msg sm.Message) bool {
+		func(msg *sm.Message) bool {
 			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false

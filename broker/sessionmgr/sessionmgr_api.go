@@ -27,15 +27,15 @@ func RegisterSession(s *Session) error {
 }
 
 // DeleteMessageWithValidator delete message in subdata with condition
-func DeleteMessageWithValidator(clientId string, validator func(Message) bool) {
+func DeleteMessageWithValidator(clientId string, validator func(*Message) bool) {
 	sub := base.GetService(ServiceName).(*sessionManager)
 	sub.deleteMessageWithValidator(clientId, validator)
 }
 
 // DeleteMessge delete message specified by idfrom subdata
-func DeleteMessage(clientId string, mid uint16, direction uint8) error {
+func DeleteMessage(clientId string, mid uint16, direction uint8) {
 	sub := base.GetService(ServiceName).(*sessionManager)
-	return sub.deleteMessage(clientId, mid, direction)
+	sub.deleteMessage(clientId, mid, direction)
 }
 
 // Client

@@ -32,13 +32,10 @@ type topicTree interface {
 	addMessage(clientId, topic string, data []byte)
 
 	// retainMessage retain message on specified topic
-	retainMessage(clientId, msg *Message)
+	retainMessage(clientId string, msg *Message)
 
 	// DeleteMessageWithValidator delete message in subdata with condition
-	deleteMessageWithValidator(clientId string, validator func(Message) bool)
-
-	// DeleteMessge delete message specified by idfrom subdata
-	deleteMessage(clientId string, mid uint16) error
+	deleteMessageWithValidator(topic string, validator func(*Message) bool)
 }
 
 func newTopicTree(c core.Config) (topicTree, error) {
