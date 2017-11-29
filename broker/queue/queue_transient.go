@@ -12,9 +12,14 @@
 
 package queue
 
-import "os"
+import (
+	"os"
+
+	"github.com/cloustone/sentel/core"
+)
 
 type transientQueue struct {
+	config   core.Config
 	id       string
 	dataChan chan []byte
 	quit     chan os.Signal
@@ -22,8 +27,9 @@ type transientQueue struct {
 	ref      int
 }
 
-func newTransientQueue(id string) (Queue, error) {
+func newTransientQueue(c core.Config, id string) (Queue, error) {
 	q := &transientQueue{
+		config:   c,
 		id:       id,
 		dataChan: make(chan []byte),
 		quit:     make(chan os.Signal),

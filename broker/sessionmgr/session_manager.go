@@ -138,11 +138,11 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
 	detail := e.Detail.(*event.SessionCreateType)
-	if e.BrokerId != base.GetBrokerId() {
+	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
 		// check wethe the session is already exist in subsription tree
 		// create virtual session if not exist
 		if s, _ := p.findSession(e.ClientId); s == nil {
-			if session, _ := newVirtualSession(e.BrokerId, e.ClientId, detail.Persistent); session != nil {
+			if session, _ := newVirtualSession(e.BrokerId, e.ClientId, true); session != nil {
 				p.registerSession(session)
 			}
 		}

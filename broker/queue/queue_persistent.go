@@ -12,8 +12,85 @@
 
 package queue
 
-type persistentQueue struct{}
+import (
+	"os"
+	"time"
 
-func newPersistentQueue(id string) (Queue, error) {
-	return nil, nil
+	"github.com/cloustone/sentel/core"
+)
+
+type persistentQueue struct {
+	config   core.Config
+	id       string
+	dataChan chan []byte
+	quit     chan os.Signal
+	observer Observer
+	ref      int
+	plugin   queuePlugin
+}
+
+func newPersistentQueue(c core.Config, id string) (Queue, error) {
+	plugin, err := newQueuePlugin(id, c)
+	if err != nil {
+		return nil, err
+	}
+	q := &persistentQueue{
+		config:   c,
+		id:       id,
+		dataChan: make(chan []byte),
+		quit:     make(chan os.Signal),
+		ref:      1,
+		plugin:   plugin,
+	}
+	return q, nil
+}
+
+func (p *persistentQueue) Id() string { return p.id }
+
+func (p *persistentQueue) Read(b []byte) (n int, err error) {
+	if p.observer != nil {
+		data := <-p.dataChan
+		return len(data), nil
+	}
+	data, err := p.plugin.getData()
+	if err != nil {
+		return -1, err
+	}
+	b = append(b, data.Data...)
+	return len(b), nil
+}
+
+// Write writes data to the connection.
+// Write can be made to time out and return a Error with Timeout() == true
+// after a fixed time limit; see SetDeadline and SetWriteDeadline.
+func (p *persistentQueue) Write(b []byte) (n int, err error) {
+	if p.observer == nil {
+		// if observer is not set, the data should be write to backend data
+		// queue
+		p.plugin.pushData(&queueData{Time: time.Now(), Data: b})
+	} else {
+		p.dataChan <- b
+		p.observer.DataAvailable(p, len(b))
+	}
+	return len(b), nil
+}
+
+// Close closes the connection.
+// Any blocked Read or Write operations will be unblocked and return errors.
+func (p *persistentQueue) Close() error {
+	close(p.dataChan)
+	return nil
+}
+
+func (p *persistentQueue) IsPersistent() bool { return false }
+func (p *persistentQueue) Name() string       { return p.id }
+
+// RegisterObesrve register an observer on queue
+func (p *persistentQueue) RegisterObserver(o Observer) {
+	p.observer = o
+}
+
+func (p *persistentQueue) Release() int {
+	p.ref -= 1
+	return p.ref
 }

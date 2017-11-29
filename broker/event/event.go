@@ -27,11 +27,10 @@ const (
 
 type Event struct {
 	core.TopicBase
-	BrokerId   string      `json:"brokerId"`   // Broker identifier where event come from
-	Type       uint32      `json:"type"`       // Event type
-	ClientId   string      `json:"clientId"`   // Client identifier where event come from
-	Persistent bool        `json:"persistent"` // Whether the session is persistent
-	Detail     interface{} `json:"detail"`     // Event detail
+	BrokerId string      `json:"brokerId"` // Broker identifier where event come from
+	Type     uint32      `json:"type"`     // Event type
+	ClientId string      `json:"clientId"` // Client identifier where event come from
+	Detail   interface{} `json:"detail"`   // Event detail
 }
 
 type SessionCreateType struct {

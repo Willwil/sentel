@@ -91,9 +91,9 @@ func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id)
+		q, err = newPersistentQueue(p.Config, id)
 	} else {
-		q, err = newTransientQueue(id)
+		q, err = newTransientQueue(p.Config, id)
 	}
 	if err != nil {
 		return nil, err

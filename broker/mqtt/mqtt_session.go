@@ -381,9 +381,8 @@ func (p *mqttSession) handleConnect() error {
 			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
 				event.Notify(&event.Event{
-					Type:       event.SessionResumed,
-					ClientId:   clientId,
-					Persistent: (cleanSession == 0),
+					Type:     event.SessionResumed,
+					ClientId: clientId,
 				})
 
 			}
@@ -424,8 +423,10 @@ func (p *mqttSession) handleConnect() error {
 
 	// Notify event service that new session created
 	sm.RegisterSession(p)
-	event.Notify(&event.Event{Type: event.SessionCreated, ClientId: clientId, Persistent: (cleanSession == 0)})
-
+	event.Notify(&event.Event{
+		Type:     event.SessionCreated,
+		ClientId: clientId,
+		Detail:   &event.SessionCreateType{Persistent: (cleanSession == 0)}})
 	// Create queue for this sesion
 	queue, err := queue.NewQueue(clientId, (cleanSession == 0))
 	if err != nil {
