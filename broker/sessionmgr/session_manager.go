@@ -33,7 +33,7 @@ type sessionManager struct {
 	base.ServiceBase
 	eventChan        chan *event.Event
 	tree             topicTree
-	sessions         map[string]*Session
+	sessions         map[string]Session
 	mutex            sync.Mutex
 	clientTopics     map[string][]string // All clients and subsribned topics
 	clientTopicMutex sync.Mutex          // Mutex for client and client's topics mapping
@@ -70,7 +70,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		},
 		eventChan:        make(chan *event.Event),
 		tree:             topicTree,
-		sessions:         make(map[string]*Session),
+		sessions:         make(map[string]Session),
 		mutex:            sync.Mutex{},
 		clientTopics:     make(map[string][]string),
 		clientTopicMutex: sync.Mutex{},
@@ -141,16 +141,15 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
 	detail := e.Detail.(*event.SessionCreateType)
-	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
-
+	if e.BrokerId != base.GetBrokerId() {
 		// check wethe the session is already exist in subsription tree
 		// return simpily if session is already retained
 		session, err := p.findSession(e.ClientId)
-		if err == nil && session.Retain == true {
+		if err == nil && session.IsPersistent() {
 			return
 		}
 		// create queue if not exist
-		_, err = queue.NewQueue(e.ClientId, true)
+		_, err = queue.NewQueue(e.ClientId, detail.Persistent)
 		if err != nil {
 			glog.Fatalf("broker: Failed to create queue for client '%s'", e.ClientId)
 		}
@@ -210,7 +209,7 @@ func (p *sessionManager) onTopicPublish(e *event.Event) {
 }
 
 // findSesison return session object by id if existed
-func (p *sessionManager) findSession(clientId string) (*Session, error) {
+func (p *sessionManager) findSession(clientId string) (Session, error) {
 	if _, ok := p.sessions[clientId]; !ok {
 		return nil, errors.New("Session id does not exist")
 	}
@@ -231,15 +230,15 @@ func (p *sessionManager) deleteSession(clientId string) error {
 }
 
 // regiserSession register session into metadata
-func (p *sessionManager) registerSession(s *Session) error {
+func (p *sessionManager) registerSession(s Session) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.sessions[s.Id]; ok {
+	if _, ok := p.sessions[s.Id()]; ok {
 		return errors.New("Session id already exists")
 	}
 
-	glog.Infof("RegisterSession: id is %s", s.Id)
-	p.sessions[s.Id] = s
+	glog.Infof("RegisterSession: id is %s", s.Id())
+	p.sessions[s.Id()] = s
 	return nil
 
 }

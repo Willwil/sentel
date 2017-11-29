@@ -347,16 +347,17 @@ func (p *mqttSession) handleConnect() error {
 		// Find if the client already has an entry, p must be done after any security check
 		if found, _ := sm.FindSession(clientId); found != nil {
 			// Found old session
-			if found.State == mqttStateInvalid {
+			if !found.IsValid() {
 				glog.Errorf("Invalid session(%s) in store", found.Id)
 			}
+			info := found.Info()
 			if p.protocol == mqttProtocol311 {
 				if cleanSession == 0 {
 					conack |= 0x01
 				}
 			}
 			p.cleanSession = cleanSession
-			if p.cleanSession == 0 && found.CleanSession == 0 {
+			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
 				event.Notify(&event.Event{
 					Type:       event.SessionResumed,

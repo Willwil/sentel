@@ -36,6 +36,8 @@ func newTransientQueue(id string) (Queue, error) {
 	return q, nil
 }
 
+func (p *transientQueue) Id() string { return p.id }
+
 func (p *transientQueue) Read(b []byte) (n int, err error) {
 	return 0, nil
 }

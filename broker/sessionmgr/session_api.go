@@ -15,13 +15,13 @@ package sessionmgr
 import "github.com/cloustone/sentel/broker/base"
 
 // FindSesison return session object by clientId if existed
-func FindSession(clientId string) (*Session, error) {
+func FindSession(clientId string) (Session, error) {
 	sub := base.GetService(ServiceName).(*sessionManager)
 	return sub.findSession(clientId)
 }
 
 // RegiserSession register session into subdata
-func RegisterSession(s *Session) error {
+func RegisterSession(s Session) error {
 	sub := base.GetService(ServiceName).(*sessionManager)
 	return sub.registerSession(s)
 }

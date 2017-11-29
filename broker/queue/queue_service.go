@@ -54,7 +54,13 @@ func (p *queueService) Name() string {
 	return ServiceName
 }
 
-func (p *queueService) Initialize() error { return nil }
+func (p *queueService) Initialize() error {
+	return p.bootstrap()
+}
+
+func (p *queueService) bootstrap() error {
+	return nil
+}
 
 // Start
 func (p *queueService) Start() error {
