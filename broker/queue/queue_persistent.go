@@ -21,9 +21,7 @@ import (
 type persistentQueue struct {
 	config   core.Config // Configuration
 	id       string      // Queue identifier
-	dataChan chan []byte // Data channe
 	observer Observer    // Queue observer when data is available
-	ref      int         // Ref cound
 	plugin   queuePlugin // backend queue plugin
 }
 
@@ -33,11 +31,9 @@ func newPersistentQueue(id string, c core.Config) (Queue, error) {
 		return nil, err
 	}
 	q := &persistentQueue{
-		config:   c,
-		id:       id,
-		dataChan: make(chan []byte),
-		ref:      1,
-		plugin:   plugin,
+		config: c,
+		id:     id,
+		plugin: plugin,
 	}
 	return q, nil
 }
@@ -45,10 +41,6 @@ func newPersistentQueue(id string, c core.Config) (Queue, error) {
 func (p *persistentQueue) Id() string { return p.id }
 
 func (p *persistentQueue) Read(b []byte) (n int, err error) {
-	if p.observer != nil {
-		data := <-p.dataChan
-		return len(data), nil
-	}
 	data, err := p.plugin.getData()
 	if err != nil {
 		return -1, err
@@ -61,12 +53,8 @@ func (p *persistentQueue) Read(b []byte) (n int, err error) {
 // Write can be made to time out and return a Error with Timeout() == true
 // after a fixed time limit; see SetDeadline and SetWriteDeadline.
 func (p *persistentQueue) Write(b []byte) (n int, err error) {
-	if p.observer == nil {
-		// if observer is not set, the data should be write to backend data
-		// queue
-		p.plugin.pushData(&queueData{Time: time.Now(), Data: b})
-	} else {
-		p.dataChan <- b
+	p.plugin.pushData(&queueData{Time: time.Now(), Data: b})
+	if p.observer != nil {
 		p.observer.DataAvailable(p, len(b))
 	}
 	return len(b), nil
@@ -75,7 +63,6 @@ func (p *persistentQueue) Write(b []byte) (n int, err error) {
 // Close closes the connection.
 // Any blocked Read or Write operations will be unblocked and return errors.
 func (p *persistentQueue) Close() error {
-	close(p.dataChan)
 	return nil
 }
 
@@ -85,9 +72,4 @@ func (p *persistentQueue) Name() string       { return p.id }
 // RegisterObesrve register an observer on queue
 func (p *persistentQueue) RegisterObserver(o Observer) {
 	p.observer = o
-}
-
-func (p *persistentQueue) Release() int {
-	p.ref -= 1
-	return p.ref
 }

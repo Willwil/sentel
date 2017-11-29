@@ -12,14 +12,16 @@
 
 package queue
 
-import "github.com/cloustone/sentel/core"
+import (
+	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
+)
 
 type transientQueue struct {
 	config   core.Config
 	id       string
 	dataChan chan []byte
 	observer Observer
-	ref      int
 }
 
 func newTransientQueue(id string, c core.Config) (Queue, error) {
@@ -27,7 +29,6 @@ func newTransientQueue(id string, c core.Config) (Queue, error) {
 		config:   c,
 		id:       id,
 		dataChan: make(chan []byte),
-		ref:      1,
 	}
 	return q, nil
 }
@@ -48,6 +49,8 @@ func (p *transientQueue) Write(b []byte) (n int, err error) {
 	p.dataChan <- b
 	if p.observer != nil {
 		p.observer.DataAvailable(p, len(b))
+	} else {
+		glog.Fatal("queue service: observer is null in transient queue")
 	}
 	return len(b), nil
 }
@@ -65,10 +68,4 @@ func (p *transientQueue) Name() string       { return p.id }
 // RegisterObesrve register an observer on queue
 func (p *transientQueue) RegisterObserver(o Observer) {
 	p.observer = o
-}
-
-// TODO
-func (p *transientQueue) Release() int {
-	p.ref -= 1
-	return p.ref
 }

@@ -120,9 +120,6 @@ func (p *queueService) getQueue(id string) Queue {
 // releaseQueue decrease queue's reference count, and destory the queue if reference is zero
 func (p *queueService) releaseQueue(id string) {
 	if _, found := p.queues[id]; found {
-		q := p.queues[id]
-		if q.Release() == 0 {
-			p.destroyQueue(id)
-		}
+		p.destroyQueue(id)
 	}
 }
