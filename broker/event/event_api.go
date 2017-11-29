@@ -12,16 +12,52 @@
 
 package event
 
-import "github.com/cloustone/sentel/broker/base"
+import (
+	"fmt"
+
+	"github.com/cloustone/sentel/broker/base"
+	"github.com/golang/glog"
+)
 
 // Publish publish event to event service
 func Notify(e *Event) {
+	glog.Infof("event '%s' is notified", NameOfEvent(e.Type))
 	service := base.GetService(ServiceName).(*eventService)
 	service.notify(e)
 }
 
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
+	glog.Infof("service '%s' subscribed event '%s'", ctx.(base.Service).Name(), NameOfEvent(event))
 	service := base.GetService(ServiceName).(*eventService)
 	service.subscribe(event, handler, ctx)
+}
+
+// NameOfEvent return event name
+func NameOfEvent(t uint32) string {
+	switch t {
+	case SessionCreated:
+		return "SessionCeate"
+	case SessionDestroyed:
+		return "SessionDestroy"
+	case TopicPublished:
+		return "TopicPublishe"
+	case TopicSubscribed:
+		return "TopicSubscribe"
+	case TopicUnsubscribed:
+		return "TopicUnsubscribe"
+	case QutoChanged:
+		return "QutoChange"
+	case SessionResumed:
+		return "SessionResume"
+	case AuthChanged:
+		return "AuthChange"
+	default:
+		return "Unknown"
+	}
+}
+
+// FullNameOfEvent return event information
+func FullNameOfEvent(e *Event) string {
+	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e.Type), e.BrokerId, e.ClientId)
 }

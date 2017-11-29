@@ -30,19 +30,18 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
+// sessionManager manage session and subscription and topic tree
+// sessionManager receive kafka event for broker cluster's notification
 type sessionManager struct {
-	base.ServiceBase
-	eventChan chan *event.Event
-	tree      topicTree
-	sessions  map[string]Session
-	mutex     sync.Mutex
+	base.ServiceBase                    // Session manager is a service that can handle asynchrous event
+	eventChan        chan *event.Event  //  Event channel for service
+	tree             topicTree          // Global topic subscription tree
+	sessions         map[string]Session // All sessions
+	mutex            sync.Mutex
 }
 
 const (
-	ServiceName       = "subtree"
-	brokerDatabase    = "broker"
-	sessionCollection = "sessions"
-	brokerCollection  = "brokers"
+	ServiceName = "subtree"
 )
 
 // New create metadata service factory
@@ -113,6 +112,8 @@ func (p *sessionManager) Stop() {
 }
 
 func (p *sessionManager) handleEvent(e *event.Event) {
+	glog.Infof("sessionmgr: %s", event.FullNameOfEvent(e))
+
 	switch e.Type {
 	case event.SessionCreated:
 		p.onSessionCreate(e)
@@ -151,17 +152,16 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
 func (p *sessionManager) onSessionDestroy(e *event.Event) {
-	glog.Infof("subtree: session(%s) is destroyed", e.ClientId)
 	p.removeSession(e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
 func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicSubscribeType)
-	glog.Infof("subtree: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
+	glog.Infof("sessionmgr: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
 	queue := queue.GetQueue(e.ClientId)
 	if queue != nil {
-		glog.Fatalf("broker: Can not get queue for client '%s'", e.ClientId)
+		glog.Fatalf("sessionmgr: Can not get queue for client '%s'", e.ClientId)
 		return
 	}
 	p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
@@ -170,21 +170,22 @@ func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
 func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicUnsubscribeType)
-	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
+	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
 	p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
 }
 
 // onEventTopicPublish called when EventTopicPublish received
 func (p *sessionManager) onTopicPublish(e *event.Event) {
 	detail := e.Detail.(*event.TopicPublishType)
-	glog.Infof("substree: topic(%s,%s) is published", e.ClientId, detail.Topic)
+	glog.Infof("sessionmgr: topic(%s,%s) is published", e.ClientId, detail.Topic)
 	p.tree.addMessage(e.ClientId, detail.Topic, detail.Payload)
 }
 
 // findSesison return session object by id if existed
 func (p *sessionManager) findSession(clientId string) (Session, error) {
+	glog.Infof("sessionmgr: find session '%s'", clientId)
 	if _, ok := p.sessions[clientId]; !ok {
-		return nil, errors.New("Session id does not exist")
+		return nil, errors.New("sessionmgr:Session id does not exist")
 	}
 
 	return p.sessions[clientId], nil
@@ -193,6 +194,7 @@ func (p *sessionManager) findSession(clientId string) (Session, error) {
 
 // deleteSession remove session specified by clientId from metadata
 func (p *sessionManager) removeSession(clientId string) error {
+	glog.Infof("sessionmgr: remove session for '%s'", clientId)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.sessions[clientId]; !ok {
@@ -204,30 +206,26 @@ func (p *sessionManager) removeSession(clientId string) error {
 
 // regiserSession register session into metadata
 func (p *sessionManager) registerSession(s Session) error {
+	glog.Infof("sessionmgr: register session for '%s'", s.Id())
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.sessions[s.Id()]; ok {
 		return errors.New("Session id already exists")
 	}
 
-	glog.Infof("RegisterSession: id is %s", s.Id())
 	p.sessions[s.Id()] = s
 	return nil
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
 func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(*Message) bool) {
-	// Get all client's topic
+	glog.Infof("sessionmgr: delete message for %s", clientId)
 	p.tree.deleteMessageWithValidator(clientId, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
 func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction uint8) {
 	p.deleteMessageWithValidator(clientId, func(msg *Message) bool {
-		if msg.Id == mid && msg.Direction == direction {
-			return true
-		} else {
-			return false
-		}
+		return msg.Id == mid && msg.Direction == direction
 	})
 }
