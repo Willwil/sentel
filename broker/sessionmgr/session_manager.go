@@ -14,6 +14,7 @@ package sessionmgr
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -151,6 +152,7 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 // onEventSessionDestroyed called when EventSessionDestroyed received
 func (p *sessionManager) onSessionDestroy(e *event.Event) {
 	glog.Infof("subtree: session(%s) is destroyed", e.ClientId)
+	p.removeSession(e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
@@ -169,7 +171,7 @@ func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicUnsubscribeType)
 	glog.Infof("subtree: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
-	p.tree.removeSubscription(e.ClientId, detail.Topic)
+	p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
 }
 
 // onEventTopicPublish called when EventTopicPublish received
@@ -190,13 +192,13 @@ func (p *sessionManager) findSession(clientId string) (Session, error) {
 }
 
 // deleteSession remove session specified by clientId from metadata
-func (p *sessionManager) deleteSession(s Session) error {
+func (p *sessionManager) removeSession(clientId string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.sessions[s.Id()]; !ok {
-		return errors.New("Session id does not exist")
+	if _, ok := p.sessions[clientId]; !ok {
+		return fmt.Errorf("Session '%s' does not exist", clientId)
 	}
-	delete(p.sessions, s.Id())
+	delete(p.sessions, clientId)
 	return nil
 }
 

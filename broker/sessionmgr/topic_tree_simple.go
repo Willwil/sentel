@@ -117,30 +117,33 @@ func (p *simpleTopicTree) retainSubscription(clientId string, topic string) erro
 	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 }
 
-// removeSubscription remove subscription from topic tree
-func (p *simpleTopicTree) removeSubscription(clientId string, topic string) error {
+// removeSubscription remove subscriptions from topic tree
+func (p *simpleTopicTree) removeSubscription(clientId string, topics []string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	node := &p.root
-	topics := strings.Split(topic, "/")
-	for _, level := range topics {
-		node = p.findNode(node, level)
-		if node == nil {
-			return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
+	for _, topic := range topics {
+		node := &p.root
+		levels := strings.Split(topic, "/")
+		for _, level := range levels {
+			node = p.findNode(node, level)
+			if node == nil {
+				return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
+			}
 		}
-	}
-	if _, ok := node.ctxs[clientId]; !ok {
-		return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
-	}
-	delete(node.ctxs, clientId)
-	// Remove the topic
-	if _, found := p.topics[clientId]; found {
-		list := p.topics[clientId]
-		for i, t := range list {
-			if t == topic {
-				list = append(list[:i], list[i+1:]...)
-				break
+		if _, ok := node.ctxs[clientId]; !ok {
+			return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+		}
+		delete(node.ctxs, clientId)
+
+		// Remove the topic
+		if _, found := p.topics[clientId]; found {
+			list := p.topics[clientId]
+			for i, t := range list {
+				if t == topic {
+					list = append(list[:i], list[i+1:]...)
+					break
+				}
 			}
 		}
 	}

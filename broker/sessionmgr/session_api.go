@@ -27,9 +27,9 @@ func RegisterSession(s Session) error {
 }
 
 // RemoveSession remove session from session manager
-func RemoveSession(s Session) error {
+func RemoveSession(clientId string) error {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.deleteSession(s)
+	return sm.removeSession(clientId)
 }
 
 // DeleteMessageWithValidator delete message in session manager with condition
