@@ -41,16 +41,6 @@ type SessionInfo struct {
 	CreatedAt          string
 }
 
-type Message struct {
-	Topic     string
-	Id        uint16
-	Direction uint8
-	State     uint8
-	Qos       uint8
-	Retain    bool
-	Payload   []uint8
-}
-
 // ClientInfo
 type ClientInfo struct {
 	UserName     string

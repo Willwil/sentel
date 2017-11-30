@@ -10,13 +10,17 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package metadata
+package base
 
 import "time"
 
-type Device struct {
-	DeviceId    string    `json:"deviceId" bson:"deviceId"`
-	CreatedAt   time.Time `json:"createdAt" bson:"createdAt"`
-	LastUpdated time.Time `json:"lastUpdated" bson:"lastUpdated"`
-	Data        []byte    `json:"data" bson:"data"`
+type Message struct {
+	Topic     string    `json:"topic" bson:"topic"`
+	Id        uint16    `json:"id" bson:"id"`
+	Direction uint8     `json:"diretion" bson:"direction"`
+	State     uint8     `json:"state" bson:"state"`
+	Qos       uint8     `json:"qos" bson:"qos"`
+	Retain    bool      `json:"retain" bson:"retain"`
+	Payload   []uint8   `json:"payload" bson:"payload"`
+	Time      time.Time `json:"time" bson:"time"`
 }

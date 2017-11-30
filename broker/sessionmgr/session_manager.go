@@ -187,7 +187,13 @@ func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 func (p *sessionManager) onTopicPublish(e *event.Event) {
 	detail := e.Detail.(*event.TopicPublishDetail)
 	glog.Infof("sessionmgr: topic(%s,%s) is published", e.ClientId, detail.Topic)
-	p.tree.addMessage(e.ClientId, detail.Topic, detail.Payload)
+	p.tree.addMessage(e.ClientId, &base.Message{
+		Topic:   detail.Topic,
+		Qos:     detail.Qos,
+		Payload: detail.Payload,
+		Retain:  detail.Retain,
+		Id:      detail.Id,
+	})
 }
 
 // findSesison return session object by id if existed
@@ -227,14 +233,14 @@ func (p *sessionManager) registerSession(s Session) error {
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
-func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(*Message) bool) {
+func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
 	glog.Infof("sessionmgr: delete message for %s", clientId)
 	p.tree.deleteMessageWithValidator(clientId, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
 func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction uint8) {
-	p.deleteMessageWithValidator(clientId, func(msg *Message) bool {
+	p.deleteMessageWithValidator(clientId, func(msg *base.Message) bool {
 		return msg.Id == mid && msg.Direction == direction
 	})
 }

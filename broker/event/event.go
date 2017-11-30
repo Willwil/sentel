@@ -15,14 +15,14 @@ package event
 import "github.com/cloustone/sentel/core"
 
 const (
-	SessionCreate    = 0x0001
-	SessionDestroy   = 0x0002
-	TopicPublish     = 0x0008
-	TopicSubscribe   = 0x0010
-	TopicUnsubscribe = 0x0100
-	QutoChange       = 0x0200
-	SessionResume    = 0x0400
-	AuthChange       = 0x0800
+	SessionCreate    = 1
+	SessionDestroy   = 2
+	TopicPublish     = 3
+	TopicSubscribe   = 4
+	TopicUnsubscribe = 5
+	QutoChange       = 6
+	SessionResume    = 7
+	AuthChange       = 8
 )
 
 type Event struct {
@@ -57,6 +57,7 @@ type TopicUnsubscribeDetail struct {
 }
 
 type TopicPublishDetail struct {
+	Id        uint16 `json:"id"`
 	Topic     string `json:"topic"` // Topic
 	Payload   []byte `json:"data"`  // Topic data
 	Qos       uint8  `json:"qos"`
@@ -64,6 +65,6 @@ type TopicPublishDetail struct {
 	Retain    bool   `json:"retain"`
 }
 
-type QutoChangeType struct {
+type QutoChangeDetail struct {
 	QutoId string `json:"qutoId"`
 }

@@ -33,7 +33,7 @@ func RemoveSession(clientId string) error {
 }
 
 // DeleteMessageWithValidator delete message in session manager with condition
-func DeleteMessageWithValidator(clientId string, validator func(*Message) bool) {
+func DeleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
 	sm := base.GetService(ServiceName).(*sessionManager)
 	sm.deleteMessageWithValidator(clientId, validator)
 }

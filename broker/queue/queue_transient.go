@@ -13,57 +13,58 @@
 package queue
 
 import (
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
 
 type transientQueue struct {
 	config   core.Config
-	id       string
-	dataChan chan []byte
+	clientId string
 	observer Observer
+	syncq    *syncQueue
 }
 
-func newTransientQueue(id string, c core.Config) (Queue, error) {
+func newTransientQueue(clientId string, c core.Config) (Queue, error) {
 	q := &transientQueue{
 		config:   c,
-		id:       id,
-		dataChan: make(chan []byte),
+		clientId: clientId,
+		syncq:    newSyncQueue(),
 	}
 	return q, nil
 }
 
 // Id return queue identifier
-func (p *transientQueue) Id() string { return p.id }
+func (p *transientQueue) ClientId() string { return p.clientId }
 
-// Read read bytes from queue
-func (p *transientQueue) Read(b []byte) (n int, err error) {
-	data := <-p.dataChan
-	return len(data), nil
+func (p *transientQueue) Length() int {
+	return p.syncq.len()
 }
 
-// Write writes data to the connection.
-// Write can be made to time out and return a Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetWriteDeadline.
-func (p *transientQueue) Write(b []byte) (n int, err error) {
-	p.dataChan <- b
+func (p *transientQueue) Front() *base.Message {
+	return p.syncq.front().(*base.Message)
+}
+
+func (p *transientQueue) Pop() *base.Message {
+	return p.syncq.pop().(*base.Message)
+}
+
+func (p *transientQueue) Pushback(msg *base.Message) {
+	p.syncq.push(msg)
 	if p.observer != nil {
-		p.observer.DataAvailable(p, len(b))
+		p.observer.DataAvailable(p, msg)
 	} else {
 		glog.Fatal("queue service: observer is null in transient queue")
 	}
-	return len(b), nil
 }
 
-// Close closes the connection.
-// Any blocked Read or Write operations will be unblocked and return errors.
 func (p *transientQueue) Close() error {
-	close(p.dataChan)
+	p.syncq.close()
 	return nil
 }
 
 func (p *transientQueue) IsPersistent() bool { return false }
-func (p *transientQueue) Name() string       { return p.id }
+func (p *transientQueue) Name() string       { return p.clientId }
 
 // RegisterObesrve register an observer on queue
 func (p *transientQueue) RegisterObserver(o Observer) {

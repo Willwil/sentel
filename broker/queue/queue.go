@@ -12,26 +12,33 @@
 
 package queue
 
+import "github.com/cloustone/sentel/broker/base"
+
 type Observer interface {
 	// DataAvailable notify that data is available
-	DataAvailable(q Queue, n int)
+	DataAvailable(q Queue, msg *base.Message)
 }
 
 type Queue interface {
-	// Id return identifier of queue
-	Id() string
+	// Id return client id of queue
+	ClientId() string
 
 	// RegisterObesrve register an observer on queue
 	RegisterObserver(o Observer)
 
-	// Read reads data from the queue.
-	Read(b []byte) (n int, err error)
+	// GetMessageCount return total mesasge count in queue
+	Length() int
 
-	// Write writes data to the queue.
-	Write(b []byte) (n int, err error)
+	// Front return message at queue's head
+	Front() *base.Message
+
+	// Pushback push message at tail of queue
+	Pushback(msg *base.Message)
+
+	// Pop popup head message from queue
+	Pop() *base.Message
 
 	// Close closes the connection.
-	// Any blocked Read or Write operations will be unblocked and return errors.
 	Close() error
 
 	// IsPersistent return true if queue is persistent

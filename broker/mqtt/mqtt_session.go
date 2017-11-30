@@ -142,23 +142,22 @@ func (p *mqttSession) Destroy() error {
 }
 
 // DataAvailable called when queue have data to deal with
-func (p *mqttSession) DataAvailable(q queue.Queue, size int) {
-	i := 0
-	data := []byte{}
-	for i < size {
-		bytes := []byte{}
-		n, err := q.Read(bytes)
-		if err != nil {
-			glog.Fatalf("mqtt reading error for client '%s'", p.clientId)
-			return
+func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
+	for {
+		if msg := q.Front(); msg != nil {
+			// Write data back to client
+			packet := &mqttPacket{
+				command:         PUBLISH,
+				remainingLength: 0,
+			}
+			packet.initializePacket()
+			// TODO: write msg into packet
+			if err := p.writePacket(packet); err == nil {
+				q.Pop()
+			}
+			// TODO: how to assure qos
 		}
-		i += n
 	}
-	// Write data back to client
-	packet := newMqttPacket()
-	packet.initializePacket()
-	packet.writeBytes(data)
-	p.writePacket(&packet)
 }
 
 func (p *mqttSession) Id() string            { return p.clientId }
@@ -409,7 +408,7 @@ func (p *mqttSession) handleConnect() error {
 	// Assuming a possible change of username
 	sm.DeleteMessageWithValidator(
 		clientId,
-		func(msg *sm.Message) bool {
+		func(msg *base.Message) bool {
 			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
 			if err != nil {
 				return false

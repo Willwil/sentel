@@ -18,6 +18,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -36,7 +37,7 @@ type subNode struct {
 	level    string              // Topic level for the node
 	children map[string]*subNode // Childern subscription topic
 	ctxs     map[string]*context // All subscription contexts
-	msgs     []*Message          // All retained messages
+	msgs     []*base.Message     // All retained messages
 }
 
 // simpleTopicTree manage all subscripted topic
@@ -61,7 +62,7 @@ func (p *simpleTopicTree) addNode(node *subNode, level string, q queue.Queue) *s
 			level:    level,
 			children: make(map[string]*subNode),
 			ctxs:     make(map[string]*context),
-			msgs:     []*Message{},
+			msgs:     []*base.Message{},
 		}
 		node.children[level] = n
 	}
@@ -171,21 +172,21 @@ func (p *simpleTopicTree) searchNode(node *subNode, levels []string, setRetain b
 }
 
 // addMessage publish a message on topic tree
-func (p *simpleTopicTree) addMessage(clientId, topic string, data []byte) {
-	levels := strings.Split(topic, "/")
+func (p *simpleTopicTree) addMessage(clientId string, msg *base.Message) {
+	levels := strings.Split(msg.Topic, "/")
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	node := p.searchNode(&p.root, levels, true)
 	if node != nil {
 		for _, ctx := range node.ctxs {
 			glog.Infof("topic tree: publishing message with client id '%s'", clientId)
-			ctx.queue.Write(data)
+			ctx.queue.Pushback(msg)
 		}
 	}
 }
 
 // retainMessage retain message on specified topic
-func (p *simpleTopicTree) retainMessage(clientId string, msg *Message) {
+func (p *simpleTopicTree) retainMessage(clientId string, msg *base.Message) {
 	levels := strings.Split(msg.Topic, "/")
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -198,7 +199,7 @@ func (p *simpleTopicTree) retainMessage(clientId string, msg *Message) {
 }
 
 // deleteMessageWithValidator delete message in subdata with condition
-func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator func(*Message) bool) {
+func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	for _, topic := range p.topics[clientId] {

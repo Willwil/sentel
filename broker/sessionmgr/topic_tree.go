@@ -13,6 +13,7 @@
 package sessionmgr
 
 import (
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/core"
 )
@@ -32,13 +33,13 @@ type topicTree interface {
 
 	// addMessage is called when message is published on topic, find the subscriber's queue
 	// and write the data to queue that will case queue observer to read data from queue
-	addMessage(clientId, topic string, data []byte)
+	addMessage(clientId string, msg *base.Message)
 
 	// retainMessage retain message on specified topic
-	retainMessage(clientId string, msg *Message)
+	retainMessage(clientId string, msg *base.Message)
 
 	// DeleteMessageWithValidator delete message in subdata with condition
-	deleteMessageWithValidator(clientId string, validator func(*Message) bool)
+	deleteMessageWithValidator(clientId string, validator func(*base.Message) bool)
 }
 
 func newTopicTree(c core.Config) (topicTree, error) {

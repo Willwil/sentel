@@ -13,26 +13,35 @@
 package queue
 
 import (
-	"time"
-
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 )
 
 type queuePlugin interface {
-	// getData get a slot of data from backend
-	getData() (*queueData, error)
-	// pushData push a slot of data to backend
-	pushData(*queueData)
-}
+	// Initialize initialize the backend queue plugin
+	initialize() error
+	// GetMessageCount return total mesasge count in queue
+	length() int
 
-type queueData struct {
-	Id   uint32    `bson:"id"`
-	Data []byte    `bson:"data"`
-	Time time.Time `bson:"time"`
+	// Front return message at queue's head
+	front() *base.Message
+
+	// Pushback push message at tail of queue
+	pushback(msg *base.Message)
+
+	// Pop popup head message from queue
+	pop() *base.Message
+
+	// Close closes the connection.
+	close() error
 }
 
 // newPlugin return backend queue plugin accoriding to configuration and id
-func newPlugin(id string, c core.Config) (queuePlugin, error) {
-	return newMongoQueuePlugin(id, c)
-
+func newPlugin(clientId string, c core.Config) (queuePlugin, error) {
+	q, err := newMongoPlugin(clientId, c)
+	if q != nil {
+		err = q.initialize()
+		return q, err
+	}
+	return nil, err
 }

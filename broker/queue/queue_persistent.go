@@ -13,61 +13,59 @@
 package queue
 
 import (
-	"time"
-
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 )
 
 type persistentQueue struct {
 	config   core.Config // Configuration
-	id       string      // Queue identifier
+	clientId string      // Queue identifier
 	observer Observer    // Queue observer when data is available
 	plugin   queuePlugin // backend queue plugin
 }
 
-func newPersistentQueue(id string, c core.Config) (Queue, error) {
-	plugin, err := newPlugin(id, c)
+func newPersistentQueue(clientId string, c core.Config) (Queue, error) {
+	plugin, err := newPlugin(clientId, c)
 	if err != nil {
 		return nil, err
 	}
 	q := &persistentQueue{
-		config: c,
-		id:     id,
-		plugin: plugin,
+		config:   c,
+		clientId: clientId,
+		plugin:   plugin,
 	}
 	return q, nil
 }
 
-func (p *persistentQueue) Id() string { return p.id }
+func (p *persistentQueue) ClientId() string { return p.clientId }
 
-func (p *persistentQueue) Read(b []byte) (n int, err error) {
-	data, err := p.plugin.getData()
-	if err != nil {
-		return -1, err
-	}
-	b = append(b, data.Data...)
-	return len(b), nil
+func (p *persistentQueue) Length() int {
+	return p.plugin.length()
 }
 
-// Write writes data to the connection.
-// Write can be made to time out and return a Error with Timeout() == true
-// after a fixed time limit; see SetDeadline and SetWriteDeadline.
-func (p *persistentQueue) Write(b []byte) (n int, err error) {
-	p.plugin.pushData(&queueData{Time: time.Now(), Data: b})
+func (p *persistentQueue) Front() *base.Message {
+	return p.plugin.front()
+}
+
+func (p *persistentQueue) Pushback(msg *base.Message) {
+	p.plugin.pushback(msg)
 	if p.observer != nil {
-		p.observer.DataAvailable(p, len(b))
+		p.observer.DataAvailable(p, msg)
 	}
-	return len(b), nil
+}
+
+func (p *persistentQueue) Pop() *base.Message {
+	return p.plugin.pop()
 }
 
 // Close closes the connection.
 // Any blocked Read or Write operations will be unblocked and return errors.
 func (p *persistentQueue) Close() error {
-	return nil
+	return p.plugin.close()
 }
 
 func (p *persistentQueue) IsPersistent() bool { return false }
-func (p *persistentQueue) Name() string       { return p.id }
+func (p *persistentQueue) Name() string       { return p.clientId }
 
 // RegisterObesrve register an observer on queue
 func (p *persistentQueue) RegisterObserver(o Observer) {
