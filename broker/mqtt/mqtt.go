@@ -61,18 +61,18 @@ var (
 
 // Message state
 const (
-	mqttMessageStateInvalid        = 0
-	mqttMessageStatePublishQos0    = 1
-	mqttMessageStatePublishQos1    = 2
-	mqttMessageStateWaitForPubAck  = 3
-	mqttMessageStatePublishQos2    = 4
-	mqttMessageStateWaitForPubRec  = 5
-	mqttMessageStateResendPubRel   = 6
-	mqttMessageStateWaitForPubRel  = 7
-	mqttMessageStateResendPubComp  = 8
-	mqttMessageStateWaitForPubComp = 9
-	mqttMessateStateSendPubRec     = 10
-	mqttMessateStateQueued         = 11
+	mqttMsgStateInvalid       = 0
+	mqttMsgStatePublishQos0   = 1
+	mqttMsgStatePublishQos1   = 2
+	mqttMsgStateWaitPubAck    = 3
+	mqttMsgStatePublishQos2   = 4
+	mqttMsgStateWaitPubRec    = 5
+	mqttMsgStateResendPubRel  = 6
+	mqttMsgStateWaitPubRel    = 7
+	mqttMsgStateResendPubComp = 8
+	mqttMsgStateWaitPubComp   = 9
+	mqttMsgStateSendPubRec    = 10
+	mqttMsgStateQueued        = 11
 )
 
 // Message direction
@@ -88,4 +88,58 @@ type mqttMessage struct {
 	payload   []uint8
 	qos       uint8
 	retain    bool
+}
+
+// nameOfSessionState return name of session state
+func nameOfSessionState(state uint8) string {
+	switch state {
+	case mqttStateNew:
+		return "mqttStateNew"
+	case mqttStateConnected:
+		return "mqttStateConnected"
+	case mqttStateDisconnecting:
+		return "mqttStateDisconnecting"
+	case mqttStateConnectAsync:
+		return "mqttStateConnectAsync"
+	case mqttStateConnectPending:
+		return "mqttStateConnectPending"
+	case mqttStateConnectSrv:
+		return "mqttStateConnectSrv"
+	case mqttStateDisconnectWs:
+		return "mqttStateDisconnectWs"
+	case mqttStateDisconnected:
+		return "mqttStateDisconnected"
+	case mqttStateExpiring:
+		return "mqttStateExpiring"
+	}
+	return "mqttStateInvalid"
+}
+
+// nameOfMessageState return message state
+func nameOfMessageState(state uint8) string {
+	switch state {
+	case mqttMsgStatePublishQos0:
+		return "mqttMessageStatePublishQos0"
+	case mqttMsgStatePublishQos1:
+		return "mqttMessageStatePublishQos1"
+	case mqttMsgStateWaitPubAck:
+		return "mqttMessageStateWaitPubAck"
+	case mqttMsgStatePublishQos2:
+		return "mqttMessageStatePublishQos2"
+	case mqttMsgStateWaitPubRec:
+		return "mqttMessageStateWaitPubRec"
+	case mqttMsgStateResendPubRel:
+		return "mqttMessageStateResendPubRel"
+	case mqttMsgStateWaitPubRel:
+		return "mqttMessageStatePubRel"
+	case mqttMsgStateResendPubComp:
+		return "mqttMessageStateResendPubComp"
+	case mqttMsgStateWaitPubComp:
+		return "mqttMessageStateWaitPubComp"
+	case mqttMsgStateSendPubRec:
+		return "mqttMessageStateSendPubRec"
+	case mqttMsgStateQueued:
+		return "mqttMessageStateQueued"
+	}
+	return "mqttMessageStateInvalid"
 }

@@ -38,7 +38,6 @@ type mqttSession struct {
 	conn           net.Conn
 	id             string
 	clientId       string
-	state          uint8
 	inpacket       mqttPacket
 	bytesReceived  int64
 	pingTime       *time.Time
@@ -55,6 +54,8 @@ type mqttSession struct {
 	stateMutex     sync.Mutex
 	waitgroup      sync.WaitGroup
 	mountpoint     string
+	msgState       uint8 // Mqtt message state
+	sessionState   uint8 // Mqtt session state
 
 	// resume field
 	storedMsgs []*mqttMessage
@@ -74,11 +75,12 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		config:        m.Config,
 		conn:          conn,
 		bytesReceived: 0,
-		state:         mqttStateNew,
+		sessionState:  mqttStateNew,
 		inpacket:      newMqttPacket(),
 		protocol:      mqttProtocolInvalid,
 		storedMsgs:    make([]*mqttMessage, msgqsize),
 		mountpoint:    "",
+		msgState:      mqttMsgStateInvalid,
 	}
 
 	return s, nil
@@ -87,6 +89,26 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 // checkTopiValidity will check topic's validity
 func checkTopicValidity(topic string) error {
 	return nil
+}
+
+// setSessionState set session's state
+func (p *mqttSession) setSessionState(state uint8) {
+	old := p.sessionState
+	p.sessionState = state
+	glog.Infof("mqtt: client '%s' session state changed (%s->%s)",
+		p.id,
+		nameOfSessionState(old),
+		nameOfSessionState(state))
+}
+
+// setMessageState set session's state
+func (p *mqttSession) setMessageState(state uint8) {
+	old := p.msgState
+	p.msgState = state
+	glog.Infof("mqtt: client '%s' message state changed (%s->%s)",
+		p.id,
+		nameOfMessageState(old),
+		nameOfMessageState(state))
 }
 
 // Handle is mainprocessor for iot device client
@@ -100,6 +122,7 @@ func (p *mqttSession) Handle() error {
 			glog.Error(err)
 			return err
 		}
+		glog.Infof("%s,%s", nameOfSessionState(p.sessionState), nameOfMessageState(p.msgState))
 		switch p.inpacket.command & 0xF0 {
 		case PINGREQ:
 			err = p.handlePingReq()
@@ -115,6 +138,8 @@ func (p *mqttSession) Handle() error {
 			err = p.handleSubscribe()
 		case UNSUBSCRIBE:
 			err = p.handleUnsubscribe()
+		case PUBACK:
+			err = p.handlePubAck()
 		default:
 			err = fmt.Errorf("Unrecognized protocol command:%d", int(p.inpacket.command&0xF0))
 		}
@@ -123,7 +148,7 @@ func (p *mqttSession) Handle() error {
 			return err
 		}
 		// Check sesstion state
-		if p.state == mqttStateDisconnected {
+		if p.sessionState == mqttStateDisconnected {
 			break
 		}
 		p.inpacket.Clear()
@@ -145,19 +170,44 @@ func (p *mqttSession) Destroy() error {
 func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
 	for {
 		if msg := q.Front(); msg != nil {
-			// Write data back to client
-			packet := &mqttPacket{
-				command:         PUBLISH,
-				remainingLength: 0,
-			}
-			packet.initializePacket()
-			// TODO: write msg into packet
+			packet := makePubPacketByMessage(msg)
 			if err := p.writePacket(packet); err == nil {
-				q.Pop()
+				switch msg.Qos {
+				case 0:
+					// NO client response for qos0 pub packet
+					q.Pop()
+					continue
+				case 1:
+					p.msgState = mqttMsgStateWaitPubAck
+					return
+				default:
+				}
 			}
-			// TODO: how to assure qos
 		}
 	}
+}
+
+// makePubPacketByMessage construct a mqtt packet by message
+func makePubPacketByMessage(msg *base.Message) *mqttPacket {
+	// Write data back to client
+	length := len(msg.Topic)
+	if msg.Qos > 0 {
+		length += 2
+	}
+	packet := mqttPacket{
+		command:         PUBLISH,
+		qos:             msg.Qos,
+		retain:          msg.Retain,
+		dup:             msg.Dup,
+		remainingLength: length,
+	}
+	packet.initializePacket()
+	packet.writeString(msg.Topic)
+	if msg.Qos > 0 {
+		packet.writeUint16(msg.PacketId)
+	}
+	packet.writeBytes(msg.Payload)
+	return &packet
 }
 
 func (p *mqttSession) Id() string            { return p.clientId }
@@ -176,7 +226,7 @@ func (p *mqttSession) handlePingReq() error {
 func (p *mqttSession) handleConnect() error {
 	glog.Infof("Handling CONNECT packet from %s", p.id)
 
-	if p.state != mqttStateNew {
+	if p.sessionState != mqttStateNew {
 		return errors.New("Invalid session state")
 	}
 	// Check protocol name and version
@@ -416,7 +466,7 @@ func (p *mqttSession) handleConnect() error {
 			return true
 		})
 
-	p.state = mqttStateConnected
+	p.sessionState = mqttStateConnected
 	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 
@@ -447,14 +497,14 @@ func (p *mqttSession) handleDisconnect() error {
 		p.disconnect()
 		return mqttErrorInvalidProtocol
 	}
-	p.state = mqttStateDisconnecting
+	p.sessionState = mqttStateDisconnecting
 	p.disconnect()
 	return nil
 }
 
 // disconnect will disconnect current connection because of protocol error
 func (p *mqttSession) disconnect() {
-	if p.state == mqttStateDisconnected {
+	if p.sessionState == mqttStateDisconnected {
 		return
 	}
 	if p.cleanSession > 0 {
@@ -462,7 +512,7 @@ func (p *mqttSession) disconnect() {
 		event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.id})
 		p.id = ""
 	}
-	p.state = mqttStateDisconnected
+	p.sessionState = mqttStateDisconnected
 	p.conn.Close()
 	p.conn = nil
 }
@@ -629,6 +679,15 @@ func (p *mqttSession) handlePublish() error {
 	}
 
 	return err
+}
+
+// handlePubAck handle pubrel packet
+func (p *mqttSession) handlePubAck() error {
+	if p.msgState == mqttMsgStateWaitPubAck {
+		q := queue.GetQueue(p.clientId)
+		q.Pop() // TODO: we should check packet identifier
+	}
+	return nil
 }
 
 // handlePubRel handle pubrel packet

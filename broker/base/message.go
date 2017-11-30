@@ -20,7 +20,7 @@ type Message struct {
 	Direction uint8     `json:"diretion" bson:"direction"`
 	State     uint8     `json:"state" bson:"state"`
 	Qos       uint8     `json:"qos" bson:"qos"`
-	Dup       uint8     `json:"dup" bson:"dup"`
+	Dup       bool      `json:"dup" bson:"dup"`
 	Retain    bool      `json:"retain" bson:"retain"`
 	Payload   []uint8   `json:"payload" bson:"payload"`
 	Time      time.Time `json:"time" bson:"time"`
