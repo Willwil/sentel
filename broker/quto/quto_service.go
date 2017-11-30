@@ -108,7 +108,7 @@ func (p *qutoServie) Initialize() error { return nil }
 
 // Start
 func (p *qutoServie) Start() error {
-	event.Subscribe(event.QutoChanged, onEventCallback, p)
+	event.Subscribe(event.QutoChange, onEventCallback, p)
 	go func(p *qutoServie) {
 		for {
 			select {

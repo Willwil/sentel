@@ -15,14 +15,14 @@ package event
 import "github.com/cloustone/sentel/core"
 
 const (
-	SessionCreated    = 0x0001
-	SessionDestroyed  = 0x0002
-	TopicPublished    = 0x0008
-	TopicSubscribed   = 0x0010
-	TopicUnsubscribed = 0x0100
-	QutoChanged       = 0x0200
-	SessionResumed    = 0x0400
-	AuthChanged       = 0x0800
+	SessionCreate    = 0x0001
+	SessionDestroy   = 0x0002
+	TopicPublish     = 0x0008
+	TopicSubscribe   = 0x0010
+	TopicUnsubscribe = 0x0100
+	QutoChange       = 0x0200
+	SessionResume    = 0x0400
+	AuthChange       = 0x0800
 )
 
 type Event struct {
@@ -33,26 +33,30 @@ type Event struct {
 	Detail   interface{} `json:"detail"`   // Event detail
 }
 
-type SessionCreateType struct {
-	Topic      string `json:"topic"`      // Topic
-	Persistent bool   `json:"persistent"` // Whether the session is persistent
-	QutoId     string `json:"qutoId"`     // Qutotation identifier
-	Retain     bool   `json:"retain"`
+type SessionCreateDetail struct {
+	Persistent bool `json:"persistent"` // Whether the session is persistent
+	Retain     bool `json:"retain"`
 }
 
-type TopicSubscribeType struct {
+type SessionDestroyDetail struct {
+	Persistent bool `json:"persistent"` // Whether the session is persistent
+	Retain     bool `json:"retain"`
+}
+
+type TopicSubscribeDetail struct {
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	Topic      string `json:"topic"`      // Topic
 	Qos        uint8  `json:"qos"`
 	Data       []byte `json:"data"` // Topic data
 	Retain     bool   `json:"retain"`
 }
-type TopicUnsubscribeType struct {
-	Topic string `json:"topic"` // Topic
-	Data  []byte `json:"data"`  // Topic data
+type TopicUnsubscribeDetail struct {
+	Persistent bool   `json:"persistent"` // Whether the session is persistent
+	Topic      string `json:"topic"`      // Topic
+	Data       []byte `json:"data"`       // Topic data
 }
 
-type TopicPublishType struct {
+type TopicPublishDetail struct {
 	Topic     string `json:"topic"` // Topic
 	Payload   []byte `json:"data"`  // Topic data
 	Qos       uint8  `json:"qos"`

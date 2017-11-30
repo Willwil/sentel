@@ -74,10 +74,10 @@ func (p *metadataService) Initialize() error { return nil }
 // Start
 func (p *metadataService) Start() error {
 	// subscribe envent
-	event.Subscribe(event.SessionCreated, onEventCallback, p)
-	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
-	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
-	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
+	event.Subscribe(event.SessionCreate, onEventCallback, p)
+	event.Subscribe(event.SessionDestroy, onEventCallback, p)
+	event.Subscribe(event.TopicSubscribe, onEventCallback, p)
+	event.Subscribe(event.TopicUnsubscribe, onEventCallback, p)
 
 	go func(p *metadataService) {
 		for {
@@ -102,13 +102,13 @@ func (p *metadataService) Stop() {
 
 func (p *metadataService) handleEvent(e *event.Event) {
 	switch e.Type {
-	case event.SessionCreated:
+	case event.SessionCreate:
 		p.onSessionCreated(e)
-	case event.SessionDestroyed:
+	case event.SessionDestroy:
 		p.onSessionDestroyed(e)
-	case event.TopicSubscribed:
+	case event.TopicSubscribe:
 		p.onTopicSubscribe(e)
-	case event.TopicUnsubscribed:
+	case event.TopicUnsubscribe:
 		p.onTopicUnsubscribe(e)
 	}
 }

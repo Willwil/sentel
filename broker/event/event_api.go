@@ -19,6 +19,8 @@ import (
 	"github.com/golang/glog"
 )
 
+type EventHandler func(e *Event, ctx interface{})
+
 // Publish publish event to event service
 func Notify(e *Event) {
 	glog.Infof("event '%s' is notified", NameOfEvent(e.Type))
@@ -36,21 +38,21 @@ func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 // NameOfEvent return event name
 func NameOfEvent(t uint32) string {
 	switch t {
-	case SessionCreated:
+	case SessionCreate:
 		return "SessionCeate"
-	case SessionDestroyed:
+	case SessionDestroy:
 		return "SessionDestroy"
-	case TopicPublished:
+	case TopicPublish:
 		return "TopicPublishe"
-	case TopicSubscribed:
+	case TopicSubscribe:
 		return "TopicSubscribe"
-	case TopicUnsubscribed:
+	case TopicUnsubscribe:
 		return "TopicUnsubscribe"
-	case QutoChanged:
+	case QutoChange:
 		return "QutoChange"
-	case SessionResumed:
+	case SessionResume:
 		return "SessionResume"
-	case AuthChanged:
+	case AuthChange:
 		return "AuthChange"
 	default:
 		return "Unknown"

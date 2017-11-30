@@ -84,11 +84,11 @@ func (p *sessionManager) Initialize() error { return nil }
 // Start
 func (p *sessionManager) Start() error {
 	// subscribe envent
-	event.Subscribe(event.SessionCreated, onEventCallback, p)
-	event.Subscribe(event.SessionDestroyed, onEventCallback, p)
-	event.Subscribe(event.TopicSubscribed, onEventCallback, p)
-	event.Subscribe(event.TopicUnsubscribed, onEventCallback, p)
-	event.Subscribe(event.TopicPublished, onEventCallback, p)
+	event.Subscribe(event.SessionCreate, onEventCallback, p)
+	event.Subscribe(event.SessionDestroy, onEventCallback, p)
+	event.Subscribe(event.TopicSubscribe, onEventCallback, p)
+	event.Subscribe(event.TopicUnsubscribe, onEventCallback, p)
+	event.Subscribe(event.TopicPublish, onEventCallback, p)
 
 	go func(p *sessionManager) {
 		for {
@@ -115,15 +115,15 @@ func (p *sessionManager) handleEvent(e *event.Event) {
 	glog.Infof("sessionmgr: %s", event.FullNameOfEvent(e))
 
 	switch e.Type {
-	case event.SessionCreated:
+	case event.SessionCreate:
 		p.onSessionCreate(e)
-	case event.SessionDestroyed:
+	case event.SessionDestroy:
 		p.onSessionDestroy(e)
-	case event.TopicSubscribed:
+	case event.TopicSubscribe:
 		p.onTopicSubscribe(e)
-	case event.TopicUnsubscribed:
+	case event.TopicUnsubscribe:
 		p.onTopicUnsubscribe(e)
-	case event.TopicPublished:
+	case event.TopicPublish:
 		p.onTopicPublish(e)
 	}
 }
@@ -138,7 +138,7 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// If session is created on other broker and is retained
 	// local queue should be created in local subscription tree
-	detail := e.Detail.(*event.SessionCreateType)
+	detail := e.Detail.(*event.SessionCreateDetail)
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
 		// check wethe the session is already exist in subsription tree
 		// create virtual session if not exist
@@ -157,26 +157,35 @@ func (p *sessionManager) onSessionDestroy(e *event.Event) {
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
 func (p *sessionManager) onTopicSubscribe(e *event.Event) {
-	detail := e.Detail.(*event.TopicSubscribeType)
-	glog.Infof("sessionmgr: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
-	queue := queue.GetQueue(e.ClientId)
-	if queue != nil {
-		glog.Fatalf("sessionmgr: Can not get queue for client '%s'", e.ClientId)
-		return
+	detail := e.Detail.(*event.TopicSubscribeDetail)
+
+	// Add subscription for persistent subsription from other broker
+	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
+		glog.Infof("sessionmgr: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
+		if queue := queue.GetQueue(e.ClientId); queue != nil {
+			p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
+		}
+	} else if e.BrokerId == base.GetBrokerId() {
+		if queue := queue.GetQueue(e.ClientId); queue != nil {
+			p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
+		}
 	}
-	p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
 func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
-	detail := e.Detail.(*event.TopicUnsubscribeType)
+	detail := e.Detail.(*event.TopicUnsubscribeDetail)
 	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
-	p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
+	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
+		p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
+	} else if e.BrokerId == base.GetBrokerId() {
+		p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
+	}
 }
 
 // onEventTopicPublish called when EventTopicPublish received
 func (p *sessionManager) onTopicPublish(e *event.Event) {
-	detail := e.Detail.(*event.TopicPublishType)
+	detail := e.Detail.(*event.TopicPublishDetail)
 	glog.Infof("sessionmgr: topic(%s,%s) is published", e.ClientId, detail.Topic)
 	p.tree.addMessage(e.ClientId, detail.Topic, detail.Payload)
 }

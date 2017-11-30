@@ -87,7 +87,7 @@ func (p *authService) Initialize() error { return nil }
 
 // Start
 func (p *authService) Start() error {
-	event.Subscribe(event.AuthChanged, onEventCallback, p)
+	event.Subscribe(event.AuthChange, onEventCallback, p)
 	go func(p *authService) {
 		for {
 			select {
