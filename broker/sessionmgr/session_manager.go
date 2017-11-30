@@ -192,7 +192,6 @@ func (p *sessionManager) onTopicPublish(e *event.Event) {
 		Qos:     detail.Qos,
 		Payload: detail.Payload,
 		Retain:  detail.Retain,
-		Id:      detail.Id,
 	})
 }
 
@@ -241,6 +240,6 @@ func (p *sessionManager) deleteMessageWithValidator(clientId string, validator f
 // deleteMessge delete message specified by idfrom metadata
 func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction uint8) {
 	p.deleteMessageWithValidator(clientId, func(msg *base.Message) bool {
-		return msg.Id == mid && msg.Direction == direction
+		return msg.PacketId == mid && msg.Direction == direction
 	})
 }

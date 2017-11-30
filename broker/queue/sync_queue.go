@@ -35,12 +35,12 @@ func newSyncQueue() *syncQueue {
 }
 
 // Pop an item from syncQueue, will block if syncQueue is empty
-func (q *syncQueue) pop() (v interface{}) {
-	c := q.popable
-	buffer := q.buffer
+func (p *syncQueue) pop() (v interface{}) {
+	c := p.popable
+	buffer := p.buffer
 
-	q.lock.Lock()
-	for buffer.Length() == 0 && !q.closed {
+	p.lock.Lock()
+	for buffer.Length() == 0 && !p.closed {
 		c.Wait()
 	}
 
@@ -49,61 +49,61 @@ func (q *syncQueue) pop() (v interface{}) {
 		buffer.Remove()
 	}
 
-	q.lock.Unlock()
+	p.lock.Unlock()
 	return
 }
 
-func (q *syncQueue) front() interface{} {
-	buffer := q.buffer
-	q.lock.Lock()
+func (p *syncQueue) front() interface{} {
+	buffer := p.buffer
+	p.lock.Lock()
 	v := buffer.Peek()
-	q.lock.Unlock()
+	p.lock.Unlock()
 	return v
 }
 
 // Try to pop an item from syncQueue, will return immediately with bool=false if syncQueue is empty
-func (q *syncQueue) tryPop() (v interface{}, ok bool) {
-	buffer := q.buffer
+func (p *syncQueue) tryPop() (v interface{}, ok bool) {
+	buffer := p.buffer
 
-	q.lock.Lock()
+	p.lock.Lock()
 
 	if buffer.Length() > 0 {
 		v = buffer.Peek()
 		buffer.Remove()
 		ok = true
-	} else if q.closed {
+	} else if p.closed {
 		ok = true
 	}
 
-	q.lock.Unlock()
+	p.lock.Unlock()
 	return
 }
 
 // Push an item to syncQueue. Always returns immediately without blocking
-func (q *syncQueue) push(v interface{}) {
-	q.lock.Lock()
-	if !q.closed {
-		q.buffer.Add(v)
-		q.popable.Signal()
+func (p *syncQueue) push(v interface{}) {
+	p.lock.Lock()
+	if !p.closed {
+		p.buffer.Add(v)
+		p.popable.Signal()
 	}
-	q.lock.Unlock()
+	p.lock.Unlock()
 }
 
 // Get the length of syncQueue
-func (q *syncQueue) len() (l int) {
-	q.lock.Lock()
-	l = q.buffer.Length()
-	q.lock.Unlock()
+func (p *syncQueue) len() (l int) {
+	p.lock.Lock()
+	l = p.buffer.Length()
+	p.lock.Unlock()
 	return
 }
 
 // Close syncQueue
 // After close, Pop will return nil without block, and TryPop will return v=nil, ok=True
-func (q *syncQueue) close() {
-	q.lock.Lock()
-	if !q.closed {
-		q.closed = true
-		q.popable.Signal()
+func (p *syncQueue) close() {
+	p.lock.Lock()
+	if !p.closed {
+		p.closed = true
+		p.popable.Signal()
 	}
-	q.lock.Unlock()
+	p.lock.Unlock()
 }

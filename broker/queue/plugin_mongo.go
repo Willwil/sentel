@@ -73,6 +73,11 @@ func (p *mongoPlugin) pushback(msg *base.Message) {
 
 // Pop popup head message from queue
 func (p *mongoPlugin) pop() *base.Message {
+	msg := base.Message{}
+	if err := p.collection.Find(nil).One(&msg); err == nil {
+		p.collection.Remove(&msg)
+		return &msg
+	}
 	return nil
 }
 
