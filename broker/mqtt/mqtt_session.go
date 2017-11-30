@@ -88,8 +88,13 @@ func (p *mqttSession) setSessionState(state uint8) {
 }
 
 // checkSessionState check wether the session state is same with expected state
-func (p *mqttSession) checkSessionState(state uint8) bool {
-	return p.sessionState == state
+func (p *mqttSession) checkSessionState(state uint8) error {
+	if p.sessionState == state {
+		return nil
+	} else {
+		return fmt.Errorf("mqtt: state miss occurred, expected:%s, now:%s",
+			nameOfSessionState(state), nameOfSessionState(p.sessionState))
+	}
 }
 
 // setMessageState set session's state
@@ -138,7 +143,7 @@ func (p *mqttSession) Handle() error {
 			return err
 		}
 		// Check sesstion state
-		if p.checkSessionState(mqttStateDisconnected) {
+		if err := p.checkSessionState(mqttStateDisconnected); err == nil {
 			break
 		}
 		p.inpacket.Clear()
@@ -221,8 +226,8 @@ func (p *mqttSession) handlePingReq() error {
 func (p *mqttSession) handleConnect() error {
 	glog.Infof("Handling CONNECT packet from %s", p.clientId)
 
-	if !p.checkSessionState(mqttStateNew) {
-		return errors.New("Invalid session state")
+	if err := p.checkSessionState(mqttStateNew); err != nil {
+		return err
 	}
 	// Check protocol name and version
 	protocolName, err := p.inpacket.readString()
@@ -258,7 +263,7 @@ func (p *mqttSession) handleConnect() error {
 	// Check connect flags
 	cflags, err := p.inpacket.readByte()
 	if err != nil {
-		return nil
+		return err
 	}
 	if p.protocol == mqttProtocol311 {
 		if cflags&0x01 != 0x00 {
@@ -295,7 +300,6 @@ func (p *mqttSession) handleConnect() error {
 				p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 				return errors.New("Invalid mqtt packet with client id")
 			}
-
 			clientId = uuid.NewV4().String()
 		}
 	}
@@ -453,29 +457,26 @@ func (p *mqttSession) handleConnect() error {
 		clientId,
 		func(msg *base.Message) bool {
 			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
-			if err != nil {
-				return false
-			}
-			return true
+			return err != nil
 		})
 
+	// Change session state and reply client
 	p.setSessionState(mqttStateConnected)
-	// Reply client
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 
-	// Notify event service that new session created
-	sm.RegisterSession(p)
-	event.Notify(&event.Event{
-		Type:     event.SessionCreate,
-		ClientId: clientId,
-		Detail:   &event.SessionCreateDetail{Persistent: (cleanSession == 0)}})
-	// Create queue for this sesion
+	// Create queue for this sesion and otify event service that new session created
 	queue, err := queue.NewQueue(clientId, (cleanSession == 0))
 	if err != nil {
 		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", clientId)
 		return err
 	}
 	queue.RegisterObserver(p)
+	sm.RegisterSession(p)
+	event.Notify(&event.Event{
+		Type:     event.SessionCreate,
+		ClientId: clientId,
+		Detail:   &event.SessionCreateDetail{Persistent: (cleanSession == 0)}})
+
 	// start keep alive timer
 	p.aliveTimer = time.NewTimer(time.Second * time.Duration(p.keepalive))
 	go func(p *mqttSession) {
@@ -508,7 +509,7 @@ func (p *mqttSession) handleDisconnect() error {
 
 // disconnect will disconnect current connection because of protocol error
 func (p *mqttSession) disconnect() {
-	if !p.checkSessionState(mqttStateDisconnected) {
+	if err := p.checkSessionState(mqttStateDisconnected); err == nil {
 		if p.cleanSession > 0 {
 			event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
 			p.clientId = ""
