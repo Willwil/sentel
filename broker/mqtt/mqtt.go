@@ -81,6 +81,7 @@ const (
 	mqttMessageDirectionOut = 1
 )
 
+/*
 type mqttMessage struct {
 	mid       uint16
 	direction int
@@ -89,6 +90,7 @@ type mqttMessage struct {
 	qos       uint8
 	retain    bool
 }
+*/
 
 // nameOfSessionState return name of session state
 func nameOfSessionState(state uint8) string {

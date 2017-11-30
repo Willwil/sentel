@@ -35,19 +35,10 @@ func newTransientQueue(clientId string, c core.Config) (Queue, error) {
 }
 
 // Id return queue identifier
-func (p *transientQueue) ClientId() string { return p.clientId }
-
-func (p *transientQueue) Length() int {
-	return p.syncq.len()
-}
-
-func (p *transientQueue) Front() *base.Message {
-	return p.syncq.front().(*base.Message)
-}
-
-func (p *transientQueue) Pop() *base.Message {
-	return p.syncq.pop().(*base.Message)
-}
+func (p *transientQueue) ClientId() string     { return p.clientId }
+func (p *transientQueue) Length() int          { return p.syncq.len() }
+func (p *transientQueue) Front() *base.Message { return p.syncq.front().(*base.Message) }
+func (p *transientQueue) Pop() *base.Message   { return p.syncq.pop().(*base.Message) }
 
 func (p *transientQueue) Pushback(msg *base.Message) {
 	p.syncq.push(msg)

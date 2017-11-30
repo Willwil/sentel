@@ -37,15 +37,9 @@ func newPersistentQueue(clientId string, c core.Config) (Queue, error) {
 	return q, nil
 }
 
-func (p *persistentQueue) ClientId() string { return p.clientId }
-
-func (p *persistentQueue) Length() int {
-	return p.plugin.length()
-}
-
-func (p *persistentQueue) Front() *base.Message {
-	return p.plugin.front()
-}
+func (p *persistentQueue) ClientId() string     { return p.clientId }
+func (p *persistentQueue) Length() int          { return p.plugin.length() }
+func (p *persistentQueue) Front() *base.Message { return p.plugin.front() }
 
 func (p *persistentQueue) Pushback(msg *base.Message) {
 	p.plugin.pushback(msg)
@@ -54,20 +48,8 @@ func (p *persistentQueue) Pushback(msg *base.Message) {
 	}
 }
 
-func (p *persistentQueue) Pop() *base.Message {
-	return p.plugin.pop()
-}
-
-// Close closes the connection.
-// Any blocked Read or Write operations will be unblocked and return errors.
-func (p *persistentQueue) Close() error {
-	return p.plugin.close()
-}
-
-func (p *persistentQueue) IsPersistent() bool { return false }
-func (p *persistentQueue) Name() string       { return p.clientId }
-
-// RegisterObesrve register an observer on queue
-func (p *persistentQueue) RegisterObserver(o Observer) {
-	p.observer = o
-}
+func (p *persistentQueue) Pop() *base.Message          { return p.plugin.pop() }
+func (p *persistentQueue) Close() error                { return p.plugin.close() }
+func (p *persistentQueue) IsPersistent() bool          { return false }
+func (p *persistentQueue) Name() string                { return p.clientId }
+func (p *persistentQueue) RegisterObserver(o Observer) { p.observer = o }

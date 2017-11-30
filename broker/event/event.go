@@ -63,6 +63,7 @@ type TopicPublishDetail struct {
 	Qos       uint8  `json:"qos"`
 	Direction uint8  `json:"direction"`
 	Retain    bool   `json:"retain"`
+	Dup       bool   `json:"dup"`
 }
 
 type QutoChangeDetail struct {

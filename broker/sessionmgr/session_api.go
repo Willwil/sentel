@@ -44,6 +44,11 @@ func DeleteMessage(clientId string, mid uint16, direction uint8) {
 	sm.deleteMessage(clientId, mid, direction)
 }
 
+// FindMessage return message already existed in session manager
+func FindMessage(clientId string, pid uint16, dir uint8) *base.Message {
+	return nil
+}
+
 // Client
 func GetClients(proto string) []*ClientInfo         { return nil }
 func GetClient(proto string, id string) *ClientInfo { return nil }
