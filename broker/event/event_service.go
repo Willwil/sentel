@@ -39,6 +39,7 @@ type eventService struct {
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	quit        chan os.Signal
 	waitgroup   sync.WaitGroup
+	tenant      string
 	product     string
 }
 
@@ -48,17 +49,10 @@ type subscriberContext struct {
 	ctx     interface{}
 }
 
-func busNameOfEvent(e *Event) string {
-	switch e.Type {
-	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
-		return "broker/event/mqtt"
-	default:
-		return "broker/event/broker"
-	}
-}
-
 // neweventService create global broker
 func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+	tenant := c.MustString("broker", "tenant")
+	product := c.MustString("broker", "product")
 	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
@@ -76,14 +70,24 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		subscribers: make(map[uint32][]subscriberContext),
 		quit:        make(chan os.Signal),
 		waitgroup:   sync.WaitGroup{},
+		tenant:      tenant,
+		product:     product,
 	}, nil
+}
+
+func (p *eventService) nameOfEventBus(e *Event) string {
+	switch e.Type {
+	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
+		return fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
+	default:
+		return fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
+	}
 }
 
 // initialize
 func (p *eventService) initialize(c core.Config) error {
-	// TODO: eventService must be associated with tenant/product
-	mqttEventBus := "/event/mqtt"
-	brokerEventBus := "/event/broker"
+	mqttEventBus := fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
+	brokerEventBus := fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
 	// subscribe topic from kafka
 	if err := p.subscribeKafkaTopic(mqttEventBus); err != nil {
 		return err
@@ -119,7 +123,7 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				core.AsyncProduceMessage(p.Config, "event", busNameOfEvent(e), e)
+				core.AsyncProduceMessage(p.Config, "event", p.nameOfEventBus(e), e)
 			case <-p.quit:
 				return
 			}

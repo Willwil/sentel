@@ -28,9 +28,10 @@ import (
 )
 
 // RunWithConfigFile create and start broker
-func RunWithConfigFile(fileName string) error {
+func RunWithConfig(fileName string, opts map[string]string) error {
 	glog.Infof("Starting 'broker' server...")
 	core.RegisterConfigGroup(defaultConfigs)
+	core.RegisterConfigGroup(map[string]map[string]string{"broker": opts})
 	// Get configuration
 	config, err := core.NewConfigWithFile(fileName)
 	if err != nil {

@@ -16,15 +16,22 @@ import (
 	"flag"
 
 	"github.com/cloustone/sentel/broker"
-
 	"github.com/golang/glog"
 )
 
 var (
 	configFileFullPath = flag.String("c", "stentel-broker.conf", "config file")
+	tenant             = flag.String("t", "", "tenant id")
+	product            = flag.String("p", "", "product id")
 )
 
 func main() {
 	flag.Parse()
-	glog.Error(broker.RunWithConfigFile(*configFileFullPath))
+	// tenant and product must be set
+	if tenant == nil || product == nil || *tenant == "" || *product == "" {
+		flag.PrintDefaults()
+		return
+	}
+	err := broker.RunWithConfig(*configFileFullPath, map[string]string{"tenant": *tenant, "product": *product})
+	glog.Fatal(err)
 }
