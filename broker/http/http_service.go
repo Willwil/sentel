@@ -34,7 +34,7 @@ type httpService struct {
 }
 
 const (
-	ServiceName = "metadata"
+	ServiceName = "http"
 )
 
 // New create metadata service factory

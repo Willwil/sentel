@@ -45,7 +45,7 @@ var (
 
 // RegisterService register service with name and protocol specified
 func registerService(name string, factory base.ServiceFactory) {
-	glog.Info("Service '%s' is registered", name)
+	glog.Infof("Service '%s' is registered", name)
 	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is already registered", name)
 	}

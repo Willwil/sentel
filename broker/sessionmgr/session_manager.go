@@ -41,7 +41,7 @@ type sessionManager struct {
 }
 
 const (
-	ServiceName = "subtree"
+	ServiceName = "sessionmgr"
 )
 
 // New create metadata service factory

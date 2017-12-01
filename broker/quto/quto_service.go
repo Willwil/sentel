@@ -47,7 +47,7 @@ type qutoServie struct {
 }
 
 const (
-	ServiceName = "metadata"
+	ServiceName = "quto"
 )
 
 // New create metadata service factory
