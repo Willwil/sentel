@@ -79,7 +79,7 @@ func (p *queueService) Stop() {
 }
 
 // newQueue allocate queue from queue service
-func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
+func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, error) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 
@@ -91,9 +91,9 @@ func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id, p.Config)
+		q, err = newPersistentQueue(id, p.Config, o)
 	} else {
-		q, err = newTransientQueue(id, p.Config)
+		q, err = newTransientQueue(id, p.Config, o)
 	}
 	if err != nil {
 		return nil, err

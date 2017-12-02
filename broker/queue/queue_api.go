@@ -15,9 +15,9 @@ package queue
 import "github.com/cloustone/sentel/broker/base"
 
 // Allocate queue from queue service
-func NewQueue(id string, persistent bool) (Queue, error) {
+func NewQueue(id string, persistent bool, o Observer) (Queue, error) {
 	service := base.GetService(ServiceName).(*queueService)
-	return service.newQueue(id, persistent)
+	return service.newQueue(id, persistent, o)
 }
 
 // GetQueue return queue by queue id

@@ -25,11 +25,12 @@ type transientQueue struct {
 	syncq    *syncQueue
 }
 
-func newTransientQueue(clientId string, c core.Config) (Queue, error) {
+func newTransientQueue(clientId string, c core.Config, o Observer) (Queue, error) {
 	q := &transientQueue{
 		config:   c,
 		clientId: clientId,
 		syncq:    newSyncQueue(),
+		observer: o,
 	}
 	return q, nil
 }
