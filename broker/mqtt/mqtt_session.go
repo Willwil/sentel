@@ -139,6 +139,7 @@ func (p *mqttSession) Handle() error {
 			err = fmt.Errorf("Unrecognized protocol command:%d", int(p.inpacket.command&0xF0))
 		}
 		if err != nil {
+			// TODO: need call RemoveSession
 			glog.Error(err)
 			return err
 		}
@@ -244,7 +245,7 @@ func (p *mqttSession) handleConnect() error {
 			p.sendConnAck(0, CONNACK_REFUSED_PROTOCOL_VERSION)
 			return fmt.Errorf("Invalid protocol version '%d' in CONNECT packet", protocolVersion)
 		}
-		p.protocol = mqttProtocol311
+		p.protocol = mqttProtocol31
 
 	case PROTOCOL_NAME_V311:
 		if protocolVersion&0x7F != PROTOCOL_VERSION_V311 {
@@ -792,6 +793,7 @@ func (p *mqttSession) updateOutMessage(mid uint16, state int) error {
 }
 
 func (p *mqttSession) generateMid() uint16 {
+	// TODO: generate message ID
 	return 0
 }
 
