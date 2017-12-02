@@ -62,6 +62,9 @@ type mqttSession struct {
 
 // newMqttSession create new session  for each client connection
 func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
+	// make a persudo alive timer for convenience, and stop it at first
+	palivetimer := time.NewTimer(time.Duration(20 * time.Second))
+	palivetimer.Stop()
 	return &mqttSession{
 		config:        m.Config,
 		conn:          conn,
@@ -71,7 +74,7 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		protocol:      mqttProtocolInvalid,
 		mountpoint:    "",
 		msgState:      mqttMsgStateInvalid,
-		aliveTimer:    nil,
+		aliveTimer:    palivetimer,
 		availableChan: make(chan *base.Message),
 		queue:         nil,
 	}, nil
@@ -113,57 +116,61 @@ func (p *mqttSession) setMessageState(state uint8) {
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.clientId)
+
 	defer event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
+	var err error
 
 	for {
 		select {
 		case msg := <-p.availableChan:
-			p.handleDataAvailableNotification(msg)
+			err = p.handleDataAvailableNotification(msg)
+		case <-p.aliveTimer.C:
+			err = p.handleAliveTimeout()
 		default:
-			if err := p.handleMqttInPacket(); err != nil {
-				// TODO: need call RemoveSession
-				glog.Error(err)
-				return err
-			}
-			// Check sesstion state
-			if err := p.checkSessionState(mqttStateDisconnected); err == nil {
-				break
-			}
-			p.inpacket.Clear()
+			err = p.handleMqttInPacket()
+		}
+		if err != nil {
+			glog.Error(err)
+			return err
+		}
+		// Check sesstion state
+		if err = p.checkSessionState(mqttStateDisconnected); err != nil {
+			glog.Error(err)
+			return err
 		}
 	}
-	return nil
+	return err
 }
 
+// handleMqttInPacket handle all mqtt in packet
 func (p *mqttSession) handleMqttInPacket() error {
-	var err error
-	if err = p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
+	if err := p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
 		glog.Error(err)
 		return err
 	}
 	glog.Infof("%s,%s", nameOfSessionState(p.sessionState), nameOfMessageState(p.msgState))
 	switch p.inpacket.command & 0xF0 {
 	case PINGREQ:
-		err = p.handlePingReq()
+		return p.handlePingReq()
 	case CONNECT:
-		err = p.handleConnect()
+		return p.handleConnect()
 	case DISCONNECT:
-		err = p.handleDisconnect()
+		return p.handleDisconnect()
 	case PUBLISH:
-		err = p.handlePublish()
+		return p.handlePublish()
 	case PUBREL:
-		err = p.handlePubRel()
+		return p.handlePubRel()
 	case SUBSCRIBE:
-		err = p.handleSubscribe()
+		return p.handleSubscribe()
 	case UNSUBSCRIBE:
-		err = p.handleUnsubscribe()
+		return p.handleUnsubscribe()
 	case PUBACK:
-		err = p.handlePubAck()
+		return p.handlePubAck()
 	default:
-		err = fmt.Errorf("Unrecognized protocol command:%d", int(p.inpacket.command&0xF0))
+		return fmt.Errorf("Unrecognized protocol command:%d", int(p.inpacket.command&0xF0))
 	}
-	return err
-
+	p.inpacket.Clear()
+	return nil
 }
 
 // Destroy will destory the current session
@@ -200,6 +207,13 @@ func (p *mqttSession) handleDataAvailableNotification(s *base.Message) error {
 			}
 		}
 	}
+	return nil
+}
+
+// handleAliveTimeout reply to client with ping rsp after timeout
+func (p *mqttSession) handleAliveTimeout() error {
+	p.aliveTimer.Reset(time.Second * time.Duration(p.keepalive))
+	// TODO:Send ping resp
 	return nil
 }
 
@@ -498,17 +512,8 @@ func (p *mqttSession) handleConnect() error {
 		ClientId: clientId,
 		Detail:   &event.SessionCreateDetail{Persistent: (cleanSession == 0)}})
 
-	// start keep alive timer
-	p.aliveTimer = time.NewTimer(time.Second * time.Duration(p.keepalive))
-	go func(p *mqttSession) {
-		for {
-			select {
-			case <-p.aliveTimer.C:
-				// Send ping resp
-				p.aliveTimer.Reset(time.Second * time.Duration(p.keepalive))
-			}
-		}
-	}(p)
+	// reset and start keep alive timer
+	p.aliveTimer.Reset(time.Second * time.Duration(p.keepalive))
 	return nil
 }
 
