@@ -187,9 +187,9 @@ func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicUnsubscribeDetail)
 	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
-		p.tree.removeSubscriptions(e.ClientId, []string{detail.Topic})
+		p.tree.removeSubscription(e.ClientId, detail.Topic)
 	} else if e.BrokerId == base.GetBrokerId() {
-		p.tree.removeSubscriptions(e.ClientId, []string{detail.Topic})
+		p.tree.removeSubscription(e.ClientId, detail.Topic)
 	}
 }
 

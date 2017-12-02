@@ -57,6 +57,8 @@ type mqttSession struct {
 	aliveTimer     *time.Timer        // Keepalive timer
 	pingTime       *time.Time         // Ping timer
 	availableChan  chan *base.Message // Event chanel for data availabel notification
+	packetChan     chan *mqttPacket   // Mqtt packet channel
+	errorChan      chan int           // Error channel
 	queue          queue.Queue        // Session's queue
 }
 
@@ -76,6 +78,8 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		msgState:      mqttMsgStateInvalid,
 		aliveTimer:    palivetimer,
 		availableChan: make(chan *base.Message),
+		packetChan:    make(chan *mqttPacket),
+		errorChan:     make(chan int),
 		queue:         nil,
 	}, nil
 }
@@ -117,16 +121,24 @@ func (p *mqttSession) setMessageState(state uint8) {
 func (p *mqttSession) Handle() error {
 	glog.Infof("Handling session:%s", p.clientId)
 
+	// Start goroutine to read packet from client
+	go func(p *mqttSession) {
+		if err := p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
+			glog.Error(err)
+			p.errorChan <- 1
+		}
+	}(p)
 	defer event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
 	var err error
-
 	for {
 		select {
+		case <-p.errorChan:
+			err = errors.New("mqtt read error occurred")
 		case msg := <-p.availableChan:
 			err = p.handleDataAvailableNotification(msg)
 		case <-p.aliveTimer.C:
 			err = p.handleAliveTimeout()
-		default:
+		case <-p.packetChan:
 			err = p.handleMqttInPacket()
 		}
 		if err != nil {
@@ -144,10 +156,6 @@ func (p *mqttSession) Handle() error {
 
 // handleMqttInPacket handle all mqtt in packet
 func (p *mqttSession) handleMqttInPacket() error {
-	if err := p.inpacket.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
-		glog.Error(err)
-		return err
-	}
 	glog.Infof("%s,%s", nameOfSessionState(p.sessionState), nameOfMessageState(p.msgState))
 	switch p.inpacket.command & 0xF0 {
 	case PINGREQ:
@@ -212,9 +220,7 @@ func (p *mqttSession) handleDataAvailableNotification(s *base.Message) error {
 
 // handleAliveTimeout reply to client with ping rsp after timeout
 func (p *mqttSession) handleAliveTimeout() error {
-	p.aliveTimer.Reset(time.Second * time.Duration(p.keepalive))
-	// TODO:Send ping resp
-	return nil
+	return errors.New("mqtt: time out occured")
 }
 
 // DataAvailable called when queue have data to deal with

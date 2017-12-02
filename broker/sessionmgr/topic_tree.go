@@ -37,7 +37,7 @@ type topicTree interface {
 	getSubscription(clientId, topic string) (*subscription, error)
 
 	// removeSubscription remove a subscription from topic tree
-	removeSubscriptions(clientId string, topics []string) error
+	removeSubscription(clientId, topic string) error
 
 	// retainSubscription make a retain process on specified topic
 	retainSubscription(clientId, topic string) error
