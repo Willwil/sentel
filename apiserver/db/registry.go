@@ -51,6 +51,13 @@ func InitializeRegistry(c core.Config) error {
 	if err != nil {
 		return err
 	}
+	session.SetMode(mgo.Monotonic, true)
+
+	EnsureDevicesIndex(session)
+	EnsureProductsIndex(session)
+	EnsureTenantsIndex(session)
+	EnsureRulesIndex(session)
+
 	session.Close()
 	return nil
 }
@@ -64,6 +71,86 @@ func NewRegistry(c core.Config) (*Registry, error) {
 		return nil, err
 	}
 	return &Registry{session: session, db: session.DB("registry"), config: c}, nil
+}
+
+func EnsureDevicesIndex(s *mgo.Session) {  
+	session := s.Copy()
+	defer session.Close()
+ 
+	c := session.DB("registry").C(dbNameDevices)
+ 
+	index := mgo.Index{
+		Key:        []string{"Id", "Name", "ProductId", "productKey"},
+		//Unique:     true,
+		DropDups:   true,
+ 		Background: true,
+		Sparse:     true,
+	}
+	err := c.EnsureIndex(index)
+	if err != nil {
+		fmt.Printf("Create INDEX error! %s\n", err)
+		panic(err)
+	}
+}
+
+func EnsureProductsIndex(s *mgo.Session) {  
+	session := s.Copy()
+	defer session.Close()
+ 
+	c := session.DB("registry").C(dbNameProducts)
+ 
+	index := mgo.Index{
+		Key:        []string{"Id", "Name"},
+		Unique:     true,
+		DropDups:   true,
+ 		Background: true,
+		Sparse:     true,
+	}
+	err := c.EnsureIndex(index)
+	if err != nil {
+		fmt.Printf("Create INDEX error! %s\n", err)
+		panic(err)
+	}
+}
+
+func EnsureTenantsIndex(s *mgo.Session) {  
+	session := s.Copy()
+	defer session.Close()
+ 
+	c := session.DB("registry").C(dbNameTenants)
+ 
+	index := mgo.Index{
+		Key:        []string{"Name"},
+		Unique:     true,
+		DropDups:   true,
+ 		Background: true,
+		Sparse:     true,
+	}
+	err := c.EnsureIndex(index)
+	if err != nil {
+		fmt.Printf("Create INDEX error! %s\n", err)
+		panic(err)
+	}
+}
+
+func EnsureRulesIndex(s *mgo.Session) {  
+	session := s.Copy()
+	defer session.Close()
+ 
+	c := session.DB("registry").C(dbNameRules)
+ 
+	index := mgo.Index{
+		Key:        []string{"Id", "Name"},
+		Unique:     true,
+		DropDups:   true,
+ 		Background: true,
+		Sparse:     true,
+	}
+	err := c.EnsureIndex(index)
+	if err != nil {
+		fmt.Printf("Create INDEX error! %s\n", err)
+		panic(err)
+	}
 }
 
 // Release release registry rources and disconnect with background database
@@ -174,11 +261,20 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetDevicebyField(field_name string, field_id string) (*Device, error) {
+func (r *Registry) GetMultipleDevices(dev *Device) ([]Device) {
 	c := r.db.C(dbNameDevices)
-	device := &Device{}
-	err := c.Find(bson.M{field_name: field_id}).One(device)
-	return device, err
+	devices := []Device{}
+	var device Device
+
+	fmt.Println("dev name:",dev.Name)
+
+	iter := c.Find(bson.M{"Name": bson.M{"$regex": dev.Name, "$options": "$i"}}).Iter()
+	for iter.Next(&device) {
+		fmt.Println(device)
+		devices = append(devices, device)
+	}
+	fmt.Println("find end!")
+	return devices
 }
 
 // GetDevice retrieve a device information from registry/

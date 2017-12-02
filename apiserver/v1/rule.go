@@ -62,6 +62,7 @@ func addRule(ctx echo.Context) error {
 		"rule",
 		util.TopicNameRule,
 		&util.RuleTopic{
+			RuleName:  rule.Name,
 			RuleId:    rule.Id,
 			ProductId: rule.ProductId,
 			Action:    util.ObjectActionRegister,
@@ -120,6 +121,7 @@ func updateRule(ctx echo.Context) error {
 		"rule",
 		util.TopicNameRule,
 		&util.RuleTopic{
+			RuleName:  rule.Name,
 			RuleId:    rule.Id,
 			ProductId: rule.ProductId,
 			Action:    util.ObjectActionUpdate,

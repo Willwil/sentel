@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/apiserver/util"
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/glog"
@@ -74,7 +75,7 @@ func (p *IndicatorService) Name() string {
 
 // Start
 func (p *IndicatorService) Start() error {
-	p.subscribeTopic("product")//"rule")
+	p.subscribeTopic("rule")
 	return nil
 }
 
@@ -106,8 +107,8 @@ func (p *IndicatorService) subscribeTopic(topic string) error {
 		go func(sarama.PartitionConsumer) {
 			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				v, err := json.Marshal(msg.Value)
-				fmt.Printf("topic:%s, msg:%s, %s, %s\n", string(msg.Topic), msg.Value, string(v), err)
+				//v, err := json.Marshal(msg.Value)
+				fmt.Printf("[%s]: %s\n", string(msg.Topic), msg.Value)
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
@@ -117,7 +118,7 @@ func (p *IndicatorService) subscribeTopic(topic string) error {
 	fmt.Printf("wait bye\n")
 	return nil
 }
-
+/*
 type ruleTopic struct {
 	RuleName  string `json:"ruleName"`
 	RuleId    string `json:"ruleId"`
@@ -131,20 +132,15 @@ type ProductTopic struct {
 	Action      string `json:"action"`
 	TenantId    string `json:"tenantId"`
 }
-
+*/
 // handleNotifications handle notification from kafka
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
-	rule := ruleTopic{}
-	pd := ProductTopic{}
-/*	if err := json.Unmarshal(value, &topic); err != nil {
-		fmt.Printf("err %s\n", err)
-		return err
-	}*/
-	if err := json.Unmarshal(value, &pd); err != nil {
+	rule := util.RuleTopic{}
+	if err := json.Unmarshal(value, &rule); err != nil {
 		fmt.Printf("err %s\n", err)
 		return err
 	}
-	fmt.Printf("[%s]:%+v\n", topic, pd)
+	fmt.Printf("[%s]:%+v\n", topic, rule)
 	r := &executor.Rule{
 		RuleName:  rule.RuleName,
 		RuleId:    rule.RuleId,

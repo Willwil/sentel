@@ -74,6 +74,7 @@ type DeviceTopic struct {
 // RuleTopic
 type RuleTopic struct {
 	TopicBase
+	RuleName  string `json:"ruleName"`
 	ProductId string `json:"productId"`
 	RuleId    string `json:"ruleId"`
 	Action    string `json:"action"`
