@@ -125,6 +125,7 @@ func (p *mqttSession) Handle() error {
 		if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
 			glog.Error(err)
 			p.errorChan <- 1
+			return
 		}
 		p.packetChan <- packet
 	}(p)
@@ -260,6 +261,7 @@ func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
 // handlePingReq handle ping request packet
 func (p *mqttSession) handlePingReq(packet *mqttPacket) error {
 	glog.Infof("Received PINGREQ from %s", p.clientId)
+	p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
 	return p.sendPingRsp()
 }
 
