@@ -73,7 +73,7 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		sessionState:  mqttStateNew,
 		protocol:      mqttProtocolInvalid,
 		mountpoint:    "",
-		msgState:      mqttMsgStateInvalid,
+		msgState:      mqttMsgStateQueued,
 		aliveTimer:    palivetimer,
 		availableChan: make(chan int),
 		packetChan:    make(chan *mqttPacket),
@@ -200,6 +200,9 @@ func (p *mqttSession) Destroy() error {
 
 // handleDataAvailableNotification read message from queue and send to client
 func (p *mqttSession) handleDataAvailableNotification() error {
+	if p.msgState != mqttMsgStateQueued {
+		return fmt.Errorf("mqtt invalid message state:%s", nameOfMessageState(p.msgState))
+	}
 	for {
 		if msg := p.queue.Front(); msg != nil {
 			packet := makePubPacketByMessage(msg)
@@ -720,8 +723,9 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 func (p *mqttSession) handlePubAck(packet *mqttPacket) error {
 	if p.msgState == mqttMsgStateWaitPubAck {
 		q := queue.GetQueue(p.clientId)
-		q.Pop() // TODO: we should check packet identifier
+		q.Pop()
 		p.setMessageState(mqttMsgStateQueued)
+		p.availableChan <- 1
 	}
 	return nil
 }
