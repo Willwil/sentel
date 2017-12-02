@@ -163,11 +163,21 @@ func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
 		glog.Infof("sessionmgr: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
 		if queue := queue.GetQueue(e.ClientId); queue != nil {
-			p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
+			p.tree.addSubscription(&subscription{
+				clientId: e.ClientId,
+				topic:    detail.Topic,
+				qos:      detail.Qos,
+				queue:    queue,
+			})
 		}
 	} else if e.BrokerId == base.GetBrokerId() {
 		if queue := queue.GetQueue(e.ClientId); queue != nil {
-			p.tree.addSubscription(e.ClientId, detail.Topic, detail.Qos, queue)
+			p.tree.addSubscription(&subscription{
+				clientId: e.ClientId,
+				topic:    detail.Topic,
+				qos:      detail.Qos,
+				queue:    queue,
+			})
 		}
 	}
 }
@@ -177,9 +187,9 @@ func (p *sessionManager) onTopicUnsubscribe(e *event.Event) {
 	detail := e.Detail.(*event.TopicUnsubscribeDetail)
 	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", e.ClientId, detail.Topic)
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
-		p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
+		p.tree.removeSubscriptions(e.ClientId, []string{detail.Topic})
 	} else if e.BrokerId == base.GetBrokerId() {
-		p.tree.removeSubscription(e.ClientId, []string{detail.Topic})
+		p.tree.removeSubscriptions(e.ClientId, []string{detail.Topic})
 	}
 }
 

@@ -18,15 +18,26 @@ import (
 	"github.com/cloustone/sentel/core"
 )
 
+type subscription struct {
+	clientId string
+	topic    string
+	qos      uint8
+	queue    queue.Queue
+	retain   bool
+}
+
 type topicTree interface {
 	// addSubscription add a subscription and context in topic tree
-	addSubscription(clientId, topic string, qos uint8, q queue.Queue) error
+	addSubscription(sub *subscription) error
 
-	// getSubscription return client's subscription
-	getSubscription(clientId string) []string
+	// getSubscriptions return client's all subscription topics
+	getSubscriptionTopics(clientId string) []string
+
+	// getSubscription return client's subscription by topic
+	getSubscription(clientId, topic string) (*subscription, error)
 
 	// removeSubscription remove a subscription from topic tree
-	removeSubscription(clientId string, topics []string) error
+	removeSubscriptions(clientId string, topics []string) error
 
 	// retainSubscription make a retain process on specified topic
 	retainSubscription(clientId, topic string) error

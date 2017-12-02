@@ -24,31 +24,23 @@ import (
 	"github.com/golang/glog"
 )
 
-// context is subscription context
-type context struct {
-	qos      uint8
-	queue    queue.Queue // Topic subscriber
-	retain   bool
-	clientId string
-}
-
 // usbNode is subscription node in topic tree
-type subNode struct {
-	level    string              // Topic level for the node
-	children map[string]*subNode // Childern subscription topic
-	ctxs     map[string]*context // All subscription contexts
-	msgs     []*base.Message     // All retained messages
+type topicNode struct {
+	level    string                   // Topic level for the node
+	children map[string]*topicNode    // Childern topic node
+	subs     map[string]*subscription // All subscription contexts
+	msgs     []*base.Message          // All retained messages
 }
 
 // simpleTopicTree manage all subscripted topic
 type simpleTopicTree struct {
-	root   subNode             // Root node
+	root   topicNode           // Root node
 	mutex  sync.Mutex          // Mutex for concurrence context
 	topics map[string][]string // All clients and subsribned topics
 }
 
 // findNode return sub node with specified topic
-func (p *simpleTopicTree) findNode(node *subNode, topic string) *subNode {
+func (p *simpleTopicTree) findNode(node *topicNode, topic string) *topicNode {
 	if n, found := node.children[topic]; found {
 		return n
 	}
@@ -56,12 +48,12 @@ func (p *simpleTopicTree) findNode(node *subNode, topic string) *subNode {
 }
 
 // addNode add a sub node in root node
-func (p *simpleTopicTree) addNode(node *subNode, level string, q queue.Queue) *subNode {
+func (p *simpleTopicTree) addNode(node *topicNode, level string, q queue.Queue) *topicNode {
 	if _, found := node.children[level]; !found {
-		n := &subNode{
+		n := &topicNode{
 			level:    level,
-			children: make(map[string]*subNode),
-			ctxs:     make(map[string]*context),
+			children: make(map[string]*topicNode),
+			subs:     make(map[string]*subscription),
 			msgs:     []*base.Message{},
 		}
 		node.children[level] = n
@@ -70,11 +62,12 @@ func (p *simpleTopicTree) addNode(node *subNode, level string, q queue.Queue) *s
 }
 
 // addSubscription add subsription into topic tree
-func (p *simpleTopicTree) addSubscription(clientId string, topic string, qos uint8, q queue.Queue) error {
-	glog.Infof("topictree:addSubscription: clientId is %s, topic is %s, qos is %d", clientId, topic, qos)
+func (p *simpleTopicTree) addSubscription(sub *subscription) error {
+	glog.Infof("topictree:addSubscription: clientId is %s, topic is %s, qos is %d",
+		sub.clientId, sub.topic, sub.qos)
 
 	// Get topic slice
-	topics := strings.Split(topic, "/")
+	topics := strings.Split(sub.topic, "/")
 	if len(topics) == 0 {
 		return errors.New("Invalid topic")
 	}
@@ -83,17 +76,14 @@ func (p *simpleTopicTree) addSubscription(clientId string, topic string, qos uin
 
 	node := &p.root
 	for _, level := range topics {
-		node = p.addNode(node, level, q)
+		node = p.addNode(node, level, sub.queue)
 	}
 
-	node.ctxs[clientId] = &context{
-		qos:   qos,
-		queue: q,
-	}
-	if _, found := p.topics[clientId]; !found {
-		p.topics[clientId] = []string{topic}
+	node.subs[sub.clientId] = sub
+	if _, found := p.topics[sub.clientId]; !found {
+		p.topics[sub.clientId] = []string{sub.topic}
 	} else {
-		p.topics[clientId] = append(p.topics[clientId], topic)
+		p.topics[sub.clientId] = append(p.topics[sub.clientId], sub.topic)
 	}
 	return nil
 }
@@ -111,15 +101,15 @@ func (p *simpleTopicTree) retainSubscription(clientId string, topic string) erro
 			return fmt.Errorf("topic tree: invalid topic '%s'", topic)
 		}
 	}
-	if ctx, found := node.ctxs[clientId]; found {
-		ctx.retain = true
+	if sub, found := node.subs[clientId]; found {
+		sub.retain = true
 		return nil
 	}
 	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 }
 
 // removeSubscription remove subscriptions from topic tree
-func (p *simpleTopicTree) removeSubscription(clientId string, topics []string) error {
+func (p *simpleTopicTree) removeSubscriptions(clientId string, topics []string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -132,10 +122,10 @@ func (p *simpleTopicTree) removeSubscription(clientId string, topics []string) e
 				return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
 			}
 		}
-		if _, ok := node.ctxs[clientId]; !ok {
+		if _, ok := node.subs[clientId]; !ok {
 			return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
 		}
-		delete(node.ctxs, clientId)
+		delete(node.subs, clientId)
 
 		// Remove the topic
 		if _, found := p.topics[clientId]; found {
@@ -152,7 +142,7 @@ func (p *simpleTopicTree) removeSubscription(clientId string, topics []string) e
 }
 
 // searchNode search specified node recursively
-func (p *simpleTopicTree) searchNode(node *subNode, levels []string, setRetain bool) *subNode {
+func (p *simpleTopicTree) searchNode(node *topicNode, levels []string, setRetain bool) *topicNode {
 	for k, v := range node.children {
 		sr := setRetain
 		if len(levels) != 0 && (k == levels[0] || k == "+") {
@@ -178,9 +168,9 @@ func (p *simpleTopicTree) addMessage(clientId string, msg *base.Message) {
 	defer p.mutex.Unlock()
 	node := p.searchNode(&p.root, levels, true)
 	if node != nil {
-		for _, ctx := range node.ctxs {
+		for _, sub := range node.subs {
 			glog.Infof("topic tree: publishing message with client id '%s'", clientId)
-			ctx.queue.Pushback(msg)
+			sub.queue.Pushback(msg)
 		}
 	}
 }
@@ -213,18 +203,36 @@ func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator 
 	}
 }
 
-// getSubscription return client's subscription
-func (p *simpleTopicTree) getSubscription(clientId string) []string {
+// getSubscriptions return client's all subscription topics
+func (p *simpleTopicTree) getSubscriptionTopics(clientId string) []string {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	return p.topics[clientId]
 }
 
+// getSubscription return client's subscription by topic
+func (p *simpleTopicTree) getSubscription(clientId, topic string) (*subscription, error) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	node := &p.root
+	levels := strings.Split(topic, "/")
+	for _, level := range levels {
+		node = p.findNode(node, level)
+		if node == nil {
+			return nil, fmt.Errorf("topic tree: invalid subscription '%s'", topic)
+		}
+	}
+	if _, ok := node.subs[clientId]; !ok {
+		return nil, fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+	}
+	return node.subs[clientId], nil
+}
+
 func newSimpleTopicTree(c core.Config) (topicTree, error) {
 	d := &simpleTopicTree{
-		root: subNode{
+		root: topicNode{
 			level:    "root",
-			children: make(map[string]*subNode),
+			children: make(map[string]*topicNode),
 		},
 		topics: make(map[string][]string),
 	}
