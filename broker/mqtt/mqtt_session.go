@@ -35,30 +35,30 @@ import (
 
 // mqttSession handle mqtt protocol session
 type mqttSession struct {
-	config         core.Config        // Session Configuration
-	conn           net.Conn           // Underlay network connection handle
-	clientId       string             // Session's client identifier
-	keepalive      uint16             // MQTT protocol kepalive time
-	protocol       uint8              // MQTT protocol version
-	username       string             // Session's user name and password
-	password       string             // Session's password
-	lastMessageIn  time.Time          // Last message's in time
-	lastMessageOut time.Time          // last message out time
-	bytesReceived  int64              // Byte recivied
-	cleanSession   uint8              // Wether the session is clean session
-	willMsg        *base.Message      // MQTT protocol will message
-	waitgroup      sync.WaitGroup     // Waitgroup for all goroutine
-	mountpoint     string             // Topic's mount point
-	stateMutex     sync.Mutex         // Mutex to session state
-	msgState       uint8              // Mqtt message state
-	sessionState   uint8              // Mqtt session state
-	authOptions    *auth.Options      // authentication options
-	aliveTimer     *time.Timer        // Keepalive timer
-	pingTime       *time.Time         // Ping timer
-	availableChan  chan *base.Message // Event chanel for data availabel notification
-	packetChan     chan *mqttPacket   // Mqtt packet channel
-	errorChan      chan int           // Error channel
-	queue          queue.Queue        // Session's queue
+	config         core.Config      // Session Configuration
+	conn           net.Conn         // Underlay network connection handle
+	clientId       string           // Session's client identifier
+	keepalive      uint16           // MQTT protocol kepalive time
+	protocol       uint8            // MQTT protocol version
+	username       string           // Session's user name and password
+	password       string           // Session's password
+	lastMessageIn  time.Time        // Last message's in time
+	lastMessageOut time.Time        // last message out time
+	bytesReceived  int64            // Byte recivied
+	cleanSession   uint8            // Wether the session is clean session
+	willMsg        *base.Message    // MQTT protocol will message
+	waitgroup      sync.WaitGroup   // Waitgroup for all goroutine
+	mountpoint     string           // Topic's mount point
+	stateMutex     sync.Mutex       // Mutex to session state
+	msgState       uint8            // Mqtt message state
+	sessionState   uint8            // Mqtt session state
+	authOptions    *auth.Options    // authentication options
+	aliveTimer     *time.Timer      // Keepalive timer
+	pingTime       *time.Time       // Ping timer
+	availableChan  chan int         // Event chanel for data availabel notification
+	packetChan     chan *mqttPacket // Mqtt packet channel
+	errorChan      chan int         // Error channel
+	queue          queue.Queue      // Session's queue
 }
 
 // newMqttSession create new session  for each client connection
@@ -75,7 +75,7 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		mountpoint:    "",
 		msgState:      mqttMsgStateInvalid,
 		aliveTimer:    palivetimer,
-		availableChan: make(chan *base.Message),
+		availableChan: make(chan int),
 		packetChan:    make(chan *mqttPacket),
 		errorChan:     make(chan int),
 		queue:         nil,
@@ -127,6 +127,7 @@ func (p *mqttSession) Handle() error {
 			p.errorChan <- 1
 			return
 		}
+		p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
 		p.packetChan <- packet
 	}(p)
 
@@ -136,8 +137,8 @@ func (p *mqttSession) Handle() error {
 		select {
 		case <-p.errorChan:
 			err = errors.New("mqtt read error occurred")
-		case msg := <-p.availableChan:
-			err = p.handleDataAvailableNotification(msg)
+		case <-p.availableChan:
+			err = p.handleDataAvailableNotification()
 		case <-p.aliveTimer.C:
 			err = p.handleAliveTimeout()
 		case packet := <-p.packetChan:
@@ -198,7 +199,7 @@ func (p *mqttSession) Destroy() error {
 }
 
 // handleDataAvailableNotification read message from queue and send to client
-func (p *mqttSession) handleDataAvailableNotification(s *base.Message) error {
+func (p *mqttSession) handleDataAvailableNotification() error {
 	for {
 		if msg := p.queue.Front(); msg != nil {
 			packet := makePubPacketByMessage(msg)
@@ -226,7 +227,7 @@ func (p *mqttSession) handleAliveTimeout() error {
 
 // DataAvailable called when queue have data to deal with
 func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
-	p.availableChan <- msg
+	p.availableChan <- 1
 }
 
 // makePubPacketByMessage construct a mqtt packet by message
@@ -261,7 +262,6 @@ func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
 // handlePingReq handle ping request packet
 func (p *mqttSession) handlePingReq(packet *mqttPacket) error {
 	glog.Infof("Received PINGREQ from %s", p.clientId)
-	p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
 	return p.sendPingRsp()
 }
 
@@ -706,7 +706,7 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
 	case 1:
 		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
-		err = p.sendPubAck(mid) // TODO
+		err = p.sendPubAck(mid)
 	case 2:
 		err = errors.New("MQTT qos 2 is not supported now")
 	default:
@@ -721,6 +721,7 @@ func (p *mqttSession) handlePubAck(packet *mqttPacket) error {
 	if p.msgState == mqttMsgStateWaitPubAck {
 		q := queue.GetQueue(p.clientId)
 		q.Pop() // TODO: we should check packet identifier
+		p.setMessageState(mqttMsgStateQueued)
 	}
 	return nil
 }
