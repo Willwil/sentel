@@ -140,8 +140,8 @@ func (p *mqttSession) Handle() error {
 		p.packetChan <- packet
 	}(p)
 
-	var err error
 	for {
+		var err error
 		select {
 		case <-p.errorChan:
 			err = errors.New("mqtt read error occurred")
@@ -160,8 +160,7 @@ func (p *mqttSession) Handle() error {
 		}
 		// Return from session main routine when session is disconnected
 		if err = p.checkSessionState(mqttStateDisconnected); err == nil {
-			glog.Error(err)
-			return nil
+			break
 		}
 	}
 	return nil
@@ -193,15 +192,6 @@ func (p *mqttSession) handleMqttInPacket(packet *mqttPacket) error {
 	return nil
 }
 
-// Destroy will destory the current session
-func (p *mqttSession) Destroy() error {
-	// Stop packet sender goroutine
-	p.waitgroup.Wait()
-	p.conn.Close()
-	p.aliveTimer.Stop()
-	return nil
-}
-
 // handleDataAvailableNotification read message from queue and send to client
 func (p *mqttSession) handleDataAvailableNotification() error {
 	if p.msgState != mqttMsgStateQueued {
@@ -212,7 +202,7 @@ func (p *mqttSession) handleDataAvailableNotification() error {
 			if err := p.sendPublish(msg); err == nil {
 				switch msg.Qos {
 				case 0:
-					// NO client response for qos0 pub packet
+					// No client response for qos0 pub packet
 					p.queue.Pop()
 					continue
 				case 1:
@@ -241,12 +231,6 @@ func (p *mqttSession) BrokerId() string      { return base.GetBrokerId() }
 func (p *mqttSession) Info() *sm.SessionInfo { return nil }
 func (p *mqttSession) IsValid() bool         { return true }
 func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
-
-// handlePingReq handle ping request packet
-func (p *mqttSession) handlePingReq(packet *mqttPacket) error {
-	glog.Infof("Received PINGREQ from %s", p.clientId)
-	return p.sendPingRsp()
-}
 
 // handleConnect handle connect packet
 func (p *mqttSession) handleConnect(packet *mqttPacket) error {
@@ -416,12 +400,12 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	p.cleanSession = cleanSession
 
 	// Create queue for this sesion and otify event service that new session created
-	queue, err := queue.NewQueue(clientId, (cleanSession == 0), p)
-	if err != nil {
+	if q, err := queue.NewQueue(clientId, (cleanSession == 0), p); err != nil {
 		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", clientId)
 		return err
+	} else {
+		p.queue = q
 	}
-	p.queue = queue
 	// Change session state and reply client
 	p.setSessionState(mqttStateConnected)
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
@@ -677,6 +661,12 @@ func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
 		remainingCount: 0,
 	}
 	return p.writePacket(packet)
+}
+
+// handlePingReq handle ping request packet
+func (p *mqttSession) handlePingReq(packet *mqttPacket) error {
+	glog.Infof("Received PINGREQ from %s", p.clientId)
+	return p.sendPingRsp()
 }
 
 // sendPingRsp send ping response to client
