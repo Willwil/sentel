@@ -28,7 +28,6 @@ import (
 	"github.com/cloustone/sentel/core"
 
 	auth "github.com/cloustone/sentel/broker/auth"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/golang/glog"
 )
@@ -98,12 +97,11 @@ func (p *mqttSession) setSessionState(state uint8) {
 
 // checkSessionState check wether the session state is same with expected state
 func (p *mqttSession) checkSessionState(state uint8) error {
-	if p.sessionState == state {
-		return nil
-	} else {
+	if p.sessionState != state {
 		return fmt.Errorf("mqtt: state miss occurred, expected:%s, now:%s",
 			nameOfSessionState(state), nameOfSessionState(p.sessionState))
 	}
+	return nil
 }
 
 // setMessageState set session's state
@@ -187,14 +185,8 @@ func (p *mqttSession) handleMqttInPacket(packet *mqttPacket) error {
 func (p *mqttSession) Destroy() error {
 	// Stop packet sender goroutine
 	p.waitgroup.Wait()
-	if p.conn != nil {
-		p.conn.Close()
-		p.conn = nil
-	}
-	if p.aliveTimer != nil {
-		p.aliveTimer.Stop()
-		p.aliveTimer = nil
-	}
+	p.conn.Close()
+	p.aliveTimer.Stop()
 	return nil
 }
 
@@ -284,6 +276,11 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	if err != nil {
 		return err
 	}
+	// Check connect flags
+	cflags, err := packet.readByte()
+	if err != nil {
+		return err
+	}
 	switch protocolName {
 	case PROTOCOL_NAME_V31:
 		if protocolVersion&0x7F != PROTOCOL_VERSION_V31 {
@@ -302,30 +299,23 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 			return fmt.Errorf("Invalid protocol version '%d' in CONNECT packet", protocolVersion)
 		}
 		p.protocol = mqttProtocol311
+		if cflags&0x01 != 0x00 {
+			return errors.New("Invalid protocol version in connect flags")
+		}
 	default:
 		return fmt.Errorf("Invalid protocol name '%s' in CONNECT packet", protocolName)
 	}
 
-	// Check connect flags
-	cflags, err := packet.readByte()
-	if err != nil {
-		return err
-	}
-	if p.protocol == mqttProtocol311 {
-		if cflags&0x01 != 0x00 {
-			return errors.New("Invalid protocol version in connect flags")
-		}
-	}
+	// Analyze connecton flag
 	cleanSession := (cflags & 0x02) >> 1
 	will := cflags & 0x04
 	willQos := (cflags & 0x18) >> 3
-	if willQos >= 3 { // qos level3 is not supported
+	if willQos >= 3 {
 		return fmt.Errorf("Invalid Will Qos in CONNECT from %s", p.clientId)
 	}
-
 	willRetain := (cflags & 0x20) == 0x20
-	passwordFlag := cflags & 0x40
-	usernameFlag := cflags & 0x80
+
+	// Keepalive and client identifier
 	keepalive, err := packet.readUint16()
 	if err != nil {
 		return err
@@ -334,20 +324,9 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Deal with client identifier
 	clientId, err := packet.readString()
-	if err != nil {
-		return err
-	}
-	if clientId == "" {
-		if p.protocol == mqttProtocol31 {
-			p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
-		} else {
-			option, err := p.config.Bool("mqtt", "allow_zero_length_clientId")
-			if err != nil && (!option || cleanSession == 0) {
-				p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
-				return errors.New("Invalid mqtt packet with client id")
-			}
-			clientId = uuid.NewV4().String()
-		}
+	if err != nil || clientId == "" {
+		p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
+		return errors.New("Invalid mqtt packet with client id")
 	}
 
 	// Deal with topc
@@ -356,11 +335,11 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	var payload []uint8
 
 	if will > 0 {
-		willMsg = new(base.Message)
+		willMsg = &base.Message{}
 		// Get topic
 		topic, err := packet.readString()
 		if err != nil || topic == "" {
-			return nil
+			return mqttErrorInvalidProtocol
 		}
 		willTopic = p.mountpoint + topic
 		if err := checkTopicValidity(willTopic); err != nil {
@@ -369,12 +348,12 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		// Get willtopic's payload
 		willPayloadLength, err := packet.readUint16()
 		if err != nil {
-			return err
+			return mqttErrorInvalidProtocol
 		}
 		if willPayloadLength > 0 {
 			payload, err = packet.readBytes(int(willPayloadLength))
 			if err != nil {
-				return err
+				return mqttErrorInvalidProtocol
 			}
 		}
 	} else {
@@ -383,78 +362,32 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 				return mqttErrorInvalidProtocol
 			}
 		}
-	} // else will
-
-	var username string
-	var password string
-	if usernameFlag > 0 {
-		username, err = packet.readString()
-		if err == nil {
-			if passwordFlag > 0 {
-				password, err = packet.readString()
-				if err == mqttErrorInvalidProtocol {
-					if p.protocol == mqttProtocol31 {
-						passwordFlag = 0
-					} else if p.protocol == mqttProtocol311 {
-						return err
-					} else {
-						return err
-					}
-				}
-			}
-		} else {
-			if p.protocol == mqttProtocol31 {
-				usernameFlag = 0
-			} else {
-				return err
-			}
-		}
-	} else { // username flag
-		if p.protocol == mqttProtocol311 {
-			if passwordFlag > 0 {
-				return mqttErrorInvalidProtocol
-			}
-		}
 	}
-	if usernameFlag > 0 {
-		// Parse mqtt client request options
-		p.authOptions, err = p.parseRequestOptions(clientId, username, password)
-		if err != nil {
-			return err
-		}
 
-		err := auth.Authenticate(p.authOptions)
-		switch err {
-		case nil:
-		case auth.ErrorAuthDenied:
-			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-			p.disconnect()
-			return err
-		default:
-			p.disconnect()
-			return err
-
-		}
-		// Get username and passowrd sucessfuly
-		p.username = username
-		p.password = password
-		// Get anonymous allow configuration
-		allowAnonymous, _ := p.config.Bool("mqtt", "allow_anonymous")
-		if usernameFlag > 0 && allowAnonymous == false {
-			// Dont allow anonymous client connection
-			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-			return mqttErrorInvalidProtocol
-		}
+	// Get user name and password and parse mqtt client request options to authentication
+	if cflags&0x40 == 0 || cflags&0x80 == 0 {
+		return mqttErrorInvalidProtocol
 	}
-	// Check wether username will be used as client id,
-	// The connection request will be refused if the option is set
-	if option, err := p.config.Bool("mqtt", "user_name_as_client_id"); err != nil && option {
-		if p.username != "" {
-			clientId = p.username
-		} else {
-			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-			return mqttErrorInvalidProtocol
-		}
+	username, usrErr := packet.readString()
+	password, pwdErr := packet.readString()
+	if usrErr != nil || pwdErr != nil {
+		return mqttErrorInvalidProtocol
+	}
+	p.authOptions, err = p.parseRequestOptions(clientId, username, password)
+	if err != nil {
+		return err
+	}
+	err = auth.Authenticate(p.authOptions)
+	switch err {
+	case nil:
+	case auth.ErrorAuthDenied:
+		p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
+		p.disconnect()
+		return err
+	default:
+		p.disconnect()
+		return err
+
 	}
 	conack := 0
 
@@ -474,13 +407,8 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 			p.cleanSession = cleanSession
 			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
-				event.Notify(&event.Event{
-					Type:     event.SessionResume,
-					ClientId: clientId,
-				})
-
+				event.Notify(&event.Event{Type: event.SessionResume, ClientId: clientId})
 			}
-
 		}
 	}
 	if willMsg != nil {
