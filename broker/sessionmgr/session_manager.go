@@ -152,6 +152,13 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
 func (p *sessionManager) onSessionDestroy(e *event.Event) {
+	session, _ := p.findSession(e.ClientId)
+	if session != nil && session.IsPersistent() {
+		if q := queue.GetQueue(e.ClientId); q != nil {
+			q.RegisterObserver(nil)
+		}
+		return
+	}
 	p.removeSession(e.ClientId)
 }
 

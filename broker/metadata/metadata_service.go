@@ -144,3 +144,19 @@ func (p *metadataService) getShadowDeviceStatus(clientId string) (*Device, error
 func (p *metadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
 	return nil
 }
+
+// deleteMessageWithValidator delete message in metadata with confition
+func (p *metadataService) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
+}
+
+// deleteMessge delete message specified by idfrom metadata
+func (p *metadataService) deleteMessage(clientId string, pid uint16, direction uint8) {
+	p.deleteMessageWithValidator(clientId, func(msg *base.Message) bool {
+		return msg.PacketId == pid && msg.Direction == direction
+	})
+}
+
+// findMessage retrieve message with packet id
+func (p *metadataService) findMessage(clientid string, pid uint16) *base.Message {
+	return nil
+}
