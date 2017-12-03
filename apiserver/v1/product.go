@@ -32,10 +32,15 @@ type product struct {
 	TimeCreated  time.Time `json:"timeCreated"`
 	TimeModified time.Time `json:"timeModified"`
 	CategoryId   string    `json:"categoryId"`
+	ProductKey   string    `bson:"productKey"`
 }
+// product.
+// req:name,category,desc
+// rsp:id,productkey(both are auto generated and unique)
 type productAddRequest struct {
 	requestBase
 	Name        string `json:"name"`
+	CategoryId  string `json:"categoryId"`
 	Description string `json:"description"`
 }
 
@@ -59,8 +64,10 @@ func registerProduct(ctx echo.Context) error {
 	// product.id and creation time
 	dp := db.Product{
 		Name:        req.Name,
+		CategoryId:  req.CategoryId,
 		Description: req.Description,
 		TimeCreated: time.Now(),
+		ProductKey:  uuid.NewV4().String(),
 	}
 	if err = r.RegisterProduct(&dp); err != nil {
 		return ctx.JSON(http.StatusOK,

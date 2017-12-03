@@ -13,6 +13,7 @@
 package db
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -73,82 +74,82 @@ func NewRegistry(c core.Config) (*Registry, error) {
 	return &Registry{session: session, db: session.DB("registry"), config: c}, nil
 }
 
-func EnsureDevicesIndex(s *mgo.Session) {  
+func EnsureDevicesIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
- 
+
 	c := session.DB("registry").C(dbNameDevices)
- 
+
 	index := mgo.Index{
 		Key:        []string{"Id", "Name", "ProductId", "productKey"},
-		//Unique:     true,
+		Unique:     true,
 		DropDups:   true,
- 		Background: true,
+		Background: true,
 		Sparse:     true,
 	}
 	err := c.EnsureIndex(index)
 	if err != nil {
-		fmt.Printf("Create INDEX error! %s\n", err)
+		glog.Infof("Create dev INDEX error! %s\n", err)
 		panic(err)
 	}
 }
 
-func EnsureProductsIndex(s *mgo.Session) {  
+func EnsureProductsIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
- 
+
 	c := session.DB("registry").C(dbNameProducts)
- 
+
 	index := mgo.Index{
 		Key:        []string{"Id", "Name"},
 		Unique:     true,
 		DropDups:   true,
- 		Background: true,
+		Background: true,
 		Sparse:     true,
 	}
 	err := c.EnsureIndex(index)
 	if err != nil {
-		fmt.Printf("Create INDEX error! %s\n", err)
+		glog.Infof("Create INDEX error! %s\n", err)
 		panic(err)
 	}
 }
 
-func EnsureTenantsIndex(s *mgo.Session) {  
+func EnsureTenantsIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
- 
+
 	c := session.DB("registry").C(dbNameTenants)
- 
+
 	index := mgo.Index{
 		Key:        []string{"Name"},
 		Unique:     true,
 		DropDups:   true,
- 		Background: true,
+		Background: true,
 		Sparse:     true,
 	}
 	err := c.EnsureIndex(index)
 	if err != nil {
-		fmt.Printf("Create INDEX error! %s\n", err)
+		glog.Infof("Create INDEX error! %s\n", err)
 		panic(err)
 	}
 }
 
-func EnsureRulesIndex(s *mgo.Session) {  
+func EnsureRulesIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
- 
+
 	c := session.DB("registry").C(dbNameRules)
- 
+
 	index := mgo.Index{
 		Key:        []string{"Id", "Name"},
 		Unique:     true,
 		DropDups:   true,
- 		Background: true,
+		Background: true,
 		Sparse:     true,
 	}
 	err := c.EnsureIndex(index)
 	if err != nil {
-		fmt.Printf("Create INDEX error! %s\n", err)
+		glog.Infof("Create INDEX error! %s\n", err)
 		panic(err)
 	}
 }
@@ -163,14 +164,14 @@ func (r *Registry) Release() {
 // CheckTenantNamveAvailable return true if name is available
 func (r *Registry) CheckTenantNameAvailable(id string) error {
 	c := r.db.C(dbNameTenants)
-	err := c.Find(bson.M{"Id": id}).One(nil)
+	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(nil)
 	return err
 }
 
 // AddTenant insert a tenant into registry
 func (r *Registry) RegisterTenant(t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	if err := c.Find(bson.M{"Name": t.Name}).One(nil); err == nil {
+	if err := c.Find(bson.M{"Name": bson.M{"$regex": t.Name, "$options": "$i"}}).One(nil); err == nil {
 		return fmt.Errorf("Tenant %s already exist", t.Name)
 	}
 	return c.Insert(t, nil)
@@ -178,13 +179,13 @@ func (r *Registry) RegisterTenant(t *Tenant) error {
 
 func (r *Registry) DeleteTenant(id string) error {
 	c := r.db.C(dbNameTenants)
-	return c.Remove(bson.M{"Name": id})
+	return c.Remove(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}})
 }
 
 func (r *Registry) GetTenant(id string) (*Tenant, error) {
 	c := r.db.C(dbNameTenants)
 	t := Tenant{}
-	err := c.Find(bson.M{"Name": id}).One(&t)
+	err := c.Find(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}).One(&t)
 	if err != nil {
 		return nil, ErrorNotFound
 	}
@@ -193,21 +194,21 @@ func (r *Registry) GetTenant(id string) (*Tenant, error) {
 
 func (r *Registry) UpdateTenant(id string, t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	return c.Update(bson.M{"Name": id}, t)
+	return c.Update(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}, t)
 }
 
 // Product
 // CheckProductNameAvailable check wethere product name is available
 func (r *Registry) CheckProductNameAvailable(p *Product) bool {
 	c := r.db.C(dbNameProducts)
-	err := c.Find(bson.M{"Id": p.Id}).One(nil)
+	err := c.Find(bson.M{"Id": bson.M{"$regex": p.Id, "$options": "$i"}}).One(nil)
 	return err != nil
 }
 
 // RegisterProduct register a product into registry
 func (r *Registry) RegisterProduct(p *Product) error {
 	c := r.db.C(dbNameProducts)
-	if err := c.Find(bson.M{"Name": p.Name}).One(nil); err == nil {
+	if err := c.Find(bson.M{"Name": bson.M{"$regex": p.Name, "$options": "$i"}, "Id": bson.M{"$regex": p.Id, "$options": "$i"}}).One(nil); err == nil {
 		return fmt.Errorf("product %s already exist", p.Name)
 	}
 	return c.Insert(p, nil)
@@ -217,23 +218,61 @@ func (r *Registry) RegisterProduct(p *Product) error {
 // DeleteProduct delete a product from registry
 func (r *Registry) DeleteProduct(id string) error {
 	c := r.db.C(dbNameProducts)
-	return c.Remove(bson.M{"Id": id})
+	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
 }
 
 // GetProduct retrieve product detail information from registry
 func (r *Registry) GetProduct(id string) (*Product, error) {
 	c := r.db.C(dbNameProducts)
 	product := &Product{}
-	err := c.Find(bson.M{"Id": id}).One(product)
+	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(product)
+	return product, err
+}
+
+// GetProduct retrieve product detail information from registry
+func (r *Registry) GetProductByName(name string) (*Product, error) {
+	c := r.db.C(dbNameProducts)
+	product := &Product{}
+	err := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).One(product)
+	return product, err
+}
+
+// GetProduct retrieve product detail information from registry
+// bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}
+func (r *Registry) GetProductByDef(query bson.M) (*Product, error) {
+	c := r.db.C(dbNameProducts)
+	product := &Product{}
+	err := c.Find(query).One(product)
 	return product, err
 }
 
 // GetProductDevices get product's device list
 func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
-	iter := c.Find(bson.M{"ProductId": id}).Limit(1000).Iter()
+	iter := c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Limit(1000).Iter()
 	devices := []Device{}
 	var device Device
+
+	for iter.Next(&device) {
+		devices = append(devices, device)
+	}
+	return devices, nil
+}
+
+// GetProductDevices get product's device list
+func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
+	pro, err := r.GetProductByName(name)
+	if err != nil {
+		return nil, ErrorNotFound
+	}
+
+	devices := []Device{}
+	var device Device
+	//var lastest Device
+
+	c := r.db.C(dbNameDevices)
+
+	iter := c.Find(bson.M{"productKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}}).Limit(1000).Iter()
 
 	for iter.Next(&device) {
 		devices = append(devices, device)
@@ -254,19 +293,17 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 	glog.Infof("RegisterDevice:[%s].%s", dev.Id, dev)
 	c := r.db.C(dbNameDevices)
 	device := Device{}
-	if err := c.Find(bson.M{"Id": dev.Id}).One(&device); err == nil { // found existed device
+	if err := c.Find(bson.M{"Id": bson.M{"$regex": dev.Id, "$options": "$i"}}).One(&device); err == nil { // found existed device
 		return fmt.Errorf("device %s already exist", dev.ProductId)
 	}
 	return c.Insert(dev)
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetMultipleDevices(dev *Device) ([]Device) {
+func (r *Registry) GetMultipleDevices(dev *Device) []Device {
 	c := r.db.C(dbNameDevices)
 	devices := []Device{}
 	var device Device
-
-	fmt.Println("dev name:",dev.Name)
 
 	iter := c.Find(bson.M{"Name": bson.M{"$regex": dev.Name, "$options": "$i"}}).Iter()
 	for iter.Next(&device) {
@@ -281,7 +318,9 @@ func (r *Registry) GetMultipleDevices(dev *Device) ([]Device) {
 func (r *Registry) GetDevice(id string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"Id": id}).One(device)
+	err := c.Find(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}).One(device)
+	v, _ := json.Marshal(*device)
+	glog.Infof("\ndevice %s\n", v)
 	return device, err
 }
 
@@ -298,7 +337,7 @@ func (r *Registry) BulkRegisterDevice(devices []Device) error {
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(id string) error {
 	c := r.db.C(dbNameDevices)
-	return c.Remove(bson.M{"Id": id})
+	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
@@ -314,7 +353,7 @@ func (r *Registry) BulkDeleteDevice(devices []string) error {
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"Id": dev.Id}, dev)
+	return c.Update(bson.M{"Id": bson.M{"$regex": dev.Id, "$options": "$i"}}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry
@@ -332,7 +371,7 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"id": rule.Id}); err == nil { // found existed device
+	if err := c.Find(bson.M{"id": bson.M{"$regex": rule.Id, "$options": "$i"}}); err == nil { // found existed device
 		return fmt.Errorf("rule %s already exist", rule.Id)
 	}
 	return c.Insert(rule)
@@ -342,18 +381,18 @@ func (r *Registry) RegisterRule(rule *Rule) error {
 func (r *Registry) GetRule(id string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
 	rule := &Rule{}
-	err := c.Find(bson.M{"Id": id}).One(rule)
+	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(rule)
 	return rule, err
 }
 
 // DeleteRule delete a rule from registry
 func (r *Registry) DeleteRule(id string) error {
 	c := r.db.C(dbNameRules)
-	return c.Remove(bson.M{"Id": id})
+	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
 }
 
 // UpdateRule update rule information in registry
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	return c.Update(bson.M{"Id": rule.Id}, rule)
+	return c.Update(bson.M{"Id": bson.M{"$regex": rule.Id, "$options": "$i"}}, rule)
 }
