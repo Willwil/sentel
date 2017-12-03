@@ -256,27 +256,44 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 	for iter.Next(&device) {
 		devices = append(devices, device)
 	}
+	iter.Close()
 	return devices, nil
 }
 
 // GetProductDevices get product's device list
+// curl -XGET "http://localhost:4145/api/vi/products/mytest?api-version=v1
 func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	pro, err := r.GetProductByName(name)
 	if err != nil {
 		return nil, ErrorNotFound
 	}
+	v, _ := json.Marshal(pro)
 
+	glog.Infof("\nproduct :%s\n", v)
 	devices := []Device{}
 	var device Device
-	//var lastest Device
+	var lastId string
+	d, _ := json.Marshal(device)
 
 	c := r.db.C(dbNameDevices)
 
-	iter := c.Find(bson.M{"productKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}}).Limit(1000).Iter()
-
-	for iter.Next(&device) {
-		devices = append(devices, device)
+	glog.Infof("\nSearch all device by productName:%s ...\n\n", pro.Name)
+	iter := c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(1000).Iter()
+	for {
+		for iter.Next(&device) {
+			d, _ = json.Marshal(device)
+			lastId =  device.Id
+			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
+			devices = append(devices, device)
+		}
+		if iter.Err() != nil {
+			glog.Infof("\nSearch end!\n\n")
+			iter.Close()
+			break
+		}
+		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(1000).Iter()
 	}
+	iter.Close()
 	return devices, nil
 }
 

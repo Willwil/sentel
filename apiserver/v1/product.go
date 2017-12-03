@@ -230,3 +230,29 @@ func getProductDevices(ctx echo.Context) error {
 		})
 
 }
+
+// getProductDevices retrieve product devices list from registry store
+func getProductDevicesByName(ctx echo.Context) error {
+	// Connect with registry
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	defer r.Release()
+
+	pdevices, err := r.GetProductDevicesByName(ctx.Param("name"))
+	if err != nil {
+		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+	}
+	rdevices := []device{}
+	for _, dev := range pdevices {
+		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
+	}
+	return ctx.JSON(http.StatusOK,
+		&response{
+			RequestId: uuid.NewV4().String(),
+			Success:   true,
+			Result:    rdevices,
+		})
+
+}
