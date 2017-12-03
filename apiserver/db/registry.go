@@ -294,7 +294,6 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	devices := []Device{}
 	var device Device
 	var lastId string
-	i := 0
 	d, _ := json.Marshal(device)
 
 	c := r.db.C(dbNameDevices)
@@ -309,7 +308,6 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 		for iter.Next(&device) {
 			d, _ = json.Marshal(device)
 			lastId = device.Id
-			i++
 			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
 			devices = append(devices, device)
 		}
