@@ -78,6 +78,8 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		packetChan:    make(chan *mqttPacket),
 		errorChan:     make(chan int),
 		queue:         nil,
+		pingTime:      nil,
+		authOptions:   nil,
 	}, nil
 }
 
@@ -329,19 +331,14 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		return errors.New("Invalid mqtt packet with client id")
 	}
 
-	// Deal with topc
-	var willTopic string
-	var willMsg *base.Message
-	var payload []uint8
-
+	// Deal with will message
+	var willMsg *base.Message = nil
 	if will > 0 {
-		willMsg = &base.Message{}
-		// Get topic
 		topic, err := packet.readString()
 		if err != nil || topic == "" {
 			return mqttErrorInvalidProtocol
 		}
-		willTopic = p.mountpoint + topic
+		willTopic := p.mountpoint + topic
 		if err := checkTopicValidity(willTopic); err != nil {
 			return err
 		}
@@ -350,11 +347,18 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		if err != nil {
 			return mqttErrorInvalidProtocol
 		}
+		var payload []uint8
 		if willPayloadLength > 0 {
 			payload, err = packet.readBytes(int(willPayloadLength))
 			if err != nil {
 				return mqttErrorInvalidProtocol
 			}
+		}
+		willMsg = &base.Message{
+			Topic:   willTopic,
+			Qos:     willQos,
+			Retain:  willRetain,
+			Payload: payload,
 		}
 	} else {
 		if p.protocol == mqttProtocol311 {
@@ -380,6 +384,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	err = auth.Authenticate(p.authOptions)
 	switch err {
 	case nil:
+		// Successfuly authenticated
 	case auth.ErrorAuthDenied:
 		p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
 		p.disconnect()
@@ -387,12 +392,11 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	default:
 		p.disconnect()
 		return err
-
 	}
-	conack := 0
 
+	// Find if the client already has an entry, p must be done after any security check
+	conack := 0
 	if cleanSession == 0 {
-		// Find if the client already has an entry, p must be done after any security check
 		if found, _ := sm.FindSession(clientId); found != nil {
 			// Found old session
 			if !found.IsValid() {
@@ -404,39 +408,25 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 					conack |= 0x01
 				}
 			}
-			p.cleanSession = cleanSession
 			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
 				event.Notify(&event.Event{Type: event.SessionResume, ClientId: clientId})
 			}
 		}
 	}
-	if willMsg != nil {
-		p.willMsg = willMsg
-		p.willMsg.Topic = willTopic
-		if len(payload) > 0 {
-			p.willMsg.Payload = payload
-		} else {
-			p.willMsg.Payload = nil
-		}
-		p.willMsg.Qos = willQos
-		p.willMsg.Retain = willRetain
-	}
-	p.clientId = clientId
-	p.cleanSession = cleanSession
-	p.pingTime = nil
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
-	sm.DeleteMessageWithValidator(
-		clientId,
-		func(msg *base.Message) bool {
-			err := auth.Authorize(clientId, username, willTopic, auth.AclRead, nil)
-			return err != nil
-		})
-
-	// Change session state and reply client
-	p.setSessionState(mqttStateConnected)
-	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
+	if willMsg != nil {
+		sm.DeleteMessageWithValidator(
+			clientId,
+			func(msg *base.Message) bool {
+				err := auth.Authorize(clientId, username, willMsg.Topic, auth.AclRead, nil)
+				return err != nil
+			})
+	}
+	p.willMsg = willMsg
+	p.clientId = clientId
+	p.cleanSession = cleanSession
 
 	// Create queue for this sesion and otify event service that new session created
 	queue, err := queue.NewQueue(clientId, (cleanSession == 0), p)
@@ -445,6 +435,9 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		return err
 	}
 	p.queue = queue
+	// Change session state and reply client
+	p.setSessionState(mqttStateConnected)
+	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 	sm.RegisterSession(p)
 	event.Notify(&event.Event{
 		Type:     event.SessionCreate,
