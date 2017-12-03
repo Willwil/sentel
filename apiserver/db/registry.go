@@ -32,6 +32,8 @@ const (
 	dbNameRules    = "rules"
 )
 
+const PageSize = 1000
+
 var (
 	ErrorNotFound = errors.New("not found")
 )
@@ -265,6 +267,7 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	pro, err := r.GetProductByName(name)
 	if err != nil {
+		glog.Infof("\nNot found! Product name:%s\n\n", name)
 		return nil, ErrorNotFound
 	}
 	v, _ := json.Marshal(pro)
@@ -278,7 +281,7 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
 
 	glog.Infof("\nSearch all device by productName:%s ...\n\n", pro.Name)
-	iter := c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(1000).Iter()
+	iter := c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	for {
 		for iter.Next(&device) {
 			d, _ = json.Marshal(device)
@@ -291,7 +294,7 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 			iter.Close()
 			break
 		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(1000).Iter()
+		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
