@@ -32,7 +32,7 @@ const (
 	dbNameRules    = "rules"
 )
 
-const PageSize = 1000
+const PageSize = 3
 
 var (
 	ErrorNotFound = errors.New("not found")
@@ -261,6 +261,10 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 
 	iter := c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	for {
+		if iter.Next(&device) == false {
+			glog.Infof("\nSearch end!\n\n")
+			break
+		}
 		for iter.Next(&device) {
 			lastId = device.Id
 			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
@@ -268,10 +272,9 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 		}
 		if iter.Err() != nil {
 			glog.Infof("\nSearch end!\n\n")
-			iter.Close()
 			break
 		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+		iter = c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
@@ -291,6 +294,7 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	devices := []Device{}
 	var device Device
 	var lastId string
+	i := 0
 	d, _ := json.Marshal(device)
 
 	c := r.db.C(dbNameDevices)
@@ -298,18 +302,24 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 	glog.Infof("\nSearch all device by productName:%s ...\n\n", pro.Name)
 	iter := c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	for {
+		if iter.Next(&device) == false {
+			glog.Infof("\nSearch end!\n\n")
+			break
+		}
 		for iter.Next(&device) {
 			d, _ = json.Marshal(device)
 			lastId = device.Id
+			i++
 			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
 			devices = append(devices, device)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
-			iter.Close()
-			break
+			if i < PageSize {
+				glog.Infof("\nSearch end!\n\n")
+				break
+			}
 		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+		iter = c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
