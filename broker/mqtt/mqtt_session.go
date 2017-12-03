@@ -15,6 +15,7 @@ package mqtt
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 	"strings"
@@ -58,20 +59,28 @@ type mqttSession struct {
 	packetChan     chan *mqttPacket // Mqtt packet channel
 	errorChan      chan int         // Error channel
 	queue          queue.Queue      // Session's queue
+	nextPacketId   uint16           // Next Packet id index
 }
 
 // newMqttSession create new session  for each client connection
-func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
-	// make a persudo alive timer for convenience, and stop it at first
+func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
+	// Make topic mount point
+	tenant := mqtt.Config.MustString("broker", "tenant")
+	product := mqtt.Config.MustString("broker", "product")
+	mountpoint := tenant + "/" + product
+
+	// Make a persudo alive timer for convenience, and stop it at first
 	palivetimer := time.NewTimer(time.Duration(20 * time.Second))
 	palivetimer.Stop()
+
+	// Create session instance
 	return &mqttSession{
-		config:        m.Config,
+		config:        mqtt.Config,
 		conn:          conn,
+		mountpoint:    mountpoint,
 		bytesReceived: 0,
 		sessionState:  mqttStateNew,
 		protocol:      mqttProtocolInvalid,
-		mountpoint:    "",
 		msgState:      mqttMsgStateQueued,
 		aliveTimer:    palivetimer,
 		availableChan: make(chan int),
@@ -80,6 +89,7 @@ func newMqttSession(m *mqttService, conn net.Conn) (*mqttSession, error) {
 		queue:         nil,
 		pingTime:      nil,
 		authOptions:   nil,
+		nextPacketId:  0,
 	}, nil
 }
 
@@ -199,8 +209,7 @@ func (p *mqttSession) handleDataAvailableNotification() error {
 	}
 	for {
 		if msg := p.queue.Front(); msg != nil {
-			packet := makePubPacketByMessage(msg)
-			if err := p.writePacket(packet); err == nil {
+			if err := p.sendPublish(msg); err == nil {
 				switch msg.Qos {
 				case 0:
 					// NO client response for qos0 pub packet
@@ -225,29 +234,6 @@ func (p *mqttSession) handleAliveTimeout() error {
 // DataAvailable called when queue have data to deal with
 func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
 	p.availableChan <- 1
-}
-
-// makePubPacketByMessage construct a mqtt packet by message
-func makePubPacketByMessage(msg *base.Message) *mqttPacket {
-	// Write data back to client
-	length := len(msg.Topic)
-	if msg.Qos > 0 {
-		length += 2
-	}
-	packet := mqttPacket{
-		command:         PUBLISH,
-		qos:             msg.Qos,
-		retain:          msg.Retain,
-		dup:             msg.Dup,
-		remainingLength: length,
-	}
-	packet.initializePacket()
-	packet.writeString(msg.Topic)
-	if msg.Qos > 0 {
-		packet.writeUint16(msg.PacketId)
-	}
-	packet.writeBytes(msg.Payload)
-	return &packet
 }
 
 func (p *mqttSession) Id() string            { return p.clientId }
@@ -747,50 +733,37 @@ func (p *mqttSession) sendPubComp(mid uint16) error {
 	return p.sendCommandWithMid(PUBCOMP, mid, false)
 }
 
-func (p *mqttSession) updateOutMessage(mid uint16, state int) error {
-	return nil
-}
-
-func (p *mqttSession) generateMid() uint16 {
-	// TODO: generate message ID
-	return 0
-}
-
-func (p *mqttSession) sendPublish(subQos uint8, srcQos uint8, topic string, payload []uint8) error {
-	/* Check for ACL topic accesp. */
-	// TODO
-
-	var qos uint8
-	if option, err := p.config.Bool("mqtt", "upgrade_outgoing_qos"); err != nil && option {
-		qos = subQos
-	} else {
-		if srcQos > subQos {
-			qos = subQos
-		} else {
-			qos = srcQos
-		}
+func (p *mqttSession) makePacketId() uint16 {
+	if p.nextPacketId < math.MaxUint16 {
+		pid := p.nextPacketId
+		p.nextPacketId += 1
+		return pid
 	}
+	p.nextPacketId = 0
+	return p.nextPacketId
+}
 
-	var mid uint16
+func (p *mqttSession) sendPublish(msg *base.Message) error {
+	qos := msg.Qos
+	pid := uint16(0)
+
+	// TODO:upgrade qos
 	if qos > 0 {
-		mid = p.generateMid()
-	} else {
-		mid = 0
+		pid = p.makePacketId()
 	}
 
 	packet := newMqttPacket()
 	packet.command = PUBLISH
-	packet.remainingLength = 2 + len(topic) + len(payload)
+	packet.remainingLength = 2 + len(msg.Topic) + len(msg.Payload)
 	if qos > 0 {
 		packet.remainingLength += 2
 	}
 	packet.initializePacket()
-	packet.writeString(topic)
+	packet.writeString(msg.Topic)
 	if qos > 0 {
-		packet.writeUint16(mid)
+		packet.writeUint16(pid)
 	}
-	packet.writeBytes(payload)
-
+	packet.writeBytes(msg.Payload)
 	return p.writePacket(&packet)
 }
 
@@ -855,8 +828,4 @@ func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (
 		}
 	}
 	return options, nil
-}
-
-func (p *mqttSession) getMountPoint() string {
-	return p.mountpoint // TODO
 }
