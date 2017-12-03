@@ -30,6 +30,7 @@ type Product struct {
 	TimeCreated  time.Time `bson:"TimeCreated"`
 	TimeModified time.Time `bson:"TimeModified"`
 	CategoryId   string    `bson:"CategoryId"`
+	ProductKey   string    `bson:"productKey"`
 }
 
 // Device

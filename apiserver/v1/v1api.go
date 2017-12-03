@@ -107,6 +107,7 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 	g.DELETE(":id", deleteProduct)
 	g.GET(":id", getProduct)
 	g.GET(":id/devices", getProductDevices)
+	g.GET(":name", getProductDevicesByName)
 
 	// Rule
 	g = p.echo.Group("/api/v1/rules/")
