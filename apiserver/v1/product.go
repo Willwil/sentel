@@ -34,6 +34,7 @@ type product struct {
 	CategoryId   string    `json:"categoryId"`
 	ProductKey   string    `bson:"productKey"`
 }
+
 // product.
 // req:name,category,desc
 // rsp:id,productkey(both are auto generated and unique)
