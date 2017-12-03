@@ -39,9 +39,9 @@ func DeleteMessageWithValidator(clientId string, validator func(*base.Message) b
 }
 
 // DeleteMessge delete message specified by id from session manager
-func DeleteMessage(clientId string, mid uint16, direction uint8) {
+func DeleteMessage(clientId string, pid uint16, direction uint8) {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	sm.deleteMessage(clientId, mid, direction)
+	sm.deleteMessage(clientId, pid, direction)
 }
 
 // FindMessage return message already existed in session manager

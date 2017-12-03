@@ -24,6 +24,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/broker/metadata"
 	"github.com/cloustone/sentel/broker/queue"
 	sm "github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
@@ -127,8 +128,6 @@ func (p *mqttSession) setMessageState(state uint8) {
 
 // Handle is mainprocessor for iot device client
 func (p *mqttSession) Handle() error {
-	glog.Infof("Handling session:%s", p.clientId)
-
 	// Start goroutine to read packet from client
 	go func(p *mqttSession) {
 		packet := &mqttPacket{}
@@ -141,7 +140,6 @@ func (p *mqttSession) Handle() error {
 		p.packetChan <- packet
 	}(p)
 
-	defer event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
 	var err error
 	for {
 		select {
@@ -154,17 +152,19 @@ func (p *mqttSession) Handle() error {
 		case packet := <-p.packetChan:
 			err = p.handleMqttInPacket(packet)
 		}
+		// Disconnect the connection when any errors occured
 		if err != nil {
 			glog.Error(err)
+			p.disconnect(err)
 			return err
 		}
-		// Check sesstion state
-		if err = p.checkSessionState(mqttStateDisconnected); err != nil {
+		// Return from session main routine when session is disconnected
+		if err = p.checkSessionState(mqttStateDisconnected); err == nil {
 			glog.Error(err)
-			return err
+			return nil
 		}
 	}
-	return err
+	return nil
 }
 
 // handleMqttInPacket handle all mqtt in packet
@@ -373,10 +373,10 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		// Successfuly authenticated
 	case auth.ErrorAuthDenied:
 		p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-		p.disconnect()
+		p.disconnect(err)
 		return err
 	default:
-		p.disconnect()
+		p.disconnect(err)
 		return err
 	}
 
@@ -403,12 +403,13 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	// Remove any queued messages that are no longer allowd through ACL
 	// Assuming a possible change of username
 	if willMsg != nil {
-		sm.DeleteMessageWithValidator(
+		metadata.DeleteMessageWithValidator(
 			clientId,
 			func(msg *base.Message) bool {
 				err := auth.Authorize(clientId, username, willMsg.Topic, auth.AclRead, nil)
 				return err != nil
 			})
+		metadata.AddMessage(clientId, willMsg)
 	}
 	p.willMsg = willMsg
 	p.clientId = clientId
@@ -443,27 +444,41 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 		return mqttErrorInvalidProtocol
 	}
 	if p.protocol == mqttProtocol311 && (packet.command&0x0F) != 0x00 {
-		p.disconnect()
 		return mqttErrorInvalidProtocol
 	}
+	// WillMessage must be deleted when received disconnect packet
+	if p.willMsg != nil {
+		sm.DeleteMessage(p.clientId, p.willMsg.PacketId, 0)
+		p.willMsg = nil
+	}
 	p.setSessionState(mqttStateDisconnecting)
-	p.disconnect()
+	p.disconnect(nil)
 	return nil
 }
 
 // disconnect will disconnect current connection because of protocol error
-func (p *mqttSession) disconnect() {
+func (p *mqttSession) disconnect(err error) {
 	if err := p.checkSessionState(mqttStateDisconnected); err == nil {
+		// Publish will message if session is not normoally disconnected
+		if err != nil && p.willMsg != nil {
+			event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId,
+				Detail: &event.TopicPublishDetail{
+					Topic:   p.willMsg.Topic,
+					Payload: p.willMsg.Payload,
+					Qos:     p.willMsg.Qos,
+					Retain:  p.willMsg.Retain,
+				}})
+		}
 		if p.cleanSession > 0 {
 			event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
-			p.clientId = ""
 		}
 		p.setSessionState(mqttStateDisconnected)
-		if p.aliveTimer != nil {
-			p.aliveTimer.Stop()
-		}
+		p.aliveTimer.Stop()
 		p.conn.Close()
 		p.conn = nil
+		// Close channel
+		close(p.availableChan)
+		close(p.packetChan)
 	}
 }
 
