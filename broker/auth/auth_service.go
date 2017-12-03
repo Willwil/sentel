@@ -110,7 +110,7 @@ func (p *authService) Stop() {
 }
 
 // CheckAcl check client's access control right
-func (p *authService) authorize(clientid string, username string, topic string, access int, opt *Options) error {
+func (p *authService) authorize(clientid string, topic string, access int, opt *Options) error {
 	return nil
 }
 

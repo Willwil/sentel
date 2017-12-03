@@ -19,7 +19,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -41,16 +40,9 @@ type mqttSession struct {
 	clientId       string           // Session's client identifier
 	keepalive      uint16           // MQTT protocol kepalive time
 	protocol       uint8            // MQTT protocol version
-	username       string           // Session's user name and password
-	password       string           // Session's password
-	lastMessageIn  time.Time        // Last message's in time
-	lastMessageOut time.Time        // last message out time
-	bytesReceived  int64            // Byte recivied
 	cleanSession   uint8            // Wether the session is clean session
 	willMsg        *base.Message    // MQTT protocol will message
-	waitgroup      sync.WaitGroup   // Waitgroup for all goroutine
 	mountpoint     string           // Topic's mount point
-	stateMutex     sync.Mutex       // Mutex to session state
 	msgState       uint8            // Mqtt message state
 	sessionState   uint8            // Mqtt session state
 	authOptions    *auth.Options    // authentication options
@@ -61,6 +53,9 @@ type mqttSession struct {
 	errorChan      chan int         // Error channel
 	queue          queue.Queue      // Session's queue
 	nextPacketId   uint16           // Next Packet id index
+	lastMessageIn  time.Time        // Last message's in time
+	lastMessageOut time.Time        // last message out time
+	bytesReceived  int64            // Byte recivied
 }
 
 // newMqttSession create new session  for each client connection
@@ -91,6 +86,8 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		pingTime:      nil,
 		authOptions:   nil,
 		nextPacketId:  0,
+		clientId:      "",
+		willMsg:       nil,
 	}, nil
 }
 
@@ -101,11 +98,10 @@ func checkTopicValidity(topic string) error {
 
 // setSessionState set session's state
 func (p *mqttSession) setSessionState(state uint8) {
-	old := p.sessionState
-	p.sessionState = state
 	glog.Infof("mqtt: client '%s' session state changed (%s->%s)", p.clientId,
-		nameOfSessionState(old),
+		nameOfSessionState(p.sessionState),
 		nameOfSessionState(state))
+	p.sessionState = state
 }
 
 // checkSessionState check wether the session state is same with expected state
@@ -119,11 +115,10 @@ func (p *mqttSession) checkSessionState(state uint8) error {
 
 // setMessageState set session's state
 func (p *mqttSession) setMessageState(state uint8) {
-	old := p.msgState
-	p.msgState = state
 	glog.Infof("mqtt: client '%s' message state changed (%s->%s)", p.clientId,
-		nameOfMessageState(old),
+		nameOfMessageState(p.msgState),
 		nameOfMessageState(state))
+	p.msgState = state
 }
 
 // Handle is mainprocessor for iot device client
@@ -150,7 +145,7 @@ func (p *mqttSession) Handle() error {
 		case <-p.aliveTimer.C:
 			err = p.handleAliveTimeout()
 		case packet := <-p.packetChan:
-			err = p.handleMqttInPacket(packet)
+			err = p.handleMqttPacket(packet)
 		}
 		// Disconnect the connection when any errors occured
 		if err != nil {
@@ -167,8 +162,13 @@ func (p *mqttSession) Handle() error {
 }
 
 // handleMqttInPacket handle all mqtt in packet
-func (p *mqttSession) handleMqttInPacket(packet *mqttPacket) error {
-	glog.Infof("%s,%s", nameOfSessionState(p.sessionState), nameOfMessageState(p.msgState))
+func (p *mqttSession) handleMqttPacket(packet *mqttPacket) error {
+	glog.Infof("mqtt packet type:%s, clientId:%s, session state:%s, message state:%s",
+		nameOfPacket(packet),
+		p.clientId,
+		nameOfSessionState(p.sessionState),
+		nameOfMessageState(p.msgState))
+
 	switch packet.command & 0xF0 {
 	case PINGREQ:
 		return p.handlePingReq(packet)
@@ -234,8 +234,6 @@ func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
 
 // handleConnect handle connect packet
 func (p *mqttSession) handleConnect(packet *mqttPacket) error {
-	glog.Infof("Handling CONNECT packet from %s", p.clientId)
-
 	if err := p.checkSessionState(mqttStateNew); err != nil {
 		return err
 	}
@@ -363,6 +361,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		p.disconnect(err)
 		return err
 	}
+	p.clientId = p.authOptions.ClientId
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
@@ -390,7 +389,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		metadata.DeleteMessageWithValidator(
 			clientId,
 			func(msg *base.Message) bool {
-				err := auth.Authorize(clientId, username, willMsg.Topic, auth.AclRead, nil)
+				err := auth.Authorize(clientId, msg.Topic, auth.AclRead, nil)
 				return err != nil
 			})
 		metadata.AddMessage(clientId, willMsg)
@@ -422,8 +421,6 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 // handleDisconnect handle disconnect packet
 func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
-	glog.Infof("Received DISCONNECT from %s", p.clientId)
-
 	if packet.remainingLength != 0 {
 		return mqttErrorInvalidProtocol
 	}
@@ -432,7 +429,7 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 	}
 	// WillMessage must be deleted when received disconnect packet
 	if p.willMsg != nil {
-		sm.DeleteMessage(p.clientId, p.willMsg.PacketId, 0)
+		metadata.DeleteMessage(p.clientId, p.willMsg.PacketId, 0)
 		p.willMsg = nil
 	}
 	p.setSessionState(mqttStateDisconnecting)
@@ -469,8 +466,6 @@ func (p *mqttSession) disconnect(err error) {
 // handleSubscribe handle subscribe packet
 func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 	payload := make([]uint8, 0)
-
-	glog.Infof("Received SUBSCRIBE from %s", p.clientId)
 	if p.protocol == mqttProtocol311 && packet.command&0x0F != 0x02 {
 		return mqttErrorInvalidProtocol
 	}
@@ -516,8 +511,6 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 
 // handleUnsubscribe handle unsubscribe packet
 func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
-	glog.Infof("Received UNSUBSCRIBE from %s", p.clientId)
-
 	if p.protocol == mqttProtocol311 && (packet.command&0x0f) != 0x02 {
 		return mqttErrorInvalidProtocol
 	}
@@ -539,15 +532,13 @@ func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
 			Detail:   event.TopicUnsubscribeDetail{Topic: topic}})
 	}
 
-	return p.sendCommandWithMid(UNSUBACK, pid, false)
+	return p.sendCommandWithPacketId(UNSUBACK, pid, false)
 }
 
 // handlePublish handle publish packet
 func (p *mqttSession) handlePublish(packet *mqttPacket) error {
-	glog.Infof("Received PUBLISH from %s", p.clientId)
-
 	var topic string
-	var mid uint16
+	var pid uint16
 	var err error
 	var payload []uint8
 
@@ -566,9 +557,8 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		return fmt.Errorf("Invalid topic in PUBLISH(%s) from %s", topic, p.clientId)
 	}
 	topic = p.mountpoint + topic
-
 	if qos > 0 {
-		mid, err = packet.readUint16()
+		pid, err = packet.readUint16()
 		if err != nil {
 			return err
 		}
@@ -587,19 +577,15 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		}
 	}
 	// Check for topic access
-	err = auth.Authorize(p.clientId, p.username, topic, auth.AclWrite, nil)
-	switch err {
-	case auth.ErrorAuthDenied:
-		return mqttErrorInvalidProtocol
-	default:
-		return err
+	if err := auth.Authorize(p.clientId, topic, auth.AclWrite, nil); err != nil {
+		return mqttErrorConnectRefused
 	}
 	glog.Infof("Received PUBLISH from %s(d:%d, q:%d r:%d, m:%d, '%s',..(%d)bytes",
-		p.clientId, dup, qos, retain, mid, topic, payloadlen)
+		p.clientId, dup, qos, retain, pid, topic, payloadlen)
 
 	// Check wether the message has been stored :TODO
 	dup = 0
-	if qos > 0 && sm.FindMessage(p.clientId, mid, 1) != nil {
+	if qos > 0 && sm.FindMessage(p.clientId, pid, 1) != nil {
 		dup = 1
 	}
 	detail := event.TopicPublishDetail{
@@ -615,7 +601,7 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
 	case 1:
 		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
-		err = p.sendPubAck(mid)
+		err = p.sendPubAck(pid)
 	case 2:
 		err = errors.New("MQTT qos 2 is not supported now")
 	default:
@@ -645,13 +631,13 @@ func (p *mqttSession) handlePubRel(packet *mqttPacket) error {
 		}
 	}
 	// Get message identifier
-	mid, err := packet.readUint16()
+	pid, err := packet.readUint16()
 	if err != nil {
 		return err
 	}
 
-	//sm.DeleteMessage(p.clientId, mid, sm.MessageDirectionIn) // TODO:Qos2
-	return p.sendPubComp(mid)
+	//sm.DeleteMessage(p.clientId, pid, sm.MessageDirectionIn) // TODO:Qos2
+	return p.sendPubComp(pid)
 }
 
 // sendSimpleCommand send a simple command
@@ -665,20 +651,16 @@ func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
 
 // handlePingReq handle ping request packet
 func (p *mqttSession) handlePingReq(packet *mqttPacket) error {
-	glog.Infof("Received PINGREQ from %s", p.clientId)
 	return p.sendPingRsp()
 }
 
 // sendPingRsp send ping response to client
 func (p *mqttSession) sendPingRsp() error {
-	glog.Infof("Sending PINGRESP to %s", p.clientId)
 	return p.sendSimpleCommand(PINGRESP)
 }
 
 // sendConnAck send connection response to client
 func (p *mqttSession) sendConnAck(ack uint8, result uint8) error {
-	glog.Infof("Sending CONNACK from %s", p.clientId)
-
 	packet := &mqttPacket{
 		command:         CONNACK,
 		remainingLength: 2,
@@ -691,23 +673,22 @@ func (p *mqttSession) sendConnAck(ack uint8, result uint8) error {
 }
 
 // sendSubAck send subscription acknowledge to client
-func (p *mqttSession) sendSubAck(mid uint16, payload []uint8) error {
-	glog.Infof("Sending SUBACK on %s", p.clientId)
+func (p *mqttSession) sendSubAck(pid uint16, payload []uint8) error {
 	packet := &mqttPacket{
 		command:         SUBACK,
 		remainingLength: 2 + int(len(payload)),
 	}
 
 	packet.initializePacket()
-	packet.writeUint16(mid)
+	packet.writeUint16(pid)
 	if len(payload) > 0 {
 		packet.writeBytes(payload)
 	}
 	return p.writePacket(packet)
 }
 
-// sendCommandWithMid send command with message identifier
-func (p *mqttSession) sendCommandWithMid(command uint8, mid uint16, dup bool) error {
+// sendCommandWithPacketId send command with message identifier
+func (p *mqttSession) sendCommandWithPacketId(command uint8, pid uint16, dup bool) error {
 	packet := &mqttPacket{
 		command:         command,
 		remainingLength: 2,
@@ -716,26 +697,26 @@ func (p *mqttSession) sendCommandWithMid(command uint8, mid uint16, dup bool) er
 		packet.command |= 8
 	}
 	packet.initializePacket()
-	packet.payload[packet.pos+0] = uint8((mid & 0xFF00) >> 8)
-	packet.payload[packet.pos+1] = uint8(mid & 0xff)
+	packet.payload[packet.pos+0] = uint8((pid & 0xFF00) >> 8)
+	packet.payload[packet.pos+1] = uint8(pid & 0xff)
 	return p.writePacket(packet)
 }
 
 // sendPubAck
-func (p *mqttSession) sendPubAck(mid uint16) error {
-	glog.Infof("Sending PUBACK to %s with MID:%d", p.clientId, mid)
-	return p.sendCommandWithMid(PUBACK, mid, false)
+func (p *mqttSession) sendPubAck(pid uint16) error {
+	glog.Infof("Sending PUBACK to %s with MID:%d", p.clientId, pid)
+	return p.sendCommandWithPacketId(PUBACK, pid, false)
 }
 
 // sendPubRec
-func (p *mqttSession) sendPubRec(mid uint16) error {
-	glog.Infof("Sending PUBRREC to %s with MID:%d", p.clientId, mid)
-	return p.sendCommandWithMid(PUBREC, mid, false)
+func (p *mqttSession) sendPubRec(pid uint16) error {
+	glog.Infof("Sending PUBRREC to %s with MID:%d", p.clientId, pid)
+	return p.sendCommandWithPacketId(PUBREC, pid, false)
 }
 
-func (p *mqttSession) sendPubComp(mid uint16) error {
-	glog.Infof("Sending PUBCOMP to %s with MID:%d", p.clientId, mid)
-	return p.sendCommandWithMid(PUBCOMP, mid, false)
+func (p *mqttSession) sendPubComp(pid uint16) error {
+	glog.Infof("Sending PUBCOMP to %s with MID:%d", p.clientId, pid)
+	return p.sendCommandWithPacketId(PUBCOMP, pid, false)
 }
 
 func (p *mqttSession) makePacketId() uint16 {

@@ -51,9 +51,9 @@ func GetVersion() string {
 	return AuthServiceVersion
 }
 
-func Authorize(clientId string, userName string, topic string, access int, opt *Options) error {
+func Authorize(clientId string, topic string, access int, opt *Options) error {
 	auth := base.GetService(ServiceName).(*authService)
-	return auth.authorize(clientId, userName, topic, access, opt)
+	return auth.authorize(clientId, topic, access, opt)
 }
 
 func Authenticate(opt *Options) error {

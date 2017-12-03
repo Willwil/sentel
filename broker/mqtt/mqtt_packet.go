@@ -60,7 +60,7 @@ type mqttPacket struct {
 	dup             bool
 	qos             uint8
 	retain          bool
-	mid             uint16
+	pid             uint16
 	pos             int
 	toprocess       int
 	length          int
@@ -69,6 +69,42 @@ type mqttPacket struct {
 	remainingLength int
 	payload         []uint8
 	buf             []uint8
+}
+
+func nameOfPacket(packet *mqttPacket) string {
+	switch packet.command {
+	case INVALID:
+		return "Invalid"
+	case CONNECT:
+		return "CONNECT"
+	case CONNACK:
+		return "CONNACK"
+	case PUBLISH:
+		return "PUBLISH"
+	case PUBACK:
+		return "PUBACK"
+	case PUBREC:
+		return "PUBREC"
+	case PUBREL:
+		return "PUBREL"
+	case PUBCOMP:
+		return "PUBCOMP"
+	case SUBSCRIBE:
+		return "SUBSCRIBE"
+	case SUBACK:
+		return "SUBACK"
+	case UNSUBSCRIBE:
+		return "UNSUBSCRIBE"
+	case UNSUBACK:
+		return "UNSUBACK"
+	case PINGREQ:
+		return "PINGREG"
+	case PINGRESP:
+		return "PINGRESP"
+	case DISCONNECT:
+		return "DISCONNECT"
+	}
+	return "Invalid"
 }
 
 func newMqttPacket() mqttPacket {
