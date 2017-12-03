@@ -486,25 +486,23 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 	payload := make([]uint8, 0)
 
 	glog.Infof("Received SUBSCRIBE from %s", p.clientId)
-	if p.protocol == mqttProtocol311 {
-		if (packet.command & 0x0F) != 0x02 {
-			return mqttErrorInvalidProtocol
-		}
+	if p.protocol == mqttProtocol311 && packet.command&0x0F != 0x02 {
+		return mqttErrorInvalidProtocol
 	}
-	// Get message identifier
-	mid, err := packet.readUint16()
+	// Get packet identifier
+	pid, err := packet.readUint16()
 	if err != nil {
 		return err
 	}
 	// Deal each subscription
 	for packet.pos < packet.remainingLength {
-		sub := ""
+		topic := ""
 		qos := uint8(0)
-		if sub, err = packet.readString(); err != nil {
+		if topic, err = packet.readString(); err != nil {
 			return err
 		}
-		if checkTopicValidity(sub) != nil {
-			glog.Errorf("Invalid subscription topic %s from %s, disconnecting", sub, p.clientId)
+		if checkTopicValidity(topic) != nil {
+			glog.Errorf("Invalid subscription topic %s from %s, disconnecting", topic, p.clientId)
 			return mqttErrorInvalidProtocol
 		}
 		if qos, err = packet.readByte(); err != nil {
@@ -512,15 +510,15 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 		}
 
 		if qos > 2 {
-			glog.Errorf("Invalid Qos in subscription %s from %s", sub, p.clientId)
+			glog.Errorf("Invalid Qos in subscription %s from %s", topic, p.clientId)
 			return mqttErrorInvalidProtocol
 		}
 
-		sub = p.mountpoint + sub
+		topic = p.mountpoint + topic
 		if qos != 0x80 {
 			event.Notify(&event.Event{Type: event.TopicSubscribe,
 				ClientId: p.clientId,
-				Detail:   event.TopicSubscribeDetail{Topic: sub, Qos: qos, Retain: true}})
+				Detail:   event.TopicSubscribeDetail{Topic: topic, Qos: qos, Retain: true}})
 		}
 		payload = append(payload, qos)
 	}
@@ -528,7 +526,7 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 	if p.protocol == mqttProtocol311 && len(payload) == 0 {
 		return mqttErrorInvalidProtocol
 	}
-	return p.sendSubAck(mid, payload)
+	return p.sendSubAck(pid, payload)
 }
 
 // handleUnsubscribe handle unsubscribe packet
@@ -538,23 +536,25 @@ func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
 	if p.protocol == mqttProtocol311 && (packet.command&0x0f) != 0x02 {
 		return mqttErrorInvalidProtocol
 	}
-	mid, err := packet.readUint16()
+	pid, err := packet.readUint16()
 	if err != nil {
 		return err
 	}
 	// Iterate all subscription
 	for packet.pos < packet.remainingLength {
-		sub, err := packet.readString()
+		topic, err := packet.readString()
 		if err != nil {
 			return mqttErrorInvalidProtocol
 		}
-		if err := checkTopicValidity(sub); err != nil {
+		if err := checkTopicValidity(topic); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.clientId)
 		}
-		event.Notify(&event.Event{Type: event.TopicUnsubscribe, ClientId: p.clientId, Detail: event.TopicUnsubscribeDetail{Topic: sub}})
+		event.Notify(&event.Event{Type: event.TopicUnsubscribe,
+			ClientId: p.clientId,
+			Detail:   event.TopicUnsubscribeDetail{Topic: topic}})
 	}
 
-	return p.sendCommandWithMid(UNSUBACK, mid, false)
+	return p.sendCommandWithMid(UNSUBACK, pid, false)
 }
 
 // handlePublish handle publish packet
@@ -568,7 +568,7 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 
 	dup := (packet.command & 0x08) >> 3
 	qos := (packet.command & 0x06) >> 1
-	if qos == 3 {
+	if qos > 2 {
 		return fmt.Errorf("Invalid Qos in PUBLISH from %s, disconnectiing", p.clientId)
 	}
 	retain := (packet.command & 0x01)
