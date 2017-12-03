@@ -249,14 +249,29 @@ func (r *Registry) GetProductByDef(query bson.M) (*Product, error) {
 }
 
 // GetProductDevices get product's device list
+// mongo golang:
+// http://www.jianshu.com/p/b63e5cfa4ce5
 func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
-	iter := c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Limit(1000).Iter()
+
 	devices := []Device{}
 	var device Device
+	var lastId string
+	d, _ := json.Marshal(device)
 
-	for iter.Next(&device) {
-		devices = append(devices, device)
+	iter := c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+	for {
+		for iter.Next(&device) {
+			lastId = device.Id
+			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
+			devices = append(devices, device)
+		}
+		if iter.Err() != nil {
+			glog.Infof("\nSearch end!\n\n")
+			iter.Close()
+			break
+		}
+		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Select(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
