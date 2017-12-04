@@ -667,8 +667,10 @@ func (p *mqttSession) handlePubRel(packet *mqttPacket) error {
 
 // sendSimpleCommand send a simple command
 func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
-	packet := newMqttPacket()
-	packet.command = cmd
+	packet := &mqttPacket{
+		command:         cmd,
+		remainingLength: 1,
+	}
 	packet.initializePacket()
 	return p.writePacket(packet)
 }
