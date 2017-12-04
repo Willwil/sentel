@@ -288,13 +288,10 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 		glog.Infof("\nNot found! Product name:%s\n\n", name)
 		return nil, ErrorNotFound
 	}
-	v, _ := json.Marshal(pro)
 
-	glog.Infof("\nproduct :%s\n", v)
 	devices := []Device{}
 	var device Device
 	var lastId string
-	d, _ := json.Marshal(device)
 
 	c := r.db.C(dbNameDevices)
 
@@ -306,19 +303,14 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 			break
 		}
 		for iter.Next(&device) {
-			d, _ = json.Marshal(device)
 			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
+			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
 			devices = append(devices, device)
 		}
-		/*
-			if iter.Err() != nil {
-				if i < PageSize {
-					glog.Infof("\nSearch end!\n\n")
-					break
-				}
-			}
-		*/
+		if iter.Err() != nil {
+			glog.Infof("\nSearch end!\n\n")
+			break
+		}
 		iter = c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()

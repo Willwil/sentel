@@ -89,6 +89,10 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
 
+	//Cross-Origin
+	//ie: curl -XGET -H'Origin: *' "http://localhost:4145/api/v1/devices/mytest?api-version=v1"
+	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
+
 	// Login
 	p.echo.POST("/api/v1/tenant", registerTenant)
 	p.echo.POST("/api/v1/login", loginTenant)
