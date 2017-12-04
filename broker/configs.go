@@ -31,7 +31,7 @@ var defaultConfigs = map[string]map[string]string{
 		"require_certificate": "false",
 	},
 	"mqtt": {
-		"protocols": "tcp,ws,tls",
+		"protocols": "tcp",
 		"tcp":       "localhost:1883",
 		"tls":       "localhost:1885",
 	},

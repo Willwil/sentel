@@ -64,12 +64,14 @@ func (p *queueService) bootstrap() error {
 
 // Start
 func (p *queueService) Start() error {
-	for {
-		select {
-		case <-p.Quit:
-			return nil
+	go func(p *queueService) {
+		for {
+			select {
+			case <-p.Quit:
+				return
+			}
 		}
-	}
+	}(p)
 	return nil
 }
 

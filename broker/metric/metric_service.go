@@ -66,7 +66,7 @@ func (p *metricService) Initialize() error { return nil }
 // Start
 func (p *metricService) Start() error {
 	// Launch timer scheduler
-	duration, err := p.Config.Int("mqttbroker", "report_duration")
+	duration, err := p.Config.Int("broker", "report_duration")
 	if err != nil {
 		duration = 2
 	}

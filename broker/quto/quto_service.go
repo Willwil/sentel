@@ -217,9 +217,12 @@ func (p *qutoServie) getQuto(id string) (uint64, error) {
 
 // checkQutoWithAddValue check wether the newly added value is over quto
 func (p *qutoServie) checkQuto(id string, value uint64) bool {
-	v, err := p.getCacheItem(id)
-	if err != nil {
-		return false
-	}
-	return v > value
+	/*
+		v, err := p.getCacheItem(id)
+		if err != nil {
+			return false
+		}
+		return v > value
+	*/
+	return true
 }

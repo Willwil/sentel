@@ -55,15 +55,11 @@ func SyncReport(c core.Config, topic string, value sarama.Encoder) error {
 }
 
 func AsyncReport(c core.Config, topic string, value sarama.Encoder) error {
-	hosts := "localhost:9092"
-	if h, err := c.String("kafka", "hosts"); err != nil {
-		glog.Warningf("kafka is not configured, using localhost:9092")
-	} else {
-		hosts = h
+	hosts, err := c.String("kafka", "hosts")
+	if err != nil {
+		return err
 	}
-
 	//	sarama.Logger = c.Logger()
-
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10

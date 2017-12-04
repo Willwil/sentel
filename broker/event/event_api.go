@@ -39,7 +39,7 @@ func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 func NameOfEvent(t uint32) string {
 	switch t {
 	case SessionCreate:
-		return "SessionCeate"
+		return "SessionCreate"
 	case SessionDestroy:
 		return "SessionDestroy"
 	case TopicPublish:

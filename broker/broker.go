@@ -50,6 +50,7 @@ func registerService(name string, factory base.ServiceFactory) {
 		glog.Errorf("Service '%s' is already registered", name)
 	}
 	serviceFactories[name] = factory
+	serviceSeqs = append(serviceSeqs, name)
 }
 
 // RegisterServiceWithConfig register service with name and configuration

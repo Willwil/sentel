@@ -89,7 +89,7 @@ func (p *mqttService) Start() error {
 func (p *mqttService) startProtocolService(protocol string, host string) error {
 	listen, err := listen(protocol, host, p.Config)
 	if err != nil {
-		glog.Errorf("Mqtt listen failed:%s", err)
+		glog.Errorf("Mqtt listen '%s', '%s' failed:%s", protocol, host, err)
 		return err
 	}
 	glog.Infof("Mqtt service '%s' is listening on '%s'...", protocol, host)
@@ -111,13 +111,7 @@ func (p *mqttService) startProtocolService(protocol string, host string) error {
 			glog.Errorf("Mqtt create session failed:%s", err)
 			return err
 		}
-		go func(s *mqttSession) {
-			err := s.Handle()
-			if err != nil {
-				conn.Close()
-				glog.Error(err)
-			}
-		}(session)
+		go session.Handle()
 	}
 }
 

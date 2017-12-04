@@ -107,8 +107,8 @@ func nameOfPacket(packet *mqttPacket) string {
 	return "Invalid"
 }
 
-func newMqttPacket() mqttPacket {
-	return mqttPacket{
+func newMqttPacket() *mqttPacket {
+	return &mqttPacket{
 		command:        0,
 		dup:            false,
 		qos:            0,

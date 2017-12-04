@@ -66,10 +66,6 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 	product := mqtt.Config.MustString("broker", "product")
 	mountpoint := tenant + "/" + product
 
-	// Make a persudo alive timer for convenience, and stop it at first
-	palivetimer := time.NewTimer(time.Duration(20 * time.Second))
-	palivetimer.Stop()
-
 	// Retrieve authentication option
 	authNeed := true
 	if n, err := mqtt.Config.Bool("broker", "auth"); err == nil {
@@ -85,7 +81,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		sessionState:  mqttStateNew,
 		protocol:      mqttProtocolInvalid,
 		msgState:      mqttMsgStateQueued,
-		aliveTimer:    palivetimer,
+		aliveTimer:    nil,
 		availableChan: make(chan int),
 		packetChan:    make(chan *mqttPacket),
 		errorChan:     make(chan int),
@@ -133,13 +129,15 @@ func (p *mqttSession) setMessageState(state uint8) {
 func (p *mqttSession) Handle() error {
 	// Start goroutine to read packet from client
 	go func(p *mqttSession) {
-		packet := &mqttPacket{}
+		packet := newMqttPacket()
 		if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
 			glog.Error(err)
 			p.errorChan <- 1
 			return
 		}
-		p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
+		if p.aliveTimer != nil {
+			p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
+		}
 		p.packetChan <- packet
 	}(p)
 
@@ -150,10 +148,13 @@ func (p *mqttSession) Handle() error {
 			err = errors.New("mqtt read error occurred")
 		case <-p.availableChan:
 			err = p.handleDataAvailableNotification()
-		case <-p.aliveTimer.C:
-			err = p.handleAliveTimeout()
 		case packet := <-p.packetChan:
 			err = p.handleMqttPacket(packet)
+		default:
+			if p.aliveTimer != nil {
+				<-p.aliveTimer.C
+				err = p.handleAliveTimeout()
+			}
 		}
 		// Disconnect the connection when any errors occured
 		if err != nil {
@@ -405,12 +406,11 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		metadata.AddMessage(clientId, willMsg)
 	}
 	p.willMsg = willMsg
-	p.clientId = clientId
 	p.cleanSession = cleanSession
 
 	// Create queue for this sesion and otify event service that new session created
-	if q, err := queue.NewQueue(clientId, (cleanSession == 0), p); err != nil {
-		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", clientId)
+	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0), p); err != nil {
+		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", p.clientId)
 		return err
 	} else {
 		p.queue = q
@@ -421,11 +421,14 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	sm.RegisterSession(p)
 	event.Notify(&event.Event{
 		Type:     event.SessionCreate,
-		ClientId: clientId,
+		ClientId: p.clientId,
 		Detail:   &event.SessionCreateDetail{Persistent: (cleanSession == 0)}})
 
-	// reset and start keep alive timer
-	p.aliveTimer.Reset(time.Second * time.Duration(p.keepalive))
+	// start keep alive timer
+	if p.keepalive > 0 {
+		p.aliveTimer = time.NewTimer(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
+	}
+
 	return nil
 }
 
@@ -760,7 +763,7 @@ func (p *mqttSession) sendPublish(msg *base.Message) error {
 		packet.writeUint16(pid)
 	}
 	packet.writeBytes(msg.Payload)
-	return p.writePacket(&packet)
+	return p.writePacket(packet)
 }
 
 func (p *mqttSession) writePacket(packet *mqttPacket) error {
