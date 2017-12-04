@@ -31,9 +31,10 @@ var defaultConfigs = map[string]map[string]string{
 		"require_certificate": "false",
 	},
 	"mqtt": {
-		"protocols": "tcp",
-		"tcp":       "localhost:1883",
-		"tls":       "localhost:1885",
+		"protocols":          "tcp",
+		"tcp":                "localhost:1883",
+		"tls":                "localhost:1885",
+		"message_size_limit": "125",
 	},
 	"rpc": {
 		"listen": "localhost:55001",

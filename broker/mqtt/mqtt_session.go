@@ -50,7 +50,7 @@ type mqttSession struct {
 	pingTime       *time.Time       // Ping timer
 	availableChan  chan int         // Event chanel for data availabel notification
 	packetChan     chan *mqttPacket // Mqtt packet channel
-	errorChan      chan int         // Error channel
+	errorChan      chan error       // Error channel
 	queue          queue.Queue      // Session's queue
 	nextPacketId   uint16           // Next Packet id index
 	lastMessageIn  time.Time        // Last message's in time
@@ -84,7 +84,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		aliveTimer:    nil,
 		availableChan: make(chan int),
 		packetChan:    make(chan *mqttPacket),
-		errorChan:     make(chan int),
+		errorChan:     make(chan error),
 		queue:         nil,
 		pingTime:      nil,
 		authOptions:   nil,
@@ -129,32 +129,29 @@ func (p *mqttSession) setMessageState(state uint8) {
 func (p *mqttSession) Handle() error {
 	// Start goroutine to read packet from client
 	go func(p *mqttSession) {
-		packet := newMqttPacket()
-		if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
-			glog.Error(err)
-			p.errorChan <- 1
-			return
+		for {
+			packet := newMqttPacket()
+			if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
+				glog.Error(err)
+				p.errorChan <- err
+				return
+			}
+			if p.aliveTimer != nil {
+				p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
+			}
+			p.packetChan <- packet
 		}
-		if p.aliveTimer != nil {
-			p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
-		}
-		p.packetChan <- packet
 	}(p)
 
 	for {
 		var err error
 		select {
-		case <-p.errorChan:
-			err = errors.New("mqtt read error occurred")
+		case e := <-p.errorChan:
+			err = e
 		case <-p.availableChan:
 			err = p.handleDataAvailableNotification()
 		case packet := <-p.packetChan:
 			err = p.handleMqttPacket(packet)
-		default:
-			if p.aliveTimer != nil {
-				<-p.aliveTimer.C
-				err = p.handleAliveTimeout()
-			}
 		}
 		// Disconnect the connection when any errors occured
 		if err != nil {
@@ -427,6 +424,15 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	// start keep alive timer
 	if p.keepalive > 0 {
 		p.aliveTimer = time.NewTimer(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
+		go func(p *mqttSession) {
+			for {
+				select {
+				case <-p.aliveTimer.C:
+					p.errorChan <- fmt.Errorf("mqtt time out for client '%s'", p.clientId)
+					return
+				}
+			}
+		}(p)
 	}
 
 	return nil
@@ -517,7 +523,7 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 		if qos != 0x80 {
 			event.Notify(&event.Event{Type: event.TopicSubscribe,
 				ClientId: p.clientId,
-				Detail:   event.TopicSubscribeDetail{Topic: topic, Qos: qos, Retain: true}})
+				Detail:   &event.TopicSubscribeDetail{Topic: topic, Qos: qos, Retain: true}})
 		}
 		payload = append(payload, qos)
 	}
@@ -548,7 +554,7 @@ func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
 		}
 		event.Notify(&event.Event{Type: event.TopicUnsubscribe,
 			ClientId: p.clientId,
-			Detail:   event.TopicUnsubscribeDetail{Topic: topic}})
+			Detail:   &event.TopicUnsubscribeDetail{Topic: topic}})
 	}
 
 	return p.sendCommandWithPacketId(UNSUBACK, pid, false)
@@ -617,9 +623,9 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 
 	switch qos {
 	case 0:
-		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
+		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: &detail})
 	case 1:
-		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: detail})
+		event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId, Detail: &detail})
 		err = p.sendPubAck(pid)
 	case 2:
 		err = errors.New("MQTT qos 2 is not supported now")

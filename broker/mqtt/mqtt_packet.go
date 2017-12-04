@@ -72,7 +72,7 @@ type mqttPacket struct {
 }
 
 func nameOfPacket(packet *mqttPacket) string {
-	switch packet.command {
+	switch packet.command & 0xF0 {
 	case INVALID:
 		return "Invalid"
 	case CONNECT:
