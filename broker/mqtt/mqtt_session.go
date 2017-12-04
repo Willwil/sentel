@@ -203,7 +203,7 @@ func (p *mqttSession) handleDataAvailableNotification() error {
 	if p.msgState != mqttMsgStateQueued {
 		return fmt.Errorf("mqtt invalid message state:%s", nameOfMessageState(p.msgState))
 	}
-	for {
+	for p.queue.Length() > 0 {
 		if msg := p.queue.Front(); msg != nil {
 			if err := p.sendPublish(msg); err == nil {
 				switch msg.Qos {

@@ -148,10 +148,10 @@ func (p *simpleTopicTree) searchNode(node *topicNode, levels []string, setRetain
 				sr = false
 			}
 			ss := levels[1:]
-			p.searchNode(v, ss, sr)
 			if len(ss) == 0 {
 				return v
 			}
+			return p.searchNode(v, ss, sr)
 		} else if k == "#" && len(v.children) > 0 {
 			return v
 		}
