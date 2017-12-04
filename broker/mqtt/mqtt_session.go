@@ -479,7 +479,9 @@ func (p *mqttSession) disconnect(err error) {
 			event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
 		}
 		p.setSessionState(mqttStateDisconnected)
-		p.aliveTimer.Stop()
+		if p.aliveTimer != nil {
+			p.aliveTimer.Stop()
+		}
 		p.conn.Close()
 		p.conn = nil
 		// Close channel
