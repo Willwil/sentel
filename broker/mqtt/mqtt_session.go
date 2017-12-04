@@ -132,7 +132,6 @@ func (p *mqttSession) Handle() error {
 		for {
 			packet := newMqttPacket()
 			if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
-				glog.Error(err)
 				p.errorChan <- err
 				return
 			}
@@ -668,9 +667,10 @@ func (p *mqttSession) handlePubRel(packet *mqttPacket) error {
 // sendSimpleCommand send a simple command
 func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
 	packet := &mqttPacket{
-		command:        cmd,
-		remainingCount: 0,
+		command:         cmd,
+		remainingLength: 0,
 	}
+	packet.initializePacket()
 	return p.writePacket(packet)
 }
 

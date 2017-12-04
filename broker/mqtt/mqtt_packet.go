@@ -98,7 +98,7 @@ func nameOfPacket(packet *mqttPacket) string {
 	case UNSUBACK:
 		return "UNSUBACK"
 	case PINGREQ:
-		return "PINGREG"
+		return "PINGREQ"
 	case PINGRESP:
 		return "PINGRESP"
 	case DISCONNECT:
