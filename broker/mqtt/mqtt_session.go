@@ -56,6 +56,7 @@ type mqttSession struct {
 	lastMessageIn  time.Time        // Last message's in time
 	lastMessageOut time.Time        // last message out time
 	bytesReceived  int64            // Byte recivied
+	authNeed       bool
 }
 
 // newMqttSession create new session  for each client connection
@@ -68,6 +69,12 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 	// Make a persudo alive timer for convenience, and stop it at first
 	palivetimer := time.NewTimer(time.Duration(20 * time.Second))
 	palivetimer.Stop()
+
+	// Retrieve authentication option
+	authNeed := true
+	if n, err := mqtt.Config.Bool("broker", "auth"); err == nil {
+		authNeed = n
+	}
 
 	// Create session instance
 	return &mqttSession{
@@ -88,6 +95,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		nextPacketId:  0,
 		clientId:      "",
 		willMsg:       nil,
+		authNeed:      authNeed,
 	}, nil
 }
 
@@ -349,17 +357,19 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	if err != nil {
 		return err
 	}
-	err = auth.Authenticate(p.authOptions)
-	switch err {
-	case nil:
-		// Successfuly authenticated
-	case auth.ErrorAuthDenied:
-		p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
-		p.disconnect(err)
-		return err
-	default:
-		p.disconnect(err)
-		return err
+	if p.authNeed {
+		err = auth.Authenticate(p.authOptions)
+		switch err {
+		case nil:
+			// Successfuly authenticated
+		case auth.ErrorAuthDenied:
+			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
+			p.disconnect(err)
+			return err
+		default:
+			p.disconnect(err)
+			return err
+		}
 	}
 	p.clientId = p.authOptions.ClientId
 

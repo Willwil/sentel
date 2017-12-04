@@ -17,6 +17,7 @@ var defaultConfigs = map[string]map[string]string{
 		"loglevel":        "debug",
 		"mongo":           "localhost:27017",
 		"connect_timeout": "5",
+		"auth":            "false",
 	},
 	"storage": {
 		"repository": "local",
