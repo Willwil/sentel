@@ -15,10 +15,8 @@ package broker
 var defaultConfigs = map[string]map[string]string{
 	"broker": {
 		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
 		"connect_timeout": "5",
-		"redis":           "localhost:6379",
 	},
 	"storage": {
 		"repository": "local",
@@ -30,7 +28,6 @@ var defaultConfigs = map[string]map[string]string{
 		"certfile":            "",
 		"keyfile":             "",
 		"require_certificate": "false",
-		"redis_db":            "1",
 	},
 	"mqtt": {
 		"protocols": "tcp,ws,tls",

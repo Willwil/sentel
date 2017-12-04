@@ -41,6 +41,7 @@ type eventService struct {
 	waitgroup   sync.WaitGroup
 	tenant      string
 	product     string
+	deploy      string
 }
 
 // subscriberContext hold subscribre's handler and context
@@ -51,12 +52,18 @@ type subscriberContext struct {
 
 // neweventService create global broker
 func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 	product := c.MustString("broker", "product")
-	khosts, _ := core.GetServiceEndpoint(c, "broker", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
+
+	var consumer sarama.Consumer
+	khosts, err := core.GetServiceEndpoint(c, "broker", "kafka")
+	if err == nil && khosts != "" {
+		cc, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
+		if err != nil {
+			return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
+		}
+		consumer = cc
 	}
 
 	return &eventService{
@@ -89,10 +96,9 @@ func (p *eventService) initialize(c core.Config) error {
 	mqttEventBus := fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
 	brokerEventBus := fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
 	// subscribe topic from kafka
-	if err := p.subscribeKafkaTopic(mqttEventBus); err != nil {
-		return err
-	}
-	if err := p.subscribeKafkaTopic(brokerEventBus); err != nil {
+	if p.consumer != nil {
+		err := p.subscribeKafkaTopic(mqttEventBus)
+		err = p.subscribeKafkaTopic(brokerEventBus)
 		return err
 	}
 	return nil
@@ -123,7 +129,9 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				core.AsyncProduceMessage(p.Config, "event", p.nameOfEventBus(e), e)
+				if p.consumer != nil {
+					core.AsyncProduceMessage(p.Config, "event", p.nameOfEventBus(e), e)
+				}
 			case <-p.quit:
 				return
 			}
@@ -136,7 +144,9 @@ func (p *eventService) Start() error {
 func (p *eventService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	close(p.eventChan)
-	p.consumer.Close()
+	if p.consumer != nil {
+		p.consumer.Close()
+	}
 	p.WaitGroup.Wait()
 }
 

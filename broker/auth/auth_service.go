@@ -46,18 +46,17 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 
 	// Connect with redis if cache policy is redis
 	var rclient *redis.Client = nil
-	addr, _ := core.GetServiceEndpoint(c, "broker", "redis")
-	password := c.MustString("broker", "redis_password")
-	db := c.MustInt("auth", "redis_db")
-
-	rclient = redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: password,
-		DB:       db,
-	})
-
-	if _, err := rclient.Ping().Result(); err != nil {
-		return nil, err
+	if addr, err := core.GetServiceEndpoint(c, "broker", "redis"); err == nil {
+		password := c.MustString("broker", "redis_password")
+		db := c.MustInt("auth", "redis_db")
+		rclient = redis.NewClient(&redis.Options{
+			Addr:     addr,
+			Password: password,
+			DB:       db,
+		})
+		if _, err := rclient.Ping().Result(); err != nil {
+			return nil, err
+		}
 	}
 
 	return &authService{
@@ -143,8 +142,10 @@ type device struct {
 func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
 	// Read from cache at first
 	key := opt.ProductKey + "/" + opt.DeviceName
-	if val, err := p.rclient.Get(key).Result(); err == nil {
-		return val, nil
+	if p.rclient != nil {
+		if val, err := p.rclient.Get(key).Result(); err == nil {
+			return val, nil
+		}
 	}
 
 	// Read from database if not found in cache
@@ -162,7 +163,9 @@ func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
 		return "", err
 	}
 	// Write back to redis
-	p.rclient.Set(key, dev.DeviceSecret, 0)
+	if p.rclient != nil {
+		p.rclient.Set(key, dev.DeviceSecret, 0)
+	}
 	return dev.DeviceSecret, nil
 }
 
