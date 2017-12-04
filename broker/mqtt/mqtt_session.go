@@ -410,7 +410,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Create queue for this sesion and otify event service that new session created
 	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0), p); err != nil {
-		glog.Fatalf("broker: Failed to create queue for mqtt client '%s'", p.clientId)
+		glog.Fatal(err)
 		return err
 	} else {
 		p.queue = q
@@ -452,6 +452,7 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 
 // disconnect will disconnect current connection because of protocol error
 func (p *mqttSession) disconnect(err error) {
+	glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
 	if err := p.checkSessionState(mqttStateDisconnected); err == nil {
 		// Publish will message if session is not normoally disconnected
 		if err != nil && p.willMsg != nil {
@@ -462,6 +463,11 @@ func (p *mqttSession) disconnect(err error) {
 					Qos:     p.willMsg.Qos,
 					Retain:  p.willMsg.Retain,
 				}})
+		}
+		// Queue must be removed when is is not normaly terminated
+		if p.queue != nil && err != nil {
+			sm.RemoveSession(p.clientId)
+			queue.DestroyQueue(p.clientId)
 		}
 		if p.cleanSession > 0 {
 			event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
