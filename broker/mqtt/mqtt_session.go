@@ -132,9 +132,10 @@ func (p *mqttSession) Handle() error {
 		for {
 			packet := newMqttPacket()
 			if err := packet.DecodeFromReader(p.conn, base.NilDecodeFeedback{}); err != nil {
-				p.errorChan <- err
+				p.errorChan <- fmt.Errorf("mqtt packet decoder failed:%s", err.Error())
 				return
 			}
+			glog.Infof("Received mqtt packet '%s'", nameOfPacket(packet))
 			if p.aliveTimer != nil {
 				p.aliveTimer.Reset(time.Duration(int(float32(p.keepalive)*1.5)) * time.Second)
 			}
@@ -458,7 +459,7 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 // disconnect will disconnect current connection because of protocol error
 func (p *mqttSession) disconnect(err error) {
 	glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
-	if err := p.checkSessionState(mqttStateDisconnected); err == nil {
+	if err := p.checkSessionState(mqttStateDisconnected); err != nil {
 		// Publish will message if session is not normoally disconnected
 		if err != nil && p.willMsg != nil {
 			event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId,
@@ -666,10 +667,8 @@ func (p *mqttSession) handlePubRel(packet *mqttPacket) error {
 
 // sendSimpleCommand send a simple command
 func (p *mqttSession) sendSimpleCommand(cmd uint8) error {
-	packet := &mqttPacket{
-		command:         cmd,
-		remainingLength: 0,
-	}
+	packet := newMqttPacket()
+	packet.command = cmd
 	packet.initializePacket()
 	return p.writePacket(packet)
 }
