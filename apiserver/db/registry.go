@@ -311,12 +311,14 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, d)
 			devices = append(devices, device)
 		}
-		if iter.Err() != nil {
-			if i < PageSize {
-				glog.Infof("\nSearch end!\n\n")
-				break
+		/*
+			if iter.Err() != nil {
+				if i < PageSize {
+					glog.Infof("\nSearch end!\n\n")
+					break
+				}
 			}
-		}
+		*/
 		iter = c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
