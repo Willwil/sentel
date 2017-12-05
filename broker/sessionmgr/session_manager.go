@@ -153,13 +153,16 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 // onEventSessionDestroyed called when EventSessionDestroyed received
 func (p *sessionManager) onSessionDestroy(e *event.Event) {
 	session, _ := p.findSession(e.ClientId)
+	// For persistent session, change queue's observer
 	if session != nil && session.IsPersistent() {
 		if q := queue.GetQueue(e.ClientId); q != nil {
 			q.RegisterObserver(nil)
 		}
 		return
 	}
+	// For transient session, just remove it from session manager
 	p.removeSession(e.ClientId)
+	queue.DestroyQueue(e.ClientId)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received

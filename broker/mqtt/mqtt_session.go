@@ -452,11 +452,11 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 }
 
 // disconnect will disconnect current connection because of protocol error
-func (p *mqttSession) disconnect(err error) {
+func (p *mqttSession) disconnect(reason error) {
 	if err := p.checkSessionState(mqttStateDisconnected); err != nil {
 		glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
 		// Publish will message if session is not normoally disconnected
-		if err != nil && p.willMsg != nil {
+		if reason != nil && p.willMsg != nil {
 			event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId,
 				Detail: &event.TopicPublishDetail{
 					Topic:   p.willMsg.Topic,
@@ -465,14 +465,7 @@ func (p *mqttSession) disconnect(err error) {
 					Retain:  p.willMsg.Retain,
 				}})
 		}
-		// Queue must be removed when is is not normaly terminated
-		if p.queue != nil && err != nil {
-			sm.RemoveSession(p.clientId)
-			queue.DestroyQueue(p.clientId)
-		}
-		if p.cleanSession > 0 {
-			event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
-		}
+		event.Notify(&event.Event{Type: event.SessionDestroy, ClientId: p.clientId})
 		p.setSessionState(mqttStateDisconnected)
 		if p.aliveTimer != nil {
 			p.aliveTimer.Stop()
