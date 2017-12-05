@@ -32,7 +32,7 @@ type product struct {
 	TimeCreated  time.Time `json:"timeCreated"`
 	TimeModified time.Time `json:"timeModified"`
 	CategoryId   string    `json:"categoryId"`
-	ProductKey   string    `bson:"productKey"`
+	ProductKey   string    `json:"productKey"`
 }
 
 // product.
