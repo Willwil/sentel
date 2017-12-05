@@ -24,6 +24,7 @@ type EventHandler func(e *Event, ctx interface{})
 // Publish publish event to event service
 func Notify(e *Event) {
 	glog.Infof("event '%s' is notified", NameOfEvent(e.Type))
+	e.BrokerId = base.GetBrokerId()
 	service := base.GetService(ServiceName).(*eventService)
 	service.notify(e)
 }

@@ -61,11 +61,6 @@ type mqttSession struct {
 
 // newMqttSession create new session  for each client connection
 func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
-	// Make topic mount point
-	tenant := mqtt.Config.MustString("broker", "tenant")
-	product := mqtt.Config.MustString("broker", "product")
-	mountpoint := tenant + "/" + product
-
 	// Retrieve authentication option
 	authNeed := true
 	if n, err := mqtt.Config.Bool("broker", "auth"); err == nil {
@@ -76,7 +71,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 	return &mqttSession{
 		config:        mqtt.Config,
 		conn:          conn,
-		mountpoint:    mountpoint,
+		mountpoint:    "",
 		bytesReceived: 0,
 		sessionState:  mqttStateNew,
 		protocol:      mqttProtocolInvalid,
@@ -458,8 +453,8 @@ func (p *mqttSession) handleDisconnect(packet *mqttPacket) error {
 
 // disconnect will disconnect current connection because of protocol error
 func (p *mqttSession) disconnect(err error) {
-	glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
 	if err := p.checkSessionState(mqttStateDisconnected); err != nil {
+		glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
 		// Publish will message if session is not normoally disconnected
 		if err != nil && p.willMsg != nil {
 			event.Notify(&event.Event{Type: event.TopicPublish, ClientId: p.clientId,
