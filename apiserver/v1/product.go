@@ -24,25 +24,14 @@ import (
 	"github.com/labstack/echo"
 )
 
-// Product internal definition
-type product struct {
-	Id           string    `json:"id"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description"`
-	TimeCreated  time.Time `json:"timeCreated"`
-	TimeModified time.Time `json:"timeModified"`
-	CategoryId   string    `json:"categoryId"`
-	ProductKey   string    `json:"productKey"`
-}
-
 // product.
 // req:name,category,desc
 // rsp:id,productkey(both are auto generated and unique)
 type productAddRequest struct {
 	requestBase
-	Name        string `json:"name"`
-	CategoryId  string `json:"categoryId"`
-	Description string `json:"description"`
+	Name        string `bson:"Name"`
+	CategoryId  string `bson:"CategoryId"`
+	Description string `bson:"Description"`
 }
 
 func registerProduct(ctx echo.Context) error {
@@ -85,7 +74,7 @@ func registerProduct(ctx echo.Context) error {
 			Action:      util.ObjectActionRegister,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(),
-		Result: &product{
+		Result: &db.Product{
 			Id:          dp.Id,
 			Name:        dp.Name,
 			Description: dp.Description,
@@ -192,7 +181,7 @@ func getProduct(ctx echo.Context) error {
 		&response{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
-			Result: &product{
+			Result: &db.Product{
 				Id:           p.Id,
 				Name:         p.Name,
 				TimeCreated:  p.TimeCreated,

@@ -25,12 +25,12 @@ import (
 // Rule Api
 type ruleAddRequest struct {
 	requestBase
-	Id          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Method      string `json:"method"`
-	Target      string `json:"target"`
-	ProductId   string `json:"productId"`
+	Id          string `bson:"Id"`
+	Name        string `bson:"Name"`
+	Description string `bson:"Description"`
+	Method      string `bson:"Method"`
+	Target      string `bson:"Target"`
+	ProductId   string `bson:"ProductId"`
 }
 
 // addRule add new rule for product
