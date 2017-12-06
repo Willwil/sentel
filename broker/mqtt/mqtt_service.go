@@ -87,6 +87,7 @@ func (p *mqttService) Start() error {
 			}
 			go session.Handle()
 		}
+		glog.Info("mqtt service exiting...")
 	}(p)
 	return nil
 }
