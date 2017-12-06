@@ -85,16 +85,16 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 func (p *eventService) nameOfEventBus(e *Event) string {
 	switch e.Type {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
-		return fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
+		return fmt.Sprintf("broker-%s-%s-event-mqtt", p.tenant, p.product)
 	default:
-		return fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
+		return fmt.Sprintf("broker-%s-%s-event-broker", p.tenant, p.product)
 	}
 }
 
 // initialize
-func (p *eventService) initialize(c core.Config) error {
-	mqttEventBus := fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
-	brokerEventBus := fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
+func (p *eventService) Initialize() error {
+	mqttEventBus := fmt.Sprintf("broker-%s-%s-event-mqtt", p.tenant, p.product)
+	brokerEventBus := fmt.Sprintf("broker-%s-%s-event-broker", p.tenant, p.product)
 	// subscribe topic from kafka
 	if p.consumer != nil {
 		err := p.subscribeKafkaTopic(mqttEventBus)
@@ -109,7 +109,7 @@ func (p *eventService) Name() string {
 	return ServiceName
 }
 
-func (p *eventService) Initialize() error {
+func (p *eventService) bootstrap() error {
 	// bootstrap
 	return nil
 }

@@ -47,9 +47,11 @@ func parseCliOptions() (map[string]map[string]string, error) {
 	if *tenant == "" || *product == "" {
 		return nil, errors.New("teant and product must be specified for broker")
 	}
-	cliOptions["broker"] = map[string]string{"tenant": *tenant}
-	cliOptions["broker"] = map[string]string{"product": *product}
+	cliOptions["broker"] = map[string]string{}
 	cliOptions["mqtt"] = map[string]string{}
+
+	cliOptions["broker"]["tenant"] = *tenant
+	cliOptions["broker"]["product"] = *product
 	// Mqtt protocol
 	if *protocol != "" {
 		switch *protocol {

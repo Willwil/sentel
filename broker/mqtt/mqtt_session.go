@@ -430,7 +430,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Create queue for this sesion and otify event service that new session created
 	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0), p); err != nil {
-		glog.Fatal(err)
+		glog.Error(err)
 		return err
 	} else {
 		p.queue = q

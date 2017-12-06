@@ -46,7 +46,7 @@ func (p *transientQueue) Pushback(msg *base.Message) {
 	if p.observer != nil {
 		p.observer.DataAvailable(p, msg)
 	} else {
-		glog.Fatal("queue service: observer is null in transient queue")
+		glog.Error("queue service: observer is null in transient queue")
 	}
 }
 

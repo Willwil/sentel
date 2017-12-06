@@ -32,7 +32,7 @@ func NewBrokerApi(c core.Config) (*BrokerApi, error) {
 
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
-		glog.Fatalf("Failed to connect with iothub:%s", err)
+		glog.Errorf("Failed to connect with iothub:%s", err)
 		return nil, err
 	}
 	rpcapi := NewApiClient(conn)

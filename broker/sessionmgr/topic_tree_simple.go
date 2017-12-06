@@ -182,7 +182,7 @@ func (p *simpleTopicTree) retainMessage(clientId string, msg *base.Message) {
 	if node != nil {
 		node.msgs = append(node.msgs, msg)
 	} else {
-		glog.Fatalf("topic tree: Failed to retain message for '%s'", clientId)
+		glog.Errorf("topic tree: Failed to retain message for '%s'", clientId)
 	}
 }
 

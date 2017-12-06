@@ -52,7 +52,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	listen := c.MustString("rpc", "listen")
 	lis, err := net.Listen("tcp", listen)
 	if err != nil {
-		glog.Fatalf("Failed to listen: %v", err)
+		glog.Errorf("Failed to listen: %v", err)
 		return nil, err
 	}
 	server.listener = lis
