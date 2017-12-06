@@ -19,6 +19,7 @@ var defaultConfigs = map[string]map[string]string{
 		"connect_timeout": "5",
 		"auth":            "false",
 		"protocol":        "tcp",
+		"kafka":           "localhost:9092",
 	},
 	"storage": {
 		"repository": "local",

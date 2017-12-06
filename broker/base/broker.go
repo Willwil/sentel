@@ -27,10 +27,10 @@ type BrokerStartupInfo struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-var brokerStartupInfo *BrokerStartupInfo
+var brokerStartupInfo BrokerStartupInfo
 
 func GetBrokerId() string                      { return brokerStartupInfo.Id }
-func GetBrokerStartupInfo() *BrokerStartupInfo { return brokerStartupInfo }
+func GetBrokerStartupInfo() *BrokerStartupInfo { return &brokerStartupInfo }
 
 func SetBrokerStartupInfo(info *BrokerStartupInfo) {
 	brokerStartupInfo.Id = info.Id
