@@ -157,7 +157,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 			if to.Sub(t) <= duration {
 				break
 			}
-			query := bson.M{"nodeId": node.NodeName, "updateTime": bson.M{"$gte": f, "$lt": t}}
+			query := bson.M{"nodeId": node.NodeId, "updateTime": bson.M{"$gte": f, "$lt": t}}
 			count, err := c.Find(query).Count()
 			if err != nil {
 				result = append(result, count)
@@ -166,7 +166,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 			}
 			f = f.Add(duration)
 		}
-		results[node.NodeName] = result
+		results[node.NodeId] = result
 	}
 	return ctx.JSON(http.StatusOK, &response{
 		Success: true,
@@ -216,11 +216,11 @@ func getNodesClientInfo(ctx echo.Context) error {
 	result := map[string]int{}
 	c = session.DB("iothub").C("clients")
 	for _, node := range nodes {
-		count, err := c.Find(bson.M{"nodeId": node.NodeName}).Limit(100).Count()
+		count, err := c.Find(bson.M{"nodeId": node.NodeId}).Limit(100).Count()
 		if err != nil {
-			result[node.NodeName] = count
+			result[node.NodeId] = count
 		} else {
-			result[node.NodeName] = 0
+			result[node.NodeId] = 0
 		}
 	}
 	return ctx.JSON(http.StatusOK, &response{
@@ -333,11 +333,11 @@ func getNodeClients(ctx echo.Context) error {
 	}
 	result := map[string]int{}
 	c = session.DB("iothub").C("clients")
-	count, err := c.Find(bson.M{"nodeId": node.NodeName}).Limit(100).Count()
+	count, err := c.Find(bson.M{"nodeId": node.NodeId}).Limit(100).Count()
 	if err != nil {
 		result[nodeName] = count
 	} else {
-		result[node.NodeName] = 0
+		result[node.NodeId] = 0
 	}
 	return ctx.JSON(http.StatusOK, &response{
 		Success: true,

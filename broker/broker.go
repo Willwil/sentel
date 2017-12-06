@@ -71,6 +71,9 @@ func NewBroker(c core.Config) (*Broker, error) {
 		services: make(map[string]base.Service),
 		brokerId: uuid.NewV4().String(),
 	}
+	base.SetBrokerStartupInfo(&base.BrokerStartupInfo{
+		Id: broker.brokerId,
+	})
 
 	for name, _ := range serviceFactories {
 		// Format service name

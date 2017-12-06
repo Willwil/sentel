@@ -12,12 +12,42 @@
 
 package base
 
-var brokerId string
+import (
+	"log"
+	"net"
+	"time"
+)
 
-func SetBrokerId(id string) {
-	brokerId = id
+type BrokerStartupInfo struct {
+	Id        string    `json:"nodeId"`
+	Ip        string    `json:"nodeIp"`
+	Version   string    `json:"version"`
+	CreatedAt time.Time `json:"createdAt"`
+	Status    string    `json:"nodeStatus"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func GetBrokerId() string {
-	return brokerId
+var brokerStartupInfo *BrokerStartupInfo
+
+func GetBrokerId() string                      { return brokerStartupInfo.Id }
+func GetBrokerStartupInfo() *BrokerStartupInfo { return brokerStartupInfo }
+
+func SetBrokerStartupInfo(info *BrokerStartupInfo) {
+	brokerStartupInfo.Id = info.Id
+	brokerStartupInfo.CreatedAt = time.Now()
+	brokerStartupInfo.Status = "started"
+	// Get ip address
+	if addrs, err := net.InterfaceAddrs(); err == nil {
+		for _, address := range addrs {
+			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() != nil {
+					brokerStartupInfo.Ip = ipnet.IP.String()
+					break
+				}
+			}
+		}
+	}
+	if brokerStartupInfo.Ip == "" {
+		log.Fatal("Failed to get local broker address")
+	}
 }

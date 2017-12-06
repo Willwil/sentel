@@ -125,16 +125,15 @@ func (p *metricService) reportMetric() {
 
 // reportKeepalive report node information to cluster manager
 func (p *metricService) reportKeepalive() {
-	/*
-		broker := base.GetBroker()
-			node := broker.GetNodeInfo()
-			collector.AsyncReport(p.Config, collector.TopicNameNode,
-				&collector.Node{
-					NodeName:  node.NodeName,
-					NodeIp:    node.NodeIp,
-					CreatedAt: node.CreatedAt,
-				})
-	*/
+	info := base.GetBrokerStartupInfo()
+	collector.AsyncReport(p.Config, collector.TopicNameNode,
+		&collector.Node{
+			NodeId:     info.Id,
+			NodeIp:     info.Ip,
+			CreatedAt:  info.CreatedAt,
+			UpdatedAt:  time.Now(),
+			NodeStatus: "started",
+		})
 }
 
 // newMetrics allocate a metrics object from metric service

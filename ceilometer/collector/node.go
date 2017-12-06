@@ -12,27 +12,32 @@
 
 package collector
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 // Node
 type Node struct {
 	topicBase
-	NodeName   string `json:"nodeName"`
-	NodeIp     string `json:"nodeIp"`
-	Version    string `json:"version"`
-	CreatedAt  string `json:"createdAt"`
-	NodeStatus string `json:"nodeStatus"`
-	Action     string `json:"action"`
+	NodeId     string    `json:"nodeId"`
+	NodeIp     string    `json:"nodeIp"`
+	Version    string    `json:"version"`
+	CreatedAt  time.Time `json:"createdAt"`
+	NodeStatus string    `json:"nodeStatus"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+	Action     string    `json:"action"`
 }
 
 func (p *Node) name() string { return TopicNameNode }
 func (p *Node) clone() topicObject {
 	return &Node{
 		topicBase:  p.topicBase,
-		NodeName:   p.NodeName,
+		NodeId:     p.NodeId,
 		NodeIp:     p.NodeIp,
 		Version:    p.Version,
 		CreatedAt:  p.CreatedAt,
+		UpdatedAt:  p.UpdatedAt,
 		NodeStatus: p.NodeStatus,
 		Action:     p.Action,
 	}
