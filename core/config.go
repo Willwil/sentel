@@ -31,13 +31,14 @@ type Config interface {
 	MustInt(section string, key string) int
 	MustString(section string, key string) string
 	SetValue(section string, key string, val string)
+	AddConfigs(options map[string]map[string]string)
 }
 
 type configSection struct {
 	items map[string]string
 }
 
-type globalConfig struct{}
+type config struct{}
 
 var allConfigSections map[string]*configSection = make(map[string]*configSection)
 
@@ -45,10 +46,10 @@ var (
 	ErrorInvalidConfiguration = errors.New("Invalid configuration")
 )
 
-// globalConfig implementations
+// config implementations
 
 // Bool return bool value for key
-func (c *globalConfig) Bool(section string, key string) (bool, error) {
+func (c *config) Bool(section string, key string) (bool, error) {
 	if allConfigSections[section] == nil {
 		return false, ErrorInvalidConfiguration
 	}
@@ -63,7 +64,7 @@ func (c *globalConfig) Bool(section string, key string) (bool, error) {
 }
 
 // Int return int value for key
-func (c *globalConfig) Int(section string, key string) (int, error) {
+func (c *config) Int(section string, key string) (int, error) {
 	if allConfigSections[section] == nil {
 		return -1, ErrorInvalidConfiguration
 	}
@@ -72,14 +73,14 @@ func (c *globalConfig) Int(section string, key string) (int, error) {
 }
 
 // String return string valu for key
-func (c *globalConfig) String(section string, key string) (string, error) {
+func (c *config) String(section string, key string) (string, error) {
 	if allConfigSections[section] == nil {
 		return "", ErrorInvalidConfiguration
 	}
 	return allConfigSections[section].items[key], nil
 }
 
-func (c *globalConfig) MustBool(section string, key string) bool {
+func (c *config) MustBool(section string, key string) bool {
 	if allConfigSections[section] == nil {
 		glog.Fatal("Invalid configuration item:%s:%s", section, key)
 		os.Exit(0)
@@ -94,7 +95,7 @@ func (c *globalConfig) MustBool(section string, key string) bool {
 	os.Exit(0)
 	return false
 }
-func (c *globalConfig) MustInt(section string, key string) int {
+func (c *config) MustInt(section string, key string) int {
 	if _, ok := allConfigSections[section]; !ok {
 		glog.Fatal("Invalid configuration item:%s:%s", section, key)
 		os.Exit(0)
@@ -108,7 +109,7 @@ func (c *globalConfig) MustInt(section string, key string) int {
 	return n
 }
 
-func (c *globalConfig) MustString(section string, key string) string {
+func (c *config) MustString(section string, key string) string {
 	if _, ok := allConfigSections[section]; !ok {
 		glog.Fatalf("Invalid configuration: %s not found", section)
 		os.Exit(0)
@@ -116,7 +117,16 @@ func (c *globalConfig) MustString(section string, key string) string {
 	return allConfigSections[section].items[key]
 }
 
-func (c *globalConfig) SetValue(section string, key string, valu string) {
+func (c *config) SetValue(section string, key string, valu string) {
+}
+
+func (c *config) AddConfigs(options map[string]map[string]string) {
+	for section, values := range options {
+		items := allConfigSections[section].items
+		for key, val := range values {
+			items[key] = val
+		}
+	}
 }
 
 // NewWithConfigFile load configurations from files
@@ -138,7 +148,7 @@ func NewConfigWithFile(fileName string, moreFiles ...string) (Config, error) {
 			}
 		}
 	}
-	return &globalConfig{}, nil
+	return &config{}, nil
 }
 
 // Config global functions

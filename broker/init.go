@@ -28,15 +28,11 @@ import (
 )
 
 // RunWithConfigFile create and start broker
-func RunWithConfig(fileName string, opts map[string]string) error {
+func RunWithConfig(fileName string, opts map[string]map[string]string) error {
 	glog.Infof("Starting 'broker' server...")
-	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterConfigGroup(map[string]map[string]string{"broker": opts})
 	// Get configuration
-	config, err := core.NewConfigWithFile(fileName)
-	if err != nil {
-		return err
-	}
+	config, _ := core.NewConfigWithFile(fileName)
+	config.AddConfigs(opts)
 	registerService(event.ServiceName, event.New)
 	registerService(queue.ServiceName, queue.New)
 	registerService(sessionmgr.ServiceName, sessionmgr.New)
@@ -54,4 +50,8 @@ func RunWithConfig(fileName string, opts map[string]string) error {
 		return err
 	}
 	return broker.Run()
+}
+
+func init() {
+	core.RegisterConfigGroup(defaultConfigs)
 }

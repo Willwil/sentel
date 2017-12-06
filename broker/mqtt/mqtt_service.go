@@ -14,12 +14,10 @@ package mqtt
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
-	"strings"
 	"sync"
 	"syscall"
 
@@ -58,61 +56,39 @@ func (p *mqttService) Initialize() error { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
-	// Read protocol configuration for supported protocol
-	protocolConfig, err := p.Config.String("mqtt", "protocols")
-	if err != nil || protocolConfig == "" {
-		return errors.New("Invalid mqtt protocol configuration")
-	}
-	protocols := strings.Split(protocolConfig, ",")
-	if len(protocols) == 0 {
-		return errors.New("No protocol service for mqtt broker")
-	}
-	for _, protocol := range protocols {
-		host, err := p.Config.String("mqtt", protocol)
-		if err != nil {
-			return err
-		}
-		go p.startProtocolService(protocol, host)
-	}
-	go func(p *mqttService) {
-		for {
-			select {
-			case <-p.Quit:
-				return
-			}
-		}
-	}(p)
-	return nil
-}
+	protocol := p.Config.MustString("broker", "protocol")
+	host := p.Config.MustString("mqtt", protocol)
 
-// startProtocolService start mqtt protocol on different port
-func (p *mqttService) startProtocolService(protocol string, host string) error {
 	listen, err := listen(protocol, host, p.Config)
 	if err != nil {
 		glog.Errorf("Mqtt listen '%s', '%s' failed:%s", protocol, host, err)
 		return err
 	}
 	glog.Infof("Mqtt service '%s' is listening on '%s'...", protocol, host)
-	p.WaitGroup.Add(1)
-	defer p.WaitGroup.Done()
-	for {
-		conn, err := listen.Accept()
-		if err != nil {
-			continue
+	go func(p *mqttService) {
+		p.WaitGroup.Add(1)
+		defer p.WaitGroup.Done()
+		for {
+			conn, err := listen.Accept()
+			if err != nil {
+				glog.Fatalf("broker accept failed")
+				break
+			}
+			// Check wether connection over quto
+			if quto.CheckQuto(quto.MaxConnections, 1) != true {
+				glog.Error("broker: over quto, closing connection...")
+				conn.Close()
+				continue
+			}
+			session, err := newMqttSession(p, conn)
+			if err != nil {
+				glog.Fatalf("broker failed to create mqtt session")
+				break
+			}
+			go session.Handle()
 		}
-		// Check wether connection over quto
-		if quto.CheckQuto(quto.MaxConnections, 1) != true {
-			glog.Error("broker: over quto, closing connection...")
-			conn.Close()
-			continue
-		}
-		session, err := newMqttSession(p, conn)
-		if err != nil {
-			glog.Errorf("Mqtt create session failed:%s", err)
-			return err
-		}
-		go session.Handle()
-	}
+	}(p)
+	return nil
 }
 
 // Stop
