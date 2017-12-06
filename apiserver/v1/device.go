@@ -14,6 +14,7 @@ package v1
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/db"
@@ -26,17 +27,17 @@ import (
 // Device internal definition
 type registerDeviceRequest struct {
 	requestBase
-	ProductKey string `bson:"productKey"`
-	DeviceName string `bson:"productName"`
+	ProductKey string `bson:"ProductKey"`
+	DeviceName string `bson:"ProductName"`
 }
 
 type registerDeviceResponse struct {
-	DeviceId     string    `bson:"deviceId"`
-	DeviceName   string    `bson:"deviceName"`
-	DeviceSecret string    `bson:"deviceSecret"`
-	DeviceStatus string    `bson:"deviceStatus"`
-	ProductKey   string    `bson:"productKey"`
-	TimeCreated  time.Time `bson:"timeCreated"`
+	DeviceId     string    `bson:"DeviceId"`
+	DeviceName   string    `bson:"DeviceName"`
+	DeviceSecret string    `bson:"DeviceSecret"`
+	DeviceStatus string    `bson:"DeviceStatus"`
+	ProductKey   string    `bson:"ProductKey"`
+	TimeCreated  time.Time `bson:"TimeCreated"`
 }
 
 // RegisterDevice register a new device in IoT hub
@@ -56,7 +57,7 @@ func registerDevice(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	//          
+	//
 	// Insert device into registry, the created product
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
@@ -79,6 +80,51 @@ func registerDevice(ctx echo.Context) error {
 			DeviceSecret: dp.DeviceSecret,
 			TimeCreated:  dp.TimeCreated,
 		}})
+}
+
+// RegisterDevice register a new device in IoT hub
+// curl -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/bulk/30?api-version=v1"
+func bulkRegisterDevices(ctx echo.Context) error {
+	// Get product
+	glog.Infof("RegisterDevice ctx:[%s] ", ctx.Param("number"))
+	req := new(registerDeviceRequest)
+	if err := ctx.Bind(req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+	config := ctx.(*apiContext).config
+	// Connect with registry
+	r, err := db.NewRegistry(config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	defer r.Release()
+
+	//
+	// Insert device into registry, the created product
+	// will be modified to retrieve specific information sucha as
+	// product.id and creation time
+	max, err := strconv.Atoi(ctx.Param("number"))
+	rdevices := []db.Device{}
+	for i := 0; i < max; i++ {
+		dp := db.Device{
+			Id:           uuid.NewV4().String(),
+			Name:         req.DeviceName,
+			ProductKey:   req.ProductKey,
+			TimeCreated:  time.Now(),
+			TimeModified: time.Now(),
+		}
+		glog.Infof("+++%d,%s\n", i, dp.Id)
+		rdevices = append(rdevices, dp)
+	}
+	err = r.BulkRegisterDevices(rdevices)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK,
+		&response{
+			Success: true,
+			Result:  rdevices,
+		})
 }
 
 // Retrieve a device from the identify registry of an IoT hub
