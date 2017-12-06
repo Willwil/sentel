@@ -46,4 +46,9 @@ var defaultConfigs = map[string]map[string]string{
 	"quto": {
 		"redis_db": "1",
 	},
+	"metric": {
+		"keepalive":       "5",
+		"report_duration": "5",
+		"services":        "mqtt",
+	},
 }
