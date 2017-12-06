@@ -36,7 +36,7 @@ const (
 	PacketDisconnect      = "packets/disconnect"
 	PacketPingreq         = "packets/pingreq"
 	PacketPingresp        = "packets/pingresp"
-	PacketPubackRecevied  = "packets/puback/received"
+	PacketPubackReceived  = "packets/puback/received"
 	PacketPubackSent      = "packets/puback/sent"
 	PacketPubcompReceived = "packets/pubcomp/received"
 	PacketPubcompSent     = "packets/pubcomp/sent"

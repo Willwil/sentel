@@ -24,6 +24,7 @@ import (
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/metadata"
+	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/queue"
 	sm "github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
@@ -56,7 +57,8 @@ type mqttSession struct {
 	lastMessageIn  time.Time        // Last message's in time
 	lastMessageOut time.Time        // last message out time
 	bytesReceived  int64            // Byte recivied
-	authNeed       bool
+	authNeed       bool             // Indicate wether authentication is needed
+	metrics        metric.Metric    // Metrics
 }
 
 // newMqttSession create new session  for each client connection
@@ -87,6 +89,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		clientId:      "",
 		willMsg:       nil,
 		authNeed:      authNeed,
+		metrics:       metric.NewMetric(ServiceName),
 	}, nil
 }
 
@@ -169,7 +172,7 @@ func (p *mqttSession) handleMqttPacket(packet *mqttPacket) error {
 		p.clientId,
 		nameOfSessionState(p.sessionState),
 		nameOfMessageState(p.msgState))
-
+	p.updatePacketMetrics(packet)
 	switch packet.command & 0xF0 {
 	case PINGREQ:
 		return p.handlePingReq(packet)
@@ -201,10 +204,12 @@ func (p *mqttSession) handleDataAvailableNotification() error {
 	for p.queue.Length() > 0 {
 		if msg := p.queue.Front(); msg != nil {
 			if err := p.sendPublish(msg); err == nil {
+				p.metrics.Add(metric.MessageSent, 1)
 				switch msg.Qos {
 				case 0:
 					// No client response for qos0 pub packet
 					p.queue.Pop()
+					p.metrics.Add(metric.PacketPublishSent, 1)
 					continue
 				case 1:
 					p.msgState = mqttMsgStateWaitPubAck
@@ -215,6 +220,29 @@ func (p *mqttSession) handleDataAvailableNotification() error {
 		}
 	}
 	return nil
+}
+
+// updateMtrics update session metrics
+func (p *mqttSession) updatePacketMetrics(packet *mqttPacket) {
+	switch packet.command & 0xF0 {
+	case PINGREQ:
+		p.metrics.Add(metric.PacketPingreq, 1)
+	case CONNECT:
+		p.metrics.Add(metric.PacketConnect, 1)
+	case DISCONNECT:
+		p.metrics.Add(metric.PacketDisconnect, 1)
+	case PUBLISH:
+		p.metrics.Add(metric.PacketPublishReceived, 1)
+	case PUBREL:
+		p.metrics.Add(metric.PacketPubrelReceived, 1)
+	case SUBSCRIBE:
+		p.metrics.Add(metric.PacketSubscribe, 1)
+	case UNSUBSCRIBE:
+		p.metrics.Add(metric.PacketUnsubscribe, 1)
+	case PUBACK:
+		p.metrics.Add(metric.PacketPubackReceived, 1)
+	}
+	p.metrics.Add(metric.PacketReceived, 1)
 }
 
 // handleAliveTimeout reply to client with ping rsp after timeout
@@ -475,6 +503,8 @@ func (p *mqttSession) disconnect(reason error) {
 		// Close channel
 		close(p.availableChan)
 		close(p.packetChan)
+		// Releae metrics
+		metric.FreeMetric(ServiceName, p.metrics)
 	}
 }
 

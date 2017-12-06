@@ -31,9 +31,8 @@ func newMetricWithLock() *metricWithLock {
 		element: nil,
 	}
 }
-func (p *metricWithLock) Get() map[string]uint64 {
-	return p.metrics
-}
+
+func (p *metricWithLock) Get() map[string]uint64 { return p.metrics }
 func (p *metricWithLock) Add(name string, value uint64) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
