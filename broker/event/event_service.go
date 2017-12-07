@@ -23,11 +23,12 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
-	"github.com/golang/glog"
 )
 
 const (
-	ServiceName = "event"
+	ServiceName         = "event"
+	fmtOfMqttEventBus   = "broker-%s-%s-event-mqtt"
+	fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
 )
 
 type eventService struct {
@@ -85,16 +86,16 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 func (p *eventService) nameOfEventBus(e *Event) string {
 	switch e.Type {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
-		return fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
+		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
 	default:
-		return fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
+		return fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 	}
 }
 
 // initialize
-func (p *eventService) initialize(c core.Config) error {
-	mqttEventBus := fmt.Sprintf("broker/%s/%s/event/mqtt", p.tenant, p.product)
-	brokerEventBus := fmt.Sprintf("broker/%s/%sevent/broker", p.tenant, p.product)
+func (p *eventService) Initialize() error {
+	mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
+	brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 	// subscribe topic from kafka
 	if p.consumer != nil {
 		err := p.subscribeKafkaTopic(mqttEventBus)
@@ -105,14 +106,7 @@ func (p *eventService) initialize(c core.Config) error {
 }
 
 // Name
-func (p *eventService) Name() string {
-	return ServiceName
-}
-
-func (p *eventService) Initialize() error {
-	// bootstrap
-	return nil
-}
+func (p *eventService) Name() string { return ServiceName }
 
 // Start
 func (p *eventService) Start() error {
@@ -166,31 +160,28 @@ func (p *eventService) handleKafkaEvent(e *Event) {
 
 // subscribeKafkaTopc subscribe topics from apiserver
 func (p *eventService) subscribeKafkaTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
-	if err != nil {
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.waitgroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.waitgroup.Done()
-			for msg := range pc.Messages() {
-				obj := &Event{}
-				if err := json.Unmarshal(msg.Value, obj); err == nil {
-					p.handleKafkaEvent(obj)
-				}
+	if partitionList, err := p.consumer.Partitions(topic); err == nil {
+		for partition, _ := range partitionList {
+			pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+			if err != nil {
+				return fmt.Errorf("event service subscribe kafka topic failed:%s", err.Error())
 			}
-		}(pc)
+			p.waitgroup.Add(1)
+
+			go func(sarama.PartitionConsumer) {
+				defer pc.AsyncClose()
+				defer p.waitgroup.Done()
+				for msg := range pc.Messages() {
+					obj := &Event{}
+					if err := json.Unmarshal(msg.Value, obj); err == nil {
+						p.handleKafkaEvent(obj)
+					}
+				}
+			}(pc)
+		}
+		return nil
 	}
-	return nil
+	return fmt.Errorf("event service failed to subscribe kafka topic '%s'", topic)
 }
 
 // publish publish event to event service
