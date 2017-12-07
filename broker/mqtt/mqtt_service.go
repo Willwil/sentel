@@ -71,7 +71,7 @@ func (p *mqttService) Start() error {
 		for {
 			conn, err := listen.Accept()
 			if err != nil {
-				glog.Fatalf("broker accept failed")
+				glog.Errorf("broker accept failed")
 				break
 			}
 			// Check wether connection over quto
@@ -82,11 +82,12 @@ func (p *mqttService) Start() error {
 			}
 			session, err := newMqttSession(p, conn)
 			if err != nil {
-				glog.Fatalf("broker failed to create mqtt session")
+				glog.Errorf("broker failed to create mqtt session")
 				break
 			}
 			go session.Handle()
 		}
+		glog.Info("mqtt service exiting...")
 	}(p)
 	return nil
 }

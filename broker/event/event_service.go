@@ -105,8 +105,10 @@ func (p *eventService) Initialize() error {
 	return nil
 }
 
-// Name
 func (p *eventService) Name() string { return ServiceName }
+func (p *eventService) bootstrap() error {
+	return nil
+}
 
 // Start
 func (p *eventService) Start() error {

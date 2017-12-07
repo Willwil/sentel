@@ -13,9 +13,10 @@
 package base
 
 import (
-	"log"
 	"net"
 	"time"
+
+	"github.com/golang/glog"
 )
 
 type BrokerStartupInfo struct {
@@ -48,6 +49,6 @@ func SetBrokerStartupInfo(info *BrokerStartupInfo) {
 		}
 	}
 	if brokerStartupInfo.Ip == "" {
-		log.Fatal("Failed to get local broker address")
+		glog.Error("Failed to get local broker address")
 	}
 }

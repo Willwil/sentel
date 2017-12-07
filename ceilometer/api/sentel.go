@@ -28,7 +28,7 @@ type SentelApi struct {
 func newSentelApi(hosts string) (*SentelApi, error) {
 	conn, err := grpc.Dial(hosts, grpc.WithInsecure())
 	if err != nil {
-		glog.Fatalf("Failed to connect with iothub:%s", err)
+		glog.Errorf("Failed to connect with iothub:%s", err)
 		return nil, err
 	}
 	c := pb.NewApiClient(conn)

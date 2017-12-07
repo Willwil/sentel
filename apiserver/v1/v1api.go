@@ -125,6 +125,7 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 	g = p.echo.Group("/api/v1/devices/")
 	p.setAuth(c, g)
 	g.POST(":id", registerDevice)
+	g.POST("bulk/:number", bulkRegisterDevices)
 	g.GET(":id", getDevice)
 	g.DELETE(":id", deleteDevice)
 	g.PUT(":id", updateDevice)

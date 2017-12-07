@@ -122,7 +122,7 @@ func (p *clusterManager) createBrokers(tid string, count int32) ([]*Broker, erro
 	// get pod list
 	pods, err := p.clientset.CoreV1().Pods(podname).List(metav1.ListOptions{})
 	if err != nil {
-		glog.Fatalf("Failed to get pod list for tenant(%s)", tid)
+		glog.Errorf("Failed to get pod list for tenant(%s)", tid)
 		return nil, err
 	}
 	// get all created pods, create broker for each pod

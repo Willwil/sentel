@@ -117,7 +117,7 @@ func (p *Iothub) addTenant(tid string) error {
 	brokers, err := p.clustermgr.createBrokers(tid, tenant.brokersCount)
 	if err != nil {
 		// TODO should we update database status
-		glog.Fatalf("Failed to created brokers for tenant(%s)", tid)
+		glog.Errorf("Failed to created brokers for tenant(%s)", tid)
 	}
 	for _, broker := range brokers {
 		p.brokers[broker.bid] = broker

@@ -83,7 +83,7 @@ func EnsureDevicesIndex(s *mgo.Session) {
 	c := session.DB("registry").C(dbNameDevices)
 
 	index := mgo.Index{
-		Key:        []string{"Id", "Name", "ProductId", "productKey"},
+		Key:        []string{"Id", "Name", "ProductId", "ProductKey"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
@@ -362,7 +362,7 @@ func (r *Registry) GetDevice(id string) (*Device, error) {
 }
 
 // BulkRegisterDevice add a lot of devices into registry
-func (r *Registry) BulkRegisterDevice(devices []Device) error {
+func (r *Registry) BulkRegisterDevices(devices []Device) error {
 	for _, device := range devices {
 		if err := r.RegisterDevice(&device); err != nil {
 			return err

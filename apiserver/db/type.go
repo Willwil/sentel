@@ -38,10 +38,10 @@ type Device struct {
 	Id           string    `bson:"Id"`
 	Name         string    `bson:"Name"`
 	ProductId    string    `bson:"ProductId"`
-	ProductKey   string    `bson:"productKey"`
-	DeviceStatus string    `bson:"deviceStatus"`
-	DeviceSecret string    `bson:"deviceSecret"`
-	TimeCreated  time.Time `bson:"timeCreated"`
+	ProductKey   string    `bson:"ProductKey"`
+	DeviceStatus string    `bson:"DeviceStatus"`
+	DeviceSecret string    `bson:"DeviceSecret"`
+	TimeCreated  time.Time `bson:"TimeCreated"`
 	TimeModified time.Time `bson:"TimeModified"`
 }
 
