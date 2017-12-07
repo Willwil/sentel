@@ -210,7 +210,8 @@ func (r *Registry) CheckProductNameAvailable(p *Product) bool {
 // RegisterProduct register a product into registry
 func (r *Registry) RegisterProduct(p *Product) error {
 	c := r.db.C(dbNameProducts)
-	if err := c.Find(bson.M{"Name": bson.M{"$regex": p.Name, "$options": "$i"}}).One(nil); err == nil {
+	product := &Product{}
+	if err := c.Find(bson.M{"Name": bson.M{"$regex": p.Name, "$options": "$i"}}).One(product); err == nil {
 		return fmt.Errorf("product %s already exist", p.Name)
 	}
 	return c.Insert(p, nil)
