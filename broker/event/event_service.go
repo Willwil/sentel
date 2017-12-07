@@ -23,7 +23,6 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
-	"github.com/golang/glog"
 )
 
 const (
@@ -35,16 +34,12 @@ const (
 type eventService struct {
 	base.ServiceBase
 	brokerId    string
-	consumer    sarama.Consumer                // kafka client endpoint
+	consumers   []sarama.Consumer              // kafka client endpoint
 	eventChan   chan *Event                    // Event notify channel
-	errorChan   chan error                     // Error channel from sub go routine
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
-	quit        chan os.Signal
-	waitgroup   sync.WaitGroup
 	tenant      string
 	product     string
-	deploy      string
 }
 
 // subscriberContext hold subscribre's handler and context
@@ -59,14 +54,13 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	tenant := c.MustString("broker", "tenant")
 	product := c.MustString("broker", "product")
 
-	var consumer sarama.Consumer
 	khosts, err := core.GetServiceEndpoint(c, "broker", "kafka")
 	if err == nil && khosts != "" {
 		cc, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 		if err != nil {
 			return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
 		}
-		consumer = cc
+		cc.Close()
 	}
 
 	return &eventService{
@@ -75,12 +69,9 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		consumer:    consumer,
+		consumers:   []sarama.Consumer{},
 		eventChan:   make(chan *Event),
-		errorChan:   make(chan error),
 		subscribers: make(map[uint32][]subscriberContext),
-		quit:        make(chan os.Signal),
-		waitgroup:   sync.WaitGroup{},
 		tenant:      tenant,
 		product:     product,
 	}, nil
@@ -97,20 +88,51 @@ func (p *eventService) nameOfEventBus(e *Event) string {
 
 // initialize
 func (p *eventService) Initialize() error {
-	mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
-	brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 	// subscribe topic from kafka
-	if p.consumer != nil {
-		// TODO: in docker environment, we dont' know the subscribe result if
-		// error occured
-		go p.subscribeKafkaTopic(mqttEventBus)
-		go p.subscribeKafkaTopic(brokerEventBus)
+	khosts, err := core.GetServiceEndpoint(p.Config, "broker", "kafka")
+	if err == nil && khosts != "" {
+		mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
+		brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
+		err := p.subscribeKafkaTopic(mqttEventBus)
+		err = p.subscribeKafkaTopic(brokerEventBus)
+		return err
 	}
 	return nil
 }
 
 func (p *eventService) Name() string { return ServiceName }
 func (p *eventService) bootstrap() error {
+	return nil
+}
+
+// subscribeKafkaTopc subscribe topics from apiserver
+func (p *eventService) subscribeKafkaTopic(topic string) error {
+	khosts, _ := core.GetServiceEndpoint(p.Config, "broker", "kafka")
+	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
+	if err != nil {
+		return fmt.Errorf("Connecting with kafka '%s' for topic '%s' failed", topic, khosts)
+	}
+
+	p.consumers = append(p.consumers, consumer)
+	if partitionList, err := consumer.Partitions(topic); err == nil {
+		for partition := range partitionList {
+			pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+			if err != nil {
+				return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
+			}
+			p.WaitGroup.Add(1)
+			defer pc.AsyncClose()
+			go func(p *eventService, pc sarama.PartitionConsumer) {
+				defer p.WaitGroup.Done()
+				for msg := range pc.Messages() {
+					obj := &Event{}
+					if err := json.Unmarshal(msg.Value, obj); err == nil {
+						p.handleKafkaEvent(obj)
+					}
+				}
+			}(p, pc)
+		}
+	}
 	return nil
 }
 
@@ -129,13 +151,10 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				if p.consumer != nil {
+				if len(p.consumers) > 0 {
 					core.AsyncProduceMessage(p.Config, "event", p.nameOfEventBus(e), e)
 				}
-			case <-p.quit:
-				return
-			case e := <-p.errorChan:
-				glog.Error(e)
+			case <-p.Quit:
 				return
 			}
 		}
@@ -146,12 +165,11 @@ func (p *eventService) Start() error {
 // Stop
 func (p *eventService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	if p.consumer != nil {
-		p.consumer.Close()
+	for _, consumer := range p.consumers {
+		consumer.Close()
 	}
 	p.WaitGroup.Wait()
 	close(p.eventChan)
-	close(p.errorChan)
 }
 
 // handleEvent handle mqtt event from other service
@@ -166,31 +184,6 @@ func (p *eventService) handleKafkaEvent(e *Event) {
 			}
 		}
 	}
-}
-
-// subscribeKafkaTopc subscribe topics from apiserver
-func (p *eventService) subscribeKafkaTopic(topic string) {
-	wg := sync.WaitGroup{}
-	if partitionList, err := p.consumer.Partitions(topic); err == nil {
-		for partition := range partitionList {
-			pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-			if err != nil {
-				p.errorChan <- fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
-				return
-			}
-			defer pc.AsyncClose()
-			go func(sarama.PartitionConsumer) {
-				defer wg.Done()
-				for msg := range pc.Messages() {
-					obj := &Event{}
-					if err := json.Unmarshal(msg.Value, obj); err == nil {
-						p.handleKafkaEvent(obj)
-					}
-				}
-			}(pc)
-		}
-	}
-	wg.Wait()
 }
 
 // publish publish event to event service
