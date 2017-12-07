@@ -101,8 +101,7 @@ func (p *eventService) nameOfEventBus(e *Event) string {
 // initialize
 func (p *eventService) Initialize() error {
 	// subscribe topic from kafka
-	khosts, err := core.GetServiceEndpoint(p.Config, "broker", "kafka")
-	if err == nil && khosts != "" {
+	if p.consumer != nil {
 		mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
 		brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 		return p.subscribeKafkaTopic([]string{mqttEventBus, brokerEventBus})
