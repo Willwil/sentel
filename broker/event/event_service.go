@@ -62,7 +62,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 
 	var consumer sarama.Consumer
 	sarama.Logger = logger
-	if khosts, err := core.GetServiceEndpoint(c, "broker", "kafka"); err != nil && khosts != "" {
+	if khosts, err := core.GetServiceEndpoint(c, "broker", "kafka"); err == nil && khosts != "" {
 		config := sarama.NewConfig()
 		config.ClientID = base.GetBrokerId()
 		config.Consumer.MaxWaitTime = time.Duration(5 * time.Second)
@@ -70,7 +70,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		config.Consumer.Offsets.Initial = sarama.OffsetNewest
 		cc, err := sarama.NewConsumer(strings.Split(khosts, ","), config)
 		if err != nil {
-			return nil, fmt.Errorf("Connecting with kafka '%s' failed", khosts)
+			return nil, fmt.Errorf("event service failed to connect with kafka server '%s'", khosts)
 		}
 		consumer = cc
 	}
