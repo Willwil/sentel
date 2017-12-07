@@ -23,6 +23,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 )
 
 const (
@@ -36,6 +37,7 @@ type eventService struct {
 	brokerId    string
 	consumer    sarama.Consumer                // kafka client endpoint
 	eventChan   chan *Event                    // Event notify channel
+	errorChan   chan error                     // Error channel from sub go routine
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	quit        chan os.Signal
@@ -75,6 +77,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		},
 		consumer:    consumer,
 		eventChan:   make(chan *Event),
+		errorChan:   make(chan error),
 		subscribers: make(map[uint32][]subscriberContext),
 		quit:        make(chan os.Signal),
 		waitgroup:   sync.WaitGroup{},
@@ -98,9 +101,10 @@ func (p *eventService) Initialize() error {
 	brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 	// subscribe topic from kafka
 	if p.consumer != nil {
-		err := p.subscribeKafkaTopic(mqttEventBus)
-		err = p.subscribeKafkaTopic(brokerEventBus)
-		return err
+		// TODO: in docker environment, we dont' know the subscribe result if
+		// error occured
+		go p.subscribeKafkaTopic(mqttEventBus)
+		go p.subscribeKafkaTopic(brokerEventBus)
 	}
 	return nil
 }
@@ -130,6 +134,9 @@ func (p *eventService) Start() error {
 				}
 			case <-p.quit:
 				return
+			case e := <-p.errorChan:
+				glog.Error(e)
+				return
 			}
 		}
 	}(p)
@@ -139,11 +146,12 @@ func (p *eventService) Start() error {
 // Stop
 func (p *eventService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	close(p.eventChan)
 	if p.consumer != nil {
 		p.consumer.Close()
 	}
 	p.WaitGroup.Wait()
+	close(p.eventChan)
+	close(p.errorChan)
 }
 
 // handleEvent handle mqtt event from other service
@@ -161,18 +169,18 @@ func (p *eventService) handleKafkaEvent(e *Event) {
 }
 
 // subscribeKafkaTopc subscribe topics from apiserver
-func (p *eventService) subscribeKafkaTopic(topic string) error {
+func (p *eventService) subscribeKafkaTopic(topic string) {
+	wg := sync.WaitGroup{}
 	if partitionList, err := p.consumer.Partitions(topic); err == nil {
-		for partition, _ := range partitionList {
+		for partition := range partitionList {
 			pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 			if err != nil {
-				return fmt.Errorf("event service subscribe kafka topic failed:%s", err.Error())
+				p.errorChan <- fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
+				return
 			}
-			p.waitgroup.Add(1)
-
+			defer pc.AsyncClose()
 			go func(sarama.PartitionConsumer) {
-				defer pc.AsyncClose()
-				defer p.waitgroup.Done()
+				defer wg.Done()
 				for msg := range pc.Messages() {
 					obj := &Event{}
 					if err := json.Unmarshal(msg.Value, obj); err == nil {
@@ -181,9 +189,8 @@ func (p *eventService) subscribeKafkaTopic(topic string) error {
 				}
 			}(pc)
 		}
-		return nil
 	}
-	return fmt.Errorf("event service failed to subscribe kafka topic '%s'", topic)
+	wg.Wait()
 }
 
 // publish publish event to event service
