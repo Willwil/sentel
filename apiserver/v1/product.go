@@ -53,6 +53,7 @@ func registerProduct(ctx echo.Context) error {
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Product{
+		Id:          uuid.NewV4().String(),
 		Name:        req.Name,
 		CategoryId:  req.CategoryId,
 		Description: req.Description,
