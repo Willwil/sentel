@@ -5,7 +5,7 @@ Get kafka and zookeeper image from docker hub
    
 Start zookeeper and kafka  
 > docker run -d --name zookeeper -p 2181 -t wurstmeister/zookeeper  
-> docker run --name kafka -e HOST\_IP=localhost -e KAFKA\_ADVERTISED\_PORT=9092 -e KAFKA\_BROKER\_ID=1 -e ZK=zk -p 9092 --link zookeeper:zk -t wurstmeister/kafka  
+> docker run -d --name kafka -e HOST_IP=localhost -e KAFKA_ADVERTISED_PORT=9092 -e KAFKA_BROKER_ID=1 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e ZK=zk -p 9092:9092 --link zookeeper:zk -t wurstmeister/kafka
 
 Get container id  ${CONTAINER ID} using `docker ps `
 > docker exec -it ${CONTAINER ID} /bin/bash  
