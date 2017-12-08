@@ -121,8 +121,8 @@ func (p *eventService) Initialize() error {
 	// subscribe topic from kafka
 	if p.consumer != nil {
 		mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
-		//brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
-		return p.subscribeKafkaTopic([]string{mqttEventBus})
+		brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
+		return p.subscribeKafkaTopic([]string{mqttEventBus, brokerEventBus})
 	}
 	return nil
 }
@@ -173,10 +173,7 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				if p.producer != nil {
-					glog.Infof("event service notify event '%s' to kafka '%s'", NameOfEvent(e), p.nameOfEventBus(e))
-					p.publishKafkaMsg(p.nameOfEventBus(e), e)
-				}
+				p.publishKafkaMsg(p.nameOfEventBus(e), e)
 			case <-p.Quit:
 				return
 			}
@@ -186,13 +183,16 @@ func (p *eventService) Start() error {
 }
 
 func (p *eventService) publishKafkaMsg(topic string, value sarama.Encoder) error {
-	msg := &sarama.ProducerMessage{
-		Topic: topic,
-		Key:   sarama.StringEncoder("sentel-broker-kafka"),
-		Value: value,
-	}
-	if _, _, err := p.producer.SendMessage(msg); err != nil {
-		return fmt.Errorf("event service failed to send kafka message:%s", err.Error())
+	if p.producer != nil {
+		msg := &sarama.ProducerMessage{
+			Topic: topic,
+			Key:   sarama.StringEncoder("sentel-broker-kafka"),
+			Value: value,
+		}
+		if _, _, err := p.producer.SendMessage(msg); err != nil {
+			return fmt.Errorf("event service failed to send kafka message:%s", err.Error())
+		}
+		glog.Infof("event service notify event '%s' to kafka", topic)
 	}
 	return nil
 }
