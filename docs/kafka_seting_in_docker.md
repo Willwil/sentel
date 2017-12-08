@@ -4,6 +4,8 @@ Get kafka and zookeeper image from docker hub
 > docker pull wurstmeister/kafka  
    
 Start zookeeper and kafka  
+> docker-compose -f docker-compose-single-broker.yml up
+
 > docker run -d --name zookeeper -p 2181 -t wurstmeister/zookeeper  
 > docker run -d --name kafka -e HOST_IP=localhost -e KAFKA_ADVERTISED_PORT=9092 -e KAFKA_BROKER_ID=1 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e ZK=zk -p 9092:9092 --link zookeeper:zk -t wurstmeister/kafka
 
