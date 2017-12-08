@@ -157,12 +157,12 @@ func (p *eventService) subscribeKafkaTopic() error {
 				if err != nil {
 					return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
 				}
-				defer pc.AsyncClose()
 				p.WaitGroup.Add(1)
 
 				go func(p *eventService, pc sarama.PartitionConsumer) {
 					defer p.WaitGroup.Done()
 					for msg := range pc.Messages() {
+						// glog.Infof("event service receive message: Key='%s'", msg.Key)
 						obj := &Event{}
 						if err := json.Unmarshal(msg.Value, obj); err == nil {
 							p.handleKafkaEvent(obj)
