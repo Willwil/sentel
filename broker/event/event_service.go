@@ -41,7 +41,8 @@ var (
 type eventService struct {
 	base.ServiceBase
 	brokerId    string
-	consumer    sarama.Consumer                // kafka client endpoint
+	consumer    sarama.Consumer // kafka client endpoint
+	producer    sarama.SyncProducer
 	eventChan   chan *Event                    // Event notify channel
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
@@ -62,6 +63,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	product := c.MustString("broker", "product")
 
 	var consumer sarama.Consumer
+	var producer sarama.SyncProducer
 	sarama.Logger = logger
 	if khosts, err := core.GetServiceEndpoint(c, "broker", "kafka"); err == nil && khosts != "" {
 		config := sarama.NewConfig()
@@ -75,6 +77,19 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		}
 		consumer = cc
 		glog.Infof("event service connected with kafka '%s' with broker id '%s'", khosts, base.GetBrokerId())
+
+		config = sarama.NewConfig()
+		config.ClientID = base.GetBrokerId()
+		config.Producer.RequiredAcks = sarama.WaitForAll
+		config.Producer.Retry.Max = 10
+		config.Producer.Return.Successes = true
+		config.Producer.Timeout = 5 * time.Second
+
+		pc, err := sarama.NewSyncProducer(strings.Split(khosts, ","), config)
+		if err != nil {
+			return nil, fmt.Errorf("event service failed to create kafka producer:%s", err.Error())
+		}
+		producer = pc
 	}
 
 	return &eventService{
@@ -84,6 +99,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			Quit:      quit,
 		},
 		consumer:    consumer,
+		producer:    producer,
 		eventChan:   make(chan *Event),
 		subscribers: make(map[uint32][]subscriberContext),
 		tenant:      tenant,
@@ -157,7 +173,7 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				if p.consumer != nil {
+				if p.producer != nil {
 					glog.Infof("event service notify event '%s' to kafka '%s'", NameOfEvent(e), p.nameOfEventBus(e))
 					p.publishKafkaMsg(p.nameOfEventBus(e), e)
 				}
@@ -170,50 +186,25 @@ func (p *eventService) Start() error {
 }
 
 func (p *eventService) publishKafkaMsg(topic string, value sarama.Encoder) error {
-	khosts, err := core.GetServiceEndpoint(p.Config, "broker", "kafka")
-	config := sarama.NewConfig()
-	config.ClientID = base.GetBrokerId()
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 10
-	config.Producer.Return.Successes = true
-	config.Producer.Timeout = 5 * time.Second
-
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder("sentel-broker-kafka"),
 		Value: value,
 	}
-
-	producer, err := sarama.NewAsyncProducer(strings.Split(khosts, ","), config)
-	if err != nil {
-		glog.Errorf("event service failed to publish kafka message:%s", err.Error())
-		return err
+	if _, _, err := p.producer.SendMessage(msg); err != nil {
+		return fmt.Errorf("event service failed to send kafka message:%s", err.Error())
 	}
-	defer producer.Close()
-
-	go func(p sarama.AsyncProducer) {
-		errors := p.Errors()
-		success := p.Successes()
-		for {
-			select {
-			case err := <-errors:
-				if err != nil {
-					glog.Error(err)
-				}
-			case <-success:
-			}
-		}
-	}(producer)
-
-	producer.Input() <- msg
-	return err
+	return nil
 }
 
 // Stop
 func (p *eventService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	for p.consumer != nil {
+	if p.consumer != nil {
 		p.consumer.Close()
+	}
+	if p.producer != nil {
+		p.producer.Close()
 	}
 	p.WaitGroup.Wait()
 	close(p.eventChan)
