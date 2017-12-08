@@ -140,6 +140,7 @@ func (p *sessionManager) onSessionCreate(e *event.Event) {
 	// local queue should be created in local subscription tree
 	detail := e.Detail.(*event.SessionCreateDetail)
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
+		glog.Infof("sessionmgr receive session create notification from cluster broker '%s'", e.BrokerId)
 		// check wethe the session is already exist in subsription tree
 		// create virtual session if not exist
 		if s, _ := p.findSession(e.ClientId); s == nil {
@@ -171,7 +172,7 @@ func (p *sessionManager) onTopicSubscribe(e *event.Event) {
 
 	// Add subscription for persistent subsription from other broker
 	if e.BrokerId != base.GetBrokerId() && detail.Persistent {
-		glog.Infof("sessionmgr: topic(%s,%s) is subscribed", e.ClientId, detail.Topic)
+		glog.Infof("sessionmgr receive topic('%s') subscribe notification from cluster broker'%s'", detail.Topic, e.ClientId)
 		if queue := queue.GetQueue(e.ClientId); queue != nil {
 			p.tree.addSubscription(&subscription{
 				clientId: e.ClientId,

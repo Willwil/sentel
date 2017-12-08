@@ -25,6 +25,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 )
 
 const (
@@ -73,6 +74,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 			return nil, fmt.Errorf("event service failed to connect with kafka server '%s'", khosts)
 		}
 		consumer = cc
+		glog.Infof("event service connected with kafka '%s' with broker id '%s'", khosts, base.GetBrokerId())
 	}
 
 	return &eventService{
@@ -103,8 +105,8 @@ func (p *eventService) Initialize() error {
 	// subscribe topic from kafka
 	if p.consumer != nil {
 		mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
-		brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
-		return p.subscribeKafkaTopic([]string{mqttEventBus, brokerEventBus})
+		//brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
+		return p.subscribeKafkaTopic([]string{mqttEventBus})
 	}
 	return nil
 }
@@ -156,7 +158,8 @@ func (p *eventService) Start() error {
 				}
 				// notify kafka for broker synchronization
 				if p.consumer != nil {
-					core.AsyncProduceMessage(p.Config, "event", p.nameOfEventBus(e), e)
+					glog.Infof("event service notify event '%s' to kafka '%s'", NameOfEvent(e), p.nameOfEventBus(e))
+					p.publishKafkaMsg(p.nameOfEventBus(e), e)
 				}
 			case <-p.Quit:
 				return
@@ -164,6 +167,46 @@ func (p *eventService) Start() error {
 		}
 	}(p)
 	return nil
+}
+
+func (p *eventService) publishKafkaMsg(topic string, value sarama.Encoder) error {
+	khosts, err := core.GetServiceEndpoint(p.Config, "broker", "kafka")
+	config := sarama.NewConfig()
+	config.ClientID = base.GetBrokerId()
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	config.Producer.Retry.Max = 10
+	config.Producer.Return.Successes = true
+	config.Producer.Timeout = 5 * time.Second
+
+	msg := &sarama.ProducerMessage{
+		Topic: topic,
+		Key:   sarama.StringEncoder("sentel-broker-kafka"),
+		Value: value,
+	}
+
+	producer, err := sarama.NewAsyncProducer(strings.Split(khosts, ","), config)
+	if err != nil {
+		glog.Errorf("event service failed to publish kafka message:%s", err.Error())
+		return err
+	}
+	defer producer.Close()
+
+	go func(p sarama.AsyncProducer) {
+		errors := p.Errors()
+		success := p.Successes()
+		for {
+			select {
+			case err := <-errors:
+				if err != nil {
+					glog.Error(err)
+				}
+			case <-success:
+			}
+		}
+	}(producer)
+
+	producer.Input() <- msg
+	return err
 }
 
 // Stop
