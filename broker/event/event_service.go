@@ -219,16 +219,18 @@ func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
 			Value: sarama.ByteEncoder(value),
 		}
 
-		partition, offset, err := p.producer.SendMessage(msg)
+		_, _, err := p.producer.SendMessage(msg)
 		if err != nil {
 			glog.Errorf("Failed to store your data:, %s", err)
-		} else {
-			// The tuple (topic, partition, offset) can be used as a unique identifier
-			// for a message in a Kafka cluster.
-			glog.Errorf("Your data is stored with unique identifier important/%d/%d", partition, offset)
 		}
+		// else {
+		// 	// The tuple (topic, partition, offset) can be used as a unique identifier
+		// 	// for a message in a Kafka cluster.
+		// 	 glog.Infof("Your data is stored with unique identifier important/%d/%d", partition, offset)
+		// }
 		glog.Infof("event service notify event '%s' to kafka", topic)
 	}
+
 	return nil
 }
 
