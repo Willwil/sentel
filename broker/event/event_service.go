@@ -41,7 +41,7 @@ type eventService struct {
 	base.ServiceBase
 	brokerId    string
 	consumer    map[string]sarama.Consumer // kafka client endpoint
-	producer    sarama.AsyncProducer
+	producer    sarama.SyncProducer
 	eventChan   chan *Event                    // Event notify channel
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
@@ -62,7 +62,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	product := c.MustString("broker", "product")
 
 	var consumer = make(map[string]sarama.Consumer)
-	var producer sarama.AsyncProducer
+	var producer sarama.SyncProducer
 	sarama.Logger = logger
 	if khosts, err := core.GetServiceEndpoint(c, "broker", "kafka"); err == nil && khosts != "" {
 		config := sarama.NewConfig()
@@ -94,16 +94,10 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 		// config.Producer.Retry.Max = 10
 		// config.Producer.Timeout = 5 * time.Second
 
-		pc, err := sarama.NewAsyncProducer(strings.Split(khosts, ","), config)
+		pc, err := sarama.NewSyncProducer(strings.Split(khosts, ","), config)
 		if err != nil {
 			return nil, fmt.Errorf("event service failed to create kafka producer:%s", err.Error())
 		}
-
-		go func(pc sarama.AsyncProducer) {
-			for err := range pc.Errors() {
-				glog.Errorf("event service failed to send message: %s", err)
-			}
-		}(pc)
 
 		producer = pc
 	}
@@ -134,10 +128,17 @@ func (p *eventService) nameOfEventBus(e *Event) string {
 
 // initialize
 func (p *eventService) Initialize() error {
-	// subscribe topic from kafka
+	// if p.producer != nil {
+	// 	go func(pc sarama.AsyncProducer) {
+	// 		for err := range pc.Errors() {
+	// 			glog.Errorf("event service failed to send message: %s", err)
+	// 		}
+	// 		glog.Errorf("event service send stop")
+	// 	}(p.producer)
+	// }
+
+	// subscribe topic from kmafka
 	if p.consumer != nil {
-		// mqttEventBus := fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
-		// brokerEventBus := fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
 		return p.subscribeKafkaTopic()
 	}
 	return nil
@@ -153,7 +154,7 @@ func (p *eventService) subscribeKafkaTopic() error {
 	for topic, consumer := range p.consumer {
 		if partitionList, err := consumer.Partitions(topic); err == nil {
 			for partition := range partitionList {
-				pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetOldest)
+				pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 				if err != nil {
 					return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
 				}
@@ -162,12 +163,13 @@ func (p *eventService) subscribeKafkaTopic() error {
 				go func(p *eventService, pc sarama.PartitionConsumer) {
 					defer p.WaitGroup.Done()
 					for msg := range pc.Messages() {
-						// glog.Infof("event service receive message: Key='%s'", msg.Key)
+						glog.Infof("event service receive message: Key='%s'", msg.Key)
 						obj := &Event{}
 						if err := json.Unmarshal(msg.Value, obj); err == nil {
 							p.handleKafkaEvent(obj)
 						}
 					}
+					glog.Errorf("event service receive message stop")
 				}(p, pc)
 			}
 		}
@@ -190,7 +192,8 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				p.publishKafkaMsg(p.nameOfEventBus(e), e)
+				val, _ := json.Marshal(e)
+				p.publishKafkaMsg(p.nameOfEventBus(e), val)
 			case <-p.Quit:
 				return
 			}
@@ -199,12 +202,27 @@ func (p *eventService) Start() error {
 	return nil
 }
 
-func (p *eventService) publishKafkaMsg(topic string, value sarama.Encoder) error {
+func (p *eventService) publishKafkaMsg(topic string, value []byte) error {
 	if p.producer != nil {
-		p.producer.Input() <- &sarama.ProducerMessage{
+		// p.producer.Input() <- &sarama.ProducerMessage{
+		// 	Topic: topic,
+		// 	Key:   sarama.StringEncoder("sentel-broker-kafka"),
+		// 	Value: sarama.ByteEncoder(value),
+		// }
+
+		msg := &sarama.ProducerMessage{
 			Topic: topic,
 			Key:   sarama.StringEncoder("sentel-broker-kafka"),
-			Value: value,
+			Value: sarama.ByteEncoder(value),
+		}
+
+		partition, offset, err := p.producer.SendMessage(msg)
+		if err != nil {
+			glog.Errorf("Failed to store your data:, %s", err)
+		} else {
+			// The tuple (topic, partition, offset) can be used as a unique identifier
+			// for a message in a Kafka cluster.
+			glog.Errorf("Your data is stored with unique identifier important/%d/%d", partition, offset)
 		}
 		glog.Infof("event service notify event '%s' to kafka", topic)
 	}
