@@ -51,6 +51,6 @@ func (p *persistentQueue) Pushback(msg *base.Message) {
 
 func (p *persistentQueue) Pop() *base.Message          { return p.plugin.pop() }
 func (p *persistentQueue) Close() error                { return p.plugin.close() }
-func (p *persistentQueue) IsPersistent() bool          { return false }
+func (p *persistentQueue) IsPersistent() bool          { return true }
 func (p *persistentQueue) Name() string                { return p.clientId }
 func (p *persistentQueue) RegisterObserver(o Observer) { p.observer = o }
