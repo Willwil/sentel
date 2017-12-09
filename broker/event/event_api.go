@@ -19,12 +19,13 @@ import (
 	"github.com/golang/glog"
 )
 
+// EventHandler event handler
 type EventHandler func(e *Event, ctx interface{})
 
-// Publish publish event to event service
+// Notify publish event to event service
 func Notify(e *Event) {
 	glog.Infof("event '%s' is notified", NameOfEvent(e))
-	e.BrokerId = base.GetBrokerId()
+	e.Common.BrokerId = base.GetBrokerId()
 	service := base.GetService(ServiceName).(*eventService)
 	service.notify(e)
 }
@@ -32,14 +33,14 @@ func Notify(e *Event) {
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 	glog.Infof("service '%s' subscribed event '%s'",
-		ctx.(base.Service).Name(), NameOfEvent(&Event{Type: event}))
+		ctx.(base.Service).Name(), NameOfEvent(&Event{Common: EventCommon{Type: event}}))
 	service := base.GetService(ServiceName).(*eventService)
 	service.subscribe(event, handler, ctx)
 }
 
 // NameOfEvent return event name
 func NameOfEvent(e *Event) string {
-	switch e.Type {
+	switch e.Common.Type {
 	case SessionCreate:
 		return "SessionCreate"
 	case SessionDestroy:
@@ -63,5 +64,5 @@ func NameOfEvent(e *Event) string {
 
 // FullNameOfEvent return event information
 func FullNameOfEvent(e *Event) string {
-	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e), e.BrokerId, e.ClientId)
+	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e), e.Common.BrokerId, e.Common.ClientId)
 }

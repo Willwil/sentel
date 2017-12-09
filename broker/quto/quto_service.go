@@ -143,7 +143,7 @@ func (p *qutoServie) handleQutoChanged(e *event.Event) {
 	timeout := p.Config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
-		glog.Errorf("quto: Access backend database failed for quto event:%d", e.Type)
+		glog.Errorf("quto: Access backend database failed for quto event:%d", e.Common.Type)
 		return
 	}
 	defer session.Close()

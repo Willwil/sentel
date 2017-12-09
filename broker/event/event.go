@@ -12,7 +12,11 @@
 
 package event
 
-import "github.com/cloustone/sentel/core"
+import (
+	"encoding/json"
+
+	"github.com/cloustone/sentel/core"
+)
 
 const (
 	SessionCreate    = 1
@@ -25,12 +29,20 @@ const (
 	AuthChange       = 8
 )
 
-type Event struct {
+type EventCommon struct {
 	core.TopicBase
-	BrokerId string      `json:"brokerId"` // Broker identifier where event come from
-	Type     uint32      `json:"type"`     // Event type
-	ClientId string      `json:"clientId"` // Client identifier where event come from
-	Detail   interface{} `json:"detail"`   // Event detail
+	BrokerId string `json:"brokerId"` // Broker identifier where event come from
+	Type     uint32 `json:"type"`     // Event type
+	ClientId string `json:"clientId"` // Client identifier where event come from
+}
+type Event struct {
+	Common EventCommon
+	Detail interface{} `json:"detail"` // Event detail
+}
+
+type serEvent struct {
+	Common json.RawMessage `json:"common"`
+	Detail json.RawMessage `json:"detail"`
 }
 
 type SessionCreateDetail struct {

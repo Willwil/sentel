@@ -101,7 +101,7 @@ func (p *metadataService) Stop() {
 }
 
 func (p *metadataService) handleEvent(e *event.Event) {
-	switch e.Type {
+	switch e.Common.Type {
 	case event.SessionCreate:
 		p.onSessionCreated(e)
 	case event.SessionDestroy:
