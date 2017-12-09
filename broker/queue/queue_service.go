@@ -86,8 +86,16 @@ func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, 
 	p.mutex.Unlock()
 
 	// check wethere the id's queue already existed
-	if _, found := p.queues[id]; found {
-		return nil, fmt.Errorf("broker: queue for '%s' already exist", id)
+	if q, found := p.queues[id]; found {
+		if persistent && q.IsPersistent() {
+			return q, nil
+		}
+
+		if q.IsPersistent() && !persistent {
+			p.destroyQueue(id)
+		} else {
+			return nil, fmt.Errorf("broker: queue for '%s' already exist", id)
+		}
 	}
 
 	var q Queue
