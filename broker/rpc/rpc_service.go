@@ -133,14 +133,14 @@ func (p *rpcService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 	/*
 		reply := &ServicesReply{
 			Header:   &ReplyMessageHeader{Success: true},
-			Services: []*ServiceInfo{},
+			Services: []*Service{},
 		}
 		switch req.Category {
 		case "list":
-				services := metadata.GetAllServiceInfo()
+				services := metadata.GetAllService()
 				for _, service := range services {
 					reply.Services = append(reply.Services,
-						&ServiceInfo{
+						&Service{
 							ServiceName:    service.ServiceName,
 							Listen:         service.Listen,
 							Acceptors:      service.Acceptors,
@@ -161,27 +161,27 @@ func (p *rpcService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
 	reply := &SubscriptionsReply{
 		Header:        &ReplyMessageHeader{Success: true},
-		Subscriptions: []*SubscriptionInfo{},
+		Subscriptions: []*Subscription{},
 	}
 	switch req.Category {
 	case "list":
-		subs := sessionmgr.GetSubscriptions(req.Service)
+		subs := sessionmgr.GetSubscriptions()
 		for _, sub := range subs {
 			reply.Subscriptions = append(reply.Subscriptions,
-				&SubscriptionInfo{
-					ClientId:  sub.ClientId,
-					Topic:     sub.Topic,
-					Attribute: sub.Attribute,
+				&Subscription{
+					ClientId: sub.ClientId,
+					Topic:    sub.Topic,
+					//Attribute: sub.Attribute,
 				})
 		}
 	case "show":
-		sub := sessionmgr.GetSubscription(req.Service, req.Subscription)
+		sub := sessionmgr.GetTopicSubscription(req.Subscription)
 		if sub != nil {
 			reply.Subscriptions = append(reply.Subscriptions,
-				&SubscriptionInfo{
-					ClientId:  sub.ClientId,
-					Topic:     sub.Topic,
-					Attribute: sub.Attribute,
+				&Subscription{
+					ClientId: sub.ClientId,
+					Topic:    sub.Topic,
+					//Attribute: sub.Attribute,
 				})
 		}
 	}
@@ -191,16 +191,16 @@ func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 // Clients delegate clients command implementation in sentel
 func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
 	reply := &ClientsReply{
-		Clients: []*ClientInfo{},
+		Clients: []*Client{},
 		Header:  &ReplyMessageHeader{Success: true},
 	}
 	switch req.Category {
 	case "list":
 		// Get all client information for specified service
-		clients := sessionmgr.GetClients(req.Service)
+		clients := sessionmgr.GetClients()
 		for _, client := range clients {
 			reply.Clients = append(reply.Clients,
-				&ClientInfo{
+				&Client{
 					UserName:     client.UserName,
 					CleanSession: client.CleanSession,
 					PeerName:     client.PeerName,
@@ -209,9 +209,9 @@ func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 		}
 	case "show":
 		// Get client information for specified client id
-		if client := sessionmgr.GetClient(req.Service, req.ClientId); client != nil {
+		if client := sessionmgr.GetClient(req.ClientId); client != nil {
 			reply.Clients = append(reply.Clients,
-				&ClientInfo{
+				&Client{
 					UserName:     client.UserName,
 					CleanSession: client.CleanSession,
 					PeerName:     client.PeerName,
@@ -236,7 +236,7 @@ func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*Clients
 func (p *rpcService) Sessions(ctx context.Context, req *SessionsRequest) (*SessionsReply, error) {
 	reply := &SessionsReply{
 		Header:   &ReplyMessageHeader{Success: true},
-		Sessions: []*SessionInfo{},
+		Sessions: []*Session{},
 	}
 	switch req.Category {
 	case "list":
@@ -244,7 +244,7 @@ func (p *rpcService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 			sessions := metadata.GetSessions(req.Service, req.Conditions)
 			for _, session := range sessions {
 				reply.Sessions = append(reply.Sessions,
-					&metadata.SessionInfo{
+					&metadata.Session{
 						ClientId:           session.ClientId,
 						CreatedAt:          session.CreatedAt,
 						CleanSession:       session.CleanSession,
@@ -263,7 +263,7 @@ func (p *rpcService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 			session := metadata.GetSession(req.Service, req.ClientId)
 			if session != nil {
 				reply.Sessions = append(reply.Sessions,
-					&SessionInfo{
+					&Session{
 						ClientId:           session.ClientId,
 						CreatedAt:          session.CreatedAt,
 						CleanSession:       session.CleanSession,
@@ -284,25 +284,25 @@ func (p *rpcService) Sessions(ctx context.Context, req *SessionsRequest) (*Sessi
 func (p *rpcService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsReply, error) {
 	reply := &TopicsReply{
 		Header: &ReplyMessageHeader{Success: true},
-		Topics: []*TopicInfo{},
+		Topics: []*Topic{},
 	}
 	switch req.Category {
 	case "list":
-		topics := sessionmgr.GetTopics(req.Service)
+		topics := sessionmgr.GetTopics()
 		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
-				&TopicInfo{
+				&Topic{
 					Topic:     topic.Topic,
 					Attribute: topic.Attribute,
 				})
 		}
 	case "show":
-		topic := sessionmgr.GetTopic(req.Service, req.Topic)
+		topic := sessionmgr.GetClientTopics(req.Topic)
 		if topic != nil {
 			reply.Topics = append(reply.Topics,
-				&TopicInfo{
-					Topic:     topic.Topic,
-					Attribute: topic.Attribute,
+				&Topic{
+				//Topic:     topic.Topic,
+				//Attribute: topic.Attribute,
 				})
 		}
 	}

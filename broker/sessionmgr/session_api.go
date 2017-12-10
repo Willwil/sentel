@@ -49,18 +49,56 @@ func FindMessage(clientId string, pid uint16, dir uint8) *base.Message {
 	return nil
 }
 
-// Client
-func GetClients(proto string) []*ClientInfo         { return nil }
-func GetClient(proto string, id string) *ClientInfo { return nil }
+// GetTopics return all topic in the broker
+func GetTopics() []*Topic {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getTopics()
+}
 
-// Session Info
-func GetSessions(proto string, conditions map[string]bool) []*Session { return nil }
-func GetSession(proto string, id string) *Session                     { return nil }
+// GetClientTopicss return client's subscribed topics
+func GetClientTopics(clientId string) []*Topic {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getClientTopics(clientId)
+}
 
-// Topic info
-func GetTopics(proto string) []*TopicInfo         { return nil }
-func GetTopic(proto string, id string) *TopicInfo { return nil }
+// GetTopic return specified topic info
+func GetTopicSubscription(topic string) *Subscription {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getTopicSubscription(topic)
+}
 
-// SubscriptionInfo
-func GetSubscriptions(proto string) []*SubscriptionInfo         { return nil }
-func GetSubscription(proto string, id string) *SubscriptionInfo { return nil }
+// GetSubscriptions return all subscriptions in the broker
+func GetSubscriptions() []*Subscription {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getSubscriptions()
+}
+
+// GetClientSubscriptions return client's subscription
+func GetClientSubscriptions(clientId string) []*Subscription {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getClientSubscriptions(clientId)
+}
+
+//  GetSession return all sessions in the broker
+func GetSessions() []*Session {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getSessions()
+}
+
+// GetSessionInfo return client's session detail information
+func GetSessionInfo(clientId string) *Session {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getSessionInfo(clientId)
+}
+
+// GetClients return all clients in broker cluster
+func GetClients() []*Client {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getClients()
+}
+
+// GetClient return client's detail information
+func GetClient(clientId string) *Client {
+	sm := base.GetService(ServiceName).(*sessionManager)
+	return sm.getClient(clientId)
+}

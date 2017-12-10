@@ -264,3 +264,48 @@ func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction ui
 		return msg.PacketId == mid && msg.Direction == direction
 	})
 }
+
+// getTopics return all topic in the broker
+func (p *sessionManager) getTopics() []*Topic {
+	return nil
+}
+
+// getClientTopicss return client's subscribed topics
+func (p *sessionManager) getClientTopics(clientId string) []*Topic {
+	return nil
+}
+
+// getTopic return specified topic info
+func (p *sessionManager) getTopicSubscription(topic string) *Subscription {
+	return nil
+}
+
+// getSubscriptions return all subscriptions in the broker
+func (p *sessionManager) getSubscriptions() []*Subscription {
+	return nil
+}
+
+// getClientSubscriptions return client's subscription
+func (p *sessionManager) getClientSubscriptions(clientId string) []*Subscription {
+	return nil
+}
+
+//  getSession return all sessions in the broker
+func (p *sessionManager) getSessions() []*Session {
+	return nil
+}
+
+// getSessionInfo return client's session detail information
+func (p *sessionManager) getSessionInfo(clientId string) *Session {
+	return nil
+}
+
+// getClients return all clients in broker cluster
+func (p *sessionManager) getClients() []*Client {
+	return nil
+}
+
+// getClient return client's detail information
+func (p *sessionManager) getClient(clientId string) *Client {
+	return nil
+}

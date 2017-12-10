@@ -21,6 +21,7 @@ import (
 	"github.com/cloustone/sentel/broker/mqtt"
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/broker/quto"
+	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -36,7 +37,7 @@ func RunWithConfig(fileName string, opts map[string]map[string]string) error {
 	registerService(queue.ServiceName, queue.New)
 	registerService(sessionmgr.ServiceName, sessionmgr.New)
 	registerService(auth.ServiceName, auth.New)
-	// registerService(rpc.ServiceName, rpc.New)
+	registerService(rpc.ServiceName, rpc.New)
 	registerService(metric.ServiceName, metric.New)
 	registerService(metadata.ServiceName, metadata.New)
 	registerService(quto.ServiceName, quto.New)

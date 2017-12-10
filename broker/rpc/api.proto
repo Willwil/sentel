@@ -40,10 +40,10 @@ message ClientsRequest{
 }
 message ClientsReply{
     ReplyMessageHeader Header = 1;
-    repeated ClientInfo Clients =2;
+    repeated Client Clients =2;
 }
 
-message ClientInfo {
+message Client {
     string UserName = 1;
     bool CleanSession = 2;
     string PeerName = 3;
@@ -64,10 +64,10 @@ message RoutesRequest{
 }
 message RoutesReply{
     ReplyMessageHeader Header = 1;
-    repeated RouteInfo Routes  = 2;
+    repeated Route Routes  = 2;
 }
 
-message RouteInfo {
+message Route {
     string Topic = 1;
     repeated string Route =2;
 }
@@ -88,10 +88,10 @@ message ServicesRequest{
 }
 message ServicesReply {
     ReplyMessageHeader Header = 1;
-    repeated ServiceInfo Services = 2;
+    repeated Service Services = 2;
 }
 
-message ServiceInfo {
+message Service {
     string ServiceName = 1;
     string Listen = 2;
     uint64 Acceptors = 3;
@@ -108,10 +108,10 @@ message SubscriptionsRequest{
 }
 message SubscriptionsReply{
     ReplyMessageHeader Header = 1;
-    repeated SubscriptionInfo Subscriptions = 2;
+    repeated Subscription Subscriptions = 2;
 }
 
-message SubscriptionInfo {
+message Subscription {
     string ClientId = 1;
     string Topic = 2;
     string Attribute = 3;
@@ -126,10 +126,10 @@ message SessionsRequest{
 }
 message SessionsReply{
     ReplyMessageHeader Header = 1;
-    repeated SessionInfo  Sessions = 2;
+    repeated Session  Sessions = 2;
 }
 
-message SessionInfo {
+message Session {
     string ClientId           = 1;
 	bool CleanSession       = 2;
 	uint64 MessageMaxInflight = 3; 
@@ -150,10 +150,10 @@ message TopicsRequest{
 }
 message TopicsReply{
     ReplyMessageHeader Header = 1;
-    repeated TopicInfo Topics = 2;
+    repeated Topic Topics = 2;
 }
 
-message TopicInfo {
+message Topic {
     string Topic = 1;
     string Attribute = 2;
 }

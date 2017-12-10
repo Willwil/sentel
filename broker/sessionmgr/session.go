@@ -41,23 +41,24 @@ type SessionInfo struct {
 	CreatedAt          string
 }
 
-// ClientInfo
-type ClientInfo struct {
+// Client
+type Client struct {
 	UserName     string
 	CleanSession bool
 	PeerName     string
 	ConnectTime  string
 }
 
-// TopicInfo
-type TopicInfo struct {
+// Topic
+type Topic struct {
 	Topic     string
 	Attribute string
 }
 
-// SubscriptionInfo
-type SubscriptionInfo struct {
-	ClientId  string
-	Topic     string
-	Attribute string
+// Subscription
+type Subscription struct {
+	ClientId string
+	Topic    string
+	Qos      uint8
+	Retain   bool
 }
