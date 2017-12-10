@@ -14,6 +14,8 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"os"
 
 	api "github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/core"
@@ -59,14 +61,19 @@ func init() {
 
 }
 
-func Execute() error {
+func Run() error {
 	c, _ := core.NewConfigWithFile(cfgFile)
 	api, err := api.NewBrokerApi(c)
-	if err != nil {
+	if err != nil || api == nil {
 		return errors.New("Sentel service is not started, please start sentel at first")
 	}
 	brokerApi = api
-	return RootCmd.Execute()
+	if err := RootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
+		return err
+	}
+	return nil
 }
 
 func initConfig() {

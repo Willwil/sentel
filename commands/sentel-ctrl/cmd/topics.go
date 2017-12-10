@@ -37,13 +37,17 @@ func topicsCmdHandler(cmd *cobra.Command, args []string) {
 
 	switch args[0] {
 	case "list": // Print topic list
-		reply, err := brokerApi.Topics(req)
-		if err != nil {
+		if reply, err := brokerApi.Topics(req); err != nil {
 			fmt.Println("Error:%v", err)
 			return
-		}
-		for _, topic := range reply.Topics {
-			fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
+		} else {
+			if len(reply.Topics) == 0 {
+				fmt.Println("No topics found in broker")
+				return
+			}
+			for _, topic := range reply.Topics {
+				fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
+			}
 		}
 	case "show":
 		if len(args) != 2 {
