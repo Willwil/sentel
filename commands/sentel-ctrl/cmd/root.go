@@ -56,6 +56,9 @@ func init() {
 	RootCmd.AddCommand(routesCmd)
 	RootCmd.AddCommand(servicesCmd)
 	RootCmd.AddCommand(sessionsCmd)
+
+	// Subscriptions
+	subscriptionsCmd.AddCommand(subscriptionsShowCmd)
 	RootCmd.AddCommand(subscriptionsCmd)
 	// Topics
 	topicsCmd.AddCommand(topicsShowCmd)

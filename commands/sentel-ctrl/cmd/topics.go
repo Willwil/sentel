@@ -43,8 +43,9 @@ var topicsCmd = &cobra.Command{
 }
 
 var topicsShowCmd = &cobra.Command{
-	Use:   "show",
-	Short: "show client's topics",
+	Use:     "show",
+	Short:   "show client's topics",
+	Example: "sentel-ctrl show clientid",
 	Run: func(cmd *cobra.Command, args []string) {
 		req := &pb.TopicsRequest{Category: "show"}
 		if len(args) != 1 {
@@ -53,10 +54,10 @@ var topicsShowCmd = &cobra.Command{
 		}
 		req.ClientId = args[1]
 		if reply, err := brokerApi.Topics(req); err != nil {
-			fmt.Println("Error:%v", err)
+			fmt.Println("Broker Api call failed:%s", err.Error())
 			return
-		} else if len(reply.Topics) != 1 {
-			fmt.Println("Error:sentel server return multiple topics")
+		} else if len(reply.Topics) == 0 {
+			fmt.Printf("No topics found for client '%s'", args[1])
 			return
 		} else {
 			topic := reply.Topics[0]
