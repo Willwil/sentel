@@ -163,7 +163,7 @@ func (p *eventService) subscribeKafkaTopic() error {
 				go func(p *eventService, pc sarama.PartitionConsumer) {
 					defer p.WaitGroup.Done()
 					for msg := range pc.Messages() {
-						// glog.Infof("event service receive message: Key='%s'", msg.Key)
+						glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
 						obj := &serEvent{}
 						if err := json.Unmarshal(msg.Value, obj); err == nil {
 							p.handleKafkaEvent(obj)
@@ -292,7 +292,8 @@ func (p *eventService) handleKafkaEvent(se *serEvent) {
 	// cluster event manager only handle kafka event from other broker
 	// Iterate all subscribers to notify
 	e := &Event{}
-	if err := json.Unmarshal(se.Common, e.Common); err != nil {
+	if err := json.Unmarshal(se.Common, &e.Common); err != nil {
+		glog.Errorf("event service unmarshal event common failed:%s", err.Error())
 		return
 	}
 
