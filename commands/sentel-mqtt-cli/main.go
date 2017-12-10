@@ -12,7 +12,7 @@ import (
 
 //define a function for the default message handler
 var f MQTT.MessageHandler = func(client MQTT.Client, msg MQTT.Message) {
-	fmt.Printf("TOPIC: %s, MSG: %s", msg.Topic(), msg.Payload())
+	fmt.Printf("TOPIC: %s, MSG: %s\n", msg.Topic(), msg.Payload())
 }
 
 func main() {
@@ -56,7 +56,7 @@ func main() {
 			token := c.Publish(*topic, 0, false, text)
 			token.Wait()
 			if token.Error() != nil {
-				fmt.Println("Failed to PUBLISH message to topic")
+				fmt.Println("Failed to PUBLISH message")
 			} else {
 				fmt.Println("Mqtt PUBLISH success")
 			}
@@ -76,4 +76,5 @@ func main() {
 	}
 
 	c.Disconnect(250)
+	fmt.Println("Mqtt DISCONNECT")
 }
