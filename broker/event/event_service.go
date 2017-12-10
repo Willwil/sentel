@@ -163,7 +163,7 @@ func (p *eventService) subscribeKafkaTopic() error {
 				go func(p *eventService, pc sarama.PartitionConsumer) {
 					defer p.WaitGroup.Done()
 					for msg := range pc.Messages() {
-						glog.Infof("event service receive message: Key='%s'", msg.Key)
+						// glog.Infof("event service receive message: Key='%s'", msg.Key)
 						obj := &serEvent{}
 						if err := json.Unmarshal(msg.Value, obj); err == nil {
 							p.handleKafkaEvent(obj)
@@ -228,7 +228,7 @@ func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
 		// 	// for a message in a Kafka cluster.
 		// 	 glog.Infof("Your data is stored with unique identifier important/%d/%d", partition, offset)
 		// }
-		glog.Infof("event service notify event '%s' to kafka", topic)
+		// glog.Infof("event service notify event '%s' to kafka", topic)
 	}
 
 	return nil
