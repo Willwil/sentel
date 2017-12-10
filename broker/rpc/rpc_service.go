@@ -157,37 +157,6 @@ func (p *rpcService) Services(ctx context.Context, req *ServicesRequest) (*Servi
 	return nil, nil
 }
 
-//Subscriptions delete subscriptions command
-func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
-	reply := &SubscriptionsReply{
-		Header:        &ReplyMessageHeader{Success: true},
-		Subscriptions: []*Subscription{},
-	}
-	switch req.Category {
-	case "list":
-		subs := sessionmgr.GetSubscriptions()
-		for _, sub := range subs {
-			reply.Subscriptions = append(reply.Subscriptions,
-				&Subscription{
-					ClientId: sub.ClientId,
-					Topic:    sub.Topic,
-					//Attribute: sub.Attribute,
-				})
-		}
-	case "show":
-		sub := sessionmgr.GetTopicSubscription(req.Subscription)
-		if sub != nil {
-			reply.Subscriptions = append(reply.Subscriptions,
-				&Subscription{
-					ClientId: sub.ClientId,
-					Topic:    sub.Topic,
-					//Attribute: sub.Attribute,
-				})
-		}
-	}
-	return reply, nil
-}
-
 // Clients delegate clients command implementation in sentel
 func (p *rpcService) Clients(ctx context.Context, req *ClientsRequest) (*ClientsReply, error) {
 	reply := &ClientsReply{
@@ -297,18 +266,51 @@ func (p *rpcService) Topics(ctx context.Context, req *TopicsRequest) (*TopicsRep
 				})
 		}
 	case "show":
-		topic := sessionmgr.GetClientTopics(req.Topic)
-		if topic != nil {
+		topics := sessionmgr.GetClientTopics(req.ClientId)
+		for _, topic := range topics {
 			reply.Topics = append(reply.Topics,
 				&Topic{
-				//Topic:     topic.Topic,
-				//Attribute: topic.Attribute,
+					Topic:     topic.Topic,
+					Attribute: topic.Attribute,
 				})
 		}
 	}
 	return reply, nil
 }
 
+//Subscriptions delete subscriptions command
+func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsRequest) (*SubscriptionsReply, error) {
+	reply := &SubscriptionsReply{
+		Header:        &ReplyMessageHeader{Success: true},
+		Subscriptions: []*Subscription{},
+	}
+	switch req.Category {
+	case "list":
+		subs := sessionmgr.GetSubscriptions()
+		for _, sub := range subs {
+			reply.Subscriptions = append(reply.Subscriptions,
+				&Subscription{
+					ClientId: sub.ClientId,
+					Topic:    sub.Topic,
+					Qos:      int32(sub.Qos),
+					Retain:   sub.Retain,
+				})
+		}
+	case "show":
+		subs := sessionmgr.GetTopicSubscription(req.Topic)
+		for _, sub := range subs {
+			reply.Subscriptions = append(reply.Subscriptions,
+				&Subscription{
+					ClientId: sub.ClientId,
+					Topic:    sub.Topic,
+					Qos:      int32(sub.Qos),
+					Retain:   sub.Retain,
+				})
+		}
+
+	}
+	return reply, nil
+}
 func (p *rpcService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
 	return nil, nil
 }

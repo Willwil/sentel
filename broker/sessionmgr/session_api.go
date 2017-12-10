@@ -61,8 +61,8 @@ func GetClientTopics(clientId string) []*Topic {
 	return sm.getClientTopics(clientId)
 }
 
-// GetTopic return specified topic info
-func GetTopicSubscription(topic string) *Subscription {
+// GetTopic return specified topic subscription info
+func GetTopicSubscription(topic string) []*Subscription {
 	sm := base.GetService(ServiceName).(*sessionManager)
 	return sm.getTopicSubscription(topic)
 }

@@ -24,21 +24,11 @@ var topicsCmd = &cobra.Command{
 	Use:   "topics",
 	Short: "List all topics of the broker",
 	Long:  `List All topics of the broker and inquery detail topic information`,
-	Run:   topicsCmdHandler,
-}
-
-func topicsCmdHandler(cmd *cobra.Command, args []string) {
-	if len(args) < 1 || len(args) > 2 {
-		fmt.Println("Usage error, please see help")
-		return
-	}
-
-	req := &pb.TopicsRequest{Category: args[0]}
-
-	switch args[0] {
-	case "list": // Print topic list
+	Run: func(cmd *cobra.Command, args []string) {
+		req := &pb.TopicsRequest{Category: "list"}
+		// Print topic list
 		if reply, err := brokerApi.Topics(req); err != nil {
-			fmt.Println("Error:%v", err)
+			fmt.Println("Broker Api call failed:%s", err.Error())
 			return
 		} else {
 			if len(reply.Topics) == 0 {
@@ -49,12 +39,19 @@ func topicsCmdHandler(cmd *cobra.Command, args []string) {
 				fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
 			}
 		}
-	case "show":
-		if len(args) != 2 {
+	},
+}
+
+var topicsShowCmd = &cobra.Command{
+	Use:   "show",
+	Short: "show client's topics",
+	Run: func(cmd *cobra.Command, args []string) {
+		req := &pb.TopicsRequest{Category: "show"}
+		if len(args) != 1 {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.Topic = args[1]
+		req.ClientId = args[1]
 		if reply, err := brokerApi.Topics(req); err != nil {
 			fmt.Println("Error:%v", err)
 			return
@@ -65,8 +62,6 @@ func topicsCmdHandler(cmd *cobra.Command, args []string) {
 			topic := reply.Topics[0]
 			fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
 		}
-	default:
-		fmt.Println("Usage error, please see help")
-		return
-	}
+
+	},
 }

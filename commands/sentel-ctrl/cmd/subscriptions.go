@@ -51,7 +51,7 @@ func subscriptionsCmdHandler(cmd *cobra.Command, args []string) {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.Subscription = args[1]
+		req.ClientId = args[1]
 		if reply, err := brokerApi.Subscriptions(req); err != nil {
 			fmt.Println("Error:%v", err)
 			return

@@ -275,8 +275,8 @@ func (p *sessionManager) getClientTopics(clientId string) []*Topic {
 	return nil
 }
 
-// getTopic return specified topic info
-func (p *sessionManager) getTopicSubscription(topic string) *Subscription {
+// getTopic return specified topic subscription info
+func (p *sessionManager) getTopicSubscription(topic string) []*Subscription {
 	return nil
 }
 

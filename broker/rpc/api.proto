@@ -104,7 +104,9 @@ message Service {
 message SubscriptionsRequest{
     string Service = 1;
     string Category = 2;
-    string Subscription = 3;
+    string ClientId = 3;
+    string Topic = 4;
+
 }
 message SubscriptionsReply{
     ReplyMessageHeader Header = 1;
@@ -115,6 +117,8 @@ message Subscription {
     string ClientId = 1;
     string Topic = 2;
     string Attribute = 3;
+    int32 Qos=5;
+    bool Retain=6;
 }
 
 // Session
@@ -146,7 +150,7 @@ message Session {
 message TopicsRequest{
     string Service = 1;
     string Category = 2;
-    string Topic = 3;
+    string ClientId = 3;
 }
 message TopicsReply{
     ReplyMessageHeader Header = 1;
