@@ -14,7 +14,7 @@ all: build
 GCFLAGS  := -gcflags "-N -l"
 
 .PHONY: build
-build: .GOPATH/.ok apiserver ceilometer broker iothub conductor sentel-ctrl mqtt-cli k8s-test
+build: .GOPATH/.ok apiserver ceilometer broker iothub conductor sentel-ctrl mqtt-cli k8s-test kafka-consumer
 	@echo "building completed!" 
 
 ### Code not in the repository root? Another binary? Add to the path like this.
@@ -27,6 +27,10 @@ k8s-test: .GOPATH/.ok
 	@echo $@
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
 
+.PHONY: kafka-consumer
+kafka-consumer: .GOPATH/.ok
+	@echo $@
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-consumer
 
 .PHONY: ceilometer 
 ceilometer: .GOPATH/.ok
