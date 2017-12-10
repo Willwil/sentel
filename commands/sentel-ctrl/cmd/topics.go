@@ -52,7 +52,7 @@ var topicsShowCmd = &cobra.Command{
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.ClientId = args[1]
+		req.ClientId = args[0]
 		if reply, err := brokerApi.Topics(req); err != nil {
 			fmt.Println("Broker Api call failed:%s", err.Error())
 			return

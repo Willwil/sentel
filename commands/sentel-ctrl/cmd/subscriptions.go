@@ -25,7 +25,7 @@ var subscriptionsCmd = &cobra.Command{
 	Short: "List all subscriptions of the broker",
 	Long:  `All software has versions. This is Hugo's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		req := &pb.SubscriptionsRequest{Category: args[0]}
+		req := &pb.SubscriptionsRequest{Category: "list"}
 		reply, err := brokerApi.Subscriptions(req)
 		if err != nil {
 			fmt.Println("Error:%v", err)
@@ -43,12 +43,12 @@ var subscriptionsShowCmd = &cobra.Command{
 	Short:   "show client's subscriptions",
 	Example: "sentel-ctrl show clientid",
 	Run: func(cmd *cobra.Command, args []string) {
-		req := &pb.SubscriptionsRequest{Category: args[0]}
+		req := &pb.SubscriptionsRequest{Category: "show"}
 		if len(args) != 1 {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.ClientId = args[1]
+		req.ClientId = args[0]
 		if reply, err := brokerApi.Subscriptions(req); err != nil {
 			fmt.Println("Broker Api call failed:%s", err.Error())
 			return
