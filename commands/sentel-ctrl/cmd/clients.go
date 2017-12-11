@@ -24,65 +24,58 @@ var clientsCmd = &cobra.Command{
 	Use:   "clients",
 	Short: "Inquery and control connected client",
 	Long:  `Inquery client information and controll client`,
-	Run:   clientCmdHandler,
-}
-
-func clientCmdHandler(cmd *cobra.Command, args []string) {
-	if len(args) < 1 || len(args) > 2 {
-		fmt.Println("Usage error, please see help")
-		return
-	}
-	switch args[0] {
-	case "list": // Print client list
-		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0]})
-		if err != nil {
-			fmt.Println("Error:%v", err)
+	Run: func(cmd *cobra.Command, args []string) {
+		if reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: "list"}); err != nil {
+			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
-		}
-		for _, info := range reply.Clients {
-			fmt.Printf("username:%s, cleanSession:%T, peername:%s, connectTime:%s",
-				info.UserName, info.CleanSession, info.PeerName, info.ConnectTime)
-		}
-	case "show":
-		if len(args) != 2 {
-			fmt.Println("Usage error, please see help")
+		} else if len(reply.Clients) == 0 {
+			fmt.Println("No clients found in the broker")
 			return
-		}
-		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
-		if err != nil {
-			fmt.Println("Error:%v", err)
-			return
-		}
-		switch len(reply.Clients) {
-		case 0:
-			fmt.Printf("No client '%s' information in sentel", args[0])
-			return
-		case 1:
-			info := reply.Clients[0]
-			fmt.Printf("username:%s, cleanSession:%T, peername:%s, connectTime:%s",
-				info.UserName, info.CleanSession, info.PeerName, info.ConnectTime)
-		default:
-			fmt.Printf("Error: sentel return multiply user infor for client '%s'", args[0])
+		} else {
 			for _, info := range reply.Clients {
-				fmt.Printf("username:%s, cleanSession:%T, peername:%s, connectTime:%s",
+				fmt.Printf("clientId:%s, cleanSession:%T, peername:%s, connectTime:%s",
 					info.UserName, info.CleanSession, info.PeerName, info.ConnectTime)
 			}
 		}
+	},
+}
 
-	case "kick":
-		if len(args) != 2 {
+var clientsShowCmd = &cobra.Command{
+	Use:     "show",
+	Short:   "show specified client's information",
+	Example: "sentel-ctrl clients show client_id",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[1]})
-		if err != nil {
-			fmt.Println("Error:%v", err)
+		if reply, err := brokerApi.Clients(&pb.ClientsRequest{Category: args[0], ClientId: args[0]}); err != nil {
+			fmt.Printf("Broker Api call failed:%s", err.Error())
+			return
+		} else if len(reply.Clients) == 0 {
+			fmt.Printf("No client '%s' found in the broker", args[0])
+			return
+		} else {
+			info := reply.Clients[0]
+			fmt.Printf("username:%s, cleanSession:%T, peername:%s, connectTime:%s",
+				info.UserName, info.CleanSession, info.PeerName, info.ConnectTime)
+		}
+	},
+}
+
+var clientsKickoffCmd = &cobra.Command{
+	Use:     "kickoff",
+	Short:   "show specified client's information",
+	Example: "sentel-ctrl clients kickoff client_id",
+	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) != 1 {
+			fmt.Println("Usage error, please see help")
 			return
 		}
-		fmt.Println(reply.Header.Reason)
-
-	default:
-		fmt.Println("Usage error, please see help")
-		return
-	}
+		_, err := brokerApi.Clients(&pb.ClientsRequest{Category: "kickoff", ClientId: args[0]})
+		if err != nil {
+			fmt.Printf("Broker Api call failed:%s", err.Error())
+			return
+		}
+	},
 }

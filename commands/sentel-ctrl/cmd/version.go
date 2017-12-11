@@ -22,14 +22,13 @@ import (
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of Sentel",
-	Long:  `All software has versions. This is Hugo's`,
+	Short: "Print the version number of broker",
 	Run: func(cmd *cobra.Command, args []string) {
 		if reply, err := brokerApi.Version(&pb.VersionRequest{}); err != nil {
-			fmt.Println("Error:%v", err)
+			fmt.Printf("Broker Api call failed:%s", err.Error())
+			return
 		} else {
 			fmt.Println("Version:%s", reply.Version)
 		}
-
 	},
 }

@@ -23,10 +23,9 @@ import (
 var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Inquery sentel server's runing status.",
-	Long:  `All software has versions.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := brokerApi.Status(&pb.StatusRequest{}); err != nil {
-			fmt.Println("Error:%v", err)
+			fmt.Printf("Broker Api call failed:%s", err.Error())
 		}
 		fmt.Println("Node 'sentel@127.0.0.1' is started")
 	},

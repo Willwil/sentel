@@ -47,16 +47,24 @@ func init() {
 	viper.SetDefault("author", "cloudstone")
 	viper.SetDefault("license", "apache")
 
+	// Version
 	RootCmd.AddCommand(versionCmd)
+	// Status
 	RootCmd.AddCommand(statusCmd)
-	RootCmd.AddCommand(brokerCmd)
-	RootCmd.AddCommand(clientsCmd)
-	RootCmd.AddCommand(clusterCmd)
-	RootCmd.AddCommand(pluginsCmd)
-	RootCmd.AddCommand(routesCmd)
+	// Service
 	RootCmd.AddCommand(servicesCmd)
-	RootCmd.AddCommand(sessionsCmd)
 
+	RootCmd.AddCommand(brokerCmd)  // TODO
+	RootCmd.AddCommand(clusterCmd) // TODO
+	RootCmd.AddCommand(pluginsCmd) // TODO
+
+	// Clients
+	clientsCmd.AddCommand(clientsShowCmd)
+	clientsCmd.AddCommand(clientsKickoffCmd)
+	RootCmd.AddCommand(clientsCmd)
+	// Sessions
+	sessionsCmd.AddCommand(sessionsShowCmd)
+	RootCmd.AddCommand(sessionsCmd)
 	// Subscriptions
 	subscriptionsCmd.AddCommand(subscriptionsShowCmd)
 	RootCmd.AddCommand(subscriptionsCmd)

@@ -22,85 +22,15 @@ import (
 
 var servicesCmd = &cobra.Command{
 	Use:   "services",
-	Short: "List all running services and start or stop service",
-	Long:  `List all running service, start or stop service`,
-	Run:   servicesCmdHandler,
-}
-
-func servicesCmdHandler(cmd *cobra.Command, args []string) {
-	switch len(args) {
-	case 0:
-		// List all services status
-		listAllServicesStatus(cmd, args)
-	case 1, 2, 3:
-		handleServiceCommand(cmd, args[1:])
-	default:
-		fmt.Println("Error:Invalid usage, please sell help")
-		return
-	}
-}
-
-func listAllServicesStatus(cmd *cobra.Command, args []string) {
-	req := &pb.ServicesRequest{
-		Category: "list",
-	}
-	reply, err := brokerApi.Services(req)
-	if err != nil {
-		fmt.Printf("Error:%v", err)
-		return
-	}
-	for _, service := range reply.Services {
-		fmt.Printf("service '%s' is listening on:'%s'", service.ServiceName, service.Listen)
-		fmt.Printf("\tacceptors:%d", service.Acceptors)
-		fmt.Printf("\tmax_clients:%d", service.MaxClients)
-		fmt.Printf("\tcurrent_clients:%d", service.CurrentClients)
-		fmt.Printf("\tshutdown_count:%d", service.Acceptors)
-	}
-	return
-
-}
-
-// handleServiceCommand hanle service specific commands, such as start, stop
-// for example,
-// sentelctl services start mqtt:tcp 127.0.0.1:8081(optional)
-// sentelctl services stop mmqtt:tcp
-func handleServiceCommand(cmd *cobra.Command, args []string) {
-	req := &pb.ServicesRequest{
-		Category: args[0],
-	}
-
-	switch args[0] {
-	case "start":
-		if len(args) == 2 {
-			req.ServiceName = args[1]
-		} else if len(args) == 3 {
-			req.ServiceName = args[1]
-			req.Listen = args[2]
+	Short: "List all running services ",
+	Run: func(cmd *cobra.Command, args []string) {
+		if reply, err := brokerApi.Services(&pb.ServicesRequest{Category: "list"}); err != nil {
+			fmt.Printf("Broker Api call failed:%s", err.Error())
+			return
 		} else {
-			fmt.Println("Error:Invalid usage, please see help")
-			return
+			for _, service := range reply.Services {
+				fmt.Printf("service '%s'", service.ServiceName) // TODO: add service's status
+			}
 		}
-		if _, err := brokerApi.Services(req); err != nil {
-			fmt.Println("Error:Invalid usage, please sell help")
-			return
-		}
-		fmt.Println("Service '%s' is successfuly started", args[1])
-
-	case "stop":
-		if len(args) == 2 {
-			req.ServiceName = args[1]
-		} else {
-			fmt.Println("Error:Invalid usage, please see help")
-			return
-		}
-		if _, err := brokerApi.Services(req); err != nil {
-			fmt.Println("Error:Invalid usage, please sell help")
-			return
-		}
-		fmt.Println("Service '%s' is successfuly stoped", args[1])
-
-	default:
-		fmt.Println("Error:Invalid usage, please sell help")
-		return
-	}
+	},
 }

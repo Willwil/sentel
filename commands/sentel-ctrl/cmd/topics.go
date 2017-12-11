@@ -54,7 +54,7 @@ var topicsShowCmd = &cobra.Command{
 			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
 		} else if len(reply.Topics) == 0 {
-			fmt.Printf("No topics found for client '%s'", args[1])
+			fmt.Printf("No topics found for client '%s'", args[0])
 			return
 		} else {
 			for _, topic := range reply.Topics {
