@@ -10,19 +10,21 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package ceilometer
+package main
 
-var defaultConfigs = map[string]map[string]string{
-	"ceilometer": {
-		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
-		"mongo":           "localhost:27017",
-		"connect_timeout": "5",
-	},
-	"api": {
-		"listen": "localhost:8080",
-	},
-	"collector": {
-		"listen": "localhost:",
-	},
+import (
+	"flag"
+
+	"github.com/cloustone/sentel/meter"
+
+	"github.com/golang/glog"
+)
+
+var (
+	configFileFullPath = flag.String("c", "/etc/sentel/meter.conf", "config file")
+)
+
+func main() {
+	flag.Parse()
+	glog.Error(meter.RunWithConfigFile(*configFileFullPath))
 }

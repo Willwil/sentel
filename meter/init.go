@@ -10,17 +10,17 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package ceilometer
+package meter
 
 import (
-	"github.com/cloustone/sentel/ceilometer/api"
-	"github.com/cloustone/sentel/ceilometer/collector"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/meter/api"
+	"github.com/cloustone/sentel/meter/collector"
 )
 
-// RunWithConfigFile create and start ceilometer service
+// RunWithConfigFile create and start meter service
 func RunWithConfigFile(fileName string) error {
-	return core.RunWithConfigFile("ceilometer", fileName)
+	return core.RunWithConfigFile("meter", fileName)
 }
 
 // init initialize default configurations and services

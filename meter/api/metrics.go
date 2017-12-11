@@ -19,14 +19,16 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cloustone/sentel/ceilometer/collector"
+	"github.com/cloustone/sentel/meter/collector"
 	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
-// getClusterStats return cluster stats
-func getClusterStats(ctx echo.Context) error {
-	glog.Infof("calling getClusterStats from %s", ctx.Request().RemoteAddr)
+// Metrics
+
+// getClusterMetricsInfo return cluster metrics
+func getClusterMetricsInfo(ctx echo.Context) error {
+	glog.Infof("calling getClusterMetricsInfo from %s", ctx.Request().RemoteAddr)
 
 	config := ctx.(*apiContext).config
 	hosts := config.MustString("condutor", "mongo")
@@ -39,17 +41,17 @@ func getClusterStats(ctx echo.Context) error {
 	c := session.DB("iothub").C("stats")
 	defer session.Close()
 
-	stats := []collector.Stats{}
-	if err := c.Find(nil).Iter().All(&stats); err != nil {
+	metrics := []collector.Metric{}
+	if err := c.Find(nil).Iter().All(&metrics); err != nil {
 		glog.Errorf("getClusterStats:%v", err)
 		return ctx.JSON(http.StatusNotFound, &response{Success: false, Message: err.Error()})
 	}
 	services := map[string]map[string]uint64{}
-	for _, stat := range stats {
-		if service, ok := services[stat.Service]; !ok { // not found
-			services[stat.Service] = stat.Values
+	for _, metric := range metrics {
+		if service, ok := services[metric.Service]; !ok { // not found
+			services[metric.Service] = metric.Values
 		} else {
-			for key, val := range stat.Values {
+			for key, val := range metric.Values {
 				if _, ok := service[key]; !ok {
 					service[key] = val
 				} else {
@@ -61,9 +63,9 @@ func getClusterStats(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, &response{Success: true, Result: services})
 }
 
-//getNodeStatsInfo return a node's stats
-func getNodeStatsInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodeStats from %s", ctx.Request().RemoteAddr)
+// getNodeMetricsInfo return a node's metrics
+func getNodeMetricsInfo(ctx echo.Context) error {
+	glog.Infof("calling getNodeMetricsInfo from %s", ctx.Request().RemoteAddr)
 
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
@@ -78,7 +80,7 @@ func getNodeStatsInfo(ctx echo.Context) error {
 	hosts := config.MustString("condutor", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeStatsInfo:%v", err)
+		glog.Errorf("getNodeMetricsInfo:%v", err)
 		return ctx.JSON(http.StatusInternalServerError,
 			&response{
 				Success: false,
@@ -90,7 +92,7 @@ func getNodeStatsInfo(ctx echo.Context) error {
 
 	node := collector.Node{}
 	if err := c.Find(bson.M{"NodeName": nodeName}).One(&node); err != nil {
-		glog.Errorf("getNodeStatsInfo:%v", err)
+		glog.Errorf("getNodeMetricsInfo:%v", err)
 		return ctx.JSON(http.StatusNotFound,
 			&response{
 				Success: false,
@@ -98,37 +100,38 @@ func getNodeStatsInfo(ctx echo.Context) error {
 			})
 	}
 	if node.NodeIp == "" {
-		glog.Errorf("getNodeStatsInfo: cann't resolve node ip for %s", nodeName)
+		glog.Errorf("getNodeMetricsInfo: cann't resolve node ip for %s", nodeName)
 		return ctx.JSON(http.StatusNotFound,
 			&response{
 				Success: false,
 				Message: fmt.Sprintf("cann't resolve node ip for %s", nodeName),
 			})
 	}
+
 	/*
 		sentelapi, err := newSentelApi(node.NodeIp)
 		if err != nil {
-			glog.Errorf("getNodeStatsInfo:%v", err)
+			glog.Errorf("getNodeMetricsInfo:%v", err)
 			return ctx.JSON(http.StatusInternalServerError,
 				&response{
 					Success: false,
 					Message: err.Error(),
 				})
 		}
-		reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "stats"})
-		if err != nil {
-			glog.Errorf("getNodeStatusInfo:%v", err)
-			return ctx.JSON(http.StatusInternalServerError,
-				&response{
-					Success: false,
-					Message: err.Error(),
-				})
-		}
+				reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "metrics"})
+				if err != nil {
+					glog.Errorf("getNodeMetricsInfo:%v", err)
+					return ctx.JSON(http.StatusInternalServerError,
+						&response{
+							Success: false,
+							Message: err.Error(),
+						})
+				}
 
-		return ctx.JSON(http.StatusOK, &response{
-			Success: true,
-			Result:  reply.Stats,
-		})
+			return ctx.JSON(http.StatusOK, &response{
+				Success: true,
+				Result:  reply.Metrics,
+			})
 	*/
 	return ctx.JSON(http.StatusOK, nil)
 }

@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/ceilometer/collector"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/meter/collector"
 	"github.com/golang/glog"
 )
 
