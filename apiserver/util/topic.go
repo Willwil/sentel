@@ -17,10 +17,10 @@ import (
 )
 
 const (
-	TopicNameTenant  = "tenant"
-	TopicNameProduct = "product"
-	TopicNameDevice  = "device"
-	TopicNameRule    = "rule"
+	TopicNameTenant  = "sentel-iot-tenant"
+	TopicNameProduct = "sentel-iot-product"
+	TopicNameDevice  = "sentel-iot-device"
+	TopicNameRule    = "sentel-iot-rule"
 )
 
 const (

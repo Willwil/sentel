@@ -31,13 +31,16 @@ const (
 	notifyActionCreate = "create"
 	notifyActionDelete = "delete"
 	notifyActionUpdate = "update"
+	notifyActionStart  = "start"
+	notifyActionStop   = "stop"
 )
 
 // TenantNofiy is notification object from api server by kafka
-type tenantNotify struct {
-	action      string `json:"action"`
-	id          string `json:"tenantid"`
-	brokerCount string `json:"brokerCount"`
+type productNotify struct {
+	Action         string `json:"action"`
+	TenantId       string `json:"tenantId"`
+	ProductId      string `json:"productId"`
+	BrokerReplicas int32  `json:"brokerReplicas"`
 }
 
 type NotifyService struct {
@@ -74,77 +77,70 @@ func (p *NotifyService) Name() string {
 
 // Start
 func (p *NotifyService) Start() error {
-	if err := p.subscribeTopic(apiserver.TopicNameTenant); err != nil {
-		return err
-	}
 	if err := p.subscribeTopic(apiserver.TopicNameProduct); err != nil {
 		return err
 	}
+	go func(p *NotifyService) {
+		for {
+			select {
+			case <-p.Quit:
+				return
+			}
+		}
+	}(p)
 	return nil
 }
 
 // Stop
 func (p *NotifyService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.consumer.Close()
 	p.WaitGroup.Wait()
 	close(p.Quit)
-	p.consumer.Close()
 }
 
 // subscribeTopc subscribe topics from apiserver
 func (p *NotifyService) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
-	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
-	}
-
-	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
-		}
-		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
-			for msg := range pc.Messages() {
-				p.handleNotifications(string(msg.Topic), msg.Value)
+	if partitionList, err := p.consumer.Partitions(topic); err == nil {
+		for partition := range partitionList {
+			pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+			if err != nil {
+				return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
 			}
-		}(pc)
-	}
-	return nil
-}
+			p.WaitGroup.Add(1)
 
-// handleNotifications handle notification from kafka
-func (p *NotifyService) handleNotifications(topic string, value []byte) error {
-	switch topic {
-	case apiserver.TopicNameTenant:
-		obj := &tenantNotify{}
-		if err := json.Unmarshal(value, obj); err != nil {
-			return err
+			go func(p *NotifyService, pc sarama.PartitionConsumer) {
+				defer p.WaitGroup.Done()
+				for msg := range pc.Messages() {
+					glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
+					obj := &productNotify{}
+					if err := json.Unmarshal(msg.Value, obj); err == nil {
+						p.handleProductNotification(obj)
+					}
+				}
+				glog.Errorf("event service receive message stop")
+			}(p, pc)
 		}
-		return p.handleTenantNotify(obj)
 	}
-
 	return nil
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (p *NotifyService) handleTenantNotify(tf *tenantNotify) error {
-	glog.Infof("iothub-notifyservice: tenant(%s) notification received", tf.id)
+func (p *NotifyService) handleProductNotification(tf *productNotify) error {
+	glog.Infof("iothub-notifyservice: tenant(%s) notification received", tf.TenantId)
 
 	hub := getIothub()
 
-	switch tf.action {
+	switch tf.Action {
 	case notifyActionCreate:
-		return hub.addTenant(tf.id)
+		_, err := hub.addProduct(tf.TenantId, tf.ProductId, tf.BrokerReplicas)
+		return err
 	case notifyActionDelete:
-		return hub.deleteTenant(tf.id)
-	case notifyActionUpdate:
-		return hub.updateTenant(tf.id)
+		return hub.deleteProduct(tf.TenantId, tf.ProductId)
+	case notifyActionStart:
+		return hub.startProduct(tf.TenantId, tf.ProductId)
+	case notifyActionStop:
+		return hub.stopProduct(tf.TenantId, tf.ProductId)
 	}
 	return nil
 }
