@@ -38,28 +38,8 @@ func newSentelApi(hosts string) (*SentelApi, error) {
 func (s *SentelApi) version(in *pb.VersionRequest) (*pb.VersionReply, error) {
 	return s.rpcapi.Version(context.Background(), in)
 }
-func (s *SentelApi) admins(in *pb.AdminsRequest) (*pb.AdminsReply, error) {
-	return s.rpcapi.Admins(context.Background(), in)
-}
-
-func (s *SentelApi) cluster(in *pb.ClusterRequest) (*pb.ClusterReply, error) {
-	return s.rpcapi.Cluster(context.Background(), in)
-}
-
-func (s *SentelApi) routes(in *pb.RoutesRequest) (*pb.RoutesReply, error) {
-	return s.rpcapi.Routes(context.Background(), in)
-}
-
 func (s *SentelApi) status(in *pb.StatusRequest) (*pb.StatusReply, error) {
 	return s.rpcapi.Status(context.Background(), in)
-}
-
-func (s *SentelApi) broker(in *pb.BrokerRequest) (*pb.BrokerReply, error) {
-	return s.rpcapi.Broker(context.Background(), in)
-}
-
-func (s *SentelApi) plugins(in *pb.PluginsRequest) (*pb.PluginsReply, error) {
-	return s.rpcapi.Plugins(context.Background(), in)
 }
 
 func (s *SentelApi) services(in *pb.ServicesRequest) (*pb.ServicesReply, error) {

@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/core"
 
@@ -98,33 +97,7 @@ func (p *rpcService) Version(ctx context.Context, req *VersionRequest) (*Version
 	return &VersionReply{Version: version}, nil
 }
 
-func (p *rpcService) Admins(ctx context.Context, req *AdminsRequest) (*AdminsReply, error) {
-	return nil, nil
-}
-
-func (p *rpcService) Cluster(ctx context.Context, req *ClusterRequest) (*ClusterReply, error) {
-	return nil, nil
-}
-
 func (p *rpcService) Status(ctx context.Context, req *StatusRequest) (*StatusReply, error) {
-	return nil, nil
-}
-
-// Broker delegate broker command implementation in sentel
-func (p *rpcService) Broker(ctx context.Context, req *BrokerRequest) (*BrokerReply, error) {
-	switch req.Category {
-	case "stats":
-		stats := metric.GetStats(req.Service)
-		return &BrokerReply{Stats: stats}, nil
-	case "metrics":
-		metrics := metric.GetMetric(req.Service)
-		return &BrokerReply{Metrics: metrics}, nil
-	default:
-	}
-	return nil, fmt.Errorf("Invalid broker request with categoru:%s", req.Category)
-}
-
-func (p *rpcService) Plugins(ctx context.Context, req *PluginsRequest) (*PluginsReply, error) {
 	return nil, nil
 }
 
@@ -310,7 +283,4 @@ func (p *rpcService) Subscriptions(ctx context.Context, req *SubscriptionsReques
 
 	}
 	return reply, nil
-}
-func (p *rpcService) Routes(ctx context.Context, req *RoutesRequest) (*RoutesReply, error) {
-	return nil, nil
 }

@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"net/http"
 
-	pb "github.com/cloustone/sentel/broker/rpc"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
@@ -109,27 +108,30 @@ func getNodeMetricsInfo(ctx echo.Context) error {
 			})
 	}
 
-	sentelapi, err := newSentelApi(node.NodeIp)
-	if err != nil {
-		glog.Errorf("getNodeMetricsInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
-			&response{
-				Success: false,
-				Message: err.Error(),
-			})
-	}
-	reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "metrics"})
-	if err != nil {
-		glog.Errorf("getNodeMetricsInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
-			&response{
-				Success: false,
-				Message: err.Error(),
-			})
-	}
+	/*
+		sentelapi, err := newSentelApi(node.NodeIp)
+		if err != nil {
+			glog.Errorf("getNodeMetricsInfo:%v", err)
+			return ctx.JSON(http.StatusInternalServerError,
+				&response{
+					Success: false,
+					Message: err.Error(),
+				})
+		}
+				reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "metrics"})
+				if err != nil {
+					glog.Errorf("getNodeMetricsInfo:%v", err)
+					return ctx.JSON(http.StatusInternalServerError,
+						&response{
+							Success: false,
+							Message: err.Error(),
+						})
+				}
 
-	return ctx.JSON(http.StatusOK, &response{
-		Success: true,
-		Result:  reply.Metrics,
-	})
+			return ctx.JSON(http.StatusOK, &response{
+				Success: true,
+				Result:  reply.Metrics,
+			})
+	*/
+	return ctx.JSON(http.StatusOK, nil)
 }

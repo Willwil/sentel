@@ -38,28 +38,9 @@ func NewBrokerApi(c core.Config) (*BrokerApi, error) {
 func (p *BrokerApi) Version(in *VersionRequest) (*VersionReply, error) {
 	return p.rpcapi.Version(context.Background(), in)
 }
-func (p *BrokerApi) Admins(in *AdminsRequest) (*AdminsReply, error) {
-	return p.rpcapi.Admins(context.Background(), in)
-}
-
-func (p *BrokerApi) Cluster(in *ClusterRequest) (*ClusterReply, error) {
-	return p.rpcapi.Cluster(context.Background(), in)
-}
-
-func (p *BrokerApi) Routes(in *RoutesRequest) (*RoutesReply, error) {
-	return p.rpcapi.Routes(context.Background(), in)
-}
 
 func (p *BrokerApi) Status(in *StatusRequest) (*StatusReply, error) {
 	return p.rpcapi.Status(context.Background(), in)
-}
-
-func (p *BrokerApi) Broker(in *BrokerRequest) (*BrokerReply, error) {
-	return p.rpcapi.Broker(context.Background(), in)
-}
-
-func (p *BrokerApi) Plugins(in *PluginsRequest) (*PluginsReply, error) {
-	return p.rpcapi.Plugins(context.Background(), in)
 }
 
 func (p *BrokerApi) Services(in *ServicesRequest) (*ServicesReply, error) {

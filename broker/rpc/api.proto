@@ -4,12 +4,7 @@ package rpc;
 
 service Api {
     rpc Version(VersionRequest) returns (VersionReply){}
-    rpc Admins(AdminsRequest) returns (AdminsReply){}
-    rpc Cluster(ClusterRequest) returns (ClusterReply){}
-    rpc Routes(RoutesRequest) returns (RoutesReply){}
     rpc Status(StatusRequest) returns (StatusReply){}
-    rpc Broker(BrokerRequest) returns (BrokerReply){}
-    rpc Plugins(PluginsRequest) returns (PluginsReply){}
     rpc Services(ServicesRequest) returns (ServicesReply){}
     rpc Subscriptions(SubscriptionsRequest) returns (SubscriptionsReply){}
     rpc Clients(ClientsRequest) returns (ClientsReply) {}
@@ -21,16 +16,6 @@ service Api {
 message VersionRequest { }
 message VersionReply{
     string Version  = 1;
-}
-// Broker
-message BrokerRequest{
-    string Category = 1;
-    string Service = 2;
-}
-message BrokerReply{
-    ReplyMessageHeader Header = 1;
-    map<string, uint64> Stats = 2; 
-    map<string, uint64> Metrics = 3;
 }
 // Clients
 message ClientsRequest{
@@ -50,35 +35,11 @@ message Client {
     string ConnectTime = 4;
 }
 
-
-
-message AdminsRequest{}
-message AdminsReply{}
-message ClusterRequest{}
-message ClusterReply{}
-// Routes
-message RoutesRequest{
-    string Category = 1;
-    string Service = 2;  // mqtt or coap
-    string Topic = 3;
-}
-message RoutesReply{
-    ReplyMessageHeader Header = 1;
-    repeated Route Routes  = 2;
-}
-
-message Route {
-    string Topic = 1;
-    repeated string Route =2;
-}
-
 // Status
 message StatusRequest{ }
 message StatusReply {
     ReplyMessageHeader Header = 1;
 }
-message PluginsRequest{}
-message PluginsReply{}
 
 // Service
 message ServicesRequest{

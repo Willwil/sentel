@@ -54,10 +54,6 @@ func init() {
 	// Service
 	RootCmd.AddCommand(servicesCmd)
 
-	RootCmd.AddCommand(brokerCmd)  // TODO
-	RootCmd.AddCommand(clusterCmd) // TODO
-	RootCmd.AddCommand(pluginsCmd) // TODO
-
 	// Clients
 	clientsCmd.AddCommand(clientsShowCmd)
 	clientsCmd.AddCommand(clientsKickoffCmd)
