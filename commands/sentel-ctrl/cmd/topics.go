@@ -26,15 +26,13 @@ var topicsCmd = &cobra.Command{
 	Long:  `List All topics of the broker and inquery detail topic information`,
 	Run: func(cmd *cobra.Command, args []string) {
 		req := &pb.TopicsRequest{Category: "list"}
-		// Print topic list
 		if reply, err := brokerApi.Topics(req); err != nil {
-			fmt.Println("Broker Api call failed:%s", err.Error())
+			fmt.Printf("Broker Api call failed:%s", err.Error())
+			return
+		} else if len(reply.Topics) == 0 {
+			fmt.Println("No topics found in broker")
 			return
 		} else {
-			if len(reply.Topics) == 0 {
-				fmt.Println("No topics found in broker")
-				return
-			}
 			for _, topic := range reply.Topics {
 				fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
 			}
@@ -47,21 +45,21 @@ var topicsShowCmd = &cobra.Command{
 	Short:   "show client's topics",
 	Example: "sentel-ctrl show clientid",
 	Run: func(cmd *cobra.Command, args []string) {
-		req := &pb.TopicsRequest{Category: "show"}
 		if len(args) != 1 {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.ClientId = args[0]
+		req := &pb.TopicsRequest{Category: "show", ClientId: args[0]}
 		if reply, err := brokerApi.Topics(req); err != nil {
-			fmt.Println("Broker Api call failed:%s", err.Error())
+			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
 		} else if len(reply.Topics) == 0 {
 			fmt.Printf("No topics found for client '%s'", args[1])
 			return
 		} else {
-			topic := reply.Topics[0]
-			fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
+			for _, topic := range reply.Topics {
+				fmt.Printf("%s, %s", topic.Topic, topic.Attribute)
+			}
 		}
 
 	},

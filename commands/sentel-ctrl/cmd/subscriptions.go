@@ -26,14 +26,17 @@ var subscriptionsCmd = &cobra.Command{
 	Long:  `All software has versions. This is Hugo's`,
 	Run: func(cmd *cobra.Command, args []string) {
 		req := &pb.SubscriptionsRequest{Category: "list"}
-		reply, err := brokerApi.Subscriptions(req)
-		if err != nil {
-			fmt.Println("Error:%v", err)
+		if reply, err := brokerApi.Subscriptions(req); err != nil {
+			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
-		}
-		for _, sub := range reply.Subscriptions {
-			fmt.Printf("clientid:%s, topic:%s, attribute:%s",
-				sub.ClientId, sub.Topic, sub.Attribute)
+		} else if len(reply.Subscriptions) == 0 {
+			fmt.Println("No subscriptions found in broker")
+			return
+		} else {
+			for _, sub := range reply.Subscriptions {
+				fmt.Printf("clientid:%s, topic:%s, attribute:%s",
+					sub.ClientId, sub.Topic, sub.Attribute)
+			}
 		}
 	},
 }
@@ -43,23 +46,23 @@ var subscriptionsShowCmd = &cobra.Command{
 	Short:   "show client's subscriptions",
 	Example: "sentel-ctrl show clientid",
 	Run: func(cmd *cobra.Command, args []string) {
-		req := &pb.SubscriptionsRequest{Category: "show"}
 		if len(args) != 1 {
 			fmt.Println("Usage error, please see help")
 			return
 		}
-		req.ClientId = args[0]
+
+		req := &pb.SubscriptionsRequest{Category: "show", ClientId: args[0]}
 		if reply, err := brokerApi.Subscriptions(req); err != nil {
-			fmt.Println("Broker Api call failed:%s", err.Error())
+			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
 		} else if len(reply.Subscriptions) == 0 {
 			fmt.Println("No subscription found in the broker")
 			return
 		} else {
-			sub := reply.Subscriptions[0]
-			fmt.Printf("clientid:%s, topic:%s, attribute:%s",
-				sub.ClientId, sub.Topic, sub.Attribute)
-
+			for _, sub := range reply.Subscriptions {
+				fmt.Printf("clientid:%s, topic:%s, attribute:%s",
+					sub.ClientId, sub.Topic, sub.Attribute)
+			}
 		}
 	},
 }
