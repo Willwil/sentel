@@ -1,6 +1,7 @@
 FROM ubuntu
-MAINTAINER jenson.zuo@qq.com
 RUN mkdir /sentel
 RUN mkdir /etc/sentel
-ADD ./broker  /sentel/broker
-ADD ./broker.conf  /etc/sentel/broker.conf
+COPY bin/linux_amd64/sentel-broker /sentel
+COPY broker/broker.conf /etc/sentel
+
+ENTRYPOINT ["/sentel/sentel-broker"]

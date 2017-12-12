@@ -8,13 +8,14 @@ V := 1 # When V is set, print commands and build progress.
 # Space separated patterns of packages to skip in list, test, format.
 IGNORED_PACKAGES := /vendor/
 
+GCFLAGS  := -gcflags "-N -l"
+
 .PHONY: all
 all: build
 
-GCFLAGS  := -gcflags "-N -l"
-CGO_ENABLED := 0 
-GOOS :=linux 
-GOARCH := amd64
+.PHONY: docker
+docker: all
+	$Q docker build -f broker/Dockerfile .
 
 .PHONY: build
 build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k8s-test kafka-consumer kafka-producer
@@ -28,7 +29,6 @@ build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k
 .PHONY: apiserver
 apiserver: .GOPATH/.ok
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/apiserver
-
 
 .PHONY: broker 
 broker: .GOPATH/.ok
@@ -50,7 +50,6 @@ conductor: .GOPATH/.ok
 sentel-ctrl: .GOPATH/.ok
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctl
 
-
 .PHONY: k8s-test
 k8s-test: .GOPATH/.ok
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
@@ -63,11 +62,9 @@ kafka-consumer: .GOPATH/.ok
 kafka-producer: .GOPATH/.ok
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-producer
 
-
 .PHONY: tools
 mqtt-cli: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
-
 
 .PHONY: sentel-cli
 sentel-cli: .GOPATH/.ok
