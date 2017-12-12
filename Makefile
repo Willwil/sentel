@@ -15,7 +15,7 @@ all: build
 
 .PHONY: docker
 docker: all
-	$Q docker build -f broker/Dockerfile .
+	$Q docker build -f broker/Dockerfile -t sentel/broker .
 
 .PHONY: build
 build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k8s-test kafka-consumer kafka-producer
