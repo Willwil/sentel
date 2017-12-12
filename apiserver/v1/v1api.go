@@ -12,7 +12,7 @@
 package v1
 
 import (
-	"github.com/cloustone/sentel/apiserver"
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/core"
 
 	"github.com/dgrijalva/jwt-go"
@@ -57,7 +57,7 @@ type jwtApiClaims struct {
 }
 
 // NewApiManager create api manager instance
-func NewApiManager() apiserver.ApiManager {
+func NewApiManager() base.ApiManager {
 	return &v1apiManager{
 		echo:    echo.New(),
 		version: "v1",

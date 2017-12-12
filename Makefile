@@ -14,13 +14,39 @@ all: build
 GCFLAGS  := -gcflags "-N -l"
 
 .PHONY: build
-build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctrl mqtt-cli k8s-test kafka-consumer kafka-producer
-	@echo "building completed!" 
+build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k8s-test kafka-consumer kafka-producer
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
 # otherbin: .GOPATH/.ok
 # 	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/otherbin
+#
+
+.PHONY: apiserver
+apiserver: .GOPATH/.ok
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/apiserver
+
+
+.PHONY: broker 
+broker: .GOPATH/.ok
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/broker
+
+.PHONY: iothub 
+iothub: .GOPATH/.ok
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/iothub
+
+.PHONY: meter 
+meter: .GOPATH/.ok
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/meter
+
+.PHONY: conductor 
+conductor: .GOPATH/.ok
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/conductor
+
+.PHONY: sentel-ctl
+sentel-ctrl: .GOPATH/.ok
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctl
+
 
 .PHONY: k8s-test
 k8s-test: .GOPATH/.ok
@@ -34,37 +60,11 @@ kafka-consumer: .GOPATH/.ok
 kafka-producer: .GOPATH/.ok
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-producer
 
-.PHONY: meter 
-meter: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-meter
-
-
-.PHONY: apiserver
-apiserver: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-apiserver
-
-
-.PHONY: broker 
-broker: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-broker
-
-.PHONY: iothub 
-iothub: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-iothub
-
-
-.PHONY: conductor 
-conductor: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-conductor
 
 .PHONY: tools
 mqtt-cli: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
 
-
-.PHONY: sentel-ctrl
-sentel-ctrl: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctrl
 
 .PHONY: sentel-cli
 sentel-cli: .GOPATH/.ok

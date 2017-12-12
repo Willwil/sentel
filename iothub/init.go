@@ -10,10 +10,11 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package iothub
+package main
 
 import (
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/golang/glog"
 )
 
@@ -29,7 +30,7 @@ func RunWithConfigFile(fileName string) error {
 
 	// Initialize iothub at startup
 	glog.Info("Initializing iothub...")
-	if err := InitializeIothub(config); err != nil {
+	if err := hub.InitializeIothub(config); err != nil {
 		return err
 	}
 
@@ -44,6 +45,6 @@ func RunWithConfigFile(fileName string) error {
 // init initialize default configuration and service before startup
 func init() {
 	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterService("api", &ApiServiceFactory{})
-	core.RegisterService("notify", &NotifyServiceFactory{})
+	core.RegisterService("api", &hub.ApiServiceFactory{})
+	core.RegisterService("notify", &hub.NotifyServiceFactory{})
 }

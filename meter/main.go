@@ -15,15 +15,21 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/iothub"
+	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/meter/api"
+	"github.com/cloustone/sentel/meter/collector"
+
 	"github.com/golang/glog"
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/iothub.conf", "config file")
+	configFileFullPath = flag.String("c", "/etc/sentel/meter.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
-	glog.Error(iothub.RunWithConfigFile(*configFileFullPath))
+	core.RegisterConfigGroup(defaultConfigs)
+	core.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
+	core.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
+	glog.Error(core.RunWithConfigFile("meter", *configFileFullPath))
 }

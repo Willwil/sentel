@@ -10,22 +10,19 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package meter
+package main
 
 import (
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/meter/api"
-	"github.com/cloustone/sentel/meter/collector"
+	"flag"
+
+	"github.com/golang/glog"
 )
 
-// RunWithConfigFile create and start meter service
-func RunWithConfigFile(fileName string) error {
-	return core.RunWithConfigFile("meter", fileName)
-}
+var (
+	configFileFullPath = flag.String("c", "/etc/sentel/iothub.conf", "config file")
+)
 
-// init initialize default configurations and services
-func init() {
-	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
-	core.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
+func main() {
+	flag.Parse()
+	glog.Error(RunWithConfigFile(*configFileFullPath))
 }

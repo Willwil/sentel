@@ -15,9 +15,9 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/apiserver"
 	"github.com/cloustone/sentel/core"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/db"
 	"github.com/cloustone/sentel/apiserver/util"
 	v1api "github.com/cloustone/sentel/apiserver/v1"
@@ -33,7 +33,9 @@ func main() {
 	flag.Parse()
 	glog.Info("Starting api server...")
 
+	base.RegisterApiManager(v1api.NewApiManager())
 	// Get configuration
+	core.RegisterConfigGroup(defaultConfigs)
 	config, err := core.NewConfigWithFile(*configFileFullPath)
 	if err != nil {
 		glog.Fatal(err)
@@ -51,15 +53,10 @@ func main() {
 	util.InitializeKafka(config)
 
 	// Create api manager using configuration
-	apiManager, err := apiserver.GetApiManager(config)
+	apiManager, err := base.GetApiManager(config)
 	if err != nil {
 		glog.Error("%v", err)
 		return
 	}
 	glog.Error(apiManager.Run())
-}
-
-func init() {
-	core.RegisterConfigGroup(defaultConfigs)
-	apiserver.RegisterApiManager(v1api.NewApiManager())
 }

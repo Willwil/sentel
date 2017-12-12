@@ -15,16 +15,20 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/meter"
-
+	"github.com/cloustone/sentel/conductor/executor"
+	"github.com/cloustone/sentel/conductor/indicator"
+	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/meter.conf", "config file")
+	configFileFullPath = flag.String("c", "/etc/sentel/conductor.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
-	glog.Error(meter.RunWithConfigFile(*configFileFullPath))
+	core.RegisterConfigGroup(defaultConfigs)
+	core.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
+	core.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
+	glog.Error(core.RunWithConfigFile("conductor", *configFileFullPath))
 }

@@ -17,7 +17,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/cloustone/sentel/broker"
 	"github.com/golang/glog"
 )
 
@@ -37,7 +36,7 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
-	err = broker.RunWithConfig(*configFile, options)
+	err = RunWithConfig(*configFile, options)
 	glog.Fatal(err)
 }
 
