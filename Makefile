@@ -12,6 +12,9 @@ IGNORED_PACKAGES := /vendor/
 all: build
 
 GCFLAGS  := -gcflags "-N -l"
+CGO_ENABLED := 0 
+GOOS :=linux 
+GOARCH := amd64
 
 .PHONY: build
 build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k8s-test kafka-consumer kafka-producer
@@ -29,7 +32,7 @@ apiserver: .GOPATH/.ok
 
 .PHONY: broker 
 broker: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/broker
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/broker 
 
 .PHONY: iothub 
 iothub: .GOPATH/.ok
