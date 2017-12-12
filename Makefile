@@ -3,7 +3,7 @@
 # If you change this, run `make clean`. Read more: https://git.io/vM7zV
 IMPORT_PATH := github.com/cloustone/sentel
 
-# V := 1 # When V is set, print commands and build progress.
+V := 1 # When V is set, print commands and build progress.
 
 # Space separated patterns of packages to skip in list, test, format.
 IGNORED_PACKAGES := /vendor/
@@ -24,61 +24,50 @@ build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctrl mqtt-cli 
 
 .PHONY: k8s-test
 k8s-test: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
 
 .PHONY: kafka-consumer
 kafka-consumer: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-consumer
 
 .PHONY: kafka-producer
 kafka-producer: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-producer
 
 .PHONY: meter 
 meter: .GOPATH/.ok
-	@echo $@
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-meter
 
 
 .PHONY: apiserver
 apiserver: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-apiserver
 
 
 .PHONY: broker 
 broker: .GOPATH/.ok
-	@echo $@
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-broker
 
 .PHONY: iothub 
 iothub: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-iothub
 
 
 .PHONY: conductor 
 conductor: .GOPATH/.ok
-	@echo $@
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-conductor
 
 .PHONY: tools
 mqtt-cli: .GOPATH/.ok
-	@echo $@
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
 
 
 .PHONY: sentel-ctrl
 sentel-ctrl: .GOPATH/.ok
-	@echo $@
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctrl
 
 .PHONY: sentel-cli
 sentel-cli: .GOPATH/.ok
-	@echo $@
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-cli
 
 
