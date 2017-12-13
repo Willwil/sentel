@@ -32,17 +32,15 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-type k8sClusterMgr struct {
+type k8sCluster struct {
 	config    core.Config
 	mutex     sync.Mutex
-	tenants   map[string]*tenant
-	products  map[string]*product
 	brokers   map[string]*broker
 	clientset *kubernetes.Clientset
 }
 
 // newClusterManager retrieve clustermanager instance connected with clustermgr
-func newK8sClusterManager(c core.Config) (*k8sClusterMgr, error) {
+func newK8sCluster(c core.Config) (*k8sCluster, error) {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolue path to the kubeconfig file")
@@ -59,31 +57,30 @@ func newK8sClusterManager(c core.Config) (*k8sClusterMgr, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &k8sClusterMgr{
+	return &k8sCluster{
 		config:    c,
 		mutex:     sync.Mutex{},
-		tenants:   make(map[string]*tenant),
-		products:  make(map[string]*product),
 		brokers:   make(map[string]*broker),
 		clientset: clientset,
 	}, nil
 }
 
+func (p *k8sCluster) Initialize() error {
+	return nil
+}
+
 // CreateBrokers create a number of brokers for tenant and product
-func (p *k8sClusterMgr) CreateBrokers(tid string, pid string, count int32) ([]string, error) {
+func (p *k8sCluster) CreateBrokers(tid string, pid string, replicas int32) ([]string, error) {
 	podname := fmt.Sprintf("%s-%s", tid, pid)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, found := p.products[pid]; found {
-		return nil, fmt.Errorf("product '%s' already existed in iothub", pid)
-	}
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	deployment := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "sentel-broker",
 		},
 		Spec: appsv1beta1.DeploymentSpec{
-			Replicas: int32ptr(count),
+			Replicas: int32ptr(replicas),
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
@@ -123,13 +120,6 @@ func (p *k8sClusterMgr) CreateBrokers(tid string, pid string, count int32) ([]st
 		glog.Errorf("Failed to get pod list for tenant(%s)", tid)
 		return nil, err
 	}
-	pp := &product{
-		pid:       pid,
-		tid:       tid,
-		createdAt: time.Now(),
-		brokers:   make(map[string]*broker),
-	}
-
 	// get all created pods, create broker for each pod
 	names := []string{}
 	for _, pod := range pods.Items {
@@ -140,61 +130,34 @@ func (p *k8sClusterMgr) CreateBrokers(tid string, pid string, count int32) ([]st
 			lastUpdated: time.Now(),
 			context:     &pod,
 		}
-		pp.brokers[b.bid] = b
 		names = append(names, b.bid)
 		p.brokers[b.bid] = b
-	}
-	p.products[pid] = pp
-	if _, found := p.tenants[tid]; !found {
-		p.tenants[tid] = &tenant{
-			tid:       tid,
-			createdAt: time.Now(),
-			products:  make(map[string]*product),
-		}
-	} else {
-		p.tenants[tid].products[pid] = pp
 	}
 	return names, nil
 }
 
 // startBroker start specified broker
-func (p *k8sClusterMgr) StartBroker(bid string) error {
+func (p *k8sCluster) StartBroker(bid string) error {
 	return nil
 }
 
 // stopBroker stop specified node
-func (p *k8sClusterMgr) StopBroker(bid string) error {
+func (p *k8sCluster) StopBroker(bid string) error {
 	return nil
 }
 
-// startBroker start specified broker
-func (p *k8sClusterMgr) StartBrokers(tid, bid string) error {
-	return nil
-}
-
-// stopBroker stop specified node
-func (p *k8sClusterMgr) StopBrokers(tid, bid string) error {
-	return nil
-}
-
-// deleteBrokers stop and delete brokers for tenant
-func (p *k8sClusterMgr) DeleteBrokers(tid, pid string) error {
-	podname := fmt.Sprintf("%s-%s", tid, pid)
+// deleteBroker stop and delete specified broker
+func (p *k8sCluster) DeleteBroker(bid string) error {
 	deletePolicy := metav1.DeletePropagationForeground
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 
-	return deploymentsClient.Delete(podname, &metav1.DeleteOptions{
+	return deploymentsClient.Delete(bid, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	})
 }
 
-// deleteBroker stop and delete specified broker
-func (p *k8sClusterMgr) DeleteBroker(bid string) error {
-	return nil
-}
-
 // rollbackBrokers rollback tenant's brokers
-func (p *k8sClusterMgr) RollbackBrokers(tid, bid string, replicas int32) error {
+func (p *k8sCluster) RollbackBrokers(tid, bid string, replicas int32) error {
 	podname := fmt.Sprintf("%s-%s", tid, bid)
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
