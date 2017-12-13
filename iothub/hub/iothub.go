@@ -116,6 +116,11 @@ func (p *Iothub) deleteTenant(tid string) error {
 }
 
 func (p *Iothub) isProductExist(tid, pid string) bool {
+	if t, found := p.tenants[tid]; found {
+		if _, found := t.products[pid]; found {
+			return true
+		}
+	}
 	return false
 }
 

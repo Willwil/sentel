@@ -10,11 +10,12 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package iothub
+package auth
 
 type Options struct {
 	TenantId     string `json:"tenantId"`
 	TenantKey    string `json:"tenantKey"`
+	ProductId    string `json:"productId"`
 	ProductKey   string `json:"productKey"`
 	SecurityMode int    `json:"securityMode"`
 	SignMethod   string `json:"signMethod"`

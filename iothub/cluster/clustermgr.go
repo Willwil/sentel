@@ -20,8 +20,6 @@ import (
 )
 
 type ClusterManager interface {
-	// Initiialize confirm and initialize cluster manager's prerequirment
-	Initialize() error
 	// CreateBrokers create a number of brokers for tenant and product
 	CreateBrokers(tid string, pid string, replicas int32) ([]string, error)
 	// StartBroker start the specified broker

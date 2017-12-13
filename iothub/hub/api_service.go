@@ -22,8 +22,8 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/core"
+	auth "github.com/cloustone/sentel/iothub/auth"
 	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
@@ -67,11 +67,11 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	})
 
 	// Tenant
-	e.POST("iothub/api/v1/tenants/:tid", addTenant)
+	e.POST("iothub/api/v1/tenants", addTenant)
 	e.DELETE("iothub/api/v1/tenants/:tid", deleteTenant)
 
 	// Product
-	e.POST("iothub/api/v1/tenants/:tid/products/:pid", addProduct)
+	e.POST("iothub/api/v1/tenants/:tid/products", addProduct)
 	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", deleteProduct)
 	e.PUT("iothub/api/v1/tenants/:tid/products/:pid/action?start", startProduct)
 	e.PUT("iothub/api/v1/tenants/:tid/products/:pid/action?stop", stopProduct)
@@ -110,22 +110,21 @@ func (p *ApiService) Stop() {
 // addTenant
 type addTenantRequest struct {
 	auth.Options
-	TenantId string `json:"tenantId"`
 }
 
 func addTenant(ctx echo.Context) error {
 	// Authentication
-	req := auth.Options{}
+	req := addTenantRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("addProduct failed:%s", err.Error())
+		glog.Errorf("addTenant failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	if err := auth.Authenticate(&req); err != nil {
+	if err := auth.Authenticate(&req.Options); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 
 	hub := getIothub()
-	if err := hub.addTenant(ctx.Param("tid")); err != nil {
+	if err := hub.addTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -137,7 +136,7 @@ func deleteTenant(ctx echo.Context) error {
 	// Authentication
 	req := auth.Options{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("addProduct failed:%s", err.Error())
+		glog.Errorf("deleteProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	if err := auth.Authenticate(&req); err != nil {
@@ -163,7 +162,7 @@ func addProduct(ctx echo.Context) error {
 	// Authentication
 	req := &addProductRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("addProduct failed:%s", err.Error())
+		glog.Errorf("addProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	if err := auth.Authenticate(&req.Options); err != nil {
@@ -171,8 +170,12 @@ func addProduct(ctx echo.Context) error {
 	}
 
 	tid := ctx.Param("tid")
-	pid := ctx.Param("pid")
+	pid := req.ProductId
 	replicas := req.Replicas
+
+	if pid == "" || replicas == 0 {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid Parameter"})
+	}
 
 	glog.Infof("iothub: add product(%s, %s, %d)", tid, pid, replicas)
 	hub := getIothub()
@@ -190,7 +193,7 @@ func deleteProduct(ctx echo.Context) error {
 	// Authentication
 	req := &auth.Options{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("deleteProduct failed:%s", err.Error())
+		glog.Errorf("deleteProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	if err := auth.Authenticate(req); err != nil {
@@ -212,7 +215,7 @@ func startProduct(ctx echo.Context) error {
 	// Authentication
 	req := &auth.Options{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("deleteProduct failed:%s", err.Error())
+		glog.Errorf("startProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	if err := auth.Authenticate(req); err != nil {
@@ -234,7 +237,7 @@ func stopProduct(ctx echo.Context) error {
 	// Authentication
 	req := &auth.Options{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Error("deleteProduct failed:%s", err.Error())
+		glog.Errorf("stopProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	if err := auth.Authenticate(req); err != nil {

@@ -30,11 +30,10 @@ import (
 )
 
 type swarmCluster struct {
-	config         core.Config
-	mutex          sync.Mutex
-	brokers        map[string]*broker
-	client         *swarm.Client
-	requiredImages map[string]bool
+	config  core.Config
+	mutex   sync.Mutex
+	brokers map[string]*broker
+	client  *swarm.Client
 }
 
 func newSwarmCluster(c core.Config) (*swarmCluster, error) {
@@ -47,7 +46,8 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 		if len(names) == 0 {
 			return nil, errors.New("no docker-images are specified in iothub.conf")
 		}
-		for _, name := range names {
+		for _, v := range names {
+			name := strings.TrimSpace(v)
 			images[name] = false
 		}
 	}
@@ -55,37 +55,26 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 	cli, err := swarm.NewEnvClient()
 	if err != nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
+	} else {
+		for imageName, _ := range images {
+			filters := filters.NewArgs()
+			filters.Add("reference", imageName)
+			options := types.ImageListOptions{
+				Filters: filters,
+			}
+			if _, err := cli.ImageList(context.Background(), options); err != nil {
+				return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
+			}
+			glog.Infof("swarm found docker image '%s' in docker host", imageName)
+		}
 	}
 	return &swarmCluster{
-		config:         c,
-		mutex:          sync.Mutex{},
-		brokers:        make(map[string]*broker),
-		requiredImages: images,
-		client:         cli,
+		config:  c,
+		mutex:   sync.Mutex{},
+		brokers: make(map[string]*broker),
+		client:  cli,
 	}, nil
 
-}
-
-// Initiialize confirm and initialize cluster manager's prerequirment
-func (p *swarmCluster) Initialize() error {
-	// We must confirm wether the requrired images already exist
-	ok := true
-	for imageName, _ := range p.requiredImages {
-		filters := filters.NewArgs()
-		filters.Add("reference", imageName)
-		options := types.ImageListOptions{
-			Filters: filters,
-		}
-		_, err := p.client.ImageList(context.Background(), options)
-		if err != nil {
-			glog.Errorf("swarm cluster can not find required '%s docker image", imageName)
-			ok = false
-		}
-	}
-	if !ok {
-		return errors.New("swarm cluster initialization failed to find required docker images")
-	}
-	return nil
 }
 
 // CreateBrokers create a number of brokers for tenant and product
