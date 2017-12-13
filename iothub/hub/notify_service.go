@@ -133,14 +133,10 @@ func (p *NotifyService) handleProductNotification(tf *productNotify) error {
 
 	switch tf.Action {
 	case notifyActionCreate:
-		_, err := hub.addProduct(tf.TenantId, tf.ProductId, tf.BrokerReplicas)
+		_, err := hub.createProduct(tf.TenantId, tf.ProductId, tf.BrokerReplicas)
 		return err
 	case notifyActionDelete:
-		return hub.deleteProduct(tf.TenantId, tf.ProductId)
-	case notifyActionStart:
-		return hub.startProduct(tf.TenantId, tf.ProductId)
-	case notifyActionStop:
-		return hub.stopProduct(tf.TenantId, tf.ProductId)
+		return hub.removeProduct(tf.TenantId, tf.ProductId)
 	}
 	return nil
 }

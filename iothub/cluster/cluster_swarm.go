@@ -21,19 +21,18 @@ import (
 
 	"github.com/cloustone/sentel/core"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/docker/docker/api/types/network"
-	swarm "github.com/docker/docker/client"
+	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/client"
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
 )
 
 type swarmCluster struct {
-	config  core.Config
-	mutex   sync.Mutex
-	brokers map[string]*broker
-	client  *swarm.Client
+	config   core.Config
+	mutex    sync.Mutex
+	services map[string]string
+	client   *client.Client
 }
 
 func newSwarmCluster(c core.Config) (*swarmCluster, error) {
@@ -52,7 +51,7 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 		}
 	}
 	// Conenct with swarm
-	cli, err := swarm.NewEnvClient()
+	cli, err := client.NewEnvClient()
 	if err != nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
 	} else {
@@ -69,85 +68,74 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 		}
 	}
 	return &swarmCluster{
-		config:  c,
-		mutex:   sync.Mutex{},
-		brokers: make(map[string]*broker),
-		client:  cli,
+		config:   c,
+		mutex:    sync.Mutex{},
+		services: make(map[string]string),
+		client:   cli,
 	}, nil
 
 }
 
-// CreateBrokers create a number of brokers for tenant and product
-func (p *swarmCluster) CreateBrokers(tid string, pid string, replicas int32) ([]string, error) {
-	result := []string{}
-	for i := 0; i < int(replicas); i++ {
-		bid := fmt.Sprintf("%s-%s-%d", tid, pid, i)
-		name := "sentel/broker"
-		containerConfig := container.Config{}
-		hostConfig := container.HostConfig{}
-		netConfig := network.NetworkingConfig{}
-		body, err := p.client.ContainerCreate(context.Background(), &containerConfig, &hostConfig, &netConfig, name)
-		if err != nil {
-			return nil, fmt.Errorf("swarm cluster failed to create docker container for '%s'", name)
+func (p *swarmCluster) Initialize() error {
+	// leave first
+	p.client.SwarmLeave(context.Background(), true)
+	// become a swarm manager
+	options := swarm.InitRequest{
+		ListenAddr: "127.0.0.1",
+	}
+	_, err := p.client.SwarmInit(context.Background(), options)
+	return err
+}
+
+func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
+	serviceName := fmt.Sprintf("%s.%s", pid, tid)
+	cmd := []string{"/sentel/broker"}
+	args := []string{"-t", tid, "-p", pid}
+	delay := time.Duration(1 * time.Second)
+	maxAttempts := uint64(10)
+	reps := uint64(replicas)
+
+	service := swarm.ServiceSpec{
+		Annotations: swarm.Annotations{
+			Name: serviceName,
+		},
+		TaskTemplate: swarm.TaskSpec{
+			ContainerSpec: &swarm.ContainerSpec{
+				Image:    "sentel/broker",
+				Command:  cmd,
+				Args:     args,
+				Hostname: fmt.Sprintf("%s.%s", pid, tid),
+			},
+			RestartPolicy: &swarm.RestartPolicy{
+				Condition:   swarm.RestartPolicyConditionOnFailure,
+				Delay:       &delay,
+				MaxAttempts: &maxAttempts,
+			},
+		},
+		Mode: swarm.ServiceMode{
+			Replicated: &swarm.ReplicatedService{
+				Replicas: &reps,
+			},
+		},
+	}
+	options := types.ServiceCreateOptions{}
+	if rsp, err := p.client.ServiceCreate(context.Background(), service, options); err != nil {
+		return serviceName, fmt.Errorf("swarm failed to create service '%s'", serviceName)
+	} else {
+		p.services[serviceName] = rsp.ID
+	}
+	return serviceName, nil
+}
+
+func (p *swarmCluster) RemoveService(serviceName string) error {
+	if id, found := p.services[serviceName]; found {
+		if err := p.client.ServiceRemove(context.Background(), id); err != nil {
+			return fmt.Errorf("swarm stop service '%s' failed", serviceName)
 		}
-		result = append(result, name)
-		p.mutex.Lock()
-		p.brokers[bid] = &broker{
-			bid:       bid,
-			tid:       tid,
-			pid:       pid,
-			status:    brokerStatusCreated,
-			createdAt: time.Now(),
-			context:   body.ID,
-		}
-		p.mutex.Unlock()
-	}
-	return result, nil
-}
-
-// StartBroker start the specified broker
-func (p *swarmCluster) StartBroker(bid string) error {
-	if _, found := p.brokers[bid]; !found {
-		return fmt.Errorf("Invalid broker id '%s' in swarm cluster", bid)
-	}
-	containerId := p.brokers[bid].context.(string)
-	options := types.ContainerStartOptions{}
-	if err := p.client.ContainerStart(context.Background(), containerId, options); err != nil {
-		return fmt.Errorf("swarm failed to start broker '%s', reason:'%s'", bid, err.Error())
 	}
 	return nil
 }
 
-// StopBroker stop the specified broker
-func (p *swarmCluster) StopBroker(bid string) error {
-	if _, found := p.brokers[bid]; !found {
-		return fmt.Errorf("Invalid broker id '%s' in swarm cluster", bid)
-	}
-	containerId := p.brokers[bid].context.(string)
-	timeout := time.Duration(5 * time.Second)
-	if err := p.client.ContainerStop(context.Background(), containerId, &timeout); err != nil {
-		return fmt.Errorf("swarm failed to stop broker '%s', reason:'%s'", bid, err.Error())
-	}
-	return nil
-}
-
-// DeleteBroker stop and delete specified broker
-func (p *swarmCluster) DeleteBroker(bid string) error {
-	if _, found := p.brokers[bid]; !found {
-		return fmt.Errorf("Invalid broker id '%s' in swarm cluster", bid)
-	}
-	containerId := p.brokers[bid].context.(string)
-	options := types.ContainerRemoveOptions{
-		Force: true,
-	}
-	if err := p.client.ContainerRemove(context.Background(), containerId, options); err != nil {
-		return fmt.Errorf("swarm failed to remove broker '%s', reason:'%s'", bid, err.Error())
-	}
-	return nil
-
-}
-
-// RollbackBrokers rollback tenant's brokers
-func (p *swarmCluster) RollbackBrokers(tid, pid string, replicas int32) error {
+func (p *swarmCluster) UpdateService(serviceName string, replicas int32) error {
 	return nil
 }

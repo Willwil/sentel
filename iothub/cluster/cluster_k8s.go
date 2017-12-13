@@ -17,11 +17,9 @@ import (
 	"fmt"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
-	uuid "github.com/satori/go.uuid"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
 	apiv1 "k8s.io/api/core/v1"
@@ -35,7 +33,7 @@ import (
 type k8sCluster struct {
 	config    core.Config
 	mutex     sync.Mutex
-	brokers   map[string]*broker
+	pods      map[string]string
 	clientset *kubernetes.Clientset
 }
 
@@ -60,7 +58,7 @@ func newK8sCluster(c core.Config) (*k8sCluster, error) {
 	return &k8sCluster{
 		config:    c,
 		mutex:     sync.Mutex{},
-		brokers:   make(map[string]*broker),
+		pods:      make(map[string]string),
 		clientset: clientset,
 	}, nil
 }
@@ -70,7 +68,7 @@ func (p *k8sCluster) Initialize() error {
 }
 
 // CreateBrokers create a number of brokers for tenant and product
-func (p *k8sCluster) CreateBrokers(tid string, pid string, replicas int32) ([]string, error) {
+func (p *k8sCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
 	podname := fmt.Sprintf("%s-%s", tid, pid)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -107,61 +105,25 @@ func (p *k8sCluster) CreateBrokers(tid string, pid string, replicas int32) ([]st
 	}
 	result, err := deploymentsClient.Create(deployment)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	glog.Infof("broker deployment created:%q.\n", result.GetObjectMeta().GetName())
-
-	// maybe we shoud wait pod to be started
-	time.Sleep(5 * time.Second) // TODO
-
-	// get pod list
-	pods, err := p.clientset.CoreV1().Pods(podname).List(metav1.ListOptions{})
-	if err != nil {
-		glog.Errorf("Failed to get pod list for tenant(%s)", tid)
-		return nil, err
-	}
-	// get all created pods, create broker for each pod
-	names := []string{}
-	for _, pod := range pods.Items {
-		b := &broker{
-			bid:         uuid.NewV4().String(),
-			status:      brokerStatusStarted,
-			createdAt:   time.Now(),
-			lastUpdated: time.Now(),
-			context:     &pod,
-		}
-		names = append(names, b.bid)
-		p.brokers[b.bid] = b
-	}
-	return names, nil
+	return podname, nil
 }
 
-// startBroker start specified broker
-func (p *k8sCluster) StartBroker(bid string) error {
-	return nil
-}
-
-// stopBroker stop specified node
-func (p *k8sCluster) StopBroker(bid string) error {
-	return nil
-}
-
-// deleteBroker stop and delete specified broker
-func (p *k8sCluster) DeleteBroker(bid string) error {
+func (p *k8sCluster) RemoveService(serviceName string) error {
 	deletePolicy := metav1.DeletePropagationForeground
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 
-	return deploymentsClient.Delete(bid, &metav1.DeleteOptions{
+	return deploymentsClient.Delete(serviceName, &metav1.DeleteOptions{
 		PropagationPolicy: &deletePolicy,
 	})
 }
 
-// rollbackBrokers rollback tenant's brokers
-func (p *k8sCluster) RollbackBrokers(tid, bid string, replicas int32) error {
-	podname := fmt.Sprintf("%s-%s", tid, bid)
+func (p *k8sCluster) UpdateService(serviceName string, replicas int32) error {
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, getErr := deploymentsClient.Get(podname, metav1.GetOptions{})
+		result, getErr := deploymentsClient.Get(serviceName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}

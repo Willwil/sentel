@@ -39,10 +39,10 @@ type tenant struct {
 }
 
 type product struct {
-	pid       string    `json:"productId"`
-	tid       string    `json:"tenantId"`
-	createdAt time.Time `json:"createdAt"`
-	brokers   []string  "json:‘brokers"
+	pid         string    `json:"productId"`
+	tid         string    `json:"tenantId"`
+	createdAt   time.Time `json:"createdAt"`
+	serviceName string    `json:"serviceName"`
 }
 
 var (
@@ -82,7 +82,7 @@ func getIothub() *Iothub {
 }
 
 // addTenant add tenant to iothub
-func (p *Iothub) addTenant(tid string) error {
+func (p *Iothub) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -97,7 +97,7 @@ func (p *Iothub) addTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iothub
-func (p *Iothub) deleteTenant(tid string) error {
+func (p *Iothub) removeTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -106,7 +106,7 @@ func (p *Iothub) deleteTenant(tid string) error {
 	// Delete all products
 	t := p.tenants[tid]
 	for name, _ := range t.products {
-		if err := p.deleteProduct(tid, name); err != nil {
+		if err := p.removeProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)
 			// TODO: trying to delete again if failure
 		}
@@ -125,25 +125,25 @@ func (p *Iothub) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iothub
-func (p *Iothub) addProduct(tid, pid string, replicas int32) ([]string, error) {
+func (p *Iothub) createProduct(tid, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
-		return nil, fmt.Errorf("product '%s' of '%s' already exist in iothub", pid, tid)
+		return "", fmt.Errorf("product '%s' of '%s' already exist in iothub", pid, tid)
 	}
-	brokers, err := p.clustermgr.CreateBrokers(tid, pid, replicas)
+	serviceName, err := p.clustermgr.CreateService(tid, pid, replicas)
 	if err != nil {
-		return nil, err
+		return "", err
 	} else {
 		t := p.tenants[tid]
-		product := &product{tid: tid, pid: pid, createdAt: time.Now(), brokers: brokers}
+		product := &product{tid: tid, pid: pid, createdAt: time.Now(), serviceName: serviceName}
 		t.products[pid] = product
 	}
-	return brokers, nil
+	return serviceName, nil
 }
 
 // deleteProduct delete product from iothub
-func (p *Iothub) deleteProduct(tid string, pid string) error {
+func (p *Iothub) removeProduct(tid string, pid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if !p.isProductExist(tid, pid) {
@@ -151,46 +151,9 @@ func (p *Iothub) deleteProduct(tid string, pid string) error {
 	}
 	t := p.tenants[tid]
 	product := t.products[pid]
-	for _, bid := range product.brokers {
-		if err := p.clustermgr.DeleteBroker(bid); err != nil {
-			return err
-		}
+	if err := p.clustermgr.RemoveService(product.serviceName); err != nil {
+		return err
 	}
 	delete(t.products, pid)
 	return nil
-}
-
-// startProduct start product's brokers
-func (p *Iothub) startProduct(tid string, pid string) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if !p.isProductExist(tid, pid) {
-		return fmt.Errorf("product '%s' of '%s' does not exist in iothub", pid, tid)
-	}
-	t := p.tenants[tid]
-	product := t.products[pid]
-	for _, bid := range product.brokers {
-		if err := p.clustermgr.StartBroker(bid); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// stopProduct stop product's brokers
-func (p *Iothub) stopProduct(tid string, pid string) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if !p.isProductExist(tid, pid) {
-		return fmt.Errorf("product '%s' of '%s' does not exist in iothub", pid, tid)
-	}
-	t := p.tenants[tid]
-	product := t.products[pid]
-	for _, bid := range product.brokers {
-		if err := p.clustermgr.StopBroker(bid); err != nil {
-			return err
-		}
-	}
-	return nil
-
 }

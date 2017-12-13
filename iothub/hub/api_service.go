@@ -67,14 +67,12 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	})
 
 	// Tenant
-	e.POST("iothub/api/v1/tenants", addTenant)
-	e.DELETE("iothub/api/v1/tenants/:tid", deleteTenant)
+	e.POST("iothub/api/v1/tenants", createTenant)
+	e.DELETE("iothub/api/v1/tenants/:tid", removeTenant)
 
 	// Product
-	e.POST("iothub/api/v1/tenants/:tid/products", addProduct)
-	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", deleteProduct)
-	e.PUT("iothub/api/v1/tenants/:tid/products/:pid/action?start", startProduct)
-	e.PUT("iothub/api/v1/tenants/:tid/products/:pid/action?stop", stopProduct)
+	e.POST("iothub/api/v1/tenants/:tid/products", createProduct)
+	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", removeProduct)
 
 	return &ApiService{
 		ServiceBase: core.ServiceBase{
@@ -112,7 +110,7 @@ type addTenantRequest struct {
 	auth.Options
 }
 
-func addTenant(ctx echo.Context) error {
+func createTenant(ctx echo.Context) error {
 	// Authentication
 	req := addTenantRequest{}
 	if err := ctx.Bind(&req); err != nil {
@@ -124,15 +122,14 @@ func addTenant(ctx echo.Context) error {
 	}
 
 	hub := getIothub()
-	if err := hub.addTenant(req.TenantId); err != nil {
+	if err := hub.createTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
 	}
 }
 
-// deleteTenant
-func deleteTenant(ctx echo.Context) error {
+func removeTenant(ctx echo.Context) error {
 	// Authentication
 	req := auth.Options{}
 	if err := ctx.Bind(&req); err != nil {
@@ -145,7 +142,7 @@ func deleteTenant(ctx echo.Context) error {
 
 	tid := ctx.Param("tid")
 	hub := getIothub()
-	if err := hub.deleteTenant(tid); err != nil {
+	if err := hub.removeTenant(tid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -157,8 +154,7 @@ type addProductRequest struct {
 	Replicas int32 `json:"replicas"`
 }
 
-// addProduct add a tenant's product to iothub
-func addProduct(ctx echo.Context) error {
+func createProduct(ctx echo.Context) error {
 	// Authentication
 	req := &addProductRequest{}
 	if err := ctx.Bind(&req); err != nil {
@@ -179,15 +175,14 @@ func addProduct(ctx echo.Context) error {
 
 	glog.Infof("iothub: add product(%s, %s, %d)", tid, pid, replicas)
 	hub := getIothub()
-	if brokers, err := hub.addProduct(tid, pid, replicas); err != nil {
+	if brokers, err := hub.createProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true, Result: brokers})
 	}
 }
 
-// deleteProduct delete a tenant from iothub
-func deleteProduct(ctx echo.Context) error {
+func removeProduct(ctx echo.Context) error {
 	glog.Infof("iothub: delete product(tid, %s)", ctx.Param("tid"))
 
 	// Authentication
@@ -203,51 +198,7 @@ func deleteProduct(ctx echo.Context) error {
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
 	hub := getIothub()
-	if err := hub.deleteProduct(tid, pid); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
-	}
-	return ctx.JSON(http.StatusOK, &response{Success: true})
-}
-
-func startProduct(ctx echo.Context) error {
-	glog.Infof("iothub: start product(tid, %s)", ctx.Param("tid"))
-
-	// Authentication
-	req := &auth.Options{}
-	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("startProduct failed:%s", err.Error())
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-	if err := auth.Authenticate(req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-
-	tid := ctx.Param("tid")
-	pid := ctx.Param("pid")
-	hub := getIothub()
-	if err := hub.startProduct(tid, pid); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
-	}
-	return ctx.JSON(http.StatusOK, &response{Success: true})
-}
-
-func stopProduct(ctx echo.Context) error {
-	glog.Infof("iothub: stop product(tid, %s)", ctx.Param("tid"))
-
-	// Authentication
-	req := &auth.Options{}
-	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("stopProduct failed:%s", err.Error())
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-	if err := auth.Authenticate(req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-
-	tid := ctx.Param("tid")
-	pid := ctx.Param("pid")
-	hub := getIothub()
-	if err := hub.stopProduct(tid, pid); err != nil {
+	if err := hub.removeProduct(tid, pid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &response{Success: true})
