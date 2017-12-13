@@ -28,7 +28,7 @@ import (
 type registerDeviceRequest struct {
 	requestBase
 	ProductKey string `bson:"ProductKey"`
-	DeviceName string `bson:"ProductName"`
+	DeviceName string `bson:"DeviceName"`
 }
 
 type registerDeviceResponse struct {
@@ -193,20 +193,20 @@ func deleteDevice(ctx echo.Context) error {
 
 type updateDeviceRequest struct {
 	requestBase
-	DeviceId     string `bson:"deviceId"`
-	DeviceName   string `bson:"productName"`
-	ProductKey   string `bson:"productKey"`
-	DeviceSecret string `bson:"deviceSecrt"`
-	DeviceStatus string `bson:"deviceStatus"`
+	DeviceId     string `bson:"DeviceId"`
+	DeviceName   string `bson:"DeviceName"`
+	ProductKey   string `bson:"ProductKey"`
+	DeviceSecret string `bson:"DeviceSecrt"`
+	DeviceStatus string `bson:"DeviceStatus"`
 }
 type updateDeviceResponse struct {
-	DeviceId     string    `bson:"deviceId"`
-	DeviceName   string    `bson:"deviceName"`
-	DeviceSecret string    `bson:deviceSecret"`
-	DeviceStatus string    `bson:deviceStatus"`
-	ProductKey   string    `bson:"productKey"`
-	TimeCreated  time.Time `bson:"timeCreated"`
-	TimeModified time.Time `bson:"timeModified"`
+	DeviceId     string    `bson:"DeviceId"`
+	DeviceName   string    `bson:"DeviceName"`
+	DeviceSecret string    `bson:"DeviceSecret"`
+	DeviceStatus string    `bson:"DeviceStatus"`
+	ProductKey   string    `bson:"ProductKey"`
+	TimeCreated  time.Time `bson:"TimeCreated"`
+	TimeModified time.Time `bson:"TimeModified"`
 }
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub

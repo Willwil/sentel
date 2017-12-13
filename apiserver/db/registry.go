@@ -206,6 +206,10 @@ func (r *Registry) GetAllTenants() ([]Tenant, error) {
 		if iter.Next(&tn) == false {
 			glog.Infof("\nSearch end!\n\n")
 			break
+		} else {
+			lastId = tn.Name
+			glog.Infof("\nName:%s\n", lastId)
+			tns = append(tns, tn)
 		}
 		for iter.Next(&tn) {
 			lastId = tn.Name
@@ -266,7 +270,6 @@ func (r *Registry) GetAllProducts() ([]Product, error) {
 	c := r.db.C(dbNameProducts)
 	pro := Product{}
 	products := []Product{}
-	//err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(product)
 	var lastId string
 
 	iter := c.Find(nil).Sort("Id").Limit(PageSize).Iter()
@@ -274,6 +277,10 @@ func (r *Registry) GetAllProducts() ([]Product, error) {
 		if iter.Next(&pro) == false {
 			glog.Infof("\nSearch end!\n\n")
 			break
+		} else {
+			lastId = pro.Id
+			glog.Infof("\nId:%s\n", lastId)
+			products = append(products, pro)
 		}
 		for iter.Next(&pro) {
 			lastId = pro.Id
@@ -322,6 +329,10 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 		if iter.Next(&device) == false {
 			glog.Infof("\nSearch end!\n\n")
 			break
+		} else {
+			lastId = device.Id
+			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
+			devices = append(devices, device)
 		}
 		for iter.Next(&device) {
 			lastId = device.Id
@@ -329,7 +340,7 @@ func (r *Registry) GetProductDevices(id string) ([]Device, error) {
 			devices = append(devices, device)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
+			glog.Infof("\nError=%s,Search end!\n\n", iter.Err())
 			break
 		}
 		iter = c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
@@ -347,23 +358,10 @@ func (r *Registry) GetProductDevicesPage(id string, indexId string) ([]Device, s
 	var lastId string
 
 	iter := c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": indexId}}).Sort("Id").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&device) == false {
-			glog.Infof("\nSearch end!\n\n")
-			lastId = "0"
-			break
-		}
-		for iter.Next(&device) {
-			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
-			devices = append(devices, device)
-		}
-		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
-			lastId = "0"
-			break
-		}
-		iter = c.Find(bson.M{"ProductId": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
+	for iter.Next(&device) {
+		lastId = device.Id
+		glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
+		devices = append(devices, device)
 	}
 	iter.Close()
 	return devices, lastId, nil
@@ -372,6 +370,7 @@ func (r *Registry) GetProductDevicesPage(id string, indexId string) ([]Device, s
 // GetProductDevices get product's device list
 // curl -XGET "http://localhost:4145/api/vi/products/mytest?api-version=v1
 func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
+	glog.Infof("\n Product name:%s\n\n", name)
 	pro, err := r.GetProductByName(name)
 	if err != nil {
 		glog.Infof("\nNot found! Product name:%s\n\n", name)
@@ -384,12 +383,16 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 
 	c := r.db.C(dbNameDevices)
 
-	glog.Infof("\nSearch all device by productName:%s ...\n\n", pro.Name)
-	iter := c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+	glog.Infof("\nSearch all device by productKey:%s ...\n\n", pro.ProductKey)
+	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
 	for {
 		if iter.Next(&device) == false {
 			glog.Infof("\nSearch end!\n\n")
 			break
+		} else {
+			lastId = device.Id
+			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
+			devices = append(devices, device)
 		}
 		for iter.Next(&device) {
 			lastId = device.Id
@@ -397,13 +400,37 @@ func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
 			devices = append(devices, device)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
+			glog.Infof("\nErr, Search end!\n\n")
 			break
 		}
-		iter = c.Find(bson.M{"Name": bson.M{"$regex": pro.Name, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
+		iter = c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
+}
+
+// GetProductDevices get product's device list
+func (r *Registry) GetProductDevicesPageByName(name string, indexId string) ([]Device, string, error) {
+	glog.Infof("\n Product name:%s\n\n", name)
+	pro, err := r.GetProductByName(name)
+	if err != nil {
+		glog.Infof("\nNot found! Product name:%s\n\n", name)
+		return nil, "0", ErrorNotFound
+	}
+	c := r.db.C(dbNameDevices)
+
+	devices := []Device{}
+	var device Device
+	var lastId string
+
+	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}, "Id": bson.M{"$gt": indexId}}).Sort("Id").Limit(PageSize).Iter()
+	for iter.Next(&device) {
+		lastId = device.Id
+		glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
+		devices = append(devices, device)
+	}
+	iter.Close()
+	return devices, lastId, nil
 }
 
 // UpdateProduct update product detail information in registry
