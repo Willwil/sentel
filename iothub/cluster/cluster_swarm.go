@@ -81,15 +81,15 @@ func (p *swarmCluster) Initialize() error {
 	p.client.SwarmLeave(context.Background(), true)
 	// become a swarm manager
 	options := swarm.InitRequest{
-		ListenAddr: "127.0.0.1",
+		ListenAddr: "0.0.0.1:2377",
 	}
 	_, err := p.client.SwarmInit(context.Background(), options)
 	return err
 }
 
 func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
-	serviceName := fmt.Sprintf("%s.%s", pid, tid)
-	cmd := []string{"/sentel/broker"}
+	serviceName := fmt.Sprintf("%s-%s", pid, tid)
+	cmd := []string{"sentel/broker"}
 	args := []string{"-t", tid, "-p", pid}
 	delay := time.Duration(1 * time.Second)
 	maxAttempts := uint64(10)
@@ -120,6 +120,7 @@ func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (st
 	}
 	options := types.ServiceCreateOptions{}
 	if rsp, err := p.client.ServiceCreate(context.Background(), service, options); err != nil {
+		glog.Error(err)
 		return serviceName, fmt.Errorf("swarm failed to create service '%s'", serviceName)
 	} else {
 		p.services[serviceName] = rsp.ID
