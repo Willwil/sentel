@@ -15,14 +15,37 @@ package main
 import (
 	"flag"
 
+	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/golang/glog"
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/iothub.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/iothub.conf", "config file")
 )
 
 func main() {
+	glog.Info("Starting iothub ...")
 	flag.Parse()
-	glog.Error(RunWithConfigFile(*configFileFullPath))
+	core.RegisterConfigGroup(defaultConfigs)
+	core.RegisterService("api", &hub.ApiServiceFactory{})
+	core.RegisterService("notify", &hub.NotifyServiceFactory{})
+
+	// Get configuration
+	config, err := core.NewConfigWithFile(*configFileName)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	// Initialize iothub at startup
+	glog.Info("Initializing iothub...")
+	if err := hub.InitializeIothub(config); err != nil {
+		glog.Fatal(err)
+	}
+
+	// Create service manager according to the configuration
+	mgr, err := core.NewServiceManager("iothub", config)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	glog.Error(mgr.RunAndWait())
 }

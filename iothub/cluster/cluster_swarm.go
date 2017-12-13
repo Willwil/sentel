@@ -89,9 +89,9 @@ func (p *swarmCluster) Initialize() error {
 }
 
 // CreateBrokers create a number of brokers for tenant and product
-func (p *swarmCluster) CreateBrokers(tid string, pid string, replicas int) ([]string, error) {
+func (p *swarmCluster) CreateBrokers(tid string, pid string, replicas int32) ([]string, error) {
 	result := []string{}
-	for i := 0; i < replicas; i++ {
+	for i := 0; i < int(replicas); i++ {
 		bid := fmt.Sprintf("%s-%s-%d", tid, pid, i)
 		name := "sentel/broker"
 		containerConfig := container.Config{}

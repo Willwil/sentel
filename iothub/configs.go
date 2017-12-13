@@ -16,10 +16,12 @@ var defaultConfigs = map[string]map[string]string{
 	"iothub": {
 		"mongo":         "localhost:27017",
 		"kafka":         "localhost:9092",
-		"docker-images": "mongo,kafka,zookeeper, redis', sentel/broker",
+		"cluster":       "swarm",
+		"docker-images": "mongo,kafka,zookeeper, redis, sentel/broker",
 	},
 	"api": {
-		"listen":   "localhost:50052",
-		"loglevel": "debug",
+		"listen":          "localhost:50052",
+		"loglevel":        "debug",
+		"connect_timeout": "2",
 	},
 }

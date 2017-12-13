@@ -63,6 +63,8 @@ func New(c core.Config) (ClusterManager, error) {
 	switch v {
 	case "k8s":
 		return newK8sCluster(c)
+	case "swarm":
+		return newSwarmCluster(c)
 	}
 	return nil, errors.New("iothub cluster manager is not specified")
 }
