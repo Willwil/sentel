@@ -97,7 +97,7 @@ func (p *Iothub) addTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iothub
-func (p *Iothub) DeleteTenant(tid string) error {
+func (p *Iothub) deleteTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {

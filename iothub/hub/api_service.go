@@ -66,7 +66,11 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 		}
 	})
 
-	// product
+	// Tenant
+	e.POST("iothub/api/v1/tenants/:tid", addTenant)
+	e.DELETE("iothub/api/v1/tenants/:tid", deleteTenant)
+
+	// Product
 	e.POST("iothub/api/v1/tenants/:tid/products/:pid", addProduct)
 	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", deleteProduct)
 	e.PUT("iothub/api/v1/tenants/:tid/products/:pid/action?start", startProduct)
@@ -101,6 +105,52 @@ func (p *ApiService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
+}
+
+// addTenant
+type addTenantRequest struct {
+	auth.Options
+	TenantId string `json:"tenantId"`
+}
+
+func addTenant(ctx echo.Context) error {
+	// Authentication
+	req := auth.Options{}
+	if err := ctx.Bind(&req); err != nil {
+		glog.Error("addProduct failed:%s", err.Error())
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+	if err := auth.Authenticate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+
+	hub := getIothub()
+	if err := hub.addTenant(ctx.Param("tid")); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	} else {
+		return ctx.JSON(http.StatusOK, &response{Success: true})
+	}
+}
+
+// deleteTenant
+func deleteTenant(ctx echo.Context) error {
+	// Authentication
+	req := auth.Options{}
+	if err := ctx.Bind(&req); err != nil {
+		glog.Error("addProduct failed:%s", err.Error())
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+	if err := auth.Authenticate(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+
+	tid := ctx.Param("tid")
+	hub := getIothub()
+	if err := hub.deleteTenant(tid); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	} else {
+		return ctx.JSON(http.StatusOK, &response{Success: true})
+	}
 }
 
 type addProductRequest struct {
