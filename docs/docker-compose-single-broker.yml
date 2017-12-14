@@ -1,29 +1,36 @@
-version: '3'
+version: '3.2'
 services:
   mongo:
     image: mongo
     ports:
       - "27017:27017"
     networks:
-      - sentelsys 
+      - front 
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
     networks:
-      - sentelsys
+      - front 
   kafka:
     image: wurstmeister/kafka
     ports:
-      - "9092:9092"
+      - target: 9094
+        published: 9094
+        protocol: tcp
+        mode: host
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"      
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_ADVERTISED_PROTOCOL_NAME: OUTSIDE
+      KAFKA_ADVERTISED_PORT: 9094
+      KAFKA_PROTOCOL_NAME: INSIDE
+      KAFKA_PORT: 9092
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
-      - sentelsys
+      - front 
 networks:
-    sentelsys:
+    front:
         driver: overlay 
