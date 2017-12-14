@@ -81,7 +81,7 @@ func (p *swarmCluster) Initialize() error {
 	p.client.SwarmLeave(context.Background(), true)
 	// become a swarm manager
 	options := swarm.InitRequest{
-		ListenAddr: "0.0.0.1:2377",
+		ListenAddr: "0.0.0.0:2377",
 	}
 	_, err := p.client.SwarmInit(context.Background(), options)
 	return err
@@ -118,10 +118,14 @@ func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (st
 			Name: serviceName,
 		},
 		TaskTemplate: swarm.TaskSpec{
-			//TODO: how to add network setting
 			ContainerSpec: &swarm.ContainerSpec{
 				Image: "sentel/broker",
 				Env:   env,
+			},
+			//TODO: how to add network setting
+			Networks: []swarm.NetworkAttachmentConfig{
+				{Target: tid},
+				{Target: "sentel-front"},
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition:   swarm.RestartPolicyConditionOnFailure,
