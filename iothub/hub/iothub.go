@@ -36,6 +36,7 @@ type tenant struct {
 	tid       string              `json:"tenantId"`
 	createdAt time.Time           `json:"createdAt"`
 	products  map[string]*product `json:"products"`
+	network   string              `json:"network"`
 }
 
 type product struct {
@@ -86,10 +87,16 @@ func (p *Iothub) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
+		// Create netwrok for each tenant
+		network, err := p.clustermgr.CreateNetwork(tid)
+		if err != nil {
+			return err
+		}
 		p.tenants[tid] = &tenant{
 			tid:       tid,
 			createdAt: time.Now(),
 			products:  make(map[string]*product),
+			network:   network,
 		}
 		return nil
 	}
@@ -103,8 +110,12 @@ func (p *Iothub) removeTenant(tid string) error {
 	if _, found := p.tenants[tid]; !found {
 		return fmt.Errorf("tenant '%s' doesn't exist in iothub")
 	}
-	// Delete all products
 	t := p.tenants[tid]
+	// Remove network
+	if err := p.clustermgr.RemoveNetwork(t.network); err != nil {
+		return err
+	}
+	// Delete all products
 	for name, _ := range t.products {
 		if err := p.removeProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)

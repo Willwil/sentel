@@ -21,6 +21,8 @@ import (
 // ClusterManager manage service in cluster for tenant and product
 type ClusterManager interface {
 	Initialize() error
+	CreateNetwork(name string) (string, error)
+	RemoveNetwork(name string) error
 	CreateService(tid string, pid string, replicas int32) (string, error)
 	RemoveService(serviceName string) error
 	UpdateService(serviceName string, replicas int32) error

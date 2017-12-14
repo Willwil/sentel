@@ -21,9 +21,9 @@ const (
 	ServiceNameMongo   = "mongo"
 	ServiceNameRedis   = "redis"
 	ServiceNameKafka   = "kafka"
-	SentelEnvKafkaHost = "SENTEL_KAFKA_HOST"
-	SentelEnvRedisHost = "SENTEL_REDIS_HOST"
-	SentelEnvMongoHost = "SENTEL_MONGO_HOST"
+	SentelEnvKafkaHost = "KAFKA_HOST"
+	SentelEnvRedisHost = "REDIS_HOST"
+	SentelEnvMongoHost = "MONGO_HOST"
 )
 
 // GetServiceEndpoint return service address and port

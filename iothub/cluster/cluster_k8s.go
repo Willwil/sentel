@@ -67,6 +67,13 @@ func (p *k8sCluster) Initialize() error {
 	return nil
 }
 
+func (p *k8sCluster) CreateNetwork(name string) (string, error) {
+	return "", nil
+}
+func (p *k8sCluster) RemoveNetwork(name string) error {
+	return nil
+}
+
 // CreateBrokers create a number of brokers for tenant and product
 func (p *k8sCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
 	podname := fmt.Sprintf("%s-%s", tid, pid)

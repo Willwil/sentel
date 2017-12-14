@@ -87,10 +87,28 @@ func (p *swarmCluster) Initialize() error {
 	return err
 }
 
+func (p *swarmCluster) CreateNetwork(name string) (string, error) {
+	options := types.NetworkCreate{
+		Driver: "overlay",
+	}
+	if rsp, err := p.client.NetworkCreate(context.Background(), name, options); err != nil {
+		return "", err
+	} else {
+		return rsp.ID, nil
+	}
+}
+func (p *swarmCluster) RemoveNetwork(name string) error {
+	return p.client.NetworkRemove(context.Background(), name)
+}
+
 func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
 	serviceName := fmt.Sprintf("%s-%s", pid, tid)
-	cmd := []string{"sentel/broker"}
-	args := []string{"-t", tid, "-p", pid}
+	env := []string{
+		"KAFKA_HOST=sentel_kafka",
+		"MONGO_HOST=sentel_mongo",
+		fmt.Sprintf("BROKER_TENANT=%s", tid),
+		fmt.Sprintf("BROKER_PRODUCT=%s", pid),
+	}
 	delay := time.Duration(1 * time.Second)
 	maxAttempts := uint64(10)
 	reps := uint64(replicas)
@@ -100,11 +118,10 @@ func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (st
 			Name: serviceName,
 		},
 		TaskTemplate: swarm.TaskSpec{
+			//TODO: how to add network setting
 			ContainerSpec: &swarm.ContainerSpec{
-				Image:    "sentel/broker",
-				Command:  cmd,
-				Args:     args,
-				Hostname: fmt.Sprintf("%s.%s", pid, tid),
+				Image: "sentel/broker",
+				Env:   env,
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition:   swarm.RestartPolicyConditionOnFailure,
