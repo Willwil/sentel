@@ -54,18 +54,17 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 	cli, err := client.NewEnvClient()
 	if err != nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
-	} else {
-		for imageName, _ := range images {
-			filters := filters.NewArgs()
-			filters.Add("reference", imageName)
-			options := types.ImageListOptions{
-				Filters: filters,
-			}
-			if _, err := cli.ImageList(context.Background(), options); err != nil {
-				return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
-			}
-			glog.Infof("swarm found docker image '%s' in docker host", imageName)
+	}
+	for imageName, _ := range images {
+		filters := filters.NewArgs()
+		filters.Add("reference", imageName)
+		options := types.ImageListOptions{
+			Filters: filters,
 		}
+		if _, err := cli.ImageList(context.Background(), options); err != nil {
+			return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
+		}
+		glog.Infof("swarm found docker image '%s' in docker host", imageName)
 	}
 	return &swarmCluster{
 		config:   c,
@@ -88,15 +87,10 @@ func (p *swarmCluster) Initialize() error {
 }
 
 func (p *swarmCluster) CreateNetwork(name string) (string, error) {
-	options := types.NetworkCreate{
-		Driver: "overlay",
-	}
-	if rsp, err := p.client.NetworkCreate(context.Background(), name, options); err != nil {
-		return "", err
-	} else {
-		return rsp.ID, nil
-	}
+	rsp, err := p.client.NetworkCreate(context.Background(), name, types.NetworkCreate{Driver: "overlay"})
+	return rsp.ID, err
 }
+
 func (p *swarmCluster) RemoveNetwork(name string) error {
 	return p.client.NetworkRemove(context.Background(), name)
 }
