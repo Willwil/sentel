@@ -76,14 +76,17 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 }
 
 func (p *swarmCluster) Initialize() error {
-	// leave first
-	p.client.SwarmLeave(context.Background(), true)
-	// become a swarm manager
-	options := swarm.InitRequest{
-		ListenAddr: "0.0.0.0:2377",
-	}
-	_, err := p.client.SwarmInit(context.Background(), options)
-	return err
+	/*
+		// leave first
+		//p.client.SwarmLeave(context.Background(), true)
+		// become a swarm manager
+		options := swarm.InitRequest{
+			ListenAddr: "0.0.0.0:2377",
+		}
+		_, err := p.client.SwarmInit(context.Background(), options)
+		return err
+	*/
+	return nil
 }
 
 func (p *swarmCluster) CreateNetwork(name string) (string, error) {

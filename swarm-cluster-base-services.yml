@@ -30,6 +30,16 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - front 
+
+  iothub:
+    image: sentel/iothub
+    environment:
+      KAFKA_HOST: kafka:9092
+      MONGO_HOST: mongo:27017
+    ports:
+        - "50052:50052"
+    networks:
+      - front 
 networks:
     front:
         driver: overlay 

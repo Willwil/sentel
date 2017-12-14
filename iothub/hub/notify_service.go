@@ -54,10 +54,10 @@ type NotifyServiceFactory struct{}
 // New create apiService service factory
 func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
-	khosts, err := core.GetServiceEndpoint(c, "iothub", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
+	endpoint, err := core.GetServiceEndpoint(c, "iothub", "kafka")
+	consumer, err := sarama.NewConsumer(strings.Split(endpoint, ","), nil)
 	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
+		return nil, fmt.Errorf("Connecting with kafka:%s failed", endpoint)
 	}
 
 	return &NotifyService{
@@ -101,12 +101,14 @@ func (p *NotifyService) Stop() {
 
 // subscribeTopc subscribe topics from apiserver
 func (p *NotifyService) subscribeTopic(topic string) error {
-	if partitionList, err := p.consumer.Partitions(topic); err == nil {
-		for partition := range partitionList {
-			pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-			if err != nil {
-				return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
-			}
+	partitionList, err := p.consumer.Partitions(topic)
+	if err != nil {
+		return err
+	}
+	for partition := range partitionList {
+		if pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest); err != nil {
+			return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
+		} else {
 			p.WaitGroup.Add(1)
 
 			go func(p *NotifyService, pc sarama.PartitionConsumer) {

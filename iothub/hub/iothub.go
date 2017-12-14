@@ -52,18 +52,6 @@ var (
 
 // InitializeIothub create iothub global instance at startup time
 func InitializeIothub(c core.Config) error {
-	// check mongo db configuration
-	hosts, err := c.String("iothub", "mongo")
-	if err != nil || hosts == "" {
-		return errors.New("Invalid mongo configuration")
-	}
-	// try connect with mongo db
-	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
-	if err != nil {
-		return err
-	}
-	session.Close()
-
 	clustermgr, err := cluster.New(c)
 	if err != nil {
 		return err
@@ -74,6 +62,17 @@ func InitializeIothub(c core.Config) error {
 		tenants:    make(map[string]*tenant),
 		mutex:      sync.Mutex{},
 	}
+	// try connect with mongo db
+	hosts, err := core.GetServiceEndpoint(c, "iothub", "mongo")
+	if err != nil || hosts == "" {
+		return errors.New("Invalid mongo configuration")
+	}
+	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
+	if err != nil {
+		return err
+	}
+	session.Close()
+
 	return nil
 }
 

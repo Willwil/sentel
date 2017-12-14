@@ -22,9 +22,9 @@ import (
 type ClusterManager interface {
 	// Initialize precheck wether cluster proconditions are meet
 	Initialize() error
-	// CreateNetwork create tenant work
+	// CreateNetwork create tenant network
 	CreateNetwork(name string) (string, error)
-	// RemoveNetwork remove tenant work
+	// RemoveNetwork remove tenant network
 	RemoveNetwork(name string) error
 	// CreateService create broker service for product
 	CreateService(tid string, pid string, replicas int32) (string, error)
@@ -36,7 +36,7 @@ type ClusterManager interface {
 
 // New retrieve clustermanager instance connected with clustermgr
 func New(c core.Config) (ClusterManager, error) {
-	if v, err := c.String("iothub", "cluster"); err != nil {
+	if v, err := c.String("iothub", "cluster"); err == nil {
 		var cluster ClusterManager
 		switch v {
 		case "k8s":

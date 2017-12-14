@@ -79,6 +79,7 @@ func parseCliOptions() (map[string]map[string]string, error) {
 		*tenant = os.Getenv("BROKER_TENANT")
 		*product = os.Getenv("BROKER_PRODUCT")
 		if *tenant == "" || *product == "" {
+			glog.Errorf("tenant:%s, product:%s", *tenant, *product)
 			return nil, errors.New("teant and product must be specified for broker")
 		}
 	}
