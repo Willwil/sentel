@@ -162,6 +162,39 @@ func deleteProduct(ctx echo.Context) error {
 		})
 }
 
+// deleteProduct delete product from registry store
+func deleteProductByName(ctx echo.Context) error {
+	if ctx.Param("name") == "" {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+	}
+
+	// Connect with registry
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	defer r.Release()
+
+	var id string
+	if id, err = r.DeleteProductByName(ctx.Param("name")); err != nil {
+		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+	}
+	// Notify kafka
+	util.SyncProduceMessage(ctx.(*apiContext).config,
+		"todo",
+		util.TopicNameProduct,
+		&util.ProductTopic{
+			ProductId: id,
+			Action:    util.ObjectActionDelete,
+		})
+
+	return ctx.JSON(http.StatusOK,
+		&response{
+			RequestId: uuid.NewV4().String(),
+			Success:   true,
+		})
+}
+
 // getProduct retrieve production information from registry store
 func getProduct(ctx echo.Context) error {
 	if ctx.Param("id") == "" {

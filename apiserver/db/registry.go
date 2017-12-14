@@ -253,8 +253,29 @@ func (r *Registry) RegisterProduct(p *Product) error {
 
 // DeleteProduct delete a product from registry
 func (r *Registry) DeleteProduct(id string) error {
-	c := r.db.C(dbNameProducts)
+	c := r.db.C(dbNameDevices)
+	c.Remove(bson.M{"ProductKey": bson.M{"$regex": id, "$options": "$i"}})
+	c = r.db.C(dbNameProducts)
 	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
+}
+
+// DeleteProduct delete a product from registry
+func (r *Registry) DeleteProductByName(name string) (string, error) {
+	c := r.db.C(dbNameProducts)
+	product := &Product{}
+	err := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).One(product)
+	if err != nil {
+		glog.Infof("NOT found product name[%s], err=%s\n", name, err)
+		return product.Id, err
+	}
+	c = r.db.C(dbNameDevices)
+	err = c.Remove(bson.M{"ProductKey": bson.M{"$regex": product.ProductKey, "$options": "$i"}})
+	if err != nil {
+		glog.Infof("NOT delete product name[%s], err=%s\n", name, err)
+		return product.Id, err
+	}
+	c = r.db.C(dbNameProducts)
+	return product.Id, c.Remove(bson.M{"Id": bson.M{"$regex": product.Id, "$options": "$i"}})
 }
 
 // GetProduct retrieve product detail information from registry
@@ -453,25 +474,25 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetMultipleDevices(dev *Device) []Device {
+func (r *Registry) GetMultipleDevices(name string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
 	devices := []Device{}
 	var device Device
 
-	iter := c.Find(bson.M{"Name": bson.M{"$regex": dev.Name, "$options": "$i"}}).Iter()
+	iter := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).Iter()
 	for iter.Next(&device) {
 		fmt.Println(device)
 		devices = append(devices, device)
 	}
 	fmt.Println("find end!")
-	return devices
+	return devices, nil
 }
 
 // GetDevice retrieve a device information from registry/
 func (r *Registry) GetDevice(id string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}).One(device)
+	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(device)
 	v, _ := json.Marshal(*device)
 	glog.Infof("\ndevice %s\n", v)
 	return device, err
