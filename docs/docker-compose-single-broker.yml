@@ -18,7 +18,6 @@ services:
       - target: 9094
         published: 9094
         protocol: tcp
-        mode: host
     environment:
       HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"      
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

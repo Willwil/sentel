@@ -13,6 +13,7 @@ package core
 
 import (
 	"fmt"
+	"net"
 	"os"
 )
 
@@ -42,7 +43,10 @@ func GetServiceEndpoint(c Config, serviceName string, endpointName string) (stri
 		}
 	case ServiceNameKafka:
 		if v := os.Getenv(SentelEnvKafkaHost); v != "" {
-			return v, nil
+			addr, err := net.ResolveTCPAddr("tcp", v)
+			if err == nil && addr != nil {
+				return addr.String(), nil
+			}
 		}
 	}
 	// Now, just return from local configurations
