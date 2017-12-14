@@ -11,12 +11,40 @@
 
 package core
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+)
+
+const (
+	ServiceNameMongo   = "mongo"
+	ServiceNameRedis   = "redis"
+	ServiceNameKafka   = "kafka"
+	SentelEnvKafkaHost = "SENTEL_KAFKA_HOST"
+	SentelEnvRedisHost = "SENTEL_REDIS_HOST"
+	SentelEnvMongoHost = "SENTEL_MONGO_HOST"
+)
 
 // GetServiceEndpoint return service address and port
 // It will lookup cluster manager(k8s) to find endpoint, if failed,
 // get endpoint from local configuration
+
 func GetServiceEndpoint(c Config, serviceName string, endpointName string) (string, error) {
+	// trieve endpoint from environment variable at first
+	switch endpointName {
+	case ServiceNameMongo:
+		if v := os.Getenv(SentelEnvMongoHost); v != "" {
+			return v, nil
+		}
+	case ServiceNameRedis:
+		if v := os.Getenv(SentelEnvRedisHost); v != "" {
+			return v, nil
+		}
+	case ServiceNameKafka:
+		if v := os.Getenv(SentelEnvKafkaHost); v != "" {
+			return v, nil
+		}
+	}
 	// Now, just return from local configurations
 	result, err := c.String(serviceName, endpointName)
 	if err != nil || result == "" {

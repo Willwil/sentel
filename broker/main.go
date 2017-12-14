@@ -16,7 +16,19 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
+	"github.com/cloustone/sentel/broker/auth"
+	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/broker/http"
+	"github.com/cloustone/sentel/broker/metadata"
+	"github.com/cloustone/sentel/broker/metric"
+	"github.com/cloustone/sentel/broker/mqtt"
+	"github.com/cloustone/sentel/broker/queue"
+	"github.com/cloustone/sentel/broker/quto"
+	"github.com/cloustone/sentel/broker/rpc"
+	"github.com/cloustone/sentel/broker/sessionmgr"
+	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
 
@@ -29,22 +41,46 @@ var (
 )
 
 func main() {
+	glog.Infof("Starting 'broker' server...")
 	flag.Parse()
+	core.RegisterConfigGroup(defaultConfigs)
 	options, err := parseCliOptions()
 	if err != nil {
 		fmt.Println(err.Error())
 		flag.PrintDefaults()
 		return
 	}
-	err = RunWithConfig(*configFile, options)
-	glog.Fatal(err)
+	// Get configuration
+	config, _ := core.NewConfigWithFile(*configFile)
+	config.AddConfigs(options)
+	registerService(event.ServiceName, event.New)
+	registerService(queue.ServiceName, queue.New)
+	registerService(sessionmgr.ServiceName, sessionmgr.New)
+	registerService(auth.ServiceName, auth.New)
+	registerService(rpc.ServiceName, rpc.New)
+	registerService(metric.ServiceName, metric.New)
+	registerService(metadata.ServiceName, metadata.New)
+	registerService(quto.ServiceName, quto.New)
+	registerService(mqtt.ServiceName, mqtt.New)
+	registerService(http.ServiceName, http.New)
+
+	// Create service manager according to the configuration
+	broker, err := NewBroker(config)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	glog.Fatal(broker.Run())
 }
 
 func parseCliOptions() (map[string]map[string]string, error) {
 	cliOptions := map[string]map[string]string{}
 	// tenant and product must be set
 	if *tenant == "" || *product == "" {
-		return nil, errors.New("teant and product must be specified for broker")
+		*tenant = os.Getenv("BROKER_TENANT")
+		*product = os.Getenv("BROKER_PRODUCT")
+		if *tenant == "" || *product == "" {
+			return nil, errors.New("teant and product must be specified for broker")
+		}
 	}
 	cliOptions["broker"] = map[string]string{}
 	cliOptions["mqtt"] = map[string]string{}
