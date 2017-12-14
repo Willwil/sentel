@@ -83,7 +83,7 @@ func registerDevice(ctx echo.Context) error {
 }
 
 // RegisterDevice register a new device in IoT hub
-// curl -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/bulk/30?api-version=v1"
+// curl -d "ProductKey=7&DeviceName=2" "http://localhost:4145/api/v1/devices/30/bulk?api-version=v1"
 func bulkRegisterDevices(ctx echo.Context) error {
 	// Get product
 	glog.Infof("RegisterDevice ctx:[%s] ", ctx.Param("number"))
@@ -263,5 +263,26 @@ func queryDevices(ctx echo.Context) error {
 
 // Get the identifies of multiple devices from The IoT hub
 func getMultipleDevices(ctx echo.Context) error {
-	return nil
+	// Connect with registry
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	defer r.Release()
+
+	pdevices, err := r.GetMultipleDevices(ctx.Param("name"))
+	if err != nil {
+		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+	}
+	rdevices := []device{}
+	for _, dev := range pdevices {
+		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
+	}
+	return ctx.JSON(http.StatusOK,
+		&response{
+			RequestId: uuid.NewV4().String(),
+			Success:   true,
+			Result:    rdevices,
+		})
+	//	return nil
 }
