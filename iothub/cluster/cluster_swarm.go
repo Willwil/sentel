@@ -91,11 +91,11 @@ func (p *swarmCluster) Initialize() error {
 }
 
 func (p *swarmCluster) CreateNetwork(name string) (string, error) {
-	if p.client != nil {
-		rsp, err := p.client.NetworkCreate(context.Background(), name, types.NetworkCreate{Driver: "overlay"})
-		return rsp.ID, err
-	}
-	return "", nil
+	// Before create network, we should check wether the network already exist
+	rsp, err := p.client.NetworkCreate(context.Background(),
+		name,
+		types.NetworkCreate{Driver: "overlay", CheckDuplicate: true})
+	return rsp.ID, err
 }
 
 func (p *swarmCluster) RemoveNetwork(name string) error {
@@ -103,7 +103,7 @@ func (p *swarmCluster) RemoveNetwork(name string) error {
 }
 
 func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
-	serviceName := fmt.Sprintf("%s-%s", pid, tid)
+	serviceName := fmt.Sprintf("tenant_%s_%s", pid, tid)
 	env := []string{
 		"KAFKA_HOST=sentel_kafka",
 		"MONGO_HOST=sentel_mongo",

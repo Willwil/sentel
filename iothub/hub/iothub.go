@@ -13,7 +13,6 @@
 package hub
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -63,13 +62,10 @@ func InitializeIothub(c core.Config) error {
 		mutex:      sync.Mutex{},
 	}
 	// try connect with mongo db
-	hosts, err := c.String("iothub", "mongo")
-	if err != nil || hosts == "" {
-		return errors.New("Invalid mongo configuration")
-	}
-	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
+	addr := c.MustString("iothub", "mongo")
+	session, err := mgo.DialWithTimeout(addr, 1*time.Second)
 	if err != nil {
-		return fmt.Errorf("iothub connect with mongo failed: '%s'", err.Error())
+		return fmt.Errorf("iothub connect with mongo '%s'failed: '%s'", addr, err.Error())
 	}
 	session.Close()
 
