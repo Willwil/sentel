@@ -34,6 +34,13 @@ type productAddRequest struct {
 	Description string `bson:"Description"`
 }
 
+type productPageRequest struct {
+	requestBase
+	Id     string `bson:"Id"`
+	Name   string `bson:"Name"`
+	LastId string `bson:"LastId"`
+}
+
 func registerProduct(ctx echo.Context) error {
 	// Get product
 	req := new(productAddRequest)
@@ -86,10 +93,10 @@ func registerProduct(ctx echo.Context) error {
 
 type productUpdateRequest struct {
 	requestBase
-	Id          string `json:productId"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CategoryId  string `json:categoryId"`
+	Id          string `bson:"Id"`
+	Name        string `bson:"Name"`
+	Description string `bson:"Description"`
+	CategoryId  string `bson:"CategoryId"`
 }
 
 // updateProduct update product information in registry
@@ -97,11 +104,13 @@ func updateProduct(ctx echo.Context) error {
 	// Get product
 	req := new(productUpdateRequest)
 	if err := ctx.Bind(req); err != nil {
+		glog.Infof("productUpdateRequest err:%s\n", req)
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
 	r, err := db.NewRegistry(ctx.(*apiContext).config)
 	if err != nil {
+		glog.Infof("updateProduct err:%s\n", err.Error())
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
@@ -225,6 +234,38 @@ func getProduct(ctx echo.Context) error {
 			}})
 }
 
+// getProductDevices retrieve product devices list from registry store
+func getProductsByCat(ctx echo.Context) error {
+	// Connect with registry
+	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+	}
+	defer r.Release()
+
+	ps, err := r.GetProductsByCat(ctx.Param("cat"))
+	if err != nil {
+		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+	}
+	rps := []db.Product{}
+	for _, p := range ps {
+		rps = append(rps, db.Product{
+			Id:           p.Id,
+			Name:         p.Name,
+			TimeCreated:  p.TimeCreated,
+			TimeModified: p.TimeModified,
+			Description:  p.Description,
+		})
+	}
+	return ctx.JSON(http.StatusOK,
+		&response{
+			RequestId: uuid.NewV4().String(),
+			Success:   true,
+			Result:    rps,
+		})
+
+}
+
 type device struct {
 	Id     string `json:"id"`
 	Status string `json:"status"`
@@ -258,6 +299,12 @@ func getProductDevices(ctx echo.Context) error {
 
 // getAllProducts list from registry store
 func getProductDevicesPage(ctx echo.Context) error {
+	// Get product
+	req := new(productPageRequest)
+	if err := ctx.Bind(req); err != nil {
+		glog.Infof("productPageRequest err:%s\n", req)
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
 	// Connect with registry
 	r, err := db.NewRegistry(ctx.(*apiContext).config)
 	if err != nil {
@@ -265,7 +312,7 @@ func getProductDevicesPage(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	pdevices, lastId, err := r.GetProductDevicesPage(ctx.Param("id"), ctx.Param("indexId"))
+	pdevices, lastId, err := r.GetProductDevicesPage(req.Id, req.LastId)
 	if err != nil {
 		return ctx.JSON(http.StatusOK, &response{Success: false, Result: lastId, Message: err.Error()})
 	}
@@ -275,7 +322,7 @@ func getProductDevicesPage(ctx echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK,
 		&response{
-			RequestId: uuid.NewV4().String(),
+			RequestId: lastId, //uuid.NewV4().String(),
 			Success:   true,
 			Result:    rdevices,
 		})

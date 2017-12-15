@@ -110,9 +110,11 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 	g.POST(":id", registerProduct)
 	g.DELETE(":id", deleteProduct)
 	g.DELETE(":name/products", deleteProductByName)
+	g.PUT("", updateProduct)
 	g.GET(":id", getProduct)
+	g.GET(":cat/products", getProductsByCat)
 	g.GET(":id/devices", getProductDevices)
-	g.GET(":id/devices/page", getProductDevicesPage)
+	g.GET("devices/page", getProductDevicesPage)
 	g.GET(":name/devicesname", getProductDevicesByName)
 	g.GET(":name/devicesname/page", getProductDevicesPageByName)
 
