@@ -15,6 +15,7 @@ package hub
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -23,6 +24,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	apiserver "github.com/cloustone/sentel/apiserver/util"
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -48,6 +50,10 @@ type NotifyService struct {
 	consumer sarama.Consumer
 }
 
+var (
+	logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
+)
+
 // NotifyServiceFactory
 type NotifyServiceFactory struct{}
 
@@ -55,7 +61,11 @@ type NotifyServiceFactory struct{}
 func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
 	endpoint, err := core.GetServiceEndpoint(c, "iothub", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(endpoint, ","), nil)
+
+	sarama.Logger = logger
+	config := sarama.NewConfig()
+	config.ClientID = base.GetBrokerId() + "_iothub"
+	consumer, err := sarama.NewConsumer(strings.Split(endpoint, ","), config)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", endpoint)
 	}
