@@ -64,7 +64,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	var consumers = make(map[string]sarama.Consumer)
 	var producer sarama.SyncProducer
 	sarama.Logger = logger
-	if khosts, err := core.GetServiceEndpoint(c, "broker", "kafka"); err == nil && khosts != "" {
+	if khosts := c.MustString("broker", "kafka"); khosts != "" {
 		config := sarama.NewConfig()
 		config.ClientID = base.GetBrokerId() + "_MQTT"
 		// config.Consumer.MaxWaitTime = time.Duration(5 * time.Second)

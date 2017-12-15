@@ -41,18 +41,9 @@ var (
 )
 
 func main() {
-	glog.Infof("Starting 'broker' server...")
 	flag.Parse()
-	core.RegisterConfigGroup(defaultConfigs)
-	options, err := parseCliOptions()
-	if err != nil {
-		fmt.Println(err.Error())
-		flag.PrintDefaults()
-		return
-	}
-	// Get configuration
-	config, _ := core.NewConfigWithFile(*configFile)
-	config.AddConfigs(options)
+
+	glog.Infof("Starting 'broker' server...")
 	registerService(event.ServiceName, event.New)
 	registerService(queue.ServiceName, queue.New)
 	registerService(sessionmgr.ServiceName, sessionmgr.New)
@@ -64,16 +55,27 @@ func main() {
 	registerService(mqtt.ServiceName, mqtt.New)
 	registerService(http.ServiceName, http.New)
 
-	// Create service manager according to the configuration
-	broker, err := NewBroker(config)
-	if err != nil {
-		glog.Fatal(err)
+	// Create global configuration
+	if config, err := createConfig(*configFile); err != nil {
+		fmt.Println(err.Error())
+		flag.PrintDefaults()
+		return
+	} else {
+		// Create service manager according to the configuration
+		broker, err := NewBroker(config)
+		if err != nil {
+			glog.Fatal(err)
+		}
+		glog.Fatal(broker.Run())
 	}
-	glog.Fatal(broker.Run())
 }
 
-func parseCliOptions() (map[string]map[string]string, error) {
-	cliOptions := map[string]map[string]string{}
+func createConfig(fileName string) (core.Config, error) {
+	core.RegisterConfigGroup(defaultConfigs)
+	options := map[string]map[string]string{}
+	options["broker"] = map[string]string{}
+	options["mqtt"] = map[string]string{}
+
 	// tenant and product must be set
 	if *tenant == "" || *product == "" {
 		*tenant = os.Getenv("BROKER_TENANT")
@@ -83,21 +85,22 @@ func parseCliOptions() (map[string]map[string]string, error) {
 			return nil, errors.New("teant and product must be specified for broker")
 		}
 	}
-	cliOptions["broker"] = map[string]string{}
-	cliOptions["mqtt"] = map[string]string{}
-	cliOptions["broker"]["tenant"] = *tenant
-	cliOptions["broker"]["product"] = *product
+	options["broker"]["tenant"] = *tenant
+	options["broker"]["product"] = *product
+
 	// Mqtt protocol
 	if *protocol != "" {
 		switch *protocol {
 		case "tcp", "ws", "tls", "https":
-			cliOptions["broker"]["protocol"] = *protocol
+			options["broker"]["protocol"] = *protocol
 			if *listen != "" {
-				cliOptions["mqtt"][*protocol] = *listen
+				options["mqtt"][*protocol] = *listen
 			}
 		default:
 			return nil, errors.New("unknown mqtt access protocol '%s', *protocol")
 		}
 	}
-	return cliOptions, nil
+	config, _ := core.NewConfigWithFile(fileName)
+	config.AddConfigs(options)
+	return config, nil
 }

@@ -49,7 +49,7 @@ type ApiServiceFactory struct{}
 
 func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "iothub", "mongo")
+	hosts := c.MustString("iothub", "mongo")
 	timeout := c.MustInt("api", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

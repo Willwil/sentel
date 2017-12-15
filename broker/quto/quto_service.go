@@ -53,7 +53,7 @@ const (
 // New create metadata service factory
 func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
+	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
@@ -69,7 +69,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 
 	var rclient *redis.Client = nil
 	if policy == cachePolicyRedis {
-		addr, _ := core.GetServiceEndpoint(c, "quto", "redis")
+		addr, _ := c.String("broker", "redis")
 		password := c.MustString("quto", "redis_password")
 		db := c.MustInt("quto", "redis_db")
 
@@ -139,7 +139,7 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 // handleQutoChanged load changed quto into cach
 func (p *qutoServie) handleQutoChanged(e *event.Event) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
+	hosts := p.Config.MustString("broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
@@ -196,7 +196,7 @@ func (p *qutoServie) getQuto(id string) (uint64, error) {
 	}
 
 	// Read from database if not found in cache
-	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
+	hosts := p.Config.MustString("broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

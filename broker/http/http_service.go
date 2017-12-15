@@ -40,7 +40,7 @@ const (
 // New create metadata service factory
 func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
+	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

@@ -40,6 +40,8 @@ services:
         - "50052:50052"
     networks:
       - front 
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
 networks:
     front:
         driver: overlay 

@@ -30,7 +30,7 @@ type mongoPlugin struct {
 
 func newMongoPlugin(clientId string, c core.Config) (queuePlugin, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
+	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

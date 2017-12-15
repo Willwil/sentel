@@ -63,13 +63,13 @@ func InitializeIothub(c core.Config) error {
 		mutex:      sync.Mutex{},
 	}
 	// try connect with mongo db
-	hosts, err := core.GetServiceEndpoint(c, "iothub", "mongo")
+	hosts, err := c.String("iothub", "mongo")
 	if err != nil || hosts == "" {
 		return errors.New("Invalid mongo configuration")
 	}
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {
-		return err
+		return fmt.Errorf("iothub connect with mongo failed: '%s'", err.Error())
 	}
 	session.Close()
 

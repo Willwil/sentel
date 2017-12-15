@@ -36,7 +36,7 @@ const (
 // New create coap service factory
 func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "broker", "mongo")
+	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
@@ -46,7 +46,7 @@ func New(c core.Config, quit chan os.Signal) (base.Service, error) {
 
 	// Connect with redis if cache policy is redis
 	var rclient *redis.Client = nil
-	if addr, err := core.GetServiceEndpoint(c, "broker", "redis"); err == nil {
+	if addr, err := c.String("broker", "redis"); err == nil {
 		password := c.MustString("broker", "redis_password")
 		db := c.MustInt("auth", "redis_db")
 		rclient = redis.NewClient(&redis.Options{
@@ -149,7 +149,7 @@ func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
 	}
 
 	// Read from database if not found in cache
-	hosts, _ := core.GetServiceEndpoint(p.Config, "broker", "mongo")
+	hosts := p.Config.MustString("broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

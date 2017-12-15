@@ -22,9 +22,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/apiserver/util"
 
 	"github.com/Shopify/sarama"
 	"github.com/golang/glog"
@@ -42,7 +42,7 @@ type IndicatorServiceFactory struct{}
 // New create apiService service factory
 func (p *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "conductor", "mongo")
+	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
@@ -51,7 +51,7 @@ func (p *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	defer session.Close()
 
 	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "conductor", "kafka")
+	khosts := c.MustString("conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
@@ -118,6 +118,7 @@ func (p *IndicatorService) subscribeTopic(topic string) error {
 	fmt.Printf("wait bye\n")
 	return nil
 }
+
 /*
 type ruleTopic struct {
 	RuleName  string `json:"ruleName"`

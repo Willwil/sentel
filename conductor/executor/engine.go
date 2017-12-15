@@ -53,7 +53,7 @@ type ruleEngine struct {
 
 // newRuleEngine create a engine according to product id and configuration
 func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
-	khosts, _ := core.GetServiceEndpoint(c, "conductor", "kafka")
+	khosts := c.MustString("conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)

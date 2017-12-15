@@ -41,7 +41,7 @@ var executorService *ExecutorService
 // New create executor service factory
 func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
-	hosts, _ := core.GetServiceEndpoint(c, "conductor", "mongo")
+	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

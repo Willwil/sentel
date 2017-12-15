@@ -126,7 +126,7 @@ func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (st
 			//TODO: how to add network setting
 			Networks: []swarm.NetworkAttachmentConfig{
 				{Target: tid},
-				{Target: "sentel-front"},
+				{Target: "sentel_front"},
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition:   swarm.RestartPolicyConditionOnFailure,

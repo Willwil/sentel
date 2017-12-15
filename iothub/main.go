@@ -14,6 +14,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/cloustone/sentel/core"
 	"github.com/cloustone/sentel/iothub/hub"
@@ -28,17 +29,12 @@ func main() {
 	flag.Parse()
 
 	glog.Info("Starting iothub ...")
-	core.RegisterConfigGroup(defaultConfigs)
 	core.RegisterService("api", &hub.ApiServiceFactory{})
 	core.RegisterService("notify", &hub.NotifyServiceFactory{})
 
-	// Get configuration
-	config, err := core.NewConfigWithFile(*configFileName)
-	if err != nil {
-		glog.Fatal(err)
-	}
 	// Initialize iothub at startup
 	glog.Info("Initializing iothub...")
+	config, _ := createConfig(*configFileName)
 	if err := hub.InitializeIothub(config); err != nil {
 		glog.Fatal(err)
 	}
@@ -49,4 +45,16 @@ func main() {
 		glog.Fatal(err)
 	}
 	glog.Error(mgr.RunAndWait())
+}
+
+func createConfig(fileName string) (core.Config, error) {
+	options := map[string]map[string]string{}
+	options["iothub"] = map[string]string{}
+	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
+	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
+	// Get configuration
+	core.RegisterConfigGroup(defaultConfigs)
+	config, _ := core.NewConfigWithFile(fileName)
+	config.AddConfigs(options)
+	return config, nil
 }

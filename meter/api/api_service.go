@@ -50,7 +50,7 @@ const APIHEAD = "api/v1/"
 // New create apiService service factory
 func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
-	hosts, _ := core.GetServiceEndpoint(c, "meter", "mongo")
+	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

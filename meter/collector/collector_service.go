@@ -39,7 +39,7 @@ type CollectorServiceFactory struct{}
 // New create apiService service factory
 func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(c, "collector", "mongo")
+	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
@@ -48,7 +48,7 @@ func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	session.Close()
 
 	// kafka
-	khosts, _ := core.GetServiceEndpoint(c, "meter", "kafka")
+	khosts := c.MustString("meter", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
@@ -101,7 +101,7 @@ func (p *CollectorService) handleNotifications(topic string, value []byte) error
 
 func (p *CollectorService) getDatabase() (*mgo.Database, error) {
 	// check mongo db configuration
-	hosts, _ := core.GetServiceEndpoint(p.Config, "collector", "mongo")
+	hosts := p.Config.MustString("meter", "mongo")
 	timeout := p.Config.MustInt("meter", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {

@@ -59,7 +59,8 @@ type NotifyServiceFactory struct{}
 // New create apiService service factory
 func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// kafka
-	endpoint, err := core.GetServiceEndpoint(c, "iothub", "kafka")
+	endpoint := c.MustString("iothub", "kafka")
+	glog.Infof("iothub get kafka service endpoint: %s", endpoint)
 
 	sarama.Logger = logger
 	config := sarama.NewConfig()
@@ -116,20 +117,20 @@ func (p *NotifyService) subscribeTopic(topic string) error {
 	}
 	for partition := range partitionList {
 		if pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest); err != nil {
-			return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
+			return fmt.Errorf("iothub subscribe kafka topic '%s' failed:%s", topic, err.Error())
 		} else {
 			p.WaitGroup.Add(1)
 
 			go func(p *NotifyService, pc sarama.PartitionConsumer) {
 				defer p.WaitGroup.Done()
 				for msg := range pc.Messages() {
-					glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
+					glog.Infof("iothub receive message: Key='%s', Value:%s", msg.Key, msg.Value)
 					obj := &productNotify{}
 					if err := json.Unmarshal(msg.Value, obj); err == nil {
 						p.handleProductNotification(obj)
 					}
 				}
-				glog.Errorf("event service receive message stop")
+				glog.Errorf("iothub message receiver stop")
 			}(p, pc)
 		}
 	}
