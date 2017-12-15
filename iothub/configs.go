@@ -15,7 +15,7 @@ package main
 var defaultConfigs = map[string]map[string]string{
 	"iothub": {
 		"mongo":         "localhost:27017",
-		"kafka":         "localhost:9094",
+		"kafka":         "localhost:9092",
 		"cluster":       "swarm",
 		"docker-images": "mongo,kafka,zookeeper, redis, sentel/broker",
 	},

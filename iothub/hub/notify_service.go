@@ -24,7 +24,6 @@ import (
 
 	"github.com/Shopify/sarama"
 	apiserver "github.com/cloustone/sentel/apiserver/util"
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -64,7 +63,7 @@ func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 
 	sarama.Logger = logger
 	config := sarama.NewConfig()
-	config.ClientID = base.GetBrokerId() + "_iothub"
+	config.ClientID = "iothub"
 	consumer, err := sarama.NewConsumer(strings.Split(endpoint, ","), config)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", endpoint)

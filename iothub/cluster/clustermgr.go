@@ -20,8 +20,6 @@ import (
 
 // ClusterManager is wrapper cluster manager built on top of swarm and kubernetes
 type ClusterManager interface {
-	// Initialize precheck wether cluster proconditions are meet
-	Initialize() error
 	// CreateNetwork create tenant network
 	CreateNetwork(name string) (string, error)
 	// RemoveNetwork remove tenant network
@@ -37,15 +35,11 @@ type ClusterManager interface {
 // New retrieve clustermanager instance connected with clustermgr
 func New(c core.Config) (ClusterManager, error) {
 	if v, err := c.String("iothub", "cluster"); err == nil {
-		var cluster ClusterManager
 		switch v {
 		case "k8s":
-			cluster, _ = newK8sCluster(c)
+			return newK8sCluster(c)
 		case "swarm":
-			cluster, _ = newSwarmCluster(c)
-		}
-		if cluster != nil {
-			return cluster, cluster.Initialize()
+			return newSwarmCluster(c)
 		}
 	}
 	return nil, errors.New("iothub cluster manager initialize failed")

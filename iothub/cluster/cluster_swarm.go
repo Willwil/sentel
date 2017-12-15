@@ -21,7 +21,6 @@ import (
 
 	"github.com/cloustone/sentel/core"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
 	"github.com/golang/glog"
@@ -52,20 +51,22 @@ func newSwarmCluster(c core.Config) (*swarmCluster, error) {
 	}
 	// Conenct with swarm
 	cli, err := client.NewEnvClient()
-	if err != nil {
+	if err != nil || cli == nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
 	}
-	for imageName, _ := range images {
-		filters := filters.NewArgs()
-		filters.Add("reference", imageName)
-		options := types.ImageListOptions{
-			Filters: filters,
+	/*
+		for imageName, _ := range images {
+			filters := filters.NewArgs()
+			filters.Add("reference", imageName)
+			options := types.ImageListOptions{
+				Filters: filters,
+			}
+			if _, err := cli.ImageList(context.Background(), options); err != nil {
+				return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
+			}
+			glog.Infof("swarm found docker image '%s' in docker host", imageName)
 		}
-		if _, err := cli.ImageList(context.Background(), options); err != nil {
-			return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
-		}
-		glog.Infof("swarm found docker image '%s' in docker host", imageName)
-	}
+	*/
 	return &swarmCluster{
 		config:   c,
 		mutex:    sync.Mutex{},
@@ -90,8 +91,11 @@ func (p *swarmCluster) Initialize() error {
 }
 
 func (p *swarmCluster) CreateNetwork(name string) (string, error) {
-	rsp, err := p.client.NetworkCreate(context.Background(), name, types.NetworkCreate{Driver: "overlay"})
-	return rsp.ID, err
+	if p.client != nil {
+		rsp, err := p.client.NetworkCreate(context.Background(), name, types.NetworkCreate{Driver: "overlay"})
+		return rsp.ID, err
+	}
+	return "", nil
 }
 
 func (p *swarmCluster) RemoveNetwork(name string) error {

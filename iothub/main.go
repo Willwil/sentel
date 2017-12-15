@@ -25,8 +25,9 @@ var (
 )
 
 func main() {
-	glog.Info("Starting iothub ...")
 	flag.Parse()
+
+	glog.Info("Starting iothub ...")
 	core.RegisterConfigGroup(defaultConfigs)
 	core.RegisterService("api", &hub.ApiServiceFactory{})
 	core.RegisterService("notify", &hub.NotifyServiceFactory{})
