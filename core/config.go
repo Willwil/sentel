@@ -50,7 +50,7 @@ var (
 
 // Bool return bool value for key
 func (c *config) Bool(section string, key string) (bool, error) {
-	if allConfigSections[section] == nil {
+	if _, found := allConfigSections[section]; !found {
 		return false, ErrorInvalidConfiguration
 	}
 	val := allConfigSections[section].items[key]
@@ -60,12 +60,12 @@ func (c *config) Bool(section string, key string) (bool, error) {
 	case "false":
 		return false, nil
 	}
-	return false, fmt.Errorf("Invalid configuration item %s:%s", key, val)
+	return false, fmt.Errorf("Invalid configuration item for service '%s' item '%s'", section, key)
 }
 
 // Int return int value for key
 func (c *config) Int(section string, key string) (int, error) {
-	if allConfigSections[section] == nil {
+	if _, found := allConfigSections[section]; !found {
 		return -1, ErrorInvalidConfiguration
 	}
 	val := allConfigSections[section].items[key]
@@ -74,16 +74,15 @@ func (c *config) Int(section string, key string) (int, error) {
 
 // String return string valu for key
 func (c *config) String(section string, key string) (string, error) {
-	if allConfigSections[section] == nil {
+	if _, found := allConfigSections[section]; !found {
 		return "", ErrorInvalidConfiguration
 	}
 	return allConfigSections[section].items[key], nil
 }
 
 func (c *config) MustBool(section string, key string) bool {
-	if allConfigSections[section] == nil {
-		glog.Fatal("Invalid configuration item:%s:%s", section, key)
-		os.Exit(0)
+	if _, found := allConfigSections[section]; !found {
+		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
 	}
 	val := allConfigSections[section].items[key]
 	switch val {
@@ -92,26 +91,24 @@ func (c *config) MustBool(section string, key string) bool {
 	case "false":
 		return false
 	}
-	os.Exit(0)
+	glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
 	return false
 }
 func (c *config) MustInt(section string, key string) int {
 	if _, ok := allConfigSections[section]; !ok {
-		glog.Fatal("Invalid configuration item:%s:%s", section, key)
-		os.Exit(0)
+		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
 	}
 	val := allConfigSections[section].items[key]
 	n, err := strconv.Atoi(val)
 	if err != nil {
-		glog.Fatalf("Invalid configuration item:%s:%s", section, key)
-		os.Exit(0)
+		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
 	}
 	return n
 }
 
 func (c *config) MustString(section string, key string) string {
 	if _, ok := allConfigSections[section]; !ok {
-		glog.Fatalf("Invalid configuration: %s not found", section)
+		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
 		os.Exit(0)
 	}
 	return allConfigSections[section].items[key]
