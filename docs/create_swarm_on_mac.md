@@ -16,16 +16,23 @@
 4. confirm swarm cluster's status  
 > docker node ls 
 
-5.start base services  
+5. update docker image registry
+> for i in `seq 3`; do \  
+> docker-machine ssh node-$i "echo 'EXTRA_ARGS=\"--registry-mirror=https://registry.docker-cn.com\"' | sudo tee -a /var/lib/boot2docker/profile"  
+
+6. restart worker node
+> for i in `seq 3`; do docker-machine restart node-$i; done  
+
+6. start base services  
 > cd $GOPATH/src/github.com/cloustone/sentel    
 > docker stack deploy -c swarm-cluster-base-services.yml sentel
 
-6. confirm service status  
+7. confirm service status  
 > docker service ls  
 > docker service ps sentel\_kafka   
 > docker service logssentel\_kafka
 
-7. test wether the broker service can be started normaly  
+8. test wether the broker service can be started normaly  
 > docker service create \  
 > --name broker  \  
 > --replicas 3  \  
@@ -36,7 +43,7 @@
 > --env BROKER\_PRODUCT=world  \  
 > sentel/broker  
 
-8. test network's status
+9. test network's status
 > docker network ls  
 > docker network create --driver overlay  hello
 > docker network rm hello  
