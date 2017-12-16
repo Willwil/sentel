@@ -1,21 +1,24 @@
 1. create virtual machine  
-> for i in seq 3; do docker-machine create -d virtualbox node-$i; done  
+> for i in `seq 3`; do docker-machine create -d virtualbox node-$i; done  
 
-2. setup docker swarm manager
+2. confirm node-1's ip address
+> docker-machine ip node-1
+
+3. setup docker swarm manager (node-1's ip address is 192.168.99.100)
 > eval $(docker-machine env node-1)  
-> docker swarm init --advertise-addr 192.168.99.100 (node-1's ip address)  
+> docker swarm init --advertise-addr 192.168.99.100
 
-3. add swarm worker nodes  
-> for i in 2 3 4; do \  
-> docker-machine ssh node-$i sudo docker swarm join  \  
-> --token xxxx--xxxx-xxx 192.168.99.100:2377; done  
+4. add swarm worker nodes  
+> for i in 2 3; do \  
+> docker-machine ssh node-$i "docker swarm join  \  
+> --token <token> 192.168.99.100:2377"; done
 
 4. confirm swarm cluster's status  
-> docker info 
+> docker node ls 
 
 5.start base services  
 > cd $GOPATH/src/github.com/cloustone/sentel    
-> docker deploy -c swarm-cluster-base-services.yml  sentel
+> docker stack deploy -c swarm-cluster-base-services.yml sentel
 
 6. confirm service status  
 > docker service ls  
