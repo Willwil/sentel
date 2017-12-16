@@ -15,7 +15,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/Unknwon/goconfig"
@@ -48,9 +47,19 @@ var (
 
 // config implementations
 
+func checkItemExist(section string, key string) bool {
+	if _, found := allConfigSections[section]; !found {
+		return false
+	}
+	if _, found := allConfigSections[section].items[key]; !found {
+		return false
+	}
+	return true
+}
+
 // Bool return bool value for key
 func (c *config) Bool(section string, key string) (bool, error) {
-	if _, found := allConfigSections[section]; !found {
+	if !checkItemExist(section, key) {
 		return false, ErrorInvalidConfiguration
 	}
 	val := allConfigSections[section].items[key]
@@ -65,7 +74,7 @@ func (c *config) Bool(section string, key string) (bool, error) {
 
 // Int return int value for key
 func (c *config) Int(section string, key string) (int, error) {
-	if _, found := allConfigSections[section]; !found {
+	if !checkItemExist(section, key) {
 		return -1, ErrorInvalidConfiguration
 	}
 	val := allConfigSections[section].items[key]
@@ -74,14 +83,15 @@ func (c *config) Int(section string, key string) (int, error) {
 
 // String return string valu for key
 func (c *config) String(section string, key string) (string, error) {
-	if _, found := allConfigSections[section]; !found {
+	if !checkItemExist(section, key) {
 		return "", ErrorInvalidConfiguration
 	}
+
 	return allConfigSections[section].items[key], nil
 }
 
 func (c *config) MustBool(section string, key string) bool {
-	if _, found := allConfigSections[section]; !found {
+	if !checkItemExist(section, key) {
 		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
 	}
 	val := allConfigSections[section].items[key]
@@ -95,7 +105,7 @@ func (c *config) MustBool(section string, key string) bool {
 	return false
 }
 func (c *config) MustInt(section string, key string) int {
-	if _, ok := allConfigSections[section]; !ok {
+	if !checkItemExist(section, key) {
 		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
 	}
 	val := allConfigSections[section].items[key]
@@ -107,9 +117,8 @@ func (c *config) MustInt(section string, key string) int {
 }
 
 func (c *config) MustString(section string, key string) string {
-	if _, ok := allConfigSections[section]; !ok {
+	if !checkItemExist(section, key) {
 		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
-		os.Exit(0)
 	}
 	return allConfigSections[section].items[key]
 }
