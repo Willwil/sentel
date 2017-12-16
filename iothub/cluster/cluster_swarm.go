@@ -105,8 +105,8 @@ func (p *swarmCluster) RemoveNetwork(name string) error {
 func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
 	serviceName := fmt.Sprintf("tenant_%s_%s", pid, tid)
 	env := []string{
-		"KAFKA_HOST=sentel_kafka",
-		"MONGO_HOST=sentel_mongo",
+		"KAFKA_HOST=kafka:9092",
+		"MONGO_HOST=mongo:27017",
 		fmt.Sprintf("BROKER_TENANT=%s", tid),
 		fmt.Sprintf("BROKER_PRODUCT=%s", pid),
 	}
