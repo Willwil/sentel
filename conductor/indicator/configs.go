@@ -12,4 +12,6 @@
 
 package indicator
 
-var Configs = map[string]string{}
+var Configs = map[string]string{
+	"listen": "localhost:50059",
+}

@@ -14,6 +14,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/conductor/indicator"
@@ -22,13 +23,40 @@ import (
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/conductor.conf", "config file")
+	configFile     = flag.String("c", "/etc/sentel/conductor.conf", "config file")
+	defaultConfigs = map[string]map[string]string{
+		"conductor": {
+			"loglevel":        "debug",
+			"kafka":           "localhost:9092",
+			"mongo":           "localhost:27017",
+			"connect_timeout": "5",
+		},
+	}
 )
 
 func main() {
 	flag.Parse()
-	core.RegisterConfigGroup(defaultConfigs)
+	glog.Info("conductor is starting...")
+
 	core.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
 	core.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
-	glog.Error(core.RunWithConfigFile("conductor", *configFileFullPath))
+	config, _ := createConfig(*configFile)
+	// Create service manager according to the configuration
+	mgr, err := core.NewServiceManager("conductor", config)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	glog.Error(mgr.RunAndWait())
+}
+
+func createConfig(fileName string) (core.Config, error) {
+	options := map[string]map[string]string{}
+	options["iothub"] = map[string]string{}
+	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
+	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
+	// Get configuration
+	core.RegisterConfigGroup(defaultConfigs)
+	config, _ := core.NewConfigWithFile(fileName)
+	config.AddConfigs(options)
+	return config, nil
 }
