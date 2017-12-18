@@ -29,6 +29,8 @@ import (
 // one product has one scpecific topic name
 const publishTopicUrl = "/cluster/publish/%s"
 
+type Rule core.RuleTopic
+
 // publishTopic is topic object received from kafka
 type publishTopic struct {
 	ClientId  string `json:"clientId"`

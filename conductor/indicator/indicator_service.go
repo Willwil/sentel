@@ -22,7 +22,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
@@ -128,15 +127,15 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 
 // handleNotifications handle notification from kafka
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
-	rule := util.RuleTopic{}
+	rule := core.RuleTopic{}
 	if err := json.Unmarshal(value, &rule); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
 		return err
 	}
 	r := &executor.Rule{
-		RuleName:  rule.RuleName,
-		ProductId: rule.ProductId,
-		Action:    rule.Action,
+		RuleName:   rule.RuleName,
+		ProductId:  rule.ProductId,
+		RuleAction: rule.RuleAction,
 	}
 	return executor.HandleRuleNotification(r)
 }

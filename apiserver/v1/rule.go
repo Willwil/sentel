@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/db"
-	"github.com/cloustone/sentel/apiserver/util"
+	"github.com/cloustone/sentel/core"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 )
@@ -58,14 +58,13 @@ func addRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	util.AsyncProduceMessage(ctx.(*apiContext).config,
+	core.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		util.TopicNameRule,
-		&util.RuleTopic{
-			RuleName:  rule.Name,
-			RuleId:    rule.Id,
-			ProductId: rule.ProductId,
-			Action:    util.ObjectActionRegister,
+		core.TopicNameRule,
+		&core.RuleTopic{
+			RuleName:   rule.Name,
+			ProductId:  rule.ProductId,
+			RuleAction: core.RuleActionCreate,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
 }
@@ -83,12 +82,11 @@ func deleteRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	util.AsyncProduceMessage(ctx.(*apiContext).config,
+	core.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		util.TopicNameRule,
-		&util.RuleTopic{
-			RuleId: id,
-			Action: util.ObjectActionDelete,
+		core.TopicNameRule,
+		&core.RuleTopic{
+			RuleAction: core.RuleActionRemove,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String()})
 }
@@ -117,14 +115,13 @@ func updateRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	util.AsyncProduceMessage(ctx.(*apiContext).config,
+	core.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		util.TopicNameRule,
-		&util.RuleTopic{
-			RuleName:  rule.Name,
-			RuleId:    rule.Id,
-			ProductId: rule.ProductId,
-			Action:    util.ObjectActionUpdate,
+		core.TopicNameRule,
+		&core.RuleTopic{
+			RuleName:   rule.Name,
+			ProductId:  rule.ProductId,
+			RuleAction: core.RuleActionUpdate,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
 }

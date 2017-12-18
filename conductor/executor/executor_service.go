@@ -109,16 +109,16 @@ func (p *ExecutorService) handleRule(r *Rule) error {
 	}
 	engine := p.engines[r.ProductId]
 
-	switch r.Action {
-	case RuleActionCreate:
+	switch r.RuleAction {
+	case core.RuleActionCreate:
 		return engine.createRule(r)
-	case RuleActionRemove:
+	case core.RuleActionRemove:
 		return engine.removeRule(r)
-	case RuleActionUpdate:
+	case core.RuleActionUpdate:
 		return engine.updateRule(r)
-	case RuleActionStart:
+	case core.RuleActionStart:
 		return engine.startRule(r)
-	case RuleActionStop:
+	case core.RuleActionStop:
 		return engine.stopRule(r)
 	}
 	return nil
@@ -130,12 +130,12 @@ func HandleRuleNotification(r *Rule) error {
 	glog.Infof("New rule notification: ruleId=%s, ruleName=%s, action=%s", r.RuleName, r.RuleName, r.Action)
 
 	// Check action's validity
-	switch r.Action {
-	case RuleActionCreate:
-	case RuleActionRemove:
-	case RuleActionUpdate:
-	case RuleActionStart:
-	case RuleActionStop:
+	switch r.RuleAction {
+	case core.RuleActionCreate:
+	case core.RuleActionRemove:
+	case core.RuleActionUpdate:
+	case core.RuleActionStart:
+	case core.RuleActionStop:
 	default:
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.Action, r.ProductId)
 	}

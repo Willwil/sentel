@@ -9,12 +9,9 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
+package core
 
-package util
-
-import (
-	"encoding/json"
-)
+import "encoding/json"
 
 const (
 	TopicNameTenant  = "sentel-iot-tenant"
@@ -31,8 +28,8 @@ const (
 	ObjectActionUpdate     = "update"
 )
 
-// TopicBase
 type TopicBase struct {
+	Action  string `json:"action"`
 	encoded []byte
 	err     error
 }
@@ -53,6 +50,13 @@ func (p *TopicBase) Encode() ([]byte, error) {
 	return p.encoded, p.err
 }
 
+// Tenantopic
+type TenantTopic struct {
+	TopicBase
+	TenantId string `json:"productId"`
+	Action   string `json:"action"`
+}
+
 // ProductTopic
 type ProductTopic struct {
 	TopicBase
@@ -71,22 +75,45 @@ type DeviceTopic struct {
 	ProductId    string `json:"productId"`
 }
 
-// RuleTopic
+// RuleTopic declaration
+const (
+	RuleActionCreate = "create"
+	RuleActionRemove = "remove"
+	RuleActionUpdate = "update"
+	RuleActionStart  = "start"
+	RuleActionStop   = "stop"
+)
+
+type DataTargetType string
+
+const (
+	DataTargetTypeTopic          = "topic"
+	DataTargetTypeOuterDatabase  = "outerDatabase"
+	DataTargetTypeInnerDatabase  = "innerDatabase"
+	DataTargetTypeMessageService = "message"
+)
+
 type RuleTopic struct {
 	TopicBase
-	RuleName  string `json:"ruleName"`
-	ProductId string `json:"productId"`
-	RuleId    string `json:"ruleId"`
-	Action    string `json:"action"`
-	encoded   []byte
-	err       error
-}
+	RuleName    string   `json:"ruleName"`
+	DataFormat  string   `json:"dataFormat"`
+	Description string   `json:"description"`
+	ProductId   string   `json:"productId"`
+	DataProcess struct { // select keyword from /productid/topic with condition
+		Keyword   string `json:"keyword"`
+		Topic     string `json:"topic"`
+		Condition string `json:"condition"`
+		Sql       string `json:"sql"`
+	}
+	DataTarget struct {
+		Type         DataTargetType `json:"type"`     // Transfer type
+		Topic        string         `json:"topic"`    // Transfer data to another topic
+		DatabaseHost string         `json:"dbhost"`   // Database host
+		DatabaseName string         `json:"database"` // Transfer data to database
+		Username     string         `json:"username"` // Database's user name
+		Password     string         `json:"password"` // Database's password
 
-// Tenantopic
-type TenantTopic struct {
-	TopicBase
-	TenantId string `json:"productId"`
-	Action   string `json:"action"`
-	encoded  []byte
-	err      error
+	}
+	Status     string `json:"status"`
+	RuleAction string `json:"action"`
 }

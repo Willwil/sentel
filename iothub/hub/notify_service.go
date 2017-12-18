@@ -23,7 +23,6 @@ import (
 	"syscall"
 
 	"github.com/Shopify/sarama"
-	apiserver "github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -87,7 +86,7 @@ func (p *NotifyService) Name() string {
 
 // Start
 func (p *NotifyService) Start() error {
-	if err := p.subscribeTopic(apiserver.TopicNameProduct); err != nil {
+	if err := p.subscribeTopic(core.TopicNameProduct); err != nil {
 		return err
 	}
 	go func(p *NotifyService) {

@@ -13,7 +13,6 @@ package core
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 	"time"
 
@@ -21,47 +20,7 @@ import (
 	"github.com/golang/glog"
 )
 
-type TopicAction string
-
-const (
-	TopicActionRegister   = "register"
-	TopicActionUnregister = "unregister"
-	TopicActionRetrieve   = "retrieve"
-	TopicActionDelete     = "delete"
-	TopicActionUpdate     = "update"
-)
-
-type TopicBase struct {
-	Action  string `json:"action"`
-	encoded []byte
-	err     error
-}
-
-func (p *TopicBase) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *TopicBase) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *TopicBase) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
-}
-
-func SyncProduceMessage(cfg Config, topic string, key string, value sarama.Encoder) error {
-	// Get kafka server
-	kafka, err := cfg.String("kafka", "hosts")
-	if err != nil || kafka == "" {
-		return errors.New("Invalid kafka configuration")
-	}
-
-	//	sarama.Logger = c.Logger()
-
+func SyncProduceMessage(c Config, topic string, key string, value sarama.Encoder) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10
@@ -73,6 +32,7 @@ func SyncProduceMessage(cfg Config, topic string, key string, value sarama.Encod
 		Value: value,
 	}
 
+	kafka := c.MustString("apiserver", "kafka")
 	producer, err := sarama.NewSyncProducer(strings.Split(kafka, ","), config)
 	if err != nil {
 		glog.Errorf("Failed to produce message:%s", err.Error())
@@ -86,27 +46,21 @@ func SyncProduceMessage(cfg Config, topic string, key string, value sarama.Encod
 	return err
 }
 
-func AsyncProduceMessage(cfg Config, key string, topic string, value sarama.Encoder) error {
-	// Get kafka server
-	kafka, err := cfg.String("kafka", "hosts")
-	if err != nil || kafka == "" {
-		return errors.New("Invalid kafka configuration")
-	}
-
-	//	sarama.Logger = c.Logger()
-
+func AsyncProduceMessage(c Config, key string, topic string, value sarama.Encoder) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10
 	config.Producer.Return.Successes = true
 	config.Producer.Timeout = 5 * time.Second
 
+	v, _ := json.Marshal(value)
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
-		Value: value,
+		Value: sarama.ByteEncoder(v), //value,
 	}
 
+	kafka := c.MustString("apiserver", "kafka")
 	producer, err := sarama.NewAsyncProducer(strings.Split(kafka, ","), config)
 	if err != nil {
 		glog.Errorf("Failed to produce message:%s", err.Error())
