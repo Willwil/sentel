@@ -135,7 +135,6 @@ func (p *IndicatorService) handleNotifications(topic string, value []byte) error
 	}
 	r := &executor.Rule{
 		RuleName:  rule.RuleName,
-		RuleId:    rule.RuleId,
 		ProductId: rule.ProductId,
 		Action:    rule.Action,
 	}

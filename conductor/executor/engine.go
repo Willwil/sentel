@@ -138,8 +138,8 @@ func (p *ruleEngine) getRuleObject(r *Rule) (*Rule, error) {
 	defer session.Close()
 	c := session.DB("registry").C("rules")
 	obj := Rule{}
-	if err := c.Find(bson.M{"RuleId": r.RuleId}).One(&obj); err != nil {
-		glog.Errorf("Invalid rule with id(%s)", r.RuleId)
+	if err := c.Find(bson.M{"RuleName": r.RuleName}).One(&obj); err != nil {
+		glog.Errorf("Invalid rule with id(%s)", r.RuleName)
 		return nil, err
 	}
 	return &obj, nil
@@ -147,7 +147,7 @@ func (p *ruleEngine) getRuleObject(r *Rule) (*Rule, error) {
 
 // createRule add a rule received from apiserver to this engine
 func (p *ruleEngine) createRule(r *Rule) error {
-	glog.Infof("ruld:%s is added", r.RuleId)
+	glog.Infof("ruld:%s is added", r.RuleName)
 
 	obj, err := p.getRuleObject(r)
 	if err != nil {
@@ -155,30 +155,30 @@ func (p *ruleEngine) createRule(r *Rule) error {
 	}
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[r.RuleId]; ok {
-		return fmt.Errorf("rule:%s already exist", r.RuleId)
+	if _, ok := p.rules[r.RuleName]; ok {
+		return fmt.Errorf("rule:%s already exist", r.RuleName)
 	}
-	p.rules[r.RuleId] = obj
+	p.rules[r.RuleName] = obj
 	return nil
 }
 
 // removeRule remove a rule from current rule engine
 func (p *ruleEngine) removeRule(r *Rule) error {
-	glog.Infof("Rule:%s is deleted", r.RuleId)
+	glog.Infof("Rule:%s is deleted", r.RuleName)
 
 	// Get rule detail
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[r.RuleId]; ok {
-		delete(p.rules, r.RuleId)
+	if _, ok := p.rules[r.RuleName]; ok {
+		delete(p.rules, r.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", r.RuleId)
+	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
 }
 
 // updateRule update rule in engine
 func (p *ruleEngine) updateRule(r *Rule) error {
-	glog.Infof("Rule:%s is updated", r.RuleId)
+	glog.Infof("Rule:%s is updated", r.RuleName)
 
 	obj, err := p.getRuleObject(r)
 	if err != nil {
@@ -188,21 +188,21 @@ func (p *ruleEngine) updateRule(r *Rule) error {
 	// Get rule detail
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[r.RuleId]; ok {
-		p.rules[r.RuleId] = obj
+	if _, ok := p.rules[r.RuleName]; ok {
+		p.rules[r.RuleName] = obj
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", r.RuleId)
+	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
 }
 
 // startRule start rule in engine
 func (p *ruleEngine) startRule(r *Rule) error {
-	glog.Infof("rule:%s is started", r.RuleId)
+	glog.Infof("rule:%s is started", r.RuleName)
 
 	// Check wether the rule engine is started
 	if p.started == false {
 		if err := p.start(); err != nil {
-			glog.Errorf(" conductor start rule '%s' failed:'%v'", r.RuleId, err)
+			glog.Errorf(" conductor start rule '%s' failed:'%v'", r.RuleName, err)
 			return err
 		}
 		p.started = true
@@ -211,23 +211,23 @@ func (p *ruleEngine) startRule(r *Rule) error {
 	// Start the rule
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[r.RuleId]; ok {
-		p.rules[r.RuleId].Status = RuleStatusStarted
+	if _, ok := p.rules[r.RuleName]; ok {
+		p.rules[r.RuleName].Status = RuleStatusStarted
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", r.RuleId)
+	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
 }
 
 // stopRule stop rule in engine
 func (p *ruleEngine) stopRule(r *Rule) error {
-	glog.Infof("rule:%s is stoped", r.RuleId)
+	glog.Infof("rule:%s is stoped", r.RuleName)
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[r.RuleId]; !ok { // not found
-		return fmt.Errorf("Invalid rule:%s", r.RuleId)
+	if _, ok := p.rules[r.RuleName]; !ok { // not found
+		return fmt.Errorf("Invalid rule:%s", r.RuleName)
 	}
-	p.rules[r.RuleId].Status = RuleStatusStoped
+	p.rules[r.RuleName].Status = RuleStatusStoped
 	// Stop current engine if all rules are stoped
 	for _, rule := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
