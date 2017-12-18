@@ -13,8 +13,8 @@
 package executor
 
 const (
-	RuleActionNew    = "new"
-	RuleActionDelete = "delete"
+	RuleActionCreate = "create"
+	RuleActionRemove = "remove"
 	RuleActionUpdate = "update"
 	RuleActionStart  = "start"
 	RuleActionStop   = "stop"
@@ -33,5 +33,5 @@ type Rule struct {
 	Sal       string `json:"sql"`
 	Target    string `json:"target"`
 	Status    string `json:"status"`
-	Action    string
+	Action    string `json:"action"`
 }

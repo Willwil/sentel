@@ -21,6 +21,8 @@ import (
 	"github.com/golang/glog"
 )
 
+type TopicAction string
+
 const (
 	TopicActionRegister   = "register"
 	TopicActionUnregister = "unregister"

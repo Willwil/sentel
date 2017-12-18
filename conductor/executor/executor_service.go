@@ -110,10 +110,10 @@ func (p *ExecutorService) handleRule(r *Rule) error {
 	engine := p.engines[r.ProductId]
 
 	switch r.Action {
-	case RuleActionNew:
-		return engine.addRule(r)
-	case RuleActionDelete:
-		return engine.deleteRule(r)
+	case RuleActionCreate:
+		return engine.createRule(r)
+	case RuleActionRemove:
+		return engine.removeRule(r)
 	case RuleActionUpdate:
 		return engine.updateRule(r)
 	case RuleActionStart:
@@ -131,8 +131,8 @@ func HandleRuleNotification(r *Rule) error {
 
 	// Check action's validity
 	switch r.Action {
-	case RuleActionNew:
-	case RuleActionDelete:
+	case RuleActionCreate:
+	case RuleActionRemove:
 	case RuleActionUpdate:
 	case RuleActionStart:
 	case RuleActionStop:

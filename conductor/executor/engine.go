@@ -41,33 +41,25 @@ type publishTopic struct {
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleEngine struct {
-	productId  string           // one product have one rule engine
-	rules      map[string]*Rule // all product's rule
-	consumer   sarama.Consumer  // one product have one consumer
-	config     core.Config      // configuration
-	mutex      sync.Mutex       // mutex to protext rules list
-	notifyChan chan int         // stop channel
-	started    bool             // indicate wether engined is started
-	wg         sync.WaitGroup   // waitgroup for consumper partions
+	productId string           // one product have one rule engine
+	rules     map[string]*Rule // all product's rule
+	consumer  sarama.Consumer  // one product have one consumer
+	config    core.Config      // configuration
+	mutex     sync.Mutex       // mutex to protext rules list
+	started   bool             // indicate wether engined is started
+	wg        sync.WaitGroup   // waitgroup for consumper partions
 }
 
 // newRuleEngine create a engine according to product id and configuration
 func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
-	khosts := c.MustString("conductor", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-
 	return &ruleEngine{
-		productId:  productId,
-		config:     c,
-		consumer:   consumer,
-		rules:      make(map[string]*Rule),
-		mutex:      sync.Mutex{},
-		notifyChan: make(chan int),
-		wg:         sync.WaitGroup{},
-		started:    false,
+		productId: productId,
+		config:    c,
+		consumer:  nil,
+		rules:     make(map[string]*Rule),
+		mutex:     sync.Mutex{},
+		wg:        sync.WaitGroup{},
+		started:   false,
 	}, nil
 }
 
@@ -76,30 +68,37 @@ func (p *ruleEngine) start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
-
 	topic := fmt.Sprintf(publishTopicUrl, p.productId)
-	if err := p.subscribeTopic(topic); err != nil {
+	if consumer, err := p.subscribeTopic(topic); err != nil {
 		return err
+	} else {
+		p.consumer = consumer
+		p.started = true
 	}
-	p.started = true
 	return nil
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *ruleEngine) subscribeTopic(topic string) error {
-	partitionList, err := p.consumer.Partitions(topic)
+func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
+	config := sarama.NewConfig()
+	config.ClientID = "sentel_conductor_engine_" + p.productId
+	khosts, _ := p.config.String("conductor", "kafka")
+	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
-		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
+		return nil, fmt.Errorf("conductor failed to connect with kafka:%s", khosts)
+	}
+	partitionList, err := consumer.Partitions(topic)
+	if err != nil {
+		consumer.Close()
+		return nil, fmt.Errorf("Failed to get list of partions:%s", err.Error())
 	}
 
 	for partition := range partitionList {
-		pc, err := p.consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+		pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 		if err != nil {
-			glog.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-			continue
+			consumer.Close()
+			return nil, fmt.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 		}
-		defer pc.AsyncClose()
 		p.wg.Add(1)
 
 		go func(sarama.PartitionConsumer) {
@@ -117,7 +116,7 @@ func (p *ruleEngine) subscribeTopic(topic string) error {
 			}
 		}(pc)
 	}
-	return nil
+	return consumer, nil
 }
 
 // stop will stop the engine
@@ -125,7 +124,6 @@ func (p *ruleEngine) stop() {
 	if p.consumer != nil {
 		p.consumer.Close()
 	}
-	p.notifyChan <- 0
 	p.wg.Wait()
 }
 
@@ -147,8 +145,8 @@ func (p *ruleEngine) getRuleObject(r *Rule) (*Rule, error) {
 	return &obj, nil
 }
 
-// addRule add a rule received from apiserver to this engine
-func (p *ruleEngine) addRule(r *Rule) error {
+// createRule add a rule received from apiserver to this engine
+func (p *ruleEngine) createRule(r *Rule) error {
 	glog.Infof("ruld:%s is added", r.RuleId)
 
 	obj, err := p.getRuleObject(r)
@@ -164,8 +162,8 @@ func (p *ruleEngine) addRule(r *Rule) error {
 	return nil
 }
 
-// delteRule remove a rule from current rule engine
-func (p *ruleEngine) deleteRule(r *Rule) error {
+// removeRule remove a rule from current rule engine
+func (p *ruleEngine) removeRule(r *Rule) error {
 	glog.Infof("Rule:%s is deleted", r.RuleId)
 
 	// Get rule detail
@@ -204,7 +202,7 @@ func (p *ruleEngine) startRule(r *Rule) error {
 	// Check wether the rule engine is started
 	if p.started == false {
 		if err := p.start(); err != nil {
-			glog.Errorf("%v", err)
+			glog.Errorf(" conductor start rule '%s' failed:'%v'", r.RuleId, err)
 			return err
 		}
 		p.started = true

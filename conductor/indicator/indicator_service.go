@@ -25,6 +25,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/core"
+	"github.com/golang/glog"
 
 	"github.com/Shopify/sarama"
 	"gopkg.in/mgo.v2"
@@ -117,7 +118,7 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 		go func(sarama.PartitionConsumer) {
 			defer p.WaitGroup.Done()
 			for msg := range pc.Messages() {
-				fmt.Printf("[%s]: %s\n", string(msg.Topic), msg.Value)
+				glog.Infof("donductor recevied topic '%s': '%s'", string(msg.Topic), msg.Value)
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
 		}(pc)
@@ -129,10 +130,9 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
 	rule := util.RuleTopic{}
 	if err := json.Unmarshal(value, &rule); err != nil {
-		fmt.Printf("err %s\n", err)
+		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
 		return err
 	}
-	fmt.Printf("[%s]:%+v\n", topic, rule)
 	r := &executor.Rule{
 		RuleName:  rule.RuleName,
 		RuleId:    rule.RuleId,
