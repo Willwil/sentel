@@ -22,7 +22,14 @@ Other service is not be designed till now. because the short time gola is device
 
 Features
 ==========================
-* Private IoT platform witht multiple deployment mode (standalone, cluster, cloud)* Multiple tenant management* Multiple access protocols (MQTT with websocket/TLS/TCP)* Security/High Available/High Concurrency* Shadow Devices* OTA* High Configurability.* High Diagnosablity.
+* Private IoT platform witht multiple deployment mode (standalone, cluster, cloud)
+* Multiple tenant management
+* Multiple access protocols (MQTT with websocket/TLS/TCP)
+* Security/High Available/High Concurrency
+* Shadow Devices
+* OTA
+* High Configurability.
+* High Diagnosablity.
 
 Architecture
 ==========================
@@ -30,15 +37,10 @@ Architecture
 
 Building
 ==========================
-1.Clone from github.com  
-  git clone https://github.com/cloustone/sentel  
-2. Update kubernetes package dependency  
-  cd $GOPATH/src/github.com/cloustone/sentel  
-  git submodule init  
-  git submodule update  
-3. Building   
-make    
-make broker // for single package
+> go get -u github.com/cloustone/sentel  
+> cd $GOPATH/src/github.com/cloustone/sentel  
+> make   
+> make docker GOOS=linux  
 
 Technology items
 ==========================
