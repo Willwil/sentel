@@ -18,10 +18,10 @@
 
 5. update docker image registry
 > for i in `seq 3`; do \  
-> docker-machine ssh node-$i "echo 'EXTRA_ARGS=\"--registry-mirror=https://registry.docker-cn.com\"' | sudo tee -a /var/lib/boot2docker/profile"  
+> docker-machine ssh node-$i "echo 'EXTRA_ARGS=\"--registry-mirror=https://registry.docker-cn.com\"' | sudo tee -a /var/lib/boot2docker/profile"; done
 
 6. restart worker node
-> for i in `seq 3`; do docker-machine restart node-$i; done  
+> docker-machine restart $(docker-machine ls -q)
 
 6. start base services  
 > cd $GOPATH/src/github.com/cloustone/sentel    
