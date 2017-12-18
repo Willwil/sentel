@@ -13,8 +13,8 @@
 package executor
 
 const (
-	RuleActionNew    = "new"
-	RuleActionDelete = "delete"
+	RuleActionCreate = "create"
+	RuleActionRemove = "remove"
 	RuleActionUpdate = "update"
 	RuleActionStart  = "start"
 	RuleActionStop   = "stop"
@@ -27,11 +27,19 @@ const (
 )
 
 type Rule struct {
-	RuleName  string `json:"ruleName"`
-	RuleId    string `json:"ruleId"`
-	ProductId string `json:"productId"`
-	Sal       string `json:"sql"`
-	Target    string `json:"target"`
-	Status    string `json:"status"`
-	Action    string
+	RuleName    string   `json:"ruleName"`
+	DataFormat  string   `json:"dataFormat"`
+	Description string   `json:"description"`
+	ProductId   string   `json:"productId"`
+	DataProcess struct { // select keyword from /productid/topic with condition
+		Keyworld  string `json:"keyword"`
+		Topic     string `json:"topic"`
+		Condition string `json:"condition"`
+		Sql       string `json:"sql"`
+	}
+	DataTarget struct {
+		Topic string `json:"topic"` // Transfer data to another topic
+	}
+	Status string `json:"status"`
+	Action string `json:"action"`
 }

@@ -110,10 +110,10 @@ func (p *ExecutorService) handleRule(r *Rule) error {
 	engine := p.engines[r.ProductId]
 
 	switch r.Action {
-	case RuleActionNew:
-		return engine.addRule(r)
-	case RuleActionDelete:
-		return engine.deleteRule(r)
+	case RuleActionCreate:
+		return engine.createRule(r)
+	case RuleActionRemove:
+		return engine.removeRule(r)
 	case RuleActionUpdate:
 		return engine.updateRule(r)
 	case RuleActionStart:
@@ -127,12 +127,12 @@ func (p *ExecutorService) handleRule(r *Rule) error {
 // HandleRuleNotification handle rule notifications recevied from kafka,
 // it will check rule's validity,for example, wether rule exist in database.
 func HandleRuleNotification(r *Rule) error {
-	glog.Infof("New rule notification: ruleId=%s, ruleName=%s, action=%s", r.RuleId, r.RuleName, r.Action)
+	glog.Infof("New rule notification: ruleId=%s, ruleName=%s, action=%s", r.RuleName, r.RuleName, r.Action)
 
 	// Check action's validity
 	switch r.Action {
-	case RuleActionNew:
-	case RuleActionDelete:
+	case RuleActionCreate:
+	case RuleActionRemove:
 	case RuleActionUpdate:
 	case RuleActionStart:
 	case RuleActionStop:
@@ -140,7 +140,7 @@ func HandleRuleNotification(r *Rule) error {
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.Action, r.ProductId)
 	}
 
-	if r.RuleId == "" || r.ProductId == "" {
+	if r.RuleName == "" || r.ProductId == "" {
 		return fmt.Errorf("Invalid argument")
 	}
 	// Now just simply send rule to executor
