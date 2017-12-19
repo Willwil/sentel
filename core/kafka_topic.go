@@ -87,36 +87,9 @@ const (
 	RuleActionStop   = "stop"
 )
 
-type DataTargetType string
-
-const (
-	DataTargetTypeTopic          = "topic"
-	DataTargetTypeOuterDatabase  = "outerDatabase"
-	DataTargetTypeInnerDatabase  = "innerDatabase"
-	DataTargetTypeMessageService = "message"
-)
-
 type RuleTopic struct {
 	TopicBase
-	RuleName    string   `json:"ruleName"`
-	DataFormat  string   `json:"dataFormat"`
-	Description string   `json:"description"`
-	ProductId   string   `json:"productId"`
-	DataProcess struct { // select keyword from /productid/topic with condition
-		Keyword   string `json:"keyword"`
-		Topic     string `json:"topic"`
-		Condition string `json:"condition"`
-		Sql       string `json:"sql"`
-	}
-	DataTarget struct {
-		Type         DataTargetType `json:"type"`     // Transfer type
-		Topic        string         `json:"topic"`    // Transfer data to another topic
-		DatabaseHost string         `json:"dbhost"`   // Database host
-		DatabaseName string         `json:"database"` // Transfer data to database
-		Username     string         `json:"username"` // Database's user name
-		Password     string         `json:"password"` // Database's password
-
-	}
-	Status     string `json:"status"`
+	RuleName   string `json:"ruleName"`
+	ProductId  string `json:"productId"`
 	RuleAction string `json:"action"`
 }

@@ -121,7 +121,7 @@ func (p *ExecutorService) handleRule(r *Rule) error {
 // HandleRuleNotification handle rule notifications recevied from kafka,
 // it will check rule's validity,for example, wether rule exist in database.
 func HandleRuleNotification(r *Rule) error {
-	glog.Infof("New rule notification: ruleId=%s, ruleName=%s, action=%s", r.RuleName, r.RuleName, r.Action)
+	glog.Infof("New rule notification for  rule '%s'", r.RuleName)
 
 	// Check action's validity
 	switch r.RuleAction {
@@ -131,11 +131,7 @@ func HandleRuleNotification(r *Rule) error {
 	case core.RuleActionStart:
 	case core.RuleActionStop:
 	default:
-		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.Action, r.ProductId)
-	}
-
-	if r.RuleName == "" || r.ProductId == "" {
-		return fmt.Errorf("Invalid argument")
+		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
 	}
 	// Now just simply send rule to executor
 	executor := core.GetServiceManager().GetService("executor").(*ExecutorService)
