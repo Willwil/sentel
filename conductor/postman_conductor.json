@@ -1,0 +1,151 @@
+{
+	"info": {
+		"name": "sentel-conductor",
+		"_postman_id": "b839ff6c-a376-8e84-16ac-349da16c99ae",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Rule Request",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"DataFormat\": \"application/json\",\n\t\"Description\": \"sample rule for product\",\n\t\"ProductId\": \"product1\",\n\t\"DataProcess\": {\n\t\t\"Keyword\": \"device\",\n\t\t\"Topic\":\" hello\",\n\t\t\"Condition\": \"\",\n\t\t\"Sql\":\"\"\n\t},\n\t\"DataTarget\": {\n\t\t\"Type\": \"topic\",\n\t\t\"Topic\":\" hello\"\n\t},\n\t\"RuleAction\":\"create\"\n}"
+				},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/rules",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"rules"
+					]
+				},
+				"description": "create a rule in conductor"
+			},
+			"response": []
+		},
+		{
+			"name": "Remove Rule Request",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/rules/rule1",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"rules",
+						"rule1"
+					]
+				},
+				"description": "remove a rule from conductor"
+			},
+			"response": []
+		},
+		{
+			"name": "Start Rule Request",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/rules/rule1?action=start",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"rules",
+						"rule1"
+					],
+					"query": [
+						{
+							"key": "action",
+							"value": "start",
+							"equals": true
+						}
+					]
+				},
+				"description": "Start rule for product "
+			},
+			"response": []
+		},
+		{
+			"name": "Stop Rule Request",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/rules/rule1?action=stop",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"rules",
+						"rule1"
+					],
+					"query": [
+						{
+							"key": "action",
+							"value": "stop",
+							"equals": true
+						}
+					]
+				},
+				"description": "stop rule for specified product"
+			},
+			"response": []
+		},
+		{
+			"name": "Update Rule Request",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/rules/rule1",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"rules",
+						"rule1"
+					]
+				},
+				"description": "update rule for specified product"
+			},
+			"response": []
+		}
+	]
+}
