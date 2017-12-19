@@ -18,8 +18,8 @@ import (
 	"github.com/cloustone/sentel/core"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/apiserver/db"
 	v1api "github.com/cloustone/sentel/apiserver/v1"
+	"github.com/cloustone/sentel/core/db"
 
 	"github.com/golang/glog"
 )

@@ -16,8 +16,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/db"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/core/db"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 )
@@ -25,16 +25,11 @@ import (
 // Rule Api
 type ruleAddRequest struct {
 	requestBase
-	Id          string `bson:"Id"`
-	Name        string `bson:"Name"`
-	Description string `bson:"Description"`
-	Method      string `bson:"Method"`
-	Target      string `bson:"Target"`
-	ProductId   string `bson:"ProductId"`
+	db.Rule
 }
 
 // addRule add new rule for product
-func addRule(ctx echo.Context) error {
+func createRule(ctx echo.Context) error {
 	req := new(ruleAddRequest)
 	if err := ctx.Bind(req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
@@ -45,14 +40,12 @@ func addRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
+	// TODO: add rule detail information
 	rule := db.Rule{
-		Id:           uuid.NewV4().String(),
-		Name:         req.Name,
-		ProductId:    req.ProductId,
-		Method:       req.Method,
-		Target:       req.Target,
-		TimeCreated:  time.Now(),
-		TimeModified: time.Now(),
+		RuleName:    req.RuleName,
+		ProductId:   req.ProductId,
+		TimeCreated: time.Now(),
+		TimeUpdated: time.Now(),
 	}
 	if err := r.RegisterRule(&rule); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
@@ -62,7 +55,7 @@ func addRule(ctx echo.Context) error {
 		"rule",
 		core.TopicNameRule,
 		&core.RuleTopic{
-			RuleName:   rule.Name,
+			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
 			RuleAction: core.RuleActionCreate,
 		})
@@ -70,15 +63,16 @@ func addRule(ctx echo.Context) error {
 }
 
 // deleteRule delete existed rule
-func deleteRule(ctx echo.Context) error {
-	id := ctx.Param("id")
+func removeRule(ctx echo.Context) error {
+	productId := ctx.Param("productId")
+	ruleName := ctx.Param("ruleName")
 	// Connect with registry
 	r, err := db.NewRegistry(ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
-	if err := r.DeleteRule(id); err != nil {
+	if err := r.DeleteRule(productId, ruleName); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
@@ -86,6 +80,8 @@ func deleteRule(ctx echo.Context) error {
 		"rule",
 		core.TopicNameRule,
 		&core.RuleTopic{
+			RuleName:   ruleName,
+			ProductId:  productId,
 			RuleAction: core.RuleActionRemove,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String()})
@@ -104,12 +100,9 @@ func updateRule(ctx echo.Context) error {
 	}
 	defer r.Release()
 	rule := db.Rule{
-		Id:           req.Id,
-		Name:         req.Name,
-		ProductId:    req.ProductId,
-		Method:       req.Method,
-		Target:       req.Target,
-		TimeModified: time.Now(),
+		RuleName:    req.RuleName,
+		ProductId:   req.ProductId,
+		TimeUpdated: time.Now(),
 	}
 	if err := r.UpdateRule(&rule); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
@@ -119,7 +112,7 @@ func updateRule(ctx echo.Context) error {
 		"rule",
 		core.TopicNameRule,
 		&core.RuleTopic{
-			RuleName:   rule.Name,
+			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
 			RuleAction: core.RuleActionUpdate,
 		})
@@ -128,14 +121,15 @@ func updateRule(ctx echo.Context) error {
 
 // getRule retrieve a rule
 func getRule(ctx echo.Context) error {
-	id := ctx.Param("id")
+	productId := ctx.Param("productId")
+	ruleName := ctx.Param("ruleName")
 	// Connect with registry
 	r, err := db.NewRegistry(ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
-	rule, err := r.GetRule(id)
+	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}

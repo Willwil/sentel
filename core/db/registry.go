@@ -617,57 +617,44 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"id": bson.M{"$regex": rule.Id, "$options": "$i"}}); err == nil { // found existed device
-		return fmt.Errorf("rule %s already exist", rule.Id)
+	if err := c.Find(bson.M{"ruleName": rule.RuleName, "productId": rule.ProductId}); err == nil {
+		return fmt.Errorf("rule %s already exist", rule.RuleName)
 	}
 	return c.Insert(rule)
 }
 
 // GetRule retrieve a rule information from registry/
-func (r *Registry) GetRule(id string) (*Rule, error) {
+func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
-	rule := &Rule{}
-	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(rule)
-	return rule, err
+	rule := Rule{}
+	err := c.Find(bson.M{"ruleName": ruleName, "productId": productId}).One(&rule)
+	return &rule, err
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetAllRules() ([]Rule, error) {
+func (r *Registry) GetAllRules(productId string) ([]Rule, error) {
 	c := r.db.C(dbNameRules)
 
 	rule := Rule{}
 	rules := []Rule{}
-	var lastId string
-
-	iter := c.Find(nil).Sort("Id").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&rule) == false {
-			glog.Infof("\nSearch end!\n\n")
+	iter := c.Find(bson.M{"productId": productId}).Sort("ruleName").Iter()
+	for iter.Next(&rule) {
+		if iter.Err() == nil {
 			break
 		}
-		for iter.Next(&r) {
-			lastId = rule.Id
-			glog.Infof("\nId:%s\n", lastId)
-			rules = append(rules, rule)
-		}
-		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
-			break
-		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
+		rules = append(rules, rule)
 	}
-	iter.Close()
 	return rules, nil
 }
 
 // DeleteRule delete a rule from registry
-func (r *Registry) DeleteRule(id string) error {
+func (r *Registry) DeleteRule(productId string, ruleName string) error {
 	c := r.db.C(dbNameRules)
-	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
+	return c.Remove(bson.M{"ruleName": ruleName, "productId": productId})
 }
 
 // UpdateRule update rule information in registry
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	return c.Update(bson.M{"Id": bson.M{"$regex": rule.Id, "$options": "$i"}}, rule)
+	return c.Update(bson.M{"ruleName": rule.RuleName, "productId": rule.ProductId}, rule)
 }

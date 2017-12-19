@@ -16,8 +16,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/db"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/core/db"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 

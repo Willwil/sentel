@@ -12,19 +12,12 @@
 
 package executor
 
+import "github.com/cloustone/sentel/core/db"
+
 const (
 	RuleStatusIdle    = "idle"
 	RuleStatusStarted = "started"
 	RuleStatusStoped  = "stoped"
-)
-
-type DataTargetType string
-
-const (
-	DataTargetTypeTopic          = "topic"
-	DataTargetTypeOuterDatabase  = "outerDatabase"
-	DataTargetTypeInnerDatabase  = "innerDatabase"
-	DataTargetTypeMessageService = "message"
 )
 
 type Rule struct {
@@ -39,12 +32,12 @@ type Rule struct {
 		Sql       string `json:"sql"`
 	}
 	DataTarget struct {
-		Type         DataTargetType `json:"type"`     // Transfer type
-		Topic        string         `json:"topic"`    // Transfer data to another topic
-		DatabaseHost string         `json:"dbhost"`   // Database host
-		DatabaseName string         `json:"database"` // Transfer data to database
-		Username     string         `json:"username"` // Database's user name
-		Password     string         `json:"password"` // Database's password
+		Type         db.DataTargetType `json:"type"`     // Transfer type
+		Topic        string            `json:"topic"`    // Transfer data to another topic
+		DatabaseHost string            `json:"dbhost"`   // Database host
+		DatabaseName string            `json:"database"` // Transfer data to database
+		Username     string            `json:"username"` // Database's user name
+		Password     string            `json:"password"` // Database's password
 
 	}
 	Status     string

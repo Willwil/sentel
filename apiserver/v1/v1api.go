@@ -121,10 +121,10 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 	// Rule
 	g = p.echo.Group("/api/v1/rules/")
 	p.setAuth(c, g)
-	g.POST("", addRule)
-	g.DELETE(":id", deleteRule)
-	g.GET(":id", getRule)
-	g.PATCH(":id", updateRule)
+	g.POST("", createRule)
+	g.DELETE(":productId/:ruleName", removeRule)
+	g.GET(":productId/:ruleName", getRule)
+	g.PATCH(":productId/:ruleName", updateRule)
 
 	// Device Api
 	g = p.echo.Group("/api/v1/devices/")
