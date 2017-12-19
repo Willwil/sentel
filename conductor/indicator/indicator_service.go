@@ -64,7 +64,7 @@ func (p *IndicatorService) Name() string { return "indicator" }
 
 // Start
 func (p *IndicatorService) Start() error {
-	consumer, err := p.subscribeTopic("sentel-iot-rule")
+	consumer, err := p.subscribeTopic(core.TopicNameRule)
 	if err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
 	}

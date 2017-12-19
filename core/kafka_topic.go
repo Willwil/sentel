@@ -26,6 +26,8 @@ const (
 	ObjectActionRetrieve   = "retrieve"
 	ObjectActionDelete     = "delete"
 	ObjectActionUpdate     = "update"
+	ObjectActionStart      = "start"
+	ObjectActionStop       = "stop"
 )
 
 type TopicBase struct {
@@ -64,6 +66,7 @@ type ProductTopic struct {
 	ProductName string `json:"productName"`
 	Action      string `json:"action"`
 	TenantId    string `json:"tenantId"`
+	Replicas    int32  `json:"replicas"`
 }
 
 // DeviceTopic
