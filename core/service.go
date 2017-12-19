@@ -223,3 +223,11 @@ func (p *ServiceManager) GetServicesByName(name string) []Service {
 	}
 	return services
 }
+
+// GetService return service instance by name, or matched by part of name
+func (p *ServiceManager) GetService(name string) Service {
+	if _, found := p.Services[name]; found {
+		return p.Services[name]
+	}
+	return nil
+}

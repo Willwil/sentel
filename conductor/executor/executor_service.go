@@ -35,9 +35,6 @@ type ExecutorService struct {
 
 type ExecutorServiceFactory struct{}
 
-//  A global executor service instance is needed because indication will send rule to it
-var executorService *ExecutorService
-
 // New create executor service factory
 func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
 	// try connect with mongo db
@@ -49,7 +46,7 @@ func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 	}
 	session.Close()
 
-	executorService = &ExecutorService{
+	return &ExecutorService{
 		ServiceBase: core.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -58,14 +55,11 @@ func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 		ruleChan: make(chan *Rule),
 		engines:  make(map[string]*ruleEngine),
 		mutex:    sync.Mutex{},
-	}
-	return executorService, nil
+	}, nil
 }
 
 // Name
-func (p *ExecutorService) Name() string {
-	return "executor"
-}
+func (p *ExecutorService) Name() string { return "executor" }
 
 // Start
 func (p *ExecutorService) Start() error {
@@ -144,6 +138,7 @@ func HandleRuleNotification(r *Rule) error {
 		return fmt.Errorf("Invalid argument")
 	}
 	// Now just simply send rule to executor
-	executorService.ruleChan <- r
+	executor := core.GetServiceManager().GetService("executor").(*ExecutorService)
+	executor.ruleChan <- r
 	return nil
 }

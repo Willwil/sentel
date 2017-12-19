@@ -12,6 +12,10 @@
 
 package executor
 
+import "github.com/cloustone/sentel/core"
+
+type Rule core.RuleTopic
+
 const (
 	RuleStatusIdle    = "idle"
 	RuleStatusStarted = "started"
