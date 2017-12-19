@@ -201,7 +201,7 @@ func (p *ruleEngine) startRule(r *db.Rule) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[r.RuleName]; ok {
-		p.rules[r.RuleName].Status = RuleStatusStarted
+		p.rules[r.RuleName].Status = db.RuleStatusStarted
 		return nil
 	}
 	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
@@ -216,11 +216,11 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 	if _, ok := p.rules[r.RuleName]; !ok { // not found
 		return fmt.Errorf("Invalid rule:%s", r.RuleName)
 	}
-	p.rules[r.RuleName].Status = RuleStatusStoped
+	p.rules[r.RuleName].Status = db.RuleStatusStoped
 	// Stop current engine if all rules are stoped
 	for _, rule := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
-		if rule.Status != RuleStatusStoped {
+		if rule.Status != db.RuleStatusStoped {
 			return nil
 		}
 	}
