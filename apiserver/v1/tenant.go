@@ -36,7 +36,7 @@ func loginTenant(ctx echo.Context) error {
 	pwd := ctx.FormValue("password")
 
 	// Get registry store instance by context
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
@@ -77,7 +77,7 @@ func registerTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Message: err.Error()})
 	}
 	// Get registry store instance by context
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
@@ -112,7 +112,7 @@ func registerTenant(ctx echo.Context) error {
 func deleteTenant(ctx echo.Context) error {
 	id := ctx.Param("id")
 	// Get registry store instance by context
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
@@ -137,7 +137,7 @@ func deleteTenant(ctx echo.Context) error {
 func getTenant(ctx echo.Context) error {
 	id := ctx.Param("id")
 	// Get registry store instance by context
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
@@ -166,7 +166,7 @@ func updateTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Message: err.Error()})
 	}
 	// Get registry store instance by context
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}

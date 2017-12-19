@@ -18,11 +18,9 @@ import (
 	"strings"
 	"sync"
 
-	mgo "gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/core/db"
 	"github.com/golang/glog"
 )
 
@@ -41,13 +39,13 @@ type publishTopic struct {
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleEngine struct {
-	productId string           // one product have one rule engine
-	rules     map[string]*Rule // all product's rule
-	consumer  sarama.Consumer  // one product have one consumer
-	config    core.Config      // configuration
-	mutex     sync.Mutex       // mutex to protext rules list
-	started   bool             // indicate wether engined is started
-	wg        sync.WaitGroup   // waitgroup for consumper partions
+	productId string              // one product have one rule engine
+	rules     map[string]*db.Rule // all product's rule
+	consumer  sarama.Consumer     // one product have one consumer
+	config    core.Config         // configuration
+	mutex     sync.Mutex          // mutex to protext rules list
+	started   bool                // indicate wether engined is started
+	wg        sync.WaitGroup      // waitgroup for consumper partions
 }
 
 // newRuleEngine create a engine according to product id and configuration
@@ -56,7 +54,7 @@ func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
 		productId: productId,
 		config:    c,
 		consumer:  nil,
-		rules:     make(map[string]*Rule),
+		rules:     make(map[string]*db.Rule),
 		mutex:     sync.Mutex{},
 		wg:        sync.WaitGroup{},
 		started:   false,
@@ -128,28 +126,19 @@ func (p *ruleEngine) stop() {
 }
 
 // getRuleObject get all rule's information from backend database
-func (p *ruleEngine) getRuleObject(r *Rule) (*Rule, error) {
-	hosts, _ := p.config.String("conductor", "mongo")
-	session, err := mgo.Dial(hosts)
-	if err != nil {
-		glog.Errorf("%v", err)
+func (p *ruleEngine) getRuleObject(productId, ruleName string) (*db.Rule, error) {
+	if registry, err := db.NewRegistry("conductor", p.config); err == nil {
+		defer registry.Release()
+		return registry.GetRule(ruleName, productId)
+	} else {
 		return nil, err
 	}
-	defer session.Close()
-	c := session.DB("registry").C("rules")
-	obj := Rule{}
-	if err := c.Find(bson.M{"RuleName": r.RuleName}).One(&obj); err != nil {
-		glog.Errorf("Invalid rule with id(%s)", r.RuleName)
-		return nil, err
-	}
-	return &obj, nil
 }
 
 // createRule add a rule received from apiserver to this engine
-func (p *ruleEngine) createRule(r *Rule) error {
+func (p *ruleEngine) createRule(r *db.Rule) error {
 	glog.Infof("ruld:%s is added", r.RuleName)
-
-	obj, err := p.getRuleObject(r)
+	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
 	if err != nil {
 		return err
 	}
@@ -163,7 +152,7 @@ func (p *ruleEngine) createRule(r *Rule) error {
 }
 
 // removeRule remove a rule from current rule engine
-func (p *ruleEngine) removeRule(r *Rule) error {
+func (p *ruleEngine) removeRule(r *db.Rule) error {
 	glog.Infof("Rule:%s is deleted", r.RuleName)
 
 	// Get rule detail
@@ -177,10 +166,10 @@ func (p *ruleEngine) removeRule(r *Rule) error {
 }
 
 // updateRule update rule in engine
-func (p *ruleEngine) updateRule(r *Rule) error {
+func (p *ruleEngine) updateRule(r *db.Rule) error {
 	glog.Infof("Rule:%s is updated", r.RuleName)
 
-	obj, err := p.getRuleObject(r)
+	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
 	if err != nil {
 		return err
 	}
@@ -196,7 +185,7 @@ func (p *ruleEngine) updateRule(r *Rule) error {
 }
 
 // startRule start rule in engine
-func (p *ruleEngine) startRule(r *Rule) error {
+func (p *ruleEngine) startRule(r *db.Rule) error {
 	glog.Infof("rule:%s is started", r.RuleName)
 
 	// Check wether the rule engine is started
@@ -219,7 +208,7 @@ func (p *ruleEngine) startRule(r *Rule) error {
 }
 
 // stopRule stop rule in engine
-func (p *ruleEngine) stopRule(r *Rule) error {
+func (p *ruleEngine) stopRule(r *db.Rule) error {
 	glog.Infof("rule:%s is stoped", r.RuleName)
 
 	p.mutex.Lock()

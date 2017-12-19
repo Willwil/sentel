@@ -51,7 +51,7 @@ func registerDevice(ctx echo.Context) error {
 	}
 	config := ctx.(*apiContext).config
 	// Connect with registry
-	r, err := db.NewRegistry(config)
+	r, err := db.NewRegistry("apiserver", config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -93,7 +93,7 @@ func bulkRegisterDevices(ctx echo.Context) error {
 	}
 	config := ctx.(*apiContext).config
 	// Connect with registry
-	r, err := db.NewRegistry(config)
+	r, err := db.NewRegistry("apiserver", config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -139,7 +139,7 @@ func getDevice(ctx echo.Context) error {
 	}
 	// Connect with registry
 	config := ctx.(*apiContext).config
-	registry, err := db.NewRegistry(config)
+	registry, err := db.NewRegistry("apiserver", config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -174,7 +174,7 @@ func deleteDevice(ctx echo.Context) error {
 	}
 	// Connect with registry
 	config := ctx.(*apiContext).config
-	registry, err := db.NewRegistry(config)
+	registry, err := db.NewRegistry("apiserver", config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -218,7 +218,7 @@ func updateDevice(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
@@ -264,7 +264,7 @@ func queryDevices(ctx echo.Context) error {
 // Get the identifies of multiple devices from The IoT hub
 func getMultipleDevices(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}

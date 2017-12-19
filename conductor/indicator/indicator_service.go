@@ -118,11 +118,10 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 
 // handleNotifications handle notification from kafka
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
-	t := core.RuleTopic{}
-	if err := json.Unmarshal(value, &t); err != nil {
+	r := core.RuleTopic{}
+	if err := json.Unmarshal(value, &r); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
 		return err
 	}
-	r := executor.Rule{RuleName: t.RuleName, ProductId: t.ProductId, RuleAction: t.RuleAction}
 	return executor.HandleRuleNotification(&r)
 }

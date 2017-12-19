@@ -92,17 +92,16 @@ func (p *RestapiService) Stop() {
 }
 
 func createRule(ctx echo.Context) error {
-	r := executor.Rule{}
+	r := core.RuleTopic{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	r.RuleAction = core.RuleActionCreate
 	// the rule should be stored to database at first
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 func updateRule(ctx echo.Context) error {
-	r := executor.Rule{}
+	r := core.RuleTopic{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
@@ -112,18 +111,18 @@ func updateRule(ctx echo.Context) error {
 }
 
 func removeRule(ctx echo.Context) error {
-	r := executor.Rule{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionRemove}
+	r := core.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionRemove}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 
 func startRule(ctx echo.Context) error {
-	r := executor.Rule{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionStart}
+	r := core.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionStart}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 func stopRule(ctx echo.Context) error {
-	r := executor.Rule{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionStop}
+	r := core.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: core.RuleActionStop}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }

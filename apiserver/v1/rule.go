@@ -35,7 +35,7 @@ func createRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -67,7 +67,7 @@ func removeRule(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -94,7 +94,7 @@ func updateRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -124,7 +124,7 @@ func getRule(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}

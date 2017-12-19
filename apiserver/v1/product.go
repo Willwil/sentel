@@ -49,7 +49,7 @@ func registerProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		glog.Error("Registry connection failed")
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
@@ -108,7 +108,7 @@ func updateProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		glog.Infof("updateProduct err:%s\n", err.Error())
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
@@ -146,7 +146,7 @@ func deleteProduct(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -178,7 +178,7 @@ func deleteProductByName(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -211,7 +211,7 @@ func getProduct(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -237,7 +237,7 @@ func getProduct(ctx echo.Context) error {
 // getProductDevices retrieve product devices list from registry store
 func getProductsByCat(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -274,7 +274,7 @@ type device struct {
 // getProductDevices retrieve product devices list from registry store
 func getProductDevices(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -306,7 +306,7 @@ func getProductDevicesPage(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -332,7 +332,7 @@ func getProductDevicesPage(ctx echo.Context) error {
 // getProductDevices retrieve product devices list from registry store
 func getProductDevicesByName(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
@@ -359,7 +359,7 @@ func getProductDevicesByName(ctx echo.Context) error {
 // getAllProducts list from registry store
 func getProductDevicesPageByName(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry(ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}

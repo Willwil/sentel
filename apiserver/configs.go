@@ -19,6 +19,7 @@ var defaultConfigs = map[string]map[string]string{
 		"kafka":    "localhost:9092",
 		"version":  "v1",
 		"auth":     "none",
+		"mongo":    "localhost:27017",
 	},
 	"storage": {
 		"repository": "local",
@@ -30,8 +31,5 @@ var defaultConfigs = map[string]map[string]string{
 		"certfile":            "",
 		"keyfile":             "",
 		"require_certificate": "false",
-	},
-	"registry": {
-		"hosts": "localhost:27017",
 	},
 }

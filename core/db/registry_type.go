@@ -70,6 +70,12 @@ type RuleDataTarget struct {
 	Password     string         `json:"password"` // Database's password
 }
 
+const (
+	RuleStatusIdle    = "idle"
+	RuleStatusStarted = "started"
+	RuleStatusStoped  = "stoped"
+)
+
 type Rule struct {
 	ProductId   string          `json:"productId" bson:"productId"`
 	RuleName    string          `json:"ruleName" bson:"ruleName"`
