@@ -164,7 +164,7 @@ func (p *eventService) subscribeKafkaTopic() error {
 					defer p.WaitGroup.Done()
 					for msg := range pc.Messages() {
 						glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
-						obj := &serEvent{}
+						obj := &MqttEvent{}
 						if err := json.Unmarshal(msg.Value, obj); err == nil {
 							p.handleKafkaEvent(obj)
 						}
@@ -208,7 +208,7 @@ func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
 		// 	Key:   sarama.StringEncoder("sentel-broker-kafka"),
 		// 	Value: sarama.ByteEncoder(value),
 		// }
-		se := &serEvent{}
+		se := &MqttEvent{}
 		se.Common, _ = json.Marshal(e.Common)
 		se.Detail, _ = json.Marshal(e.Detail)
 		value, _ := json.Marshal(se)
@@ -286,7 +286,7 @@ func (p *eventService) unmarshalDetail(e *Event, detail json.RawMessage) (interf
 }
 
 // handleEvent handle mqtt event from other service
-func (p *eventService) handleKafkaEvent(se *serEvent) {
+func (p *eventService) handleKafkaEvent(se *MqttEvent) {
 	// cluster event manager only handle kafka event from other broker
 	// Iterate all subscribers to notify
 	e := &Event{}

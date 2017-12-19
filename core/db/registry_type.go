@@ -77,6 +77,7 @@ const (
 )
 
 type Rule struct {
+	TenantId    string          `json:"tenantId" bson:"tenantId"`
 	ProductId   string          `json:"productId" bson:"productId"`
 	RuleName    string          `json:"ruleName" bson:"ruleName"`
 	DataFormat  string          `json:"format" bson:"format"`

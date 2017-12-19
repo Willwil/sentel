@@ -19,26 +19,18 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/core"
 	"github.com/cloustone/sentel/core/db"
 	"github.com/golang/glog"
 )
 
 // one product has one scpecific topic name
-const publishTopicUrl = "/cluster/publish/%s"
-
-// publishTopic is topic object received from kafka
-type publishTopic struct {
-	ClientId  string `json:"clientId"`
-	Topic     string `json:"topic"`
-	ProductId string `json:"product"`
-	Content   string `json:"content"`
-	encoded   []byte
-	err       error
-}
+const fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleEngine struct {
+	tenantId  string              // Tenant
 	productId string              // one product have one rule engine
 	rules     map[string]*db.Rule // all product's rule
 	consumer  sarama.Consumer     // one product have one consumer
@@ -49,7 +41,7 @@ type ruleEngine struct {
 }
 
 // newRuleEngine create a engine according to product id and configuration
-func newRuleEngine(c core.Config, productId string) (*ruleEngine, error) {
+func newRuleEngine(c core.Config, tenantId string, productId string) (*ruleEngine, error) {
 	return &ruleEngine{
 		productId: productId,
 		config:    c,
@@ -66,7 +58,7 @@ func (p *ruleEngine) start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
-	topic := fmt.Sprintf(publishTopicUrl, p.productId)
+	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
 	if consumer, err := p.subscribeTopic(topic); err != nil {
 		return err
 	} else {
@@ -102,19 +94,35 @@ func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 		go func(sarama.PartitionConsumer) {
 			defer p.wg.Done()
 			for msg := range pc.Messages() {
-				t := publishTopic{}
-				if err := json.Unmarshal(msg.Value, &t); err != nil {
-					glog.Errorf("Failed to handle topic:%v", err)
-					continue
-				}
-				if err := p.execute(&t); err != nil {
-					glog.Errorf("Failed to handle topic:%v", err)
-					continue
+				obj := &event.MqttEvent{}
+				if err := json.Unmarshal(msg.Value, obj); err == nil {
+					p.handleKafkaEvent(obj)
 				}
 			}
 		}(pc)
 	}
 	return consumer, nil
+}
+
+// handleEvent handle mqtt event from other service
+func (p *ruleEngine) handleKafkaEvent(se *event.MqttEvent) error {
+	e := &event.Event{}
+	if err := json.Unmarshal(se.Common, &e.Common); err != nil {
+		return fmt.Errorf("conductor unmarshal event common failed:%s", err.Error())
+	}
+	switch e.Common.Type {
+	case event.SessionCreate:
+	case event.SessionDestroy:
+	case event.TopicSubscribe:
+	case event.TopicUnsubscribe:
+	case event.TopicPublish:
+		obj := &event.TopicPublishDetail{}
+		if err := json.Unmarshal(se.Detail, obj); err != nil {
+			return fmt.Errorf("conductor unmarshal event detail failed:%s", err.Error())
+		}
+		return p.execute(obj)
+	}
+	return nil
 }
 
 // stop will stop the engine
@@ -230,6 +238,6 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
-func (p *ruleEngine) execute(t *publishTopic) error {
+func (p *ruleEngine) execute(t *event.TopicPublishDetail) error {
 	return nil
 }

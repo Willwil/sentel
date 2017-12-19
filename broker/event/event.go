@@ -40,7 +40,7 @@ type Event struct {
 	Detail interface{} `json:"detail"` // Event detail
 }
 
-type serEvent struct {
+type MqttEvent struct {
 	Common json.RawMessage `json:"common"`
 	Detail json.RawMessage `json:"detail"`
 }

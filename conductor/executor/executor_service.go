@@ -101,7 +101,7 @@ func (p *ExecutorService) handleRule(ctx ruleContext) error {
 	r := ctx.rule
 	// Get engine instance according to product id
 	if _, ok := p.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(p.Config, r.ProductId)
+		engine, err := newRuleEngine(p.Config, r.TenantId, r.ProductId)
 		if err != nil {
 			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
 			return err
