@@ -128,6 +128,9 @@ func (c *config) SetValue(section string, key string, valu string) {
 
 func (c *config) AddConfigs(options map[string]map[string]string) {
 	for section, values := range options {
+		if _, found := allConfigSections[section]; !found {
+			allConfigSections[section] = &configSection{items: make(map[string]string)}
+		}
 		items := allConfigSections[section].items
 		for key, val := range values {
 			items[key] = val

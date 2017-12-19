@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/conductor/indicator"
+	"github.com/cloustone/sentel/conductor/restapi"
 	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
@@ -40,6 +41,7 @@ func main() {
 
 	core.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
 	core.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
+	core.RegisterServiceWithConfig("restapi", &restapi.RestapiServiceFactory{}, restapi.Configs)
 	config, _ := createConfig(*configFile)
 	// Create service manager according to the configuration
 	mgr, err := core.NewServiceManager("conductor", config)
@@ -51,7 +53,7 @@ func main() {
 
 func createConfig(fileName string) (core.Config, error) {
 	options := map[string]map[string]string{}
-	options["iothub"] = map[string]string{}
+	options["iothub"] = make(map[string]string)
 	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
 	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
 	// Get configuration

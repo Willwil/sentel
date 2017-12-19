@@ -18,10 +18,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/core"
@@ -54,9 +52,7 @@ func (m *NotifyServiceFactory) New(c core.Config, quit chan os.Signal) (core.Ser
 }
 
 // Name
-func (p *NotifyService) Name() string {
-	return "notify"
-}
+func (p *NotifyService) Name() string { return "notify" }
 
 // Start
 func (p *NotifyService) Start() error {
@@ -67,20 +63,11 @@ func (p *NotifyService) Start() error {
 	}
 	p.consumers = append(p.consumers, tc)
 	p.consumers = append(p.consumers, pc)
-	go func(p *NotifyService) {
-		for {
-			select {
-			case <-p.Quit:
-				return
-			}
-		}
-	}(p)
 	return nil
 }
 
 // Stop
 func (p *NotifyService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	for _, consumer := range p.consumers {
 		consumer.Close()
 	}
