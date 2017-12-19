@@ -30,14 +30,14 @@ const fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleEngine struct {
-	tenantId  string              // Tenant
-	productId string              // one product have one rule engine
-	rules     map[string]*db.Rule // all product's rule
-	consumer  sarama.Consumer     // one product have one consumer
-	config    core.Config         // configuration
-	mutex     sync.Mutex          // mutex to protext rules list
-	started   bool                // indicate wether engined is started
-	wg        sync.WaitGroup      // waitgroup for consumper partions
+	tenantId  string                // Tenant
+	productId string                // one product have one rule engine
+	rules     map[string]ruleWraper // all product's rule
+	consumer  sarama.Consumer       // one product have one consumer
+	config    core.Config           // configuration
+	mutex     sync.Mutex            // mutex to protext rules list
+	started   bool                  // indicate wether engined is started
+	wg        sync.WaitGroup        // waitgroup for consumper partions
 }
 
 // newRuleEngine create a engine according to product id and configuration
@@ -46,7 +46,7 @@ func newRuleEngine(c core.Config, tenantId string, productId string) (*ruleEngin
 		productId: productId,
 		config:    c,
 		consumer:  nil,
-		rules:     make(map[string]*db.Rule),
+		rules:     make(map[string]ruleWraper),
 		mutex:     sync.Mutex{},
 		wg:        sync.WaitGroup{},
 		started:   false,
@@ -155,7 +155,7 @@ func (p *ruleEngine) createRule(r *db.Rule) error {
 	if _, ok := p.rules[r.RuleName]; ok {
 		return fmt.Errorf("rule:%s already exist", r.RuleName)
 	}
-	p.rules[r.RuleName] = obj
+	p.rules[r.RuleName] = ruleWraper{rule: obj}
 	return nil
 }
 
@@ -186,7 +186,7 @@ func (p *ruleEngine) updateRule(r *db.Rule) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[r.RuleName]; ok {
-		p.rules[r.RuleName] = obj
+		p.rules[r.RuleName] = ruleWraper{rule: obj}
 		return nil
 	}
 	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
@@ -209,7 +209,7 @@ func (p *ruleEngine) startRule(r *db.Rule) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[r.RuleName]; ok {
-		p.rules[r.RuleName].Status = db.RuleStatusStarted
+		p.rules[r.RuleName].rule.Status = db.RuleStatusStarted
 		return nil
 	}
 	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
@@ -224,11 +224,11 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 	if _, ok := p.rules[r.RuleName]; !ok { // not found
 		return fmt.Errorf("Invalid rule:%s", r.RuleName)
 	}
-	p.rules[r.RuleName].Status = db.RuleStatusStoped
+	p.rules[r.RuleName].rule.Status = db.RuleStatusStoped
 	// Stop current engine if all rules are stoped
-	for _, rule := range p.rules {
+	for _, w := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
-		if rule.Status != db.RuleStatusStoped {
+		if w.rule.Status != db.RuleStatusStoped {
 			return nil
 		}
 	}
@@ -239,5 +239,12 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
 func (p *ruleEngine) execute(t *event.TopicPublishDetail) error {
+	for _, w := range p.rules {
+		if w.rule.Status == db.RuleStatusStarted {
+			if err := w.execute(p.config, t); err != nil {
+				glog.Infof("conductor execute rule '%s' failed, reason: '%s'", w.rule.RuleName, err.Error())
+			}
+		}
+	}
 	return nil
 }
