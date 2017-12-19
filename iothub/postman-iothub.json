@@ -1,0 +1,94 @@
+{
+	"info": {
+		"name": "sentel-iothub",
+		"_postman_id": "aadeb47a-b562-2dd7-8894-532ad29ba365",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "localhost:50052/iothub/v1/api/tenants",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "asdfasdfa",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"tenantId\": \"jenson\",\n\"tenantKey\": \"zzz\",\n\"productKey\": \"ssddn\",\n\"securityMethod\":3,\n\"signMethod\":\"sha1mac\",\n\"timestamp\":\"1123\",\n\"password\":\"xxx\"\n}"
+				},
+				"url": {
+					"raw": "localhost:50052/iothub/api/v1/tenants",
+					"host": [
+						"localhost"
+					],
+					"port": "50052",
+					"path": [
+						"iothub",
+						"api",
+						"v1",
+						"tenants"
+					]
+				},
+				"description": "add tenant to iothub"
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:50052/iothub/v1/api/tenants/zuoyl/products",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "asdfasdfa",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\"tenantId\": \"jenson\",\n\"tenantKey\": \"zzz\",\n\"productId\":\"p1\",\n\"productKey\": \"ssddn\",\n\"securityMethod\":3,\n\"signMethod\":\"sha1mac\",\n\"timestamp\":\"1123\",\n\"password\":\"xxx\",\n\"replicas\":2\n}"
+				},
+				"url": {
+					"raw": "localhost:50052/iothub/api/v1/tenants/zuoyl/products",
+					"host": [
+						"localhost"
+					],
+					"port": "50052",
+					"path": [
+						"iothub",
+						"api",
+						"v1",
+						"tenants",
+						"zuoyl",
+						"products"
+					]
+				},
+				"description": "add tenant to iothub"
+			},
+			"response": []
+		}
+	]
+}

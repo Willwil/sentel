@@ -13,7 +13,6 @@
 package core
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -41,26 +40,22 @@ type config struct{}
 
 var allConfigSections map[string]*configSection = make(map[string]*configSection)
 
-var (
-	ErrorInvalidConfiguration = errors.New("Invalid configuration")
-)
-
 // config implementations
 
-func checkItemExist(section string, key string) bool {
+func checkItemExist(section string, key string) error {
 	if _, found := allConfigSections[section]; !found {
-		return false
+		return fmt.Errorf("Invalid configuration, section '%s' doesn't exist'", section)
 	}
 	if _, found := allConfigSections[section].items[key]; !found {
-		return false
+		return fmt.Errorf("Invalid configuration, there are no item '%s' in section '%s'", key, section)
 	}
-	return true
+	return nil
 }
 
 // Bool return bool value for key
 func (c *config) Bool(section string, key string) (bool, error) {
-	if !checkItemExist(section, key) {
-		return false, ErrorInvalidConfiguration
+	if err := checkItemExist(section, key); err != nil {
+		return false, err
 	}
 	val := allConfigSections[section].items[key]
 	switch val {
@@ -74,8 +69,8 @@ func (c *config) Bool(section string, key string) (bool, error) {
 
 // Int return int value for key
 func (c *config) Int(section string, key string) (int, error) {
-	if !checkItemExist(section, key) {
-		return -1, ErrorInvalidConfiguration
+	if err := checkItemExist(section, key); err != nil {
+		return -1, err
 	}
 	val := allConfigSections[section].items[key]
 	return strconv.Atoi(val)
@@ -83,16 +78,15 @@ func (c *config) Int(section string, key string) (int, error) {
 
 // String return string valu for key
 func (c *config) String(section string, key string) (string, error) {
-	if !checkItemExist(section, key) {
-		return "", ErrorInvalidConfiguration
+	if err := checkItemExist(section, key); err != nil {
+		return "", err
 	}
-
 	return allConfigSections[section].items[key], nil
 }
 
 func (c *config) MustBool(section string, key string) bool {
-	if !checkItemExist(section, key) {
-		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
+	if err := checkItemExist(section, key); err != nil {
+		glog.Fatal(err)
 	}
 	val := allConfigSections[section].items[key]
 	switch val {
@@ -105,8 +99,8 @@ func (c *config) MustBool(section string, key string) bool {
 	return false
 }
 func (c *config) MustInt(section string, key string) int {
-	if !checkItemExist(section, key) {
-		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
+	if err := checkItemExist(section, key); err != nil {
+		glog.Fatal(err)
 	}
 	val := allConfigSections[section].items[key]
 	n, err := strconv.Atoi(val)
@@ -117,8 +111,8 @@ func (c *config) MustInt(section string, key string) int {
 }
 
 func (c *config) MustString(section string, key string) string {
-	if !checkItemExist(section, key) {
-		glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
+	if err := checkItemExist(section, key); err != nil {
+		glog.Fatal(err)
 	}
 	return allConfigSections[section].items[key]
 }
