@@ -44,9 +44,9 @@ func createConfig(fileName string) (com.Config, error) {
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}
-	options["iothub"] = make(map[string]string)
-	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
-	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
+	options["conductor"] = make(map[string]string)
+	options["conductor"]["kafka"] = os.Getenv("KAFKA_HOST")
+	options["conductor"]["mongo"] = os.Getenv("MONGO_HOST")
 	config.AddConfig(options)
 	return config, nil
 }
