@@ -30,7 +30,9 @@ type ServiceBase struct {
 	Quit      chan os.Signal
 	WaitGroup sync.WaitGroup
 }
-type ServiceFactory func(c com.Config, quit chan os.Signal) (Service, error)
+type ServiceFactory interface {
+	New(c com.Config, quit chan os.Signal) (Service, error)
+}
 
 var (
 	services = make(map[string]Service)

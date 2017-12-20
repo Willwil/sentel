@@ -55,8 +55,10 @@ type subscriberContext struct {
 	ctx     interface{}
 }
 
+type ServiceFactory struct{}
+
 // New create global broker
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 	product := c.MustString("broker", "product")

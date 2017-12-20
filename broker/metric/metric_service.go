@@ -42,8 +42,10 @@ type metricService struct {
 	statsMutex   sync.Mutex
 }
 
+type ServiceFactory struct{}
+
 // New create apiService service factory
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// Get node ip, name and created time
 	return &metricService{
 		ServiceBase: base.ServiceBase{

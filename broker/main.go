@@ -44,30 +44,26 @@ func main() {
 	flag.Parse()
 
 	glog.Infof("Starting 'broker' server...")
-	registerService(event.ServiceName, event.New)
-	registerService(queue.ServiceName, queue.New)
-	registerService(sessionmgr.ServiceName, sessionmgr.New)
-	registerService(auth.ServiceName, auth.New)
-	registerService(rpc.ServiceName, rpc.New)
-	registerService(metric.ServiceName, metric.New)
-	registerService(metadata.ServiceName, metadata.New)
-	registerService(quto.ServiceName, quto.New)
-	registerService(mqtt.ServiceName, mqtt.New)
-	registerService(http.ServiceName, http.New)
-
-	// Create global configuration
-	if config, err := createConfig(*configFile); err != nil {
+	config, err := createConfig(*configFile)
+	if err != nil {
 		fmt.Println(err.Error())
 		flag.PrintDefaults()
 		return
-	} else {
-		// Create service manager according to the configuration
-		broker, err := NewBroker(config)
-		if err != nil {
-			glog.Fatal(err)
-		}
-		glog.Fatal(broker.Run())
 	}
+	// Create service manager according to the configuration
+	broker, _ := NewBroker(config)
+	broker.addService(event.ServiceFactory{})
+	broker.addService(queue.ServiceFactory{})
+	broker.addService(sessionmgr.ServiceFactory{})
+	broker.addService(auth.ServiceFactory{})
+	broker.addService(rpc.ServiceFactory{})
+	broker.addService(metric.ServiceFactory{})
+	broker.addService(metadata.ServiceFactory{})
+	broker.addService(quto.ServiceFactory{})
+	broker.addService(mqtt.ServiceFactory{})
+	broker.addService(http.ServiceFactory{})
+
+	glog.Fatal(broker.Run())
 }
 
 func createConfig(fileName string) (com.Config, error) {

@@ -33,8 +33,10 @@ const (
 	ServiceName = "auth"
 )
 
+type ServiceFactory struct{}
+
 // New create coap service factory
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")

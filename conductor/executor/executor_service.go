@@ -42,7 +42,7 @@ type ruleContext struct {
 type ExecutorServiceFactory struct{}
 
 // New create executor service factory
-func (p *ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")

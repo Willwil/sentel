@@ -12,7 +12,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -27,90 +26,86 @@ import (
 
 type Broker struct {
 	sync.Once
-	config   com.Config                // Global config
-	services map[string]base.Service   // All service created by config.Protocols
-	quits    map[string]chan os.Signal // Notification channel for each service
-	name     string                    // Name of service manager
-	brokerId string
+	config           com.Config            // Global config
+	serviceFactories []base.ServiceFactory // All service factory
+	services         []base.Service        // All service created by config.Protocols
+	quits            []chan os.Signal      // Notification channel for each service
+	name             string                // Name of service manager
+	brokerId         string
 }
 
 const (
 	BrokerVersion = "0.1"
 )
 
-var (
-	serviceFactories = make(map[string]base.ServiceFactory)
-	serviceSeqs      = []string{}
-)
-
-// RegisterService register service with name and protocol specified
-func registerService(name string, factory base.ServiceFactory) {
-	glog.Infof("Service '%s' is registered", name)
-	if _, ok := serviceFactories[name]; ok {
-		glog.Errorf("Service '%s' is already registered", name)
-	}
-	serviceFactories[name] = factory
-	serviceSeqs = append(serviceSeqs, name)
-}
-
 // newBroker create global broker
 func NewBroker(c com.Config) (*Broker, error) {
 	broker := &Broker{
-		config:   c,
-		quits:    make(map[string]chan os.Signal),
-		services: make(map[string]base.Service),
-		brokerId: uuid.NewV4().String(),
+		config:           c,
+		quits:            []chan os.Signal{},
+		services:         []base.Service{},
+		serviceFactories: []base.ServiceFactory{},
+		brokerId:         uuid.NewV4().String(),
 	}
 	base.SetBrokerStartupInfo(&base.BrokerStartupInfo{
 		Id: broker.brokerId,
 	})
 
-	for name, _ := range serviceFactories {
-		// Format service name
-		quit := make(chan os.Signal)
-		service, err := serviceFactories[name](c, quit)
-		if err != nil {
-			glog.Infof("Create service '%s'failed", name)
-			return nil, err
-		} else {
-			glog.Infof("Create service '%s' successfully", name)
-			broker.services[name] = service
-			broker.quits[name] = quit
-			base.RegisterService(name, service)
-		}
-	}
 	return broker, nil
 }
 
+// addService register service with name and protocol specified
+func (p *Broker) addService(factory base.ServiceFactory) {
+	p.serviceFactories = append(p.serviceFactories, factory)
+}
+
 // getServicesByName return service instance by name, or matched by part of name
-func (p *Broker) getServiceByName(name string) com.Service {
-	if _, ok := p.services[name]; !ok {
-		panic(fmt.Sprintf("Failed to find service '%s' in broker", name))
+func (p *Broker) getService(name string) com.Service {
+	for _, service := range p.services {
+		if service.Name() == name {
+			return service
+		}
 	}
-	return p.services[name]
+	glog.Fatal(fmt.Errorf("Failed to find service '%s' in broker", name))
+	return nil
 }
 
 // Start
 func (p *Broker) Run() error {
-	// initialize event manager at first
-	for _, name := range serviceSeqs {
-		if err := p.services[name].Initialize(); err != nil {
+	// create service
+	for _, factory := range p.serviceFactories {
+		// Format service name
+		quit := make(chan os.Signal)
+		service, err := factory.New(p.config, quit)
+		if err != nil {
+			return err
+		} else {
+			glog.Infof("Create service '%s' successfully", service.Name())
+			p.services = append(p.services, service)
+			p.quits = append(p.quits, quit)
+			base.RegisterService(service.Name(), service)
+		}
+	}
+
+	// initialize services
+	for _, service := range p.services {
+		if err := service.Initialize(); err != nil {
 			return err
 		}
-		glog.Infof("Initializing service '%s' ...successfuly", name)
+		glog.Infof("Initializing service '%s' ...successfuly", service.Name())
 	}
 
 	// start each registered services
-	for _, name := range serviceSeqs {
-		if err := p.services[name].Start(); err != nil {
+	for _, service := range p.services {
+		if err := service.Start(); err != nil {
 			return err
 		}
-		glog.Infof("Starting service '%s' ...successfuly", name)
+		glog.Infof("Starting service '%s' ...successfuly", service.Name())
 	}
 	// Wait all service to terminate in main context<TODO>
-	for name, quit := range p.quits {
-		<-quit
-		glog.Info("Servide(%s) is terminated", name)
+	for index, service := range p.services {
+		<-p.quits[index]
+		glog.Info("Servide(%s) is terminated", service.Name())
 	}
 
 	return nil
@@ -119,20 +114,9 @@ func (p *Broker) Run() error {
 // Stop
 func (p *Broker) Stop() {
 	// Wait all service to terminate in main context<TODO>
-	for name, quit := range p.quits {
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGQUIT)
-		glog.Info("Servide(%s) is be terminating", name)
+	for index, service := range p.services {
+		signal.Notify(p.quits[index], syscall.SIGINT, syscall.SIGQUIT)
+		glog.Info("Service(%s) is terminated", service.Name())
 	}
 
-}
-
-// CheckAllRegisteredServices check all registered service simplily
-func checkAllRegisteredServices() error {
-	if len(serviceFactories) == 0 {
-		return errors.New("No service registered")
-	}
-	for name, _ := range serviceFactories {
-		glog.Infof("Service '%s' is registered", name)
-	}
-	return nil
 }

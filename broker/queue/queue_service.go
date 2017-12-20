@@ -35,8 +35,10 @@ const (
 	ServiceName = "queue"
 )
 
+type ServiceFactory struct{}
+
 // New create metadata service factory
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	return &queueService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,

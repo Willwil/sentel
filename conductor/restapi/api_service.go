@@ -43,7 +43,7 @@ type response struct {
 // RestapiServiceFactory
 type RestapiServiceFactory struct{}
 
-func (p *RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -72,7 +72,7 @@ func (p *RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Serv
 }
 
 // Name
-func (p *RestapiService) Name() string { return "api" }
+func (p *RestapiService) Name() string { return "restapi" }
 
 // Start
 func (p *RestapiService) Start() error {

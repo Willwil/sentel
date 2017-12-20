@@ -39,7 +39,7 @@ type IndicatorService struct {
 type IndicatorServiceFactory struct{}
 
 // New create apiService service factory
-func (p *IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")

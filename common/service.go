@@ -33,8 +33,8 @@ type ServiceFactory interface {
 type ServiceManager struct {
 	sync.Once
 	Config           Config // Global config
-	serviceFactories map[string]ServiceFactory
-	Services         map[string]Service        // All service created by config.Protocols
+	serviceFactories []ServiceFactory
+	services         []Service                 // All service created by config.Protocols
 	quits            map[string]chan os.Signal // Notification channel for each service
 	name             string                    // Name of service manager
 }
@@ -56,41 +56,37 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 	}
 	mgr := &ServiceManager{
 		Config:           c,
-		serviceFactories: make(map[string]ServiceFactory),
+		serviceFactories: []ServiceFactory{},
+		services:         []Service{},
 		quits:            make(map[string]chan os.Signal),
-		Services:         make(map[string]Service),
 		name:             name,
 	}
 	serviceManager = mgr
 	return serviceManager, nil
 }
 
-func (p *ServiceManager) AddService(name string, factory ServiceFactory) error {
-	if _, found := p.serviceFactories[name]; found {
-		glog.Fatalf("Service '%s' is already registered", name)
-	}
-	p.serviceFactories[name] = factory
-	return nil
+func (p *ServiceManager) AddService(factory ServiceFactory) *ServiceManager {
+	p.serviceFactories = append(p.serviceFactories, factory)
+	return p
 }
 
 // Run launch all serices and wait to terminate
 func (p *ServiceManager) RunAndWait() error {
 	// Create all services
-	for name, _ := range p.serviceFactories {
+	for _, factory := range p.serviceFactories {
 		quit := make(chan os.Signal)
-		if service, err := p.serviceFactories[name].New(p.Config, quit); err != nil {
-			glog.Infof("Create service '%s'failed", name)
+		if service, err := factory.New(p.Config, quit); err != nil {
 			return err
 		} else {
-			glog.Infof("Create service '%s' successfully", name)
-			p.Services[name] = service
-			p.quits[name] = quit
+			glog.Infof("Create service '%s' successfully", service.Name())
+			p.services = append(p.services, service)
+			p.quits[service.Name()] = quit
 		}
 	}
 
 	// Run all service
-	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
-	for _, service := range p.Services {
+	glog.Infof("There are %d service in '%s'", len(p.services), p.name)
+	for _, service := range p.services {
 		glog.Infof("Starting service:'%s'...", service.Name())
 		if err := service.Start(); err != nil {
 			return err
@@ -107,8 +103,8 @@ func (p *ServiceManager) RunAndWait() error {
 // Run launch all serices
 func (p *ServiceManager) Run() error {
 	// Run all service
-	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
-	for _, service := range p.Services {
+	glog.Infof("There are %d service in '%s'", len(p.services), p.name)
+	for _, service := range p.services {
 		glog.Infof("Starting service:'%s'...", service.Name())
 		if err := service.Start(); err != nil {
 			return err
@@ -119,51 +115,18 @@ func (p *ServiceManager) Run() error {
 
 // stop
 func (p *ServiceManager) stop() error {
-	for _, service := range p.Services {
+	for _, service := range p.services {
 		glog.Infof("Stoping service:'%s'...", service.Name())
 		service.Stop()
 	}
 	return nil
 }
 
-/*
-// StartService launch specified service
-func (p *ServiceManager) StartService(name string) error {
-	// Return error if service has already been started
-	for id, service := range p.Services {
-		if strings.IndexAny(id, name) >= 0 && service != nil {
-			return fmt.Errorf("The service '%s' has already been started", name)
-		}
-	}
-	quit := make(chan os.Signal)
-	service, err := CreateService(name, p.Config, quit)
-	if err != nil {
-		glog.Errorf("%s", err)
-	} else {
-		glog.Infof("Create service '%s' success", name)
-		p.Services[name] = service
-		p.quits[name] = quit
-	}
-	return nil
-}
-
-// StopService stop specified service
-func (p *ServiceManager) StopService(id string) error {
-	for name, service := range p.Services {
-		if name == id && service != nil {
-			service.Stop()
-			p.Services[name] = nil
-			close(p.quits[name])
-		}
-	}
-	return nil
-}
-*/
 // GetServicesByName return service instance by name, or matched by part of name
 func (p *ServiceManager) GetServicesByName(name string) []Service {
 	services := []Service{}
-	for k, service := range p.Services {
-		if strings.IndexAny(k, name) >= 0 {
+	for _, service := range p.services {
+		if strings.IndexAny(service.Name(), name) >= 0 {
 			services = append(services, service)
 		}
 	}
@@ -172,8 +135,10 @@ func (p *ServiceManager) GetServicesByName(name string) []Service {
 
 // GetService return service instance by name, or matched by part of name
 func (p *ServiceManager) GetService(name string) Service {
-	if _, found := p.Services[name]; found {
-		return p.Services[name]
+	for _, service := range p.services {
+		if service.Name() == name {
+			return service
+		}
 	}
 	return nil
 }

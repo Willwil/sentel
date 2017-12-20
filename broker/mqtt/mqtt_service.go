@@ -33,8 +33,10 @@ type mqttService struct {
 	base.ServiceBase
 }
 
+type ServiceFactory struct{}
+
 // New create mqtt service factory
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	t := &mqttService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,

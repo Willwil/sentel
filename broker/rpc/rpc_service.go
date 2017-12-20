@@ -38,8 +38,10 @@ type rpcService struct {
 	srv      *grpc.Server
 }
 
+type ServiceFactory struct{}
+
 // New create apiService service factory
-func New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	server := &rpcService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
