@@ -37,7 +37,7 @@ const (
 	cachePolicyRedis  = "redis"
 )
 
-type qutoServie struct {
+type qutoService struct {
 	base.ServiceBase
 	eventChan   chan *event.Event
 	cachePolicy string
@@ -86,7 +86,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, er
 		}
 	}
 
-	return &qutoServie{
+	return &qutoService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -102,16 +102,16 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, er
 }
 
 // Name
-func (p *qutoServie) Name() string {
+func (p *qutoService) Name() string {
 	return ServiceName
 }
 
-func (p *qutoServie) Initialize() error { return nil }
+func (p *qutoService) Initialize() error { return nil }
 
 // Start
-func (p *qutoServie) Start() error {
+func (p *qutoService) Start() error {
 	event.Subscribe(event.QutoChange, onEventCallback, p)
-	go func(p *qutoServie) {
+	go func(p *qutoService) {
 		for {
 			select {
 			case e := <-p.eventChan:
@@ -125,7 +125,7 @@ func (p *qutoServie) Start() error {
 }
 
 // Stop
-func (p *qutoServie) Stop() {
+func (p *qutoService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
@@ -134,12 +134,12 @@ func (p *qutoServie) Stop() {
 
 // onEventCallback will be called when notificaiton come from event service
 func onEventCallback(e *event.Event, ctx interface{}) {
-	service := ctx.(*qutoServie)
+	service := ctx.(*qutoService)
 	service.eventChan <- e
 }
 
 // handleQutoChanged load changed quto into cach
-func (p *qutoServie) handleQutoChanged(e *event.Event) {
+func (p *qutoService) handleQutoChanged(e *event.Event) {
 	// check mongo db configuration
 	hosts := p.Config.MustString("broker", "mongo")
 	timeout := p.Config.MustInt("broker", "connect_timeout")
@@ -163,7 +163,7 @@ func (p *qutoServie) handleQutoChanged(e *event.Event) {
 }
 
 // getCacheItem get item from ache
-func (p *qutoServie) getCacheItem(id string) (uint64, error) {
+func (p *qutoService) getCacheItem(id string) (uint64, error) {
 	switch p.cachePolicy {
 	case cachePolicyMemory:
 		if _, ok := p.cacheMap[id]; !ok {
@@ -181,7 +181,7 @@ func (p *qutoServie) getCacheItem(id string) (uint64, error) {
 }
 
 // setCacheItem set cache item internal
-func (p *qutoServie) setCacheItem(id string, val uint64) {
+func (p *qutoService) setCacheItem(id string, val uint64) {
 	switch p.cachePolicy {
 	case cachePolicyMemory:
 		p.cacheMap[id] = val
@@ -191,7 +191,7 @@ func (p *qutoServie) setCacheItem(id string, val uint64) {
 }
 
 // getQuto return object's qutotation
-func (p *qutoServie) getQuto(id string) (uint64, error) {
+func (p *qutoService) getQuto(id string) (uint64, error) {
 	// Get quto from cache at first
 	if val, err := p.getCacheItem(id); err == nil {
 		return val, nil
@@ -218,7 +218,7 @@ func (p *qutoServie) getQuto(id string) (uint64, error) {
 }
 
 // checkQutoWithAddValue check wether the newly added value is over quto
-func (p *qutoServie) checkQuto(id string, value uint64) bool {
+func (p *qutoService) checkQuto(id string, value uint64) bool {
 	/*
 		v, err := p.getCacheItem(id)
 		if err != nil {
