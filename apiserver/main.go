@@ -33,16 +33,10 @@ func main() {
 	glog.Info("Starting api server...")
 
 	base.RegisterApiManager(v1api.NewApiManager())
-	// Get configuration
+
 	config := com.NewConfig()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(*configFileName)
-	config, err := com.NewConfigWithFile(*configFileName)
-	if err != nil {
-		glog.Fatal(err)
-		flag.PrintDefaults()
-		return
-	}
 
 	// Initialize registry
 	if err := db.InitializeRegistry(config); err != nil {
@@ -57,5 +51,5 @@ func main() {
 		glog.Error("%v", err)
 		return
 	}
-	glog.Error(apiManager.Run())
+	glog.Fatal(apiManager.Run())
 }
