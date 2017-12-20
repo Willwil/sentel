@@ -37,7 +37,7 @@ type CollectorService struct {
 type CollectorServiceFactory struct{}
 
 // New create apiService service factory
-func (m *CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (m CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")

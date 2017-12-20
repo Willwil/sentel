@@ -55,12 +55,12 @@ func NewBroker(c com.Config) (*Broker, error) {
 }
 
 // addService register service with name and protocol specified
-func (p *Broker) addService(factory base.ServiceFactory) {
+func (p *Broker) AddService(factory base.ServiceFactory) {
 	p.serviceFactories = append(p.serviceFactories, factory)
 }
 
 // getServicesByName return service instance by name, or matched by part of name
-func (p *Broker) getService(name string) com.Service {
+func (p *Broker) GetService(name string) com.Service {
 	for _, service := range p.services {
 		if service.Name() == name {
 			return service

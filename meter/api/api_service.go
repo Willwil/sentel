@@ -48,7 +48,7 @@ type ApiServiceFactory struct{}
 const APIHEAD = "api/v1/"
 
 // New create apiService service factory
-func (p *ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")

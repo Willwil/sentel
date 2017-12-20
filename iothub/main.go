@@ -36,9 +36,9 @@ func main() {
 
 	// Create service manager according to the configuration
 	mgr, _ := com.NewServiceManager("iothub", config)
-	mgr.AddService(&hub.ApiServiceFactory{})
-	mgr.AddService(&hub.NotifyServiceFactory{})
-	glog.Error(mgr.RunAndWait())
+	mgr.AddService(hub.ApiServiceFactory{})
+	mgr.AddService(hub.NotifyServiceFactory{})
+	glog.Fatal(mgr.RunAndWait())
 }
 
 func createConfig(fileName string) (com.Config, error) {

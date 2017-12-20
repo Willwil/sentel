@@ -47,7 +47,7 @@ type response struct {
 // ApiServiceFactory
 type ApiServiceFactory struct{}
 
-func (p *ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("iothub", "mongo")
 	timeout := c.MustInt("api", "connect_timeout")

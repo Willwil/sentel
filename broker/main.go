@@ -52,16 +52,16 @@ func main() {
 	}
 	// Create service manager according to the configuration
 	broker, _ := NewBroker(config)
-	broker.addService(event.ServiceFactory{})
-	broker.addService(queue.ServiceFactory{})
-	broker.addService(sessionmgr.ServiceFactory{})
-	broker.addService(auth.ServiceFactory{})
-	broker.addService(rpc.ServiceFactory{})
-	broker.addService(metric.ServiceFactory{})
-	broker.addService(metadata.ServiceFactory{})
-	broker.addService(quto.ServiceFactory{})
-	broker.addService(mqtt.ServiceFactory{})
-	broker.addService(http.ServiceFactory{})
+	broker.AddService(event.ServiceFactory{})
+	broker.AddService(queue.ServiceFactory{})
+	broker.AddService(sessionmgr.ServiceFactory{})
+	broker.AddService(auth.ServiceFactory{})
+	broker.AddService(rpc.ServiceFactory{})
+	broker.AddService(metric.ServiceFactory{})
+	broker.AddService(metadata.ServiceFactory{})
+	broker.AddService(quto.ServiceFactory{})
+	broker.AddService(mqtt.ServiceFactory{})
+	broker.AddService(http.ServiceFactory{})
 
 	glog.Fatal(broker.Run())
 }

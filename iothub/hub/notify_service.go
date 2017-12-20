@@ -39,7 +39,7 @@ var (
 type NotifyServiceFactory struct{}
 
 // New create apiService service factory
-func (m *NotifyServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (m NotifyServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	sarama.Logger = logger
 	return &NotifyService{
 		ServiceBase: com.ServiceBase{
