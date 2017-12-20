@@ -15,11 +15,11 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 
 	"github.com/cloustone/sentel/apiserver/base"
 	v1api "github.com/cloustone/sentel/apiserver/v1"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common/db"
 
 	"github.com/golang/glog"
 )
@@ -34,8 +34,8 @@ func main() {
 
 	base.RegisterApiManager(v1api.NewApiManager())
 	// Get configuration
-	core.RegisterConfigGroup(defaultConfigs)
-	config, err := core.NewConfigWithFile(*configFileFullPath)
+	com.RegisterConfigGroup(defaultConfigs)
+	config, err := com.NewConfigWithFile(*configFileFullPath)
 	if err != nil {
 		glog.Fatal(err)
 		flag.PrintDefaults()

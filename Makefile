@@ -49,27 +49,27 @@ conductor: .GOPATH/.ok
 
 .PHONY: sentel-ctl
 sentel-ctrl: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-ctl
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-ctl
 
 .PHONY: k8s-test
 k8s-test: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/k8s-test
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/k8s-test
 
 .PHONY: kafka-consumer
 kafka-consumer: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-consumer
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/kafka-consumer
 
 .PHONY: kafka-producer
 kafka-producer: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/kafka-producer
+	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/kafka-producer
 
 .PHONY: tools
 mqtt-cli: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-mqtt-cli
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-mqtt-cli
 
 .PHONY: sentel-cli
 sentel-cli: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/commands/sentel-cli
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-cli
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####

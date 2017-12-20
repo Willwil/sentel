@@ -20,15 +20,15 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
 // ExecutorService manage all rule engine and execute rule
 type ExecutorService struct {
-	core.ServiceBase
+	com.ServiceBase
 	ruleChan chan ruleContext
 	engines  map[string]*ruleEngine
 	mutex    sync.Mutex
@@ -42,7 +42,7 @@ type ruleContext struct {
 type ExecutorServiceFactory struct{}
 
 // New create executor service factory
-func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -53,7 +53,7 @@ func (p *ExecutorServiceFactory) New(c core.Config, quit chan os.Signal) (core.S
 	session.Close()
 
 	return &ExecutorService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
@@ -111,15 +111,15 @@ func (p *ExecutorService) handleRule(ctx ruleContext) error {
 	engine := p.engines[r.ProductId]
 
 	switch ctx.action {
-	case core.RuleActionCreate:
+	case com.RuleActionCreate:
 		return engine.createRule(r)
-	case core.RuleActionRemove:
+	case com.RuleActionRemove:
 		return engine.removeRule(r)
-	case core.RuleActionUpdate:
+	case com.RuleActionUpdate:
 		return engine.updateRule(r)
-	case core.RuleActionStart:
+	case com.RuleActionStart:
 		return engine.startRule(r)
-	case core.RuleActionStop:
+	case com.RuleActionStop:
 		return engine.stopRule(r)
 	}
 	return nil
@@ -127,21 +127,21 @@ func (p *ExecutorService) handleRule(ctx ruleContext) error {
 
 // HandleRuleNotification handle rule notifications recevied from kafka,
 // it will check rule's validity,for example, wether rule exist in database.
-func HandleRuleNotification(t *core.RuleTopic) error {
+func HandleRuleNotification(t *com.RuleTopic) error {
 	glog.Infof("New rule notification for  rule '%s'", t.RuleName)
 
 	// Check action's validity
 	switch t.RuleAction {
-	case core.RuleActionCreate:
-	case core.RuleActionRemove:
-	case core.RuleActionUpdate:
-	case core.RuleActionStart:
-	case core.RuleActionStop:
+	case com.RuleActionCreate:
+	case com.RuleActionRemove:
+	case com.RuleActionUpdate:
+	case com.RuleActionStart:
+	case com.RuleActionStop:
 	default:
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", t.RuleAction, t.ProductId)
 	}
 	// Now just simply send rule to executor
-	executor := core.GetServiceManager().GetService("executor").(*ExecutorService)
+	executor := com.GetServiceManager().GetService("executor").(*ExecutorService)
 	ctx := ruleContext{
 		action: t.RuleAction,
 		rule: &db.Rule{

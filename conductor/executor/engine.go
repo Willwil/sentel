@@ -20,8 +20,8 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
 )
 
@@ -34,14 +34,14 @@ type ruleEngine struct {
 	productId string                // one product have one rule engine
 	rules     map[string]ruleWraper // all product's rule
 	consumer  sarama.Consumer       // one product have one consumer
-	config    core.Config           // configuration
+	config    com.Config            // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
 	wg        sync.WaitGroup        // waitgroup for consumper partions
 }
 
 // newRuleEngine create a engine according to product id and configuration
-func newRuleEngine(c core.Config, tenantId string, productId string) (*ruleEngine, error) {
+func newRuleEngine(c com.Config, tenantId string, productId string) (*ruleEngine, error) {
 	return &ruleEngine{
 		productId: productId,
 		config:    c,

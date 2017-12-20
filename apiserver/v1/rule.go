@@ -16,8 +16,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 )
@@ -51,13 +51,13 @@ func createRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		core.TopicNameRule,
-		&core.RuleTopic{
+		com.TopicNameRule,
+		&com.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: core.RuleActionCreate,
+			RuleAction: com.RuleActionCreate,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
 }
@@ -76,13 +76,13 @@ func removeRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		core.TopicNameRule,
-		&core.RuleTopic{
+		com.TopicNameRule,
+		&com.RuleTopic{
 			RuleName:   ruleName,
 			ProductId:  productId,
-			RuleAction: core.RuleActionRemove,
+			RuleAction: com.RuleActionRemove,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String()})
 }
@@ -108,13 +108,13 @@ func updateRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"rule",
-		core.TopicNameRule,
-		&core.RuleTopic{
+		com.TopicNameRule,
+		&com.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: core.RuleActionUpdate,
+			RuleAction: com.RuleActionUpdate,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
 }

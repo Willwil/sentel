@@ -22,7 +22,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/sessionmgr"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -39,7 +39,7 @@ type rpcService struct {
 }
 
 // New create apiService service factory
-func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	server := &rpcService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,

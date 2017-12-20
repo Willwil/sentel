@@ -16,8 +16,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 
@@ -74,13 +74,13 @@ func registerProduct(ctx echo.Context) error {
 	}
 
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"product",
-		core.TopicNameProduct,
-		&core.ProductTopic{
+		com.TopicNameProduct,
+		&com.ProductTopic{
 			ProductId:   dp.Id,
 			ProductName: dp.Name,
-			Action:      core.ObjectActionRegister,
+			Action:      com.ObjectActionRegister,
 		})
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(),
 		Result: &db.Product{
@@ -127,13 +127,13 @@ func updateProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"product",
-		core.TopicNameProduct,
-		&core.ProductTopic{
+		com.TopicNameProduct,
+		&com.ProductTopic{
 			ProductId:   req.Id,
 			ProductName: req.Name,
-			Action:      core.ObjectActionUpdate,
+			Action:      com.ObjectActionUpdate,
 		})
 
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Success: true})
@@ -156,12 +156,12 @@ func deleteProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.SyncProduceMessage(ctx.(*apiContext).config,
+	com.SyncProduceMessage(ctx.(*apiContext).config,
 		"todo",
-		core.TopicNameProduct,
-		&core.ProductTopic{
+		com.TopicNameProduct,
+		&com.ProductTopic{
 			ProductId: ctx.Param("id"),
-			Action:    core.ObjectActionDelete,
+			Action:    com.ObjectActionDelete,
 		})
 
 	return ctx.JSON(http.StatusOK,
@@ -189,12 +189,12 @@ func deleteProductByName(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	core.SyncProduceMessage(ctx.(*apiContext).config,
+	com.SyncProduceMessage(ctx.(*apiContext).config,
 		"todo",
-		core.TopicNameProduct,
-		&core.ProductTopic{
+		com.TopicNameProduct,
+		&com.ProductTopic{
 			ProductId: id,
-			Action:    core.ObjectActionDelete,
+			Action:    com.ObjectActionDelete,
 		})
 
 	return ctx.JSON(http.StatusOK,

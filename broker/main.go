@@ -28,7 +28,7 @@ import (
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/broker/sessionmgr"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 )
 
@@ -70,8 +70,8 @@ func main() {
 	}
 }
 
-func createConfig(fileName string) (core.Config, error) {
-	core.RegisterConfigGroup(defaultConfigs)
+func createConfig(fileName string) (com.Config, error) {
+	com.RegisterConfigGroup(defaultConfigs)
 	options := map[string]map[string]string{}
 	options["broker"] = map[string]string{}
 	options["broker"]["kafka"] = os.Getenv("KAFKA_HOST")
@@ -102,7 +102,7 @@ func createConfig(fileName string) (core.Config, error) {
 			return nil, errors.New("unknown mqtt access protocol '%s', *protocol")
 		}
 	}
-	config, _ := core.NewConfigWithFile(fileName)
+	config, _ := com.NewConfigWithFile(fileName)
 	config.AddConfigs(options)
 	return config, nil
 }

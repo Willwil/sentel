@@ -17,7 +17,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
 
 	"github.com/labstack/echo"

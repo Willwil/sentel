@@ -13,7 +13,7 @@
 package rpc
 
 import (
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 	context "golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -24,7 +24,7 @@ type BrokerApi struct {
 	conn   *grpc.ClientConn
 }
 
-func NewBrokerApi(c core.Config) (*BrokerApi, error) {
+func NewBrokerApi(c com.Config) (*BrokerApi, error) {
 	address := "localhost:55001"
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {

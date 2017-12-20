@@ -23,7 +23,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 )
 
@@ -56,7 +56,7 @@ type subscriberContext struct {
 }
 
 // New create global broker
-func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 	product := c.MustString("broker", "product")

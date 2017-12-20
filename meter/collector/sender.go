@@ -17,11 +17,11 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 )
 
-func SyncReport(c core.Config, topic string, value sarama.Encoder) error {
+func SyncReport(c com.Config, topic string, value sarama.Encoder) error {
 	//	sarama.Logger = c.Logger()
 	hosts := "localhost:9092"
 	if h, err := c.String("kafka", "hosts"); err != nil {
@@ -54,7 +54,7 @@ func SyncReport(c core.Config, topic string, value sarama.Encoder) error {
 	return err
 }
 
-func AsyncReport(c core.Config, topic string, value sarama.Encoder) error {
+func AsyncReport(c com.Config, topic string, value sarama.Encoder) error {
 	hosts, err := c.String("kafka", "hosts")
 	if err != nil {
 		return err

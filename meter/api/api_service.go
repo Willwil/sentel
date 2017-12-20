@@ -22,18 +22,18 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/labstack/echo"
 )
 
 type ApiService struct {
-	core.ServiceBase
+	com.ServiceBase
 	echo *echo.Echo
 }
 
 type apiContext struct {
 	echo.Context
-	config core.Config
+	config com.Config
 }
 
 type response struct {
@@ -48,7 +48,7 @@ type ApiServiceFactory struct{}
 const APIHEAD = "api/v1/"
 
 // New create apiService service factory
-func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
@@ -112,7 +112,7 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	e.GET(APIHEAD+"nodes/:nodeName/stats", getNodeStatsInfo)
 
 	return &ApiService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

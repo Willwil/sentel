@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/meter/collector"
 	"github.com/golang/glog"
 )
@@ -43,7 +43,7 @@ type metricService struct {
 }
 
 // New create apiService service factory
-func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// Get node ip, name and created time
 	return &metricService{
 		ServiceBase: base.ServiceBase{

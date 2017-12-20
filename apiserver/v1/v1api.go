@@ -13,7 +13,7 @@ package v1
 
 import (
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 
 	"github.com/dgrijalva/jwt-go"
 	echo "github.com/labstack/echo"
@@ -25,13 +25,13 @@ const APIHEAD = "api/v1/"
 // v1apiManager mananage version 1 apis
 type v1apiManager struct {
 	version string
-	config  core.Config
+	config  com.Config
 	echo    *echo.Echo
 }
 
 type apiContext struct {
 	echo.Context
-	config core.Config
+	config com.Config
 }
 
 type requestBase struct {
@@ -74,7 +74,7 @@ func (p *v1apiManager) Run() error {
 }
 
 // Initialize initialize api manager with configuration
-func (p *v1apiManager) Initialize(c core.Config) error {
+func (p *v1apiManager) Initialize(c com.Config) error {
 	p.config = c
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
@@ -171,7 +171,7 @@ func (p *v1apiManager) Initialize(c core.Config) error {
 }
 
 // setAuth setup api group 's authentication method
-func (p *v1apiManager) setAuth(c core.Config, g *echo.Group) {
+func (p *v1apiManager) setAuth(c com.Config, g *echo.Group) {
 	auth := "jwt"
 	if _, err := c.String("apiserver", "auth"); err == nil {
 		auth = c.MustString("apiserver", "auth")

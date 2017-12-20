@@ -16,8 +16,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
@@ -97,12 +97,12 @@ func registerTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"tenant",
-		core.TopicNameTenant,
-		&core.TenantTopic{
+		com.TopicNameTenant,
+		&com.TenantTopic{
 			TenantId: req.Name,
-			Action:   core.ObjectActionRegister,
+			Action:   com.ObjectActionRegister,
 		})
 
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &t})
@@ -122,12 +122,12 @@ func deleteTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"tenant",
-		core.TopicNameTenant,
-		&core.TenantTopic{
+		com.TopicNameTenant,
+		&com.TenantTopic{
 			TenantId: id,
-			Action:   core.ObjectActionDelete,
+			Action:   com.ObjectActionDelete,
 		})
 
 	return ctx.JSON(http.StatusOK, &response{})
@@ -147,12 +147,12 @@ func getTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"tenant",
-		core.TopicNameTenant,
-		&core.TenantTopic{
+		com.TopicNameTenant,
+		&com.TenantTopic{
 			TenantId: id,
-			Action:   core.ObjectActionDelete,
+			Action:   com.ObjectActionDelete,
 		})
 
 	return ctx.JSON(http.StatusOK, &response{})
@@ -182,12 +182,12 @@ func updateTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &response{Message: err.Error()})
 	}
 	// Notify kafka
-	core.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*apiContext).config,
 		"tenant",
-		core.TopicNameTenant,
-		&core.TenantTopic{
+		com.TopicNameTenant,
+		&com.TenantTopic{
 			TenantId: req.Name,
-			Action:   core.ObjectActionUpdate,
+			Action:   com.ObjectActionUpdate,
 		})
 
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &t})

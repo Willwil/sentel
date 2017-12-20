@@ -15,7 +15,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 )
 
 type Service interface {
@@ -26,11 +26,11 @@ type Service interface {
 }
 
 type ServiceBase struct {
-	Config    core.Config
+	Config    com.Config
 	Quit      chan os.Signal
 	WaitGroup sync.WaitGroup
 }
-type ServiceFactory func(c core.Config, quit chan os.Signal) (Service, error)
+type ServiceFactory func(c com.Config, quit chan os.Signal) (Service, error)
 
 var (
 	services = make(map[string]Service)

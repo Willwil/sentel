@@ -16,10 +16,10 @@ import (
 	"flag"
 	"os"
 
+	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/conductor/indicator"
 	"github.com/cloustone/sentel/conductor/restapi"
-	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 )
 
@@ -39,26 +39,26 @@ func main() {
 	flag.Parse()
 	glog.Info("conductor is starting...")
 
-	core.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
-	core.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
-	core.RegisterServiceWithConfig("restapi", &restapi.RestapiServiceFactory{}, restapi.Configs)
+	com.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
+	com.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
+	com.RegisterServiceWithConfig("restapi", &restapi.RestapiServiceFactory{}, restapi.Configs)
 	config, _ := createConfig(*configFile)
 	// Create service manager according to the configuration
-	mgr, err := core.NewServiceManager("conductor", config)
+	mgr, err := com.NewServiceManager("conductor", config)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	glog.Error(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (core.Config, error) {
+func createConfig(fileName string) (com.Config, error) {
 	options := map[string]map[string]string{}
 	options["iothub"] = make(map[string]string)
 	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
 	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
 	// Get configuration
-	core.RegisterConfigGroup(defaultConfigs)
-	config, _ := core.NewConfigWithFile(fileName)
+	com.RegisterConfigGroup(defaultConfigs)
+	config, _ := com.NewConfigWithFile(fileName)
 	config.AddConfigs(options)
 	return config, nil
 }

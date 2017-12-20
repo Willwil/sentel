@@ -14,17 +14,17 @@ package queue
 
 import (
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 )
 
 type persistentQueue struct {
-	config   core.Config // Configuration
+	config   com.Config  // Configuration
 	clientId string      // Queue identifier
 	observer Observer    // Queue observer when data is available
 	plugin   queuePlugin // backend queue plugin
 }
 
-func newPersistentQueue(clientId string, c core.Config, o Observer) (Queue, error) {
+func newPersistentQueue(clientId string, c com.Config, o Observer) (Queue, error) {
 	plugin, err := newPlugin(clientId, c)
 	if err != nil {
 		return nil, err

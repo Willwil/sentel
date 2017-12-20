@@ -22,20 +22,20 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	auth "github.com/cloustone/sentel/iothub/auth"
 	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
 type ApiService struct {
-	core.ServiceBase
+	com.ServiceBase
 	echo *echo.Echo
 }
 
 type apiContext struct {
 	echo.Context
-	config core.Config
+	config com.Config
 }
 
 type response struct {
@@ -47,7 +47,7 @@ type response struct {
 // ApiServiceFactory
 type ApiServiceFactory struct{}
 
-func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("iothub", "mongo")
 	timeout := c.MustInt("api", "connect_timeout")
@@ -75,7 +75,7 @@ func (p *ApiServiceFactory) New(c core.Config, quit chan os.Signal) (core.Servic
 	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", removeProduct)
 
 	return &ApiService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

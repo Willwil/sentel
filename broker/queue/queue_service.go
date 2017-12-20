@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 )
 
 // Metaservice manage broker metadata
@@ -36,7 +36,7 @@ const (
 )
 
 // New create metadata service factory
-func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	return &queueService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,

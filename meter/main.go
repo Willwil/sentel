@@ -15,7 +15,7 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/meter/api"
 	"github.com/cloustone/sentel/meter/collector"
 
@@ -28,8 +28,8 @@ var (
 
 func main() {
 	flag.Parse()
-	core.RegisterConfigGroup(defaultConfigs)
-	core.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
-	core.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
-	glog.Error(core.RunWithConfigFile("meter", *configFileFullPath))
+	com.RegisterConfigGroup(defaultConfigs)
+	com.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
+	com.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
+	glog.Error(com.RunWithConfigFile("meter", *configFileFullPath))
 }

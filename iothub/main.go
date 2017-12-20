@@ -16,7 +16,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/golang/glog"
 )
@@ -29,8 +29,8 @@ func main() {
 	flag.Parse()
 
 	glog.Info("Starting iothub ...")
-	core.RegisterService("api", &hub.ApiServiceFactory{})
-	core.RegisterService("notify", &hub.NotifyServiceFactory{})
+	com.RegisterService("api", &hub.ApiServiceFactory{})
+	com.RegisterService("notify", &hub.NotifyServiceFactory{})
 
 	// Initialize iothub at startup
 	glog.Info("Initializing iothub...")
@@ -40,21 +40,21 @@ func main() {
 	}
 
 	// Create service manager according to the configuration
-	mgr, err := core.NewServiceManager("iothub", config)
+	mgr, err := com.NewServiceManager("iothub", config)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	glog.Error(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (core.Config, error) {
+func createConfig(fileName string) (com.Config, error) {
 	options := map[string]map[string]string{}
 	options["iothub"] = map[string]string{}
 	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
 	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
 	// Get configuration
-	core.RegisterConfigGroup(defaultConfigs)
-	config, _ := core.NewConfigWithFile(fileName)
+	com.RegisterConfigGroup(defaultConfigs)
+	config, _ := com.NewConfigWithFile(fileName)
 	config.AddConfigs(options)
 	return config, nil
 }

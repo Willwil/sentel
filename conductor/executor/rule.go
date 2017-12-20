@@ -14,8 +14,8 @@ package executor
 
 import (
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/core"
-	"github.com/cloustone/sentel/core/db"
+	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
 )
 
@@ -23,7 +23,7 @@ type ruleWraper struct {
 	rule *db.Rule
 }
 
-func (p *ruleWraper) execute(c core.Config, t *event.TopicPublishDetail) error {
+func (p *ruleWraper) execute(c com.Config, t *event.TopicPublishDetail) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	return nil
 }

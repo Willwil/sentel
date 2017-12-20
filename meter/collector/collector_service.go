@@ -23,13 +23,13 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
 type CollectorService struct {
-	core.ServiceBase
+	com.ServiceBase
 	consumer sarama.Consumer
 }
 
@@ -37,7 +37,7 @@ type CollectorService struct {
 type CollectorServiceFactory struct{}
 
 // New create apiService service factory
-func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (m *CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
@@ -55,7 +55,7 @@ func (m *CollectorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	}
 
 	return &CollectorService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

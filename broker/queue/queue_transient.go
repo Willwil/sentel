@@ -14,18 +14,18 @@ package queue
 
 import (
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 )
 
 type transientQueue struct {
-	config   core.Config
+	config   com.Config
 	clientId string
 	observer Observer
 	syncq    *syncQueue
 }
 
-func newTransientQueue(clientId string, c core.Config, o Observer) (Queue, error) {
+func newTransientQueue(clientId string, c com.Config, o Observer) (Queue, error) {
 	q := &transientQueue{
 		config:   c,
 		clientId: clientId,

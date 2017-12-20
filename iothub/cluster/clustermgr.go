@@ -15,7 +15,7 @@ package cluster
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 )
 
 // ClusterManager is wrapper cluster manager built on top of swarm and kubernetes
@@ -33,7 +33,7 @@ type ClusterManager interface {
 }
 
 // New retrieve clustermanager instance connected with clustermgr
-func New(c core.Config) (ClusterManager, error) {
+func New(c com.Config) (ClusterManager, error) {
 	if v, err := c.String("iothub", "cluster"); err == nil {
 		switch v {
 		case "k8s":

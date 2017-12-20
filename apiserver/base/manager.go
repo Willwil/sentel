@@ -15,13 +15,13 @@ package base
 import (
 	"fmt"
 
-	"github.com/cloustone/sentel/core"
+	com "github.com/cloustone/sentel/common"
 )
 
 // ApiManager represent api manager interface for each version
 type ApiManager interface {
 	// Initialize api manager with configuration
-	Initialize(c core.Config) error
+	Initialize(c com.Config) error
 	// Get apimanager's version
 	GetVersion() string
 	// Mainloop method
@@ -43,7 +43,7 @@ func RegisterApiManager(api ApiManager) {
 }
 
 // GetApiManger return api manager specified by configuration
-func GetApiManager(c core.Config) (ApiManager, error) {
+func GetApiManager(c com.Config) (ApiManager, error) {
 	version := c.MustString("apiserver", "version")
 	if _, ok := apiManagers[version]; !ok {
 		return nil, fmt.Errorf("Manager %s doesn't exist", version)

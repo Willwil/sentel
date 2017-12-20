@@ -23,7 +23,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/quto"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 
 	"github.com/golang/glog"
 )
@@ -34,7 +34,7 @@ type mqttService struct {
 }
 
 // New create mqtt service factory
-func New(c core.Config, quit chan os.Signal) (base.Service, error) {
+func New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	t := &mqttService{
 		ServiceBase: base.ServiceBase{
 			Config:    c,
@@ -99,7 +99,7 @@ func (p *mqttService) Stop() {
 	close(p.Quit)
 }
 
-func listen(network, laddr string, c core.Config) (net.Listener, error) {
+func listen(network, laddr string, c com.Config) (net.Listener, error) {
 	switch network {
 	case mqttNetworkTcp:
 		return net.Listen("tcp", laddr)

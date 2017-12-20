@@ -18,17 +18,17 @@ import (
 	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 )
 
 type mongoPlugin struct {
 	clientId   string
-	config     core.Config
+	config     com.Config
 	session    *mgo.Session
 	collection *mgo.Collection
 }
 
-func newMongoPlugin(clientId string, c core.Config) (queuePlugin, error) {
+func newMongoPlugin(clientId string, c com.Config) (queuePlugin, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")

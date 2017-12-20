@@ -20,14 +20,14 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/core"
+	"github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 )
 
 type Broker struct {
 	sync.Once
-	config   core.Config               // Global config
+	config   com.Config                // Global config
 	services map[string]base.Service   // All service created by config.Protocols
 	quits    map[string]chan os.Signal // Notification channel for each service
 	name     string                    // Name of service manager
@@ -58,13 +58,13 @@ func registerServiceWithConfig(name string, factory base.ServiceFactory, configs
 	if _, ok := serviceFactories[name]; ok {
 		glog.Errorf("Service '%s' is already registered", name)
 	}
-	core.RegisterConfig(name, configs)
+	com.RegisterConfig(name, configs)
 	serviceFactories[name] = factory
 	serviceSeqs = append(serviceSeqs, name)
 }
 
 // newBroker create global broker
-func NewBroker(c core.Config) (*Broker, error) {
+func NewBroker(c com.Config) (*Broker, error) {
 	broker := &Broker{
 		config:   c,
 		quits:    make(map[string]chan os.Signal),
@@ -93,7 +93,7 @@ func NewBroker(c core.Config) (*Broker, error) {
 }
 
 // getServicesByName return service instance by name, or matched by part of name
-func (p *Broker) getServiceByName(name string) core.Service {
+func (p *Broker) getServiceByName(name string) com.Service {
 	if _, ok := p.services[name]; !ok {
 		panic(fmt.Sprintf("Failed to find service '%s' in broker", name))
 	}

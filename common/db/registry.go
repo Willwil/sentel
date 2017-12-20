@@ -21,7 +21,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cloustone/sentel/core"
+	com "github.com/cloustone/sentel/common"
 	"github.com/golang/glog"
 )
 
@@ -40,14 +40,14 @@ var (
 
 // Registry is wraper of mongo database about for iot object
 type Registry struct {
-	config  core.Config
+	config  com.Config
 	session *mgo.Session
 	db      *mgo.Database
 }
 
 // InitializeRegistry try to connect with background database
 // to confirm wether it is normal
-func InitializeRegistry(c core.Config) error {
+func InitializeRegistry(c com.Config) error {
 	hosts := c.MustString("registry", "hosts")
 	glog.Infof("Initializing registry:%s...", hosts)
 	session, err := mgo.Dial(hosts)
@@ -66,7 +66,7 @@ func InitializeRegistry(c core.Config) error {
 }
 
 // NewRegistry create registry instance
-func NewRegistry(owner string, c core.Config) (*Registry, error) {
+func NewRegistry(owner string, c com.Config) (*Registry, error) {
 	hosts := c.MustString(owner, "mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {

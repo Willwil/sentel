@@ -22,8 +22,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/conductor/executor"
-	"github.com/cloustone/sentel/core"
 	"github.com/golang/glog"
 
 	"github.com/Shopify/sarama"
@@ -31,7 +31,7 @@ import (
 )
 
 type IndicatorService struct {
-	core.ServiceBase
+	com.ServiceBase
 	consumer sarama.Consumer
 }
 
@@ -39,7 +39,7 @@ type IndicatorService struct {
 type IndicatorServiceFactory struct{}
 
 // New create apiService service factory
-func (p *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.Service, error) {
+func (p *IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -50,7 +50,7 @@ func (p *IndicatorServiceFactory) New(c core.Config, quit chan os.Signal) (core.
 	session.Close()
 
 	return &IndicatorService{
-		ServiceBase: core.ServiceBase{
+		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
@@ -64,7 +64,7 @@ func (p *IndicatorService) Name() string { return "indicator" }
 
 // Start
 func (p *IndicatorService) Start() error {
-	consumer, err := p.subscribeTopic(core.TopicNameRule)
+	consumer, err := p.subscribeTopic(com.TopicNameRule)
 	if err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
 	}
@@ -118,7 +118,7 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 
 // handleNotifications handle notification from kafka
 func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
-	r := core.RuleTopic{}
+	r := com.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
 		return err
