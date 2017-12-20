@@ -30,16 +30,16 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type IndicatorService struct {
+type indicatorService struct {
 	com.ServiceBase
 	consumer sarama.Consumer
 }
 
-// IndicatorServiceFactory
-type IndicatorServiceFactory struct{}
+// indicatorServiceFactory
+type ServiceFactory struct{}
 
 // New create apiService service factory
-func (p IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -49,7 +49,7 @@ func (p IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Ser
 	}
 	session.Close()
 
-	return &IndicatorService{
+	return &indicatorService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -60,10 +60,10 @@ func (p IndicatorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Ser
 }
 
 // Name
-func (p *IndicatorService) Name() string { return "indicator" }
+func (p *indicatorService) Name() string { return "indicator" }
 
 // Start
-func (p *IndicatorService) Start() error {
+func (p *indicatorService) Start() error {
 	consumer, err := p.subscribeTopic(com.TopicNameRule)
 	if err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
@@ -73,7 +73,7 @@ func (p *IndicatorService) Start() error {
 }
 
 // Stop
-func (p *IndicatorService) Stop() {
+func (p *indicatorService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	if p.consumer != nil {
 		p.consumer.Close()
@@ -83,7 +83,7 @@ func (p *IndicatorService) Stop() {
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error) {
+func (p *indicatorService) subscribeTopic(topic string) (sarama.Consumer, error) {
 	config := sarama.NewConfig()
 	config.ClientID = "sentel_conductor_indicator"
 	khosts, _ := p.Config.String("conductor", "kafka")
@@ -117,7 +117,7 @@ func (p *IndicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 }
 
 // handleNotifications handle notification from kafka
-func (p *IndicatorService) handleNotifications(topic string, value []byte) error {
+func (p *indicatorService) handleNotifications(topic string, value []byte) error {
 	r := com.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)

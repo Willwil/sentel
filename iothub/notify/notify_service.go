@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package hub
+package notify
 
 import (
 	"encoding/json"
@@ -23,10 +23,11 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/golang/glog"
 )
 
-type NotifyService struct {
+type notifyService struct {
 	com.ServiceBase
 	consumers []sarama.Consumer
 }
@@ -35,13 +36,12 @@ var (
 	logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
 )
 
-// NotifyServiceFactory
-type NotifyServiceFactory struct{}
+type ServiceFactory struct{}
 
 // New create apiService service factory
-func (m NotifyServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (m ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	sarama.Logger = logger
-	return &NotifyService{
+	return &notifyService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -52,10 +52,10 @@ func (m NotifyServiceFactory) New(c com.Config, quit chan os.Signal) (com.Servic
 }
 
 // Name
-func (p *NotifyService) Name() string { return "notify" }
+func (p *notifyService) Name() string { return "notify" }
 
 // Start
-func (p *NotifyService) Start() error {
+func (p *notifyService) Start() error {
 	tc, subError1 := p.subscribeTopic(com.TopicNameTenant)
 	pc, subError2 := p.subscribeTopic(com.TopicNameProduct)
 	if subError1 != nil || subError2 != nil {
@@ -67,7 +67,7 @@ func (p *NotifyService) Start() error {
 }
 
 // Stop
-func (p *NotifyService) Stop() {
+func (p *notifyService) Stop() {
 	for _, consumer := range p.consumers {
 		consumer.Close()
 	}
@@ -76,7 +76,7 @@ func (p *NotifyService) Stop() {
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *NotifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
+func (p *notifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
 	endpoint := p.Config.MustString("iothub", "kafka")
 	glog.Infof("iothub get kafka service endpoint: %s", endpoint)
 
@@ -97,7 +97,7 @@ func (p *NotifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
 		} else {
 			p.WaitGroup.Add(1)
 
-			go func(p *NotifyService, pc sarama.PartitionConsumer) {
+			go func(p *notifyService, pc sarama.PartitionConsumer) {
 				defer p.WaitGroup.Done()
 				for msg := range pc.Messages() {
 					if err := p.handleNotification(topic, msg.Value); err != nil {
@@ -112,7 +112,7 @@ func (p *NotifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
 }
 
 // handleNotify handle notification from kafka
-func (p *NotifyService) handleNotification(topic string, value []byte) error {
+func (p *notifyService) handleNotification(topic string, value []byte) error {
 	glog.Infof("iothub receive message from topic '%s'", topic)
 	var err error
 	switch topic {
@@ -126,25 +126,25 @@ func (p *NotifyService) handleNotification(topic string, value []byte) error {
 }
 
 // handleProductNotify handle notification about product from api server
-func (p *NotifyService) handleProductNotify(value []byte) error {
-	hub := getIothub()
+func (p *notifyService) handleProductNotify(value []byte) error {
+	hub := hub.GetIothub()
 	tf := com.ProductTopic{}
 	if err := json.Unmarshal(value, &tf); err != nil {
 		return err
 	}
 	switch tf.Action {
 	case com.ObjectActionRegister:
-		_, err := hub.createProduct(tf.TenantId, tf.ProductId, tf.Replicas)
+		_, err := hub.CreateProduct(tf.TenantId, tf.ProductId, tf.Replicas)
 		return err
 	case com.ObjectActionDelete:
-		return hub.removeProduct(tf.TenantId, tf.ProductId)
+		return hub.RemoveProduct(tf.TenantId, tf.ProductId)
 	}
 	return nil
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (p *NotifyService) handleTenantNotify(value []byte) error {
-	hub := getIothub()
+func (p *notifyService) handleTenantNotify(value []byte) error {
+	hub := hub.GetIothub()
 	tf := com.TenantTopic{}
 	if err := json.Unmarshal(value, &tf); err != nil {
 		return err
@@ -152,9 +152,9 @@ func (p *NotifyService) handleTenantNotify(value []byte) error {
 
 	switch tf.Action {
 	case com.ObjectActionRegister:
-		hub.createTenant(tf.TenantId)
+		hub.CreateTenant(tf.TenantId)
 	case com.ObjectActionDelete:
-		return hub.removeTenant(tf.TenantId)
+		return hub.RemoveTenant(tf.TenantId)
 	}
 	return nil
 }

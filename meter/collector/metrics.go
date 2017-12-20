@@ -40,7 +40,7 @@ func (p *Metric) clone() topicObject {
 	}
 }
 
-func (p *Metric) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Metric) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()
 	if err != nil {
 		return err

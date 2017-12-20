@@ -41,7 +41,7 @@ func (p *Stats) clone() topicObject {
 	}
 }
 
-func (p *Stats) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Stats) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()
 	if err != nil {
 		return err

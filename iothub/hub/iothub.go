@@ -73,12 +73,12 @@ func InitializeIothub(c com.Config) error {
 }
 
 // getIothub return global iothub instance used in iothub packet
-func getIothub() *Iothub {
+func GetIothub() *Iothub {
 	return iothub
 }
 
 // addTenant add tenant to iothub
-func (p *Iothub) createTenant(tid string) error {
+func (p *Iothub) CreateTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -99,7 +99,7 @@ func (p *Iothub) createTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iothub
-func (p *Iothub) removeTenant(tid string) error {
+func (p *Iothub) RemoveTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -112,7 +112,7 @@ func (p *Iothub) removeTenant(tid string) error {
 	}
 	// Delete all products
 	for name, _ := range t.products {
-		if err := p.removeProduct(tid, name); err != nil {
+		if err := p.RemoveProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)
 			// TODO: trying to delete again if failure
 		}
@@ -131,7 +131,7 @@ func (p *Iothub) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iothub
-func (p *Iothub) createProduct(tid, pid string, replicas int32) (string, error) {
+func (p *Iothub) CreateProduct(tid, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
@@ -149,7 +149,7 @@ func (p *Iothub) createProduct(tid, pid string, replicas int32) (string, error) 
 }
 
 // deleteProduct delete product from iothub
-func (p *Iothub) removeProduct(tid string, pid string) error {
+func (p *Iothub) RemoveProduct(tid string, pid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if !p.isProductExist(tid, pid) {

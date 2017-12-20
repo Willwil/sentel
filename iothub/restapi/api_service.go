@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package hub
+package restapi
 
 import (
 	"net/http"
@@ -24,11 +24,12 @@ import (
 
 	"github.com/cloustone/sentel/common"
 	auth "github.com/cloustone/sentel/iothub/auth"
+	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
-type ApiService struct {
+type restapiService struct {
 	com.ServiceBase
 	echo *echo.Echo
 }
@@ -44,10 +45,10 @@ type response struct {
 	Result  interface{} `json:"result"`
 }
 
-// ApiServiceFactory
-type ApiServiceFactory struct{}
+// restapiServiceFactory
+type ServiceFactory struct{}
 
-func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("iothub", "mongo")
 	timeout := c.MustInt("api", "connect_timeout")
@@ -74,7 +75,7 @@ func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, 
 	e.POST("iothub/api/v1/tenants/:tid/products", createProduct)
 	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", removeProduct)
 
-	return &ApiService{
+	return &restapiService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -86,11 +87,11 @@ func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, 
 }
 
 // Name
-func (p *ApiService) Name() string { return "api" }
+func (p *restapiService) Name() string { return "api" }
 
 // Start
-func (p *ApiService) Start() error {
-	go func(s *ApiService) {
+func (p *restapiService) Start() error {
+	go func(s *restapiService) {
 		addr := p.Config.MustString("api", "listen")
 		p.echo.Start(addr)
 		p.WaitGroup.Add(1)
@@ -99,7 +100,7 @@ func (p *ApiService) Start() error {
 }
 
 // Stop
-func (p *ApiService) Stop() {
+func (p *restapiService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
@@ -121,8 +122,8 @@ func createTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 
-	hub := getIothub()
-	if err := hub.createTenant(req.TenantId); err != nil {
+	hub := hub.GetIothub()
+	if err := hub.CreateTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -141,8 +142,8 @@ func removeTenant(ctx echo.Context) error {
 	}
 
 	tid := ctx.Param("tid")
-	hub := getIothub()
-	if err := hub.removeTenant(tid); err != nil {
+	hub := hub.GetIothub()
+	if err := hub.RemoveTenant(tid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -174,8 +175,8 @@ func createProduct(ctx echo.Context) error {
 	}
 
 	glog.Infof("iothub: add product(%s, %s, %d)", tid, pid, replicas)
-	hub := getIothub()
-	if brokers, err := hub.createProduct(tid, pid, replicas); err != nil {
+	hub := hub.GetIothub()
+	if brokers, err := hub.CreateProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true, Result: brokers})
@@ -197,8 +198,8 @@ func removeProduct(ctx echo.Context) error {
 
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
-	hub := getIothub()
-	if err := hub.removeProduct(tid, pid); err != nil {
+	hub := hub.GetIothub()
+	if err := hub.RemoveProduct(tid, pid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &response{Success: true})

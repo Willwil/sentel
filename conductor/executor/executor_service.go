@@ -26,8 +26,8 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-// ExecutorService manage all rule engine and execute rule
-type ExecutorService struct {
+// executorService manage all rule engine and execute rule
+type executorService struct {
 	com.ServiceBase
 	ruleChan chan ruleContext
 	engines  map[string]*ruleEngine
@@ -39,10 +39,10 @@ type ruleContext struct {
 	action string
 }
 
-type ExecutorServiceFactory struct{}
+type ServiceFactory struct{}
 
 // New create executor service factory
-func (p ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -52,7 +52,7 @@ func (p ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Serv
 	}
 	session.Close()
 
-	return &ExecutorService{
+	return &executorService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -65,12 +65,12 @@ func (p ExecutorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Serv
 }
 
 // Name
-func (p *ExecutorService) Name() string { return "executor" }
+func (p *executorService) Name() string { return "executor" }
 
 // Start
-func (p *ExecutorService) Start() error {
+func (p *executorService) Start() error {
 	// start rule channel
-	go func(s *ExecutorService) {
+	go func(s *executorService) {
 		s.WaitGroup.Add(1)
 		select {
 		case ctx := <-s.ruleChan:
@@ -83,7 +83,7 @@ func (p *ExecutorService) Start() error {
 }
 
 // Stop
-func (p *ExecutorService) Stop() {
+func (p *executorService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
@@ -97,7 +97,7 @@ func (p *ExecutorService) Stop() {
 }
 
 // handleRule process incomming rule
-func (p *ExecutorService) handleRule(ctx ruleContext) error {
+func (p *executorService) handleRule(ctx ruleContext) error {
 	r := ctx.rule
 	// Get engine instance according to product id
 	if _, ok := p.engines[r.ProductId]; !ok { // not found
@@ -141,7 +141,7 @@ func HandleRuleNotification(t *com.RuleTopic) error {
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", t.RuleAction, t.ProductId)
 	}
 	// Now just simply send rule to executor
-	executor := com.GetServiceManager().GetService("executor").(*ExecutorService)
+	executor := com.GetServiceManager().GetService("executor").(*executorService)
 	ctx := ruleContext{
 		action: t.RuleAction,
 		rule: &db.Rule{

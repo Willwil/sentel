@@ -33,9 +33,9 @@ func main() {
 
 	config, _ := createConfig(*configFile)
 	mgr, _ := com.NewServiceManager("conductor", config)
-	mgr.AddService(executor.ExecutorServiceFactory{})
-	mgr.AddService(indicator.IndicatorServiceFactory{})
-	mgr.AddService(restapi.RestapiServiceFactory{})
+	mgr.AddService(executor.ServiceFactory{})
+	mgr.AddService(indicator.ServiceFactory{})
+	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 

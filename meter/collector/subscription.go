@@ -39,7 +39,7 @@ func (p *Subscription) clone() topicObject {
 	}
 }
 
-func (p *Subscription) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Subscription) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()
 	if err != nil {
 		return err

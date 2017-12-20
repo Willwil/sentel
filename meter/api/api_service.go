@@ -26,7 +26,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type ApiService struct {
+type apiService struct {
 	com.ServiceBase
 	echo *echo.Echo
 }
@@ -42,13 +42,13 @@ type response struct {
 	Result  interface{} `json:"result"`
 }
 
-// ApiServiceFactory
-type ApiServiceFactory struct{}
+// apiServiceFactory
+type ServiceFactory struct{}
 
 const APIHEAD = "api/v1/"
 
 // New create apiService service factory
-func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
@@ -111,7 +111,7 @@ func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, 
 	e.GET(APIHEAD+"stats", getClusterStats)
 	e.GET(APIHEAD+"nodes/:nodeName/stats", getNodeStatsInfo)
 
-	return &ApiService{
+	return &apiService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -123,13 +123,13 @@ func (p ApiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, 
 }
 
 // Name
-func (p *ApiService) Name() string {
+func (p *apiService) Name() string {
 	return "api"
 }
 
 // Start
-func (p *ApiService) Start() error {
-	go func(p *ApiService) {
+func (p *apiService) Start() error {
+	go func(p *apiService) {
 		addr := p.Config.MustString("api", "listen")
 		p.echo.Start(addr)
 		p.WaitGroup.Add(1)
@@ -138,7 +138,7 @@ func (p *ApiService) Start() error {
 }
 
 // Stop
-func (p *ApiService) Stop() {
+func (p *apiService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)

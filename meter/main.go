@@ -30,7 +30,7 @@ func main() {
 	config := com.NewConfig()
 	config.AddConfig(defaultConfigs)
 	mgr, _ := com.NewServiceManager("meter", config)
-	mgr.AddService(api.ApiServiceFactory{})
-	mgr.AddService(collector.CollectorServiceFactory{})
+	mgr.AddService(api.ServiceFactory{})
+	mgr.AddService(collector.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }

@@ -18,6 +18,8 @@ import (
 
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/iothub/hub"
+	"github.com/cloustone/sentel/iothub/notify"
+	"github.com/cloustone/sentel/iothub/restapi"
 	"github.com/golang/glog"
 )
 
@@ -36,8 +38,8 @@ func main() {
 
 	// Create service manager according to the configuration
 	mgr, _ := com.NewServiceManager("iothub", config)
-	mgr.AddService(hub.ApiServiceFactory{})
-	mgr.AddService(hub.NotifyServiceFactory{})
+	mgr.AddService(notify.ServiceFactory{})
+	mgr.AddService(restapi.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
 

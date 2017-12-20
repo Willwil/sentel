@@ -52,7 +52,7 @@ func (p *Session) clone() topicObject {
 	}
 }
 
-func (p *Session) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Session) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()
 	if err != nil {
 		return err

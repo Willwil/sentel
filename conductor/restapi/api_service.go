@@ -24,7 +24,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-type RestapiService struct {
+type restapiService struct {
 	com.ServiceBase
 	echo *echo.Echo
 }
@@ -40,10 +40,10 @@ type response struct {
 	Result  interface{} `json:"result"`
 }
 
-// RestapiServiceFactory
-type RestapiServiceFactory struct{}
+// restapiServiceFactory
+type ServiceFactory struct{}
 
-func (p RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -60,7 +60,7 @@ func (p RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Servi
 	e.PUT("conductor/api/v1/rules/:ruleName?action=stop", stopRule)
 	e.PATCH("conductor/api/v1/rules/:ruleName", updateRule)
 
-	return &RestapiService{
+	return &restapiService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -72,11 +72,11 @@ func (p RestapiServiceFactory) New(c com.Config, quit chan os.Signal) (com.Servi
 }
 
 // Name
-func (p *RestapiService) Name() string { return "restapi" }
+func (p *restapiService) Name() string { return "restapi" }
 
 // Start
-func (p *RestapiService) Start() error {
-	go func(s *RestapiService) {
+func (p *restapiService) Start() error {
+	go func(s *restapiService) {
 		addr := p.Config.MustString("restapi", "listen")
 		p.echo.Start(addr)
 		p.WaitGroup.Add(1)
@@ -85,7 +85,7 @@ func (p *RestapiService) Start() error {
 }
 
 // Stop
-func (p *RestapiService) Stop() {
+func (p *restapiService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)

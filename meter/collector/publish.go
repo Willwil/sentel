@@ -32,6 +32,6 @@ func (p *Publish) clone() topicObject {
 	}
 }
 
-func (p *Publish) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Publish) handleTopic(service *collectorService, ctx context.Context) error {
 	return nil
 }

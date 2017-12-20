@@ -43,7 +43,7 @@ func (p *Node) clone() topicObject {
 	}
 }
 
-func (p *Node) handleTopic(service *CollectorService, ctx context.Context) error {
+func (p *Node) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()
 	if err != nil {
 		return err

@@ -28,16 +28,16 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type CollectorService struct {
+type collectorService struct {
 	com.ServiceBase
 	consumer sarama.Consumer
 }
 
-// CollectorServiceFactory
-type CollectorServiceFactory struct{}
+// collectorServiceFactory
+type ServiceFactory struct{}
 
 // New create apiService service factory
-func (m CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (m ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
@@ -54,7 +54,7 @@ func (m CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Ser
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", hosts)
 	}
 
-	return &CollectorService{
+	return &collectorService{
 		ServiceBase: com.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
@@ -66,12 +66,12 @@ func (m CollectorServiceFactory) New(c com.Config, quit chan os.Signal) (com.Ser
 }
 
 // Name
-func (p *CollectorService) Name() string {
+func (p *collectorService) Name() string {
 	return "collector"
 }
 
 // Start
-func (p *CollectorService) Start() error {
+func (p *collectorService) Start() error {
 	p.subscribeTopic(TopicNameNode)
 	p.subscribeTopic(TopicNameClient)
 	p.subscribeTopic(TopicNameSession)
@@ -83,7 +83,7 @@ func (p *CollectorService) Start() error {
 }
 
 // Stop
-func (p *CollectorService) Stop() {
+func (p *collectorService) Stop() {
 	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	p.WaitGroup.Wait()
 	close(p.Quit)
@@ -91,7 +91,7 @@ func (p *CollectorService) Stop() {
 }
 
 // handleNotifications handle notification from kafka
-func (p *CollectorService) handleNotifications(topic string, value []byte) error {
+func (p *collectorService) handleNotifications(topic string, value []byte) error {
 	if err := handleTopicObject(p, context.Background(), topic, value); err != nil {
 		glog.Error(err)
 		return err
@@ -99,7 +99,7 @@ func (p *CollectorService) handleNotifications(topic string, value []byte) error
 	return nil
 }
 
-func (p *CollectorService) getDatabase() (*mgo.Database, error) {
+func (p *collectorService) getDatabase() (*mgo.Database, error) {
 	// check mongo db configuration
 	hosts := p.Config.MustString("meter", "mongo")
 	timeout := p.Config.MustInt("meter", "connect_timeout")
@@ -112,7 +112,7 @@ func (p *CollectorService) getDatabase() (*mgo.Database, error) {
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *CollectorService) subscribeTopic(topic string) error {
+func (p *collectorService) subscribeTopic(topic string) error {
 	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
