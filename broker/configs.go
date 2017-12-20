@@ -37,6 +37,10 @@ var defaultConfigs = map[string]map[string]string{
 		"tcp":                "localhost:1883",
 		"tls":                "localhost:1885",
 		"message_size_limit": "125",
+		"bind_address":       "localhost:1883",
+		"max_connections":    "1000",
+		"allow_anonymous":    "true",
+		"session_queue_size": "20",
 	},
 	"rpc": {
 		"listen": "localhost:55001",

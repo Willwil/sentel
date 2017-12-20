@@ -13,7 +13,6 @@ package com
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -31,75 +30,13 @@ type ServiceFactory interface {
 	New(c Config, quit chan os.Signal) (Service, error)
 }
 
-var (
-	serviceFactories = make(map[string]ServiceFactory)
-)
-
-// RegisterService register service with name and protocol specified
-func RegisterService(name string, factory ServiceFactory) {
-	if _, ok := serviceFactories[name]; ok {
-		glog.Errorf("Service '%s' is not registered", name)
-	}
-	serviceFactories[name] = factory
-}
-
-// RegisterServiceWithConfig register service with name and configuration
-func RegisterServiceWithConfig(name string, factory ServiceFactory, configs map[string]string) {
-	if _, ok := serviceFactories[name]; ok {
-		glog.Errorf("Service '%s' is not registered", name)
-	}
-	RegisterConfig(name, configs)
-	serviceFactories[name] = factory
-}
-
-// CreateService create service instance according to service name
-func CreateService(name string, c Config, ch chan os.Signal) (Service, error) {
-	glog.Infof("Creating service '%s'...", name)
-
-	if factory, ok := serviceFactories[name]; ok && factory != nil {
-		return serviceFactories[name].New(c, ch)
-	}
-	return nil, fmt.Errorf("Invalid service '%s'", name)
-}
-
-// RunWithConfigFile create and start server
-func RunWithConfigFile(serverName string, fileName string) error {
-	glog.Infof("Starting '%s' server...", serverName)
-
-	// Check all registered service
-	if err := CheckAllRegisteredServices(); err != nil {
-		return err
-	}
-	// Get configuration
-	config, err := NewConfigWithFile(fileName)
-	if err != nil {
-		return err
-	}
-	// Create service manager according to the configuration
-	mgr, err := NewServiceManager(serverName, config)
-	if err != nil {
-		return err
-	}
-	return mgr.RunAndWait()
-}
-
-// CheckAllRegisteredServices check all registered service simplily
-func CheckAllRegisteredServices() error {
-	if len(serviceFactories) == 0 {
-		return errors.New("No service registered")
-	}
-	for name, _ := range serviceFactories {
-		glog.Infof("Service '%s' is registered", name)
-	}
-	return nil
-}
-
 type ServiceManager struct {
 	sync.Once
-	Config   Config                    // Global config
-	Services map[string]Service        // All service created by config.Protocols
-	quits    map[string]chan os.Signal // Notification channel for each service
-	name     string                    // Name of service manager
+	Config           Config // Global config
+	serviceFactories map[string]ServiceFactory
+	Services         map[string]Service        // All service created by config.Protocols
+	quits            map[string]chan os.Signal // Notification channel for each service
+	name             string                    // Name of service manager
 }
 
 const serviceManagerVersion = "0.1"
@@ -118,31 +55,39 @@ func NewServiceManager(name string, c Config) (*ServiceManager, error) {
 		return serviceManager, errors.New("NewServiceManager had been called many times")
 	}
 	mgr := &ServiceManager{
-		Config:   c,
-		quits:    make(map[string]chan os.Signal),
-		Services: make(map[string]Service),
-		name:     name,
-	}
-	// Create service for each protocol
-	for name, _ := range serviceFactories {
-		// Format service name
-		quit := make(chan os.Signal)
-		service, err := serviceFactories[name].New(c, quit)
-		if err != nil {
-			glog.Infof("Create service '%s'failed", name)
-			return nil, err
-		} else {
-			glog.Infof("Create service '%s' successfully", name)
-			mgr.Services[name] = service
-			mgr.quits[name] = quit
-		}
+		Config:           c,
+		serviceFactories: make(map[string]ServiceFactory),
+		quits:            make(map[string]chan os.Signal),
+		Services:         make(map[string]Service),
+		name:             name,
 	}
 	serviceManager = mgr
 	return serviceManager, nil
 }
 
+func (p *ServiceManager) AddService(name string, factory ServiceFactory) error {
+	if _, found := p.serviceFactories[name]; found {
+		glog.Fatalf("Service '%s' is already registered", name)
+	}
+	p.serviceFactories[name] = factory
+	return nil
+}
+
 // Run launch all serices and wait to terminate
 func (p *ServiceManager) RunAndWait() error {
+	// Create all services
+	for name, _ := range p.serviceFactories {
+		quit := make(chan os.Signal)
+		if service, err := p.serviceFactories[name].New(p.Config, quit); err != nil {
+			glog.Infof("Create service '%s'failed", name)
+			return err
+		} else {
+			glog.Infof("Create service '%s' successfully", name)
+			p.Services[name] = service
+			p.quits[name] = quit
+		}
+	}
+
 	// Run all service
 	glog.Infof("There are %d service in '%s'", len(p.Services), p.name)
 	for _, service := range p.Services {
@@ -181,6 +126,7 @@ func (p *ServiceManager) stop() error {
 	return nil
 }
 
+/*
 // StartService launch specified service
 func (p *ServiceManager) StartService(name string) error {
 	// Return error if service has already been started
@@ -212,7 +158,7 @@ func (p *ServiceManager) StopService(id string) error {
 	}
 	return nil
 }
-
+*/
 // GetServicesByName return service instance by name, or matched by part of name
 func (p *ServiceManager) GetServicesByName(name string) []Service {
 	services := []Service{}

@@ -29,24 +29,51 @@ type Config interface {
 	MustInt(section string, key string) int
 	MustString(section string, key string) string
 	SetValue(section string, key string, val string)
-	AddConfigs(options map[string]map[string]string)
+	AddConfig(options map[string]map[string]string) Config
+	AddConfigSection(setion string, options map[string]string) Config
+	AddConfigFile(fileName string) (Config, error)
 }
 
-type configSection struct {
-	items map[string]string
+type config struct {
+	sections map[string]map[string]string
 }
 
-type config struct{}
+func NewConfig() Config {
+	return &config{
+		sections: make(map[string]map[string]string),
+	}
+}
 
-var allConfigSections map[string]*configSection = make(map[string]*configSection)
+// NewConfigWithFile load configurations from files
+func NewConfigWithFile(fileName string, moreFiles ...string) (Config, error) {
+	c := &config{
+		sections: make(map[string]map[string]string),
+	}
+	if cfg, err := goconfig.LoadConfigFile(fileName, moreFiles...); err == nil {
+		sections := cfg.GetSectionList()
+		for _, name := range sections {
+			// create section if it doesn't exist
+			if _, ok := c.sections[name]; !ok {
+				c.sections[name] = make(map[string]string)
+			}
+			items, err := cfg.GetSection(name)
+			if err == nil {
+				for key, val := range items {
+					c.sections[name][key] = val
+				}
+			}
+		}
+	} else {
+		return nil, err
+	}
+	return c, nil
+}
 
-// config implementations
-
-func checkItemExist(section string, key string) error {
-	if _, found := allConfigSections[section]; !found {
+func (c *config) checkItemExist(section string, key string) error {
+	if _, found := c.sections[section]; !found {
 		return fmt.Errorf("Invalid configuration, section '%s' doesn't exist'", section)
 	}
-	if _, found := allConfigSections[section].items[key]; !found {
+	if _, found := c.sections[section][key]; !found {
 		return fmt.Errorf("Invalid configuration, there are no item '%s' in section '%s'", key, section)
 	}
 	return nil
@@ -54,10 +81,10 @@ func checkItemExist(section string, key string) error {
 
 // Bool return bool value for key
 func (c *config) Bool(section string, key string) (bool, error) {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		return false, err
 	}
-	val := allConfigSections[section].items[key]
+	val := c.sections[section][key]
 	switch val {
 	case "true":
 		return true, nil
@@ -69,26 +96,26 @@ func (c *config) Bool(section string, key string) (bool, error) {
 
 // Int return int value for key
 func (c *config) Int(section string, key string) (int, error) {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		return -1, err
 	}
-	val := allConfigSections[section].items[key]
+	val := c.sections[section][key]
 	return strconv.Atoi(val)
 }
 
 // String return string valu for key
 func (c *config) String(section string, key string) (string, error) {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		return "", err
 	}
-	return allConfigSections[section].items[key], nil
+	return c.sections[section][key], nil
 }
 
 func (c *config) MustBool(section string, key string) bool {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
-	val := allConfigSections[section].items[key]
+	val := c.sections[section][key]
 	switch val {
 	case "true":
 		return true
@@ -99,10 +126,10 @@ func (c *config) MustBool(section string, key string) bool {
 	return false
 }
 func (c *config) MustInt(section string, key string) int {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
-	val := allConfigSections[section].items[key]
+	val := c.sections[section][key]
 	n, err := strconv.Atoi(val)
 	if err != nil {
 		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
@@ -111,72 +138,62 @@ func (c *config) MustInt(section string, key string) int {
 }
 
 func (c *config) MustString(section string, key string) string {
-	if err := checkItemExist(section, key); err != nil {
+	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
-	return allConfigSections[section].items[key]
+	return c.sections[section][key]
 }
 
 func (c *config) SetValue(section string, key string, valu string) {
 }
 
-func (c *config) AddConfigs(options map[string]map[string]string) {
+func (c *config) AddConfig(options map[string]map[string]string) Config {
 	for section, values := range options {
-		if _, found := allConfigSections[section]; !found {
-			allConfigSections[section] = &configSection{items: make(map[string]string)}
+		if _, found := c.sections[section]; !found {
+			c.sections[section] = make(map[string]string)
 		}
-		items := allConfigSections[section].items
 		for key, val := range values {
-			items[key] = val
+			c.sections[section][key] = val
 		}
 	}
+	return c
 }
 
-// NewWithConfigFile load configurations from files
-func NewConfigWithFile(fileName string, moreFiles ...string) (Config, error) {
-	// load all config sections in _allConfigSections, get section and item to overide
-	cfg, err := goconfig.LoadConfigFile(fileName, moreFiles...)
-	if err == nil {
+// Config global functions
+func (c *config) AddConfigSection(sectionName string, items map[string]string) Config {
+	if _, found := c.sections[sectionName]; found {
+		for key, val := range c.sections[sectionName] {
+			if c.sections[sectionName][key] != "" {
+				glog.Infof("Config item(%s) will overide existed item:%s", key, val)
+			}
+			c.sections[sectionName][key] = val
+		}
+	} else {
+		c.sections[sectionName] = make(map[string]string)
+		for key, val := range items {
+			c.sections[sectionName][key] = val
+		}
+	}
+	return c
+}
+
+func (c *config) AddConfigFile(fileName string) (Config, error) {
+	if cfg, err := goconfig.LoadConfigFile(fileName); err == nil {
 		sections := cfg.GetSectionList()
 		for _, name := range sections {
 			// create section if it doesn't exist
-			if _, ok := allConfigSections[name]; !ok {
-				allConfigSections[name] = &configSection{items: make(map[string]string)}
+			if _, ok := c.sections[name]; !ok {
+				c.sections[name] = make(map[string]string)
 			}
 			items, err := cfg.GetSection(name)
 			if err == nil {
 				for key, val := range items {
-					allConfigSections[name].items[key] = val
+					c.sections[name][key] = val
 				}
 			}
 		}
-	}
-	return &config{}, nil
-}
-
-// Config global functions
-func RegisterConfig(sectionName string, items map[string]string) {
-	if allConfigSections[sectionName] != nil { // section already exist
-		section := allConfigSections[sectionName]
-		for key, val := range items {
-			if section.items[key] != "" {
-				glog.Infof("Config item(%s) will overide existed item:%s", key, section.items[key])
-			}
-			section.items[key] = val
-		}
+		return c, nil
 	} else {
-		section := new(configSection)
-		section.items = make(map[string]string)
-		for key, val := range items {
-			section.items[key] = val
-		}
-		allConfigSections[sectionName] = section
-	}
-}
-
-// RegisterConfigGropu reigster all group's subconfigurations
-func RegisterConfigGroup(configs map[string]map[string]string) {
-	for group, values := range configs {
-		RegisterConfig(group, values)
+		return nil, err
 	}
 }

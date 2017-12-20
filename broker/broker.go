@@ -53,16 +53,6 @@ func registerService(name string, factory base.ServiceFactory) {
 	serviceSeqs = append(serviceSeqs, name)
 }
 
-// RegisterServiceWithConfig register service with name and configuration
-func registerServiceWithConfig(name string, factory base.ServiceFactory, configs map[string]string) {
-	if _, ok := serviceFactories[name]; ok {
-		glog.Errorf("Service '%s' is already registered", name)
-	}
-	com.RegisterConfig(name, configs)
-	serviceFactories[name] = factory
-	serviceSeqs = append(serviceSeqs, name)
-}
-
 // newBroker create global broker
 func NewBroker(c com.Config) (*Broker, error) {
 	broker := &Broker{

@@ -15,7 +15,7 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/common"
+	com "github.com/cloustone/sentel/common"
 
 	"github.com/cloustone/sentel/apiserver/base"
 	v1api "github.com/cloustone/sentel/apiserver/v1"
@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/apiserver.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/apiserver.conf", "config file")
 )
 
 func main() {
@@ -34,8 +34,10 @@ func main() {
 
 	base.RegisterApiManager(v1api.NewApiManager())
 	// Get configuration
-	com.RegisterConfigGroup(defaultConfigs)
-	config, err := com.NewConfigWithFile(*configFileFullPath)
+	config := com.NewConfig()
+	config.AddConfig(defaultConfigs)
+	config.AddConfigFile(*configFileName)
+	config, err := com.NewConfigWithFile(*configFileName)
 	if err != nil {
 		glog.Fatal(err)
 		flag.PrintDefaults()

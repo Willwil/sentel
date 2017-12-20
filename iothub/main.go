@@ -28,11 +28,6 @@ var (
 func main() {
 	flag.Parse()
 
-	glog.Info("Starting iothub ...")
-	com.RegisterService("api", &hub.ApiServiceFactory{})
-	com.RegisterService("notify", &hub.NotifyServiceFactory{})
-
-	// Initialize iothub at startup
 	glog.Info("Initializing iothub...")
 	config, _ := createConfig(*configFileName)
 	if err := hub.InitializeIothub(config); err != nil {
@@ -40,21 +35,20 @@ func main() {
 	}
 
 	// Create service manager according to the configuration
-	mgr, err := com.NewServiceManager("iothub", config)
-	if err != nil {
-		glog.Fatal(err)
-	}
+	mgr, _ := com.NewServiceManager("iothub", config)
+	mgr.AddService("api", &hub.ApiServiceFactory{})
+	mgr.AddService("notify", &hub.NotifyServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 
 func createConfig(fileName string) (com.Config, error) {
+	config := com.NewConfig()
+	config.AddConfig(defaultConfigs)
+	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}
 	options["iothub"] = map[string]string{}
 	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
 	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
-	// Get configuration
-	com.RegisterConfigGroup(defaultConfigs)
-	config, _ := com.NewConfigWithFile(fileName)
-	config.AddConfigs(options)
+	config.AddConfig(options)
 	return config, nil
 }

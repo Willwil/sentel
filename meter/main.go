@@ -18,7 +18,6 @@ import (
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/meter/api"
 	"github.com/cloustone/sentel/meter/collector"
-
 	"github.com/golang/glog"
 )
 
@@ -28,8 +27,10 @@ var (
 
 func main() {
 	flag.Parse()
-	com.RegisterConfigGroup(defaultConfigs)
-	com.RegisterServiceWithConfig("api", &api.ApiServiceFactory{}, api.Configs)
-	com.RegisterServiceWithConfig("collector", &collector.CollectorServiceFactory{}, collector.Configs)
-	glog.Error(com.RunWithConfigFile("meter", *configFileFullPath))
+	config := com.NewConfig()
+	config.AddConfig(defaultConfigs)
+	mgr, _ := com.NewServiceManager("meter", config)
+	mgr.AddService("api", &api.ApiServiceFactory{})
+	mgr.AddService("collector", &collector.CollectorServiceFactory{})
+	glog.Fatal(mgr.RunAndWait())
 }

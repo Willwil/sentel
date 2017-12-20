@@ -24,41 +24,29 @@ import (
 )
 
 var (
-	configFile     = flag.String("c", "/etc/sentel/conductor.conf", "config file")
-	defaultConfigs = map[string]map[string]string{
-		"conductor": {
-			"loglevel":        "debug",
-			"kafka":           "localhost:9092",
-			"mongo":           "localhost:27017",
-			"connect_timeout": "5",
-		},
-	}
+	configFile = flag.String("c", "/etc/sentel/conductor.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
 	glog.Info("conductor is starting...")
 
-	com.RegisterServiceWithConfig("executor", &executor.ExecutorServiceFactory{}, executor.Configs)
-	com.RegisterServiceWithConfig("indicator", &indicator.IndicatorServiceFactory{}, indicator.Configs)
-	com.RegisterServiceWithConfig("restapi", &restapi.RestapiServiceFactory{}, restapi.Configs)
 	config, _ := createConfig(*configFile)
-	// Create service manager according to the configuration
-	mgr, err := com.NewServiceManager("conductor", config)
-	if err != nil {
-		glog.Fatal(err)
-	}
+	mgr, _ := com.NewServiceManager("conductor", config)
+	mgr.AddService("executor", &executor.ExecutorServiceFactory{})
+	mgr.AddService("indicator", &indicator.IndicatorServiceFactory{})
+	mgr.AddService("restapi", &restapi.RestapiServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 
 func createConfig(fileName string) (com.Config, error) {
+	config := com.NewConfig()
+	config.AddConfig(defaultConfigs)
+	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}
 	options["iothub"] = make(map[string]string)
 	options["iothub"]["kafka"] = os.Getenv("KAFKA_HOST")
 	options["iothub"]["mongo"] = os.Getenv("MONGO_HOST")
-	// Get configuration
-	com.RegisterConfigGroup(defaultConfigs)
-	config, _ := com.NewConfigWithFile(fileName)
-	config.AddConfigs(options)
+	config.AddConfig(options)
 	return config, nil
 }
