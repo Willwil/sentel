@@ -13,26 +13,24 @@
 package executor
 
 import (
-	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
+	"fmt"
+
+	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
-	"github.com/golang/glog"
 )
 
-type ruleWraper struct {
-	rule *db.Rule
+type dataTarget interface {
+	target() string
+	execute(data map[string]interface{}) error
 }
 
-func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
-	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	dataProcessor, _ := newDataProcessor(c, p.rule)
-	dataTarget, err := newDataTarget(c, p.rule)
-	if err != nil {
-		return err
+func newDataTarget(c com.Config, r *db.Rule) (dataTarget, error) {
+	switch r.DataTarget.Type {
+	case db.DataTargetTypeTopic:
+		return &topicDataTarget{config: c, rule: r}, nil
+	case db.DataTargetTypeOuterDatabase:
+	case db.DataTargetTypeInnerDatabase:
+	case db.DataTargetTypeMessageService:
 	}
-	if result, err := dataProcessor.execute(e); err != nil {
-		return err
-	} else {
-		return dataTarget.execute(result)
-	}
+	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)
 }

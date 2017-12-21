@@ -56,10 +56,9 @@ const (
 )
 
 type RuleDataProcess struct { // select keyword from /productid/topic with condition
-	Keyword   string `json:"keyword" bson:"keyword"`
-	Topic     string `json:"topic" bson:"topic"`
-	Condition string `json:"condition" bson:"condiction"`
-	Sql       string `json:"sql" bson:"sql"`
+	Topic     string   `json:"topic" bson:"topic"`
+	Condition string   `json:"condition" bson:"condiction"`
+	Fields    []string `json:"fields" bson:"fields"`
 }
 type RuleDataTarget struct {
 	Type         DataTargetType `json:"type"`     // Transfer type

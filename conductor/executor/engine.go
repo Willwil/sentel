@@ -105,9 +105,9 @@ func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 }
 
 // handleEvent handle mqtt event from other service
-func (p *ruleEngine) handleKafkaEvent(se *event.MqttEvent) error {
+func (p *ruleEngine) handleKafkaEvent(me *event.MqttEvent) error {
 	e := &event.Event{}
-	if err := json.Unmarshal(se.Common, &e.Common); err != nil {
+	if err := json.Unmarshal(me.Common, &e.Common); err != nil {
 		return fmt.Errorf("conductor unmarshal event common failed:%s", err.Error())
 	}
 	switch e.Common.Type {
@@ -116,11 +116,12 @@ func (p *ruleEngine) handleKafkaEvent(se *event.MqttEvent) error {
 	case event.TopicSubscribe:
 	case event.TopicUnsubscribe:
 	case event.TopicPublish:
-		obj := &event.TopicPublishDetail{}
-		if err := json.Unmarshal(se.Detail, obj); err != nil {
+		detail := event.TopicPublishDetail{}
+		if err := json.Unmarshal(me.Detail, &detail); err != nil {
 			return fmt.Errorf("conductor unmarshal event detail failed:%s", err.Error())
 		}
-		return p.execute(obj)
+		e.Detail = detail
+		return p.execute(e)
 	}
 	return nil
 }
@@ -238,10 +239,10 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
-func (p *ruleEngine) execute(t *event.TopicPublishDetail) error {
+func (p *ruleEngine) execute(e *event.Event) error {
 	for _, w := range p.rules {
 		if w.rule.Status == db.RuleStatusStarted {
-			if err := w.execute(p.config, t); err != nil {
+			if err := w.execute(p.config, e); err != nil {
 				glog.Infof("conductor execute rule '%s' failed, reason: '%s'", w.rule.RuleName, err.Error())
 			}
 		}

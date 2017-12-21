@@ -63,6 +63,24 @@
 			"revisionTime": "2017-09-08T15:56:42Z"
 		},
 		{
+			"checksumSHA1": "Ydh4bz1JdjeC/yYZVMteAiG31Cg=",
+			"path": "github.com/elgs/gojq",
+			"revision": "81fa9a608a130323eaf4b4fc00224f7a467ffbd1",
+			"revisionTime": "2016-04-21T19:40:50Z"
+		},
+		{
+			"checksumSHA1": "mbG9pNnNbnjutJynijNPZWQzSVw=",
+			"path": "github.com/elgs/gosplitargs",
+			"revision": "a491c5eeb3c841d55913cf4888f5c957be4c598d",
+			"revisionTime": "2016-10-28T07:19:35Z"
+		},
+		{
+			"checksumSHA1": "Gdlt08VYwIeEAsdxlk/YtgVJHyk=",
+			"path": "github.com/elgs/jsonql",
+			"revision": "bd06d2d14979d9178b682140689a759f186116d9",
+			"revisionTime": "2017-12-14T21:41:21Z"
+		},
+		{
 			"checksumSHA1": "x2Km0Qy3WgJJnV19Zv25VwTJcBM=",
 			"path": "github.com/fsnotify/fsnotify",
 			"revision": "4da3e2cfbabc9f751898f250b49f2439785783a1",
