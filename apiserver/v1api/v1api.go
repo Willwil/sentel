@@ -9,11 +9,18 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package v1
+package v1api
 
 import (
-	"github.com/cloustone/sentel/apiserver/base"
+	"fmt"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+
 	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
+	"github.com/golang/glog"
 
 	"github.com/dgrijalva/jwt-go"
 	echo "github.com/labstack/echo"
@@ -22,8 +29,9 @@ import (
 
 const APIHEAD = "api/v1/"
 
-// v1apiManager mananage version 1 apis
-type v1apiManager struct {
+// v1apiService mananage version 1 apis
+type v1apiService struct {
+	com.ServiceBase
 	version string
 	config  com.Config
 	echo    *echo.Echo
@@ -56,26 +64,50 @@ type jwtApiClaims struct {
 	Name string `json:"name"`
 }
 
+type ServiceFactory struct{}
+
 // NewApiManager create api manager instance
-func NewApiManager() base.ApiManager {
-	return &v1apiManager{
-		echo:    echo.New(),
-		version: "v1",
+func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+	service := &v1apiService{
+		ServiceBase: com.ServiceBase{
+			Config:    c,
+			WaitGroup: sync.WaitGroup{},
+			Quit:      quit,
+		},
+		echo: echo.New(),
 	}
+	if err := service.initialize(c); err != nil {
+		return nil, err
+	}
+	return service, nil
 }
 
-// GetVersion return api's version
-func (p *v1apiManager) GetVersion() string { return p.version }
+func (p *v1apiService) Name() string { return "v1apiService" }
 
-// Run loop to wait api server to terminate
-func (p *v1apiManager) Run() error {
-	address := p.config.MustString("apiserver", "listen")
-	return p.echo.Start(address)
+// Start
+func (p *v1apiService) Start() error {
+	go func(s *v1apiService) {
+		addr := p.Config.MustString("apiserver", "listen")
+		p.echo.Start(addr)
+		p.WaitGroup.Add(1)
+	}(p)
+	return nil
+}
+
+// Stop
+func (p *v1apiService) Stop() {
+	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.WaitGroup.Wait()
+	close(p.Quit)
 }
 
 // Initialize initialize api manager with configuration
-func (p *v1apiManager) Initialize(c com.Config) error {
-	p.config = c
+func (p *v1apiService) initialize(c com.Config) error {
+	if err := db.InitializeRegistry(c); err != nil {
+		return fmt.Errorf("registry initialize failed:%v", err)
+	}
+	glog.Infof("Registry is initialized successfuly")
+
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
 			cc := &apiContext{Context: e, config: c}
@@ -171,7 +203,7 @@ func (p *v1apiManager) Initialize(c com.Config) error {
 }
 
 // setAuth setup api group 's authentication method
-func (p *v1apiManager) setAuth(c com.Config, g *echo.Group) {
+func (p *v1apiService) setAuth(c com.Config, g *echo.Group) {
 	auth := "jwt"
 	if _, err := c.String("apiserver", "auth"); err == nil {
 		auth = c.MustString("apiserver", "auth")

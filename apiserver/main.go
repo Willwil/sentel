@@ -15,11 +15,8 @@ package main
 import (
 	"flag"
 
+	"github.com/cloustone/sentel/apiserver/v1api"
 	com "github.com/cloustone/sentel/common"
-
-	"github.com/cloustone/sentel/apiserver/base"
-	v1api "github.com/cloustone/sentel/apiserver/v1"
-	"github.com/cloustone/sentel/common/db"
 
 	"github.com/golang/glog"
 )
@@ -32,24 +29,14 @@ func main() {
 	flag.Parse()
 	glog.Info("Starting api server...")
 
-	base.RegisterApiManager(v1api.NewApiManager())
-
 	config := com.NewConfig()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(*configFileName)
 
-	// Initialize registry
-	if err := db.InitializeRegistry(config); err != nil {
-		glog.Errorf("Failed to initialize registry:%v", err)
-		return
-	}
-	glog.Infof("Registry is initialized successfuly")
-
-	// Create api manager using configuration
-	apiManager, err := base.GetApiManager(config)
+	mgr, err := com.NewServiceManager("apiserver", config)
 	if err != nil {
-		glog.Error("%v", err)
-		return
+		glog.Fatalf("api server create failed: '%s'", err.Error())
 	}
-	glog.Fatal(apiManager.Run())
+	mgr.AddService(v1api.ServiceFactory{})
+	glog.Fatal(mgr.RunAndWait())
 }

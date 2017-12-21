@@ -10,17 +10,23 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package v1
+package v1api
 
 import "github.com/labstack/echo"
 
-// Retrieves statistics about devices identities in the IoT hub's
-// identify registry
-func getRegistryStatistics(ctx echo.Context) error {
+// Twin Api
+
+// Get a device twin
+func getDeviceTwin(ctx echo.Context) error {
 	return nil
 }
 
-// Retrieves services statisticsfor this IoT hubs's identity registry
-func getServiceStatistics(ctx echo.Context) error {
+// Invoce a direct method on device
+func invokeDeviceMethod(ctx echo.Context) error {
+	return nil
+}
+
+// Updates tags and desired properties of a device twin
+func updateDeviceTwin(ctx echo.Context) error {
 	return nil
 }

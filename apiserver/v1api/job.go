@@ -10,38 +10,27 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package v1
+package v1api
 
 import "github.com/labstack/echo"
 
-// Http Runtime Api
-
-// Abandon a cloud-to-device message
-func abandonDeviceBoundNotification(ctx echo.Context) error {
+// Cancel an existing job on an IoT hub
+func cancelJob(ctx echo.Context) error {
 	return nil
 }
 
-// Complete or rejects a cloud-to-device message
-func completeDeviceBoundNotification(ctx echo.Context) error {
+// Create a new job on an IoT hub
+func createJob(ctx echo.Context) error {
 	return nil
 }
 
-// Retrive a storage SAS URI to upload a file
-func createFileUploadSasUri(ctx echo.Context) error {
+// Retrieve details of an existing job from an IoT hub
+func getJob(ctx echo.Context) error {
 	return nil
 }
 
-// Retrive a cloud-to-device message
-func receiveDeviceBoundNotification(ctx echo.Context) error {
-	return nil
-}
-
-// Send a device-to-cloud message
-func sendDeviceEvent(ctx echo.Context) error {
-	return nil
-}
-
-// Notify an IoT hub of a complete file upload
-func updateFileUploadStatus(ctx echo.Context) error {
+// Query an IoT hub to retrieve information regarding jobs using
+// the IoT Hub query language
+func queryJobs(ctx echo.Context) error {
 	return nil
 }
