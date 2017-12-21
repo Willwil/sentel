@@ -27,9 +27,6 @@ import (
 	mw "github.com/labstack/echo/middleware"
 )
 
-const APIHEAD = "api/v1/"
-
-// v1apiService mananage version 1 apis
 type v1apiService struct {
 	com.ServiceBase
 	version string
@@ -66,7 +63,6 @@ type jwtApiClaims struct {
 
 type ServiceFactory struct{}
 
-// NewApiManager create api manager instance
 func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
 	service := &v1apiService{
 		ServiceBase: com.ServiceBase{
@@ -82,7 +78,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, err
 	return service, nil
 }
 
-func (p *v1apiService) Name() string { return "v1apiService" }
+func (p *v1apiService) Name() string { return "v1api" }
 
 // Start
 func (p *v1apiService) Start() error {
