@@ -10,27 +10,17 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package v1
+package v1api
 
 import "github.com/labstack/echo"
 
-// Cancel an existing job on an IoT hub
-func cancelJob(ctx echo.Context) error {
+// Retrieves statistics about devices identities in the IoT hub's
+// identify registry
+func getRegistryStatistics(ctx echo.Context) error {
 	return nil
 }
 
-// Create a new job on an IoT hub
-func createJob(ctx echo.Context) error {
-	return nil
-}
-
-// Retrieve details of an existing job from an IoT hub
-func getJob(ctx echo.Context) error {
-	return nil
-}
-
-// Query an IoT hub to retrieve information regarding jobs using
-// the IoT Hub query language
-func queryJobs(ctx echo.Context) error {
+// Retrieves services statisticsfor this IoT hubs's identity registry
+func getServiceStatistics(ctx echo.Context) error {
 	return nil
 }

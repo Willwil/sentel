@@ -16,6 +16,7 @@ import (
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/conductor/data"
 	"github.com/golang/glog"
 )
 
@@ -25,14 +26,14 @@ type ruleWraper struct {
 
 func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	dataProcessor, _ := newDataProcessor(c, p.rule)
-	dataTarget, err := newDataTarget(c, p.rule)
+	dataProcessor, _ := data.NewProcessor(c, p.rule)
+	endpoint, err := data.NewEndpoint(c, p.rule)
 	if err != nil {
 		return err
 	}
-	if result, err := dataProcessor.execute(e); err != nil {
+	if result, err := dataProcessor.Execute(e); err != nil {
 		return err
 	} else {
-		return dataTarget.execute(result)
+		return endpoint.Write(result)
 	}
 }

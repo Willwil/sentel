@@ -29,8 +29,8 @@ import (
 
 const (
 	ServiceName         = "event"
-	fmtOfMqttEventBus   = "broker-%s-%s-event-mqtt"
-	fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
+	fmtOfMqttEventBus   = "broker-%s-event-mqtt"
+	fmtOfBrokerEventBus = "broker-%s-event-broker"
 )
 
 var (
@@ -46,7 +46,6 @@ type eventService struct {
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	tenant      string
-	product     string
 }
 
 // subscriberContext hold subscribre's handler and context
@@ -61,7 +60,6 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
-	product := c.MustString("broker", "product")
 
 	var consumers = make(map[string]sarama.Consumer)
 	var producer sarama.SyncProducer
@@ -76,7 +74,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, er
 		if err != nil {
 			return nil, fmt.Errorf("event service failed to connect with kafka server(MQTT) '%s'", khosts)
 		}
-		consumers[fmt.Sprintf(fmtOfMqttEventBus, tenant, product)] = cm
+		consumers[fmt.Sprintf(fmtOfMqttEventBus, tenant)] = cm
 
 		config = sarama.NewConfig()
 		config.ClientID = base.GetBrokerId() + "_Broker"
@@ -84,7 +82,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, er
 		if err != nil {
 			return nil, fmt.Errorf("event service failed to connect with kafka server(Broker) '%s'", khosts)
 		}
-		consumers[fmt.Sprintf(fmtOfBrokerEventBus, tenant, product)] = cb
+		consumers[fmt.Sprintf(fmtOfBrokerEventBus, tenant)] = cb
 		glog.Infof("event service connected with kafka '%s' with broker id '%s'", khosts, base.GetBrokerId())
 
 		config = sarama.NewConfig()
@@ -115,16 +113,15 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, er
 		eventChan:   make(chan *Event),
 		subscribers: make(map[uint32][]subscriberContext),
 		tenant:      tenant,
-		product:     product,
 	}, nil
 }
 
 func (p *eventService) nameOfEventBus(e *Event) string {
 	switch e.Common.Type {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
-		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant, p.product)
+		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant)
 	default:
-		return fmt.Sprintf(fmtOfBrokerEventBus, p.tenant, p.product)
+		return fmt.Sprintf(fmtOfBrokerEventBus, p.tenant)
 	}
 }
 

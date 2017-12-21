@@ -25,7 +25,7 @@ type ClusterManager interface {
 	// RemoveNetwork remove tenant network
 	RemoveNetwork(name string) error
 	// CreateService create broker service for product
-	CreateService(tid string, pid string, replicas int32) (string, error)
+	CreateService(tid string, replicas int32) (string, error)
 	// RemoveService remove broker service of product
 	RemoveService(serviceName string) error
 	// UpdateService updatet product' service about replicas and ...

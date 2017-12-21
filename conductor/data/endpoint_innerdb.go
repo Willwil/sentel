@@ -10,27 +10,26 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package data
 
 import (
-	"fmt"
+	"errors"
 
 	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
 )
 
-type dataTarget interface {
-	target() string
-	execute(data map[string]interface{}) error
+type innerdbEndpoint struct {
+	config com.Config
+	rule   *db.Rule
 }
 
-func newDataTarget(c com.Config, r *db.Rule) (dataTarget, error) {
-	switch r.DataTarget.Type {
-	case db.DataTargetTypeTopic:
-		return &topicDataTarget{config: c, rule: r}, nil
-	case db.DataTargetTypeOuterDatabase:
-	case db.DataTargetTypeInnerDatabase:
-	case db.DataTargetTypeMessageService:
-	}
-	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)
+func newInnerdbEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+	return &innerdbEndpoint{config: c, rule: r}, nil
+}
+
+func (p *innerdbEndpoint) Name() string { return "innerdb" }
+
+func (p *innerdbEndpoint) Write(data map[string]interface{}) error {
+	return errors.New("not implemented")
 }

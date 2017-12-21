@@ -102,13 +102,12 @@ func (p *swarmCluster) RemoveNetwork(name string) error {
 	return p.client.NetworkRemove(context.Background(), name)
 }
 
-func (p *swarmCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
-	serviceName := fmt.Sprintf("tenant_%s_%s", pid, tid)
+func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error) {
+	serviceName := fmt.Sprintf("tenant_%s", tid)
 	env := []string{
 		"KAFKA_HOST=kafka:9092",
 		"MONGO_HOST=mongo:27017",
 		fmt.Sprintf("BROKER_TENANT=%s", tid),
-		fmt.Sprintf("BROKER_PRODUCT=%s", pid),
 	}
 	delay := time.Duration(1 * time.Second)
 	maxAttempts := uint64(10)

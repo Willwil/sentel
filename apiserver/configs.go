@@ -21,9 +21,9 @@ var defaultConfigs = map[string]map[string]string{
 		"auth":     "none",
 		"mongo":    "localhost:27017",
 	},
-	"storage": {
-		"repository": "local",
-		"loglevel":   "debug",
+	"registry": {
+		"hosts":    "localhost:27017",
+		"loglevel": "debug",
 	},
 	"security": {
 		"cafile":              "",

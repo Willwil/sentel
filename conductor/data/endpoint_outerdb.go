@@ -10,17 +10,24 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package v1
+package data
 
-import "github.com/labstack/echo"
+import (
+	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/common/db"
+)
 
-// Retrieves statistics about devices identities in the IoT hub's
-// identify registry
-func getRegistryStatistics(ctx echo.Context) error {
-	return nil
+type outerdbEndpoint struct {
+	config com.Config
+	rule   *db.Rule
 }
 
-// Retrieves services statisticsfor this IoT hubs's identity registry
-func getServiceStatistics(ctx echo.Context) error {
+func newOuterdbEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+	return &outerdbEndpoint{config: c, rule: r}, nil
+}
+
+func (p *outerdbEndpoint) Name() string { return "outerdb" }
+
+func (p *outerdbEndpoint) Write(data map[string]interface{}) error {
 	return nil
 }

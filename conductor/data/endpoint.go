@@ -10,33 +10,30 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package main
+package data
 
 import (
-	"flag"
+	"fmt"
 
-	"github.com/cloustone/sentel/apiserver/v1api"
 	com "github.com/cloustone/sentel/common"
-
-	"github.com/golang/glog"
+	"github.com/cloustone/sentel/common/db"
 )
 
-var (
-	configFileName = flag.String("c", "/etc/sentel/apiserver.conf", "config file")
-)
+type DataEndpoint interface {
+	Name() string
+	Write(data map[string]interface{}) error
+}
 
-func main() {
-	flag.Parse()
-	glog.Info("Starting api server...")
-
-	config := com.NewConfig()
-	config.AddConfig(defaultConfigs)
-	config.AddConfigFile(*configFileName)
-
-	mgr, err := com.NewServiceManager("apiserver", config)
-	if err != nil {
-		glog.Fatalf("api server create failed: '%s'", err.Error())
+func NewEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+	switch r.DataTarget.Type {
+	case db.DataTargetTypeTopic:
+		return newTopicEndpoint(c, r)
+	case db.DataTargetTypeOuterDatabase:
+		return newOuterdbEndpoint(c, r)
+	case db.DataTargetTypeInnerDatabase:
+		return newInnerdbEndpoint(c, r)
+	case db.DataTargetTypeMessageService:
+		return newMsgEndpoint(c, r)
 	}
-	mgr.AddService(v1api.ServiceFactory{})
-	glog.Fatal(mgr.RunAndWait())
+	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)
 }
