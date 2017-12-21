@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package data
 
 import (
 	"errors"
@@ -22,11 +22,11 @@ import (
 	"github.com/elgs/jsonql"
 )
 
-type dataProcessor interface {
-	execute(e *event.Event) (map[string]interface{}, error)
+type DataProcessor interface {
+	Execute(e *event.Event) (map[string]interface{}, error)
 }
 
-func newDataProcessor(c com.Config, r *db.Rule) (dataProcessor, error) {
+func NewProcessor(c com.Config, r *db.Rule) (DataProcessor, error) {
 	return &simpleDataProcessor{config: c, rule: r}, nil
 }
 
@@ -35,7 +35,7 @@ type simpleDataProcessor struct {
 	rule   *db.Rule
 }
 
-func (p *simpleDataProcessor) execute(e *event.Event) (map[string]interface{}, error) {
+func (p *simpleDataProcessor) Execute(e *event.Event) (map[string]interface{}, error) {
 	detail := e.Detail.(*event.TopicPublishDetail)
 	if detail.Topic == p.rule.DataProcess.Topic {
 		// topic's data must be json format

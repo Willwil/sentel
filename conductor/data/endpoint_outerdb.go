@@ -10,30 +10,24 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package data
 
 import (
-	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
+	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
-	"github.com/cloustone/sentel/conductor/data"
-	"github.com/golang/glog"
 )
 
-type ruleWraper struct {
-	rule *db.Rule
+type outerdbEndpoint struct {
+	config com.Config
+	rule   *db.Rule
 }
 
-func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
-	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	dataProcessor, _ := data.NewProcessor(c, p.rule)
-	endpoint, err := data.NewEndpoint(c, p.rule)
-	if err != nil {
-		return err
-	}
-	if result, err := dataProcessor.Execute(e); err != nil {
-		return err
-	} else {
-		return endpoint.Write(result)
-	}
+func newOuterdbEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+	return &outerdbEndpoint{config: c, rule: r}, nil
+}
+
+func (p *outerdbEndpoint) Name() string { return "outerdb" }
+
+func (p *outerdbEndpoint) Write(data map[string]interface{}) error {
+	return nil
 }

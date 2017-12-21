@@ -10,30 +10,30 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package data
 
 import (
-	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
+	"fmt"
+
+	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
-	"github.com/cloustone/sentel/conductor/data"
-	"github.com/golang/glog"
 )
 
-type ruleWraper struct {
-	rule *db.Rule
+type DataEndpoint interface {
+	Name() string
+	Write(data map[string]interface{}) error
 }
 
-func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
-	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	dataProcessor, _ := data.NewProcessor(c, p.rule)
-	endpoint, err := data.NewEndpoint(c, p.rule)
-	if err != nil {
-		return err
+func NewEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+	switch r.DataTarget.Type {
+	case db.DataTargetTypeTopic:
+		return newTopicEndpoint(c, r)
+	case db.DataTargetTypeOuterDatabase:
+		return newOuterdbEndpoint(c, r)
+	case db.DataTargetTypeInnerDatabase:
+		return newInnerdbEndpoint(c, r)
+	case db.DataTargetTypeMessageService:
+		return newMsgEndpoint(c, r)
 	}
-	if result, err := dataProcessor.Execute(e); err != nil {
-		return err
-	} else {
-		return endpoint.Write(result)
-	}
+	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)
 }
