@@ -28,7 +28,7 @@ function parserTenant(s) {
                 var client_id_len_lsb = s.buffer.charCodeAt(payload_offset + 1).toString(16);
                 if ( client_id_len_lsb.length < 2 ) client_id_len_lsb = "0" + client_id_len_lsb;
                 var client_id_len_int = parseInt(client_id_len_msb + client_id_len_lsb, 16);
-                var client_id_str = s.buffer.substr(payload_offset + 2, client_id_len_int);
+                var client_id_str = s.buffer.substr(payload_offset, client_id_len_int);
                 s.log("ClientId value  = " + client_id_str);
                 var str_arr = client_id_str.split("|");
                 if (str_arr.length > 0) {
