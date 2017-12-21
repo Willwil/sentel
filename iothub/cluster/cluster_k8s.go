@@ -75,8 +75,8 @@ func (p *k8sCluster) RemoveNetwork(name string) error {
 }
 
 // CreateBrokers create a number of brokers for tenant and product
-func (p *k8sCluster) CreateService(tid string, pid string, replicas int32) (string, error) {
-	podname := fmt.Sprintf("%s-%s", tid, pid)
+func (p *k8sCluster) CreateService(tid string, replicas int32) (string, error) {
+	podname := fmt.Sprintf("tenant-%s", tid)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)

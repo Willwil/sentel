@@ -35,7 +35,6 @@ import (
 var (
 	configFile = flag.String("c", "/etc/sentel/broker.conf", "config file")
 	tenant     = flag.String("t", "", "tenant id")
-	product    = flag.String("p", "", "product id")
 	protocol   = flag.String("P", "tcp", "mqtt access protocol, tcp|tls|ws|https")
 	listen     = flag.String("l", "localhost:1883", "mqtt broker listen address")
 )
@@ -77,16 +76,13 @@ func createConfig(fileName string) (com.Config, error) {
 	options["mqtt"] = map[string]string{}
 
 	// tenant and product must be set
-	if *tenant == "" || *product == "" {
+	if *tenant == "" {
 		*tenant = os.Getenv("BROKER_TENANT")
-		*product = os.Getenv("BROKER_PRODUCT")
-		if *tenant == "" || *product == "" {
-			glog.Errorf("tenant:%s, product:%s", *tenant, *product)
-			return nil, errors.New("teant and product must be specified for broker")
+		if *tenant == "" {
+			return nil, errors.New("teant must be specified for broker")
 		}
 	}
 	options["broker"]["tenant"] = *tenant
-	options["broker"]["product"] = *product
 
 	// Mqtt protocol
 	if *protocol != "" {

@@ -137,7 +137,7 @@ func (p *Iothub) CreateProduct(tid, pid string, replicas int32) (string, error) 
 	if p.isProductExist(tid, pid) {
 		return "", fmt.Errorf("product '%s' of '%s' already exist in iothub", pid, tid)
 	}
-	serviceName, err := p.clustermgr.CreateService(tid, pid, replicas)
+	serviceName, err := p.clustermgr.CreateService(tid, replicas)
 	if err != nil {
 		return "", err
 	} else {
