@@ -161,10 +161,11 @@ func (p *v1apiService) initialize(c com.Config) error {
 	g.POST(":number/bulk", bulkRegisterDevices)
 	g.GET(":id", getDevice)
 	g.DELETE(":id", deleteDevice)
-	g.PUT(":id", updateDevice)
-	g.DELETE(":id/commands", purgeCommandQueue)
-	g.GET(":name/all", getMultipleDevices)
-	g.POST("query", queryDevices)
+	g.PATCH(":id", updateDevice)
+	//g.DELETE(":id/commands", purgeCommandQueue)
+	//g.GET(":name/all", getMultipleDevices)
+	//g.POST("query", queryDevices)
+
 	// Http Runtip. Api
 	g.POST(":id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
 	g.DELETE(":id/messages/devicesBound/:etag", completeDeviceBoundNotification)
