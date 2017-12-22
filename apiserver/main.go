@@ -14,6 +14,7 @@ package main
 
 import (
 	"flag"
+	"os"
 
 	"github.com/cloustone/sentel/apiserver/v1api"
 	com "github.com/cloustone/sentel/common"
@@ -29,14 +30,23 @@ func main() {
 	flag.Parse()
 	glog.Info("Starting api server...")
 
-	config := com.NewConfig()
-	config.AddConfig(defaultConfigs)
-	config.AddConfigFile(*configFileName)
-
+	config, _ := createConfig(*configFileName)
 	mgr, err := com.NewServiceManager("apiserver", config)
 	if err != nil {
-		glog.Fatalf("api server create failed: '%s'", err.Error())
+		glog.Fatalf("apiserver create failed: '%s'", err.Error())
 	}
 	mgr.AddService(v1api.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
+}
+
+func createConfig(fileName string) (com.Config, error) {
+	config := com.NewConfig()
+	config.AddConfig(defaultConfigs)
+	config.AddConfigFile(fileName)
+	options := map[string]map[string]string{}
+	options["apiserver"] = map[string]string{}
+	options["apiserver"]["kafka"] = os.Getenv("KAFKA_HOST")
+	options["apiserver"]["mongo"] = os.Getenv("MONGO_HOST")
+	config.AddConfig(options)
+	return config, nil
 }
