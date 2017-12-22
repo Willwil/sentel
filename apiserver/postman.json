@@ -14,8 +14,16 @@
 					"name": "Register Tenant",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"default\",\n\t\"Password\": \"default\"\n}"
+						},
 						"url": {
 							"raw": "http://localhost:8080/iot/api/v1/tenants",
 							"protocol": "http",
@@ -38,10 +46,18 @@
 					"name": "Delete Tenant",
 					"request": {
 						"method": "DELETE",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"default\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId",
+							"raw": "http://localhost:8080/iot/api/v1/tenants",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -51,14 +67,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								}
+								"tenants"
 							]
 						},
 						"description": "delete tenant"
@@ -72,7 +81,7 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId",
+							"raw": "http://localhost:8080/iot/api/v1/tenants?tenantId=:tenantId",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -82,13 +91,13 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId"
+								"tenants"
 							],
-							"variable": [
+							"query": [
 								{
 									"key": "tenantId",
-									"value": ""
+									"value": ":tenantId",
+									"equals": true
 								}
 							]
 						},
@@ -100,10 +109,49 @@
 					"name": "Update Tenant",
 					"request": {
 						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Name\": \"default\",\n\t\"Password\": \"default\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/tenants?tenantId=:tenantId",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"tenants"
+							],
+							"query": [
+								{
+									"key": "tenantId",
+									"value": ":tenantId",
+									"equals": true
+								}
+							]
+						},
+						"description": "update tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Teanant's All Products",
+					"request": {
+						"method": "GET",
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId",
+							"raw": "http://localhost:8080/iot/api/v1/tenants/products?teantId=:tenantId",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -114,16 +162,17 @@
 								"api",
 								"v1",
 								"tenants",
-								":tenantId"
+								"products"
 							],
-							"variable": [
+							"query": [
 								{
-									"key": "tenantId",
-									"value": ""
+									"key": "teantId",
+									"value": ":tenantId",
+									"equals": true
 								}
 							]
 						},
-						"description": "update tenant"
+						"description": ""
 					},
 					"response": []
 				}
@@ -137,10 +186,18 @@
 					"name": "Add Product",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId",
+							"raw": "http://localhost:8080/iot/api/v1/products",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -150,20 +207,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								}
+								"products"
 							]
 						},
 						"description": ""
@@ -174,10 +218,18 @@
 					"name": "Delete Product",
 					"request": {
 						"method": "DELETE",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/teants/:tenantId/products/:productId",
+							"raw": "http://localhost:8080/iot/api/v1/products",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -187,20 +239,7 @@
 								"iot",
 								"api",
 								"v1",
-								"teants",
-								":tenantId",
-								"products",
-								":productId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								}
+								"products"
 							]
 						},
 						"description": ""
@@ -208,13 +247,13 @@
 					"response": []
 				},
 				{
-					"name": "Get Products",
+					"name": "Get Product Device List",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId",
+							"raw": "http://localhost:8080/iot/api/v1/products/devices?tenantId=:tenantId&productId=:productId",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -224,57 +263,19 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
 								"products",
-								":productId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								}
-							]
-						},
-						"description": ""
-					},
-					"response": []
-				},
-				{
-					"name": "Get Product Devices",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {},
-						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"iot",
-								"api",
-								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
 								"devices"
 							],
-							"variable": [
+							"query": [
 								{
 									"key": "tenantId",
-									"value": ""
+									"value": ":tenantId",
+									"equals": true
 								},
 								{
 									"key": "productId",
-									"value": ""
+									"value": ":productId",
+									"equals": true
 								}
 							]
 						},
@@ -283,13 +284,21 @@
 					"response": []
 				},
 				{
-					"name": "Get Device By Name",
+					"name": "Update Product",
 					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/:deviceId",
+							"raw": "http://localhost:8080/iot/api/v1/products",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -299,26 +308,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"devices",
-								":deviceId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "deviceId",
-									"value": ""
-								}
+								"products"
 							]
 						},
 						"description": ""
@@ -335,10 +325,18 @@
 					"name": "Create Rule",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/rules/:ruleId",
+							"raw": "http://localhost:8080/iot/api/v1/rules/",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -348,26 +346,8 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
 								"rules",
-								":ruleId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "ruleId",
-									"value": ""
-								}
+								""
 							]
 						},
 						"description": ""
@@ -378,10 +358,18 @@
 					"name": "Delete Rule",
 					"request": {
 						"method": "DELETE",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/rules/:ruleId",
+							"raw": "http://localhost:8080/iot/api/v1/rules",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -391,26 +379,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"rules",
-								":ruleId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "ruleId",
-									"value": ""
-								}
+								"rules"
 							]
 						},
 						"description": ""
@@ -418,13 +387,13 @@
 					"response": []
 				},
 				{
-					"name": "Get Product Rules",
+					"name": "Get Product Rule List",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/apl/v1/tenants/:tenantId/products/:productId/rules",
+							"raw": "http://localhost:8080/iot/apl/v1/rules/product?teantId=:tenantId&productId=:productId",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -434,20 +403,19 @@
 								"iot",
 								"apl",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"rules"
+								"rules",
+								"product"
 							],
-							"variable": [
+							"query": [
 								{
-									"key": "tenantId",
-									"value": ""
+									"key": "teantId",
+									"value": ":tenantId",
+									"equals": true
 								},
 								{
 									"key": "productId",
-									"value": ""
+									"value": ":productId",
+									"equals": true
 								}
 							]
 						},
@@ -456,13 +424,13 @@
 					"response": []
 				},
 				{
-					"name": "Get Rule",
+					"name": "Get One Rule",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/rules/:ruleId",
+							"raw": "http://localhost:8080/iot/apl/v1/rules/one?teantId=:tenantId&productId=:productId&ruleName=:ruleName",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -470,27 +438,26 @@
 							"port": "8080",
 							"path": [
 								"iot",
-								"api",
+								"apl",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
 								"rules",
-								":ruleId"
+								"one"
 							],
-							"variable": [
+							"query": [
 								{
-									"key": "tenantId",
-									"value": ""
+									"key": "teantId",
+									"value": ":tenantId",
+									"equals": true
 								},
 								{
 									"key": "productId",
-									"value": ""
+									"value": ":productId",
+									"equals": true
 								},
 								{
-									"key": "ruleId",
-									"value": ""
+									"key": "ruleName",
+									"value": ":ruleName",
+									"equals": true
 								}
 							]
 						},
@@ -502,10 +469,18 @@
 					"name": "Update Rule",
 					"request": {
 						"method": "PATCH",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/rules/:ruldId",
+							"raw": "http://localhost:8080/iot/api/v1/rules",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -515,26 +490,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"rules",
-								":ruldId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "ruldId",
-									"value": ""
-								}
+								"rules"
 							]
 						},
 						"description": ""
@@ -551,10 +507,18 @@
 					"name": "Register Device",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/",
+							"raw": "http://localhost:8080/iot/api/v1/devices/",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -564,22 +528,8 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
 								"devices",
 								""
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								}
 							]
 						},
 						"description": ""
@@ -590,10 +540,18 @@
 					"name": "Bulk Register Devices",
 					"request": {
 						"method": "POST",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceNumber\": 10,\n\t\"Devices\": [\n\t {\n\t \t\"DeviceId\": \"defaultDeviceId1\",\n\t \t\"DeviceKey\": \"defaultDeviceKey1\"\n\t },\n\t \t {\n\t \t\"DeviceId\": \"defaultDeviceId2\",\n\t \t\"DeviceKey\": \"defaultDeviceKey2\"\n\t }\n\t]\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/bulk",
+							"raw": "http://localhost:8080/iot/api/v1/devices/bulk",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -603,22 +561,8 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
 								"devices",
 								"bulk"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								}
 							]
 						},
 						"description": ""
@@ -626,13 +570,13 @@
 					"response": []
 				},
 				{
-					"name": "Get Device",
+					"name": "Get One Device",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/:deviceId",
+							"raw": "http://localhost:8080/iot/api/v1/devices?teantId=:tenantId&productId=:productId&deviceId=:deviceId",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -642,25 +586,23 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"devices",
-								":deviceId"
+								"devices"
 							],
-							"variable": [
+							"query": [
 								{
-									"key": "tenantId",
-									"value": ""
+									"key": "teantId",
+									"value": ":tenantId",
+									"equals": true
 								},
 								{
 									"key": "productId",
-									"value": ""
+									"value": ":productId",
+									"equals": true
 								},
 								{
 									"key": "deviceId",
-									"value": ""
+									"value": ":deviceId",
+									"equals": true
 								}
 							]
 						},
@@ -672,10 +614,18 @@
 					"name": "Delete Device",
 					"request": {
 						"method": "DELETE",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TeantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\",\n\t\"DeviceKey\": \"defaultDeviceKey\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/:deviceId",
+							"raw": "http://localhost:8080/iot/api/v1/devices",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -685,26 +635,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"devices",
-								":deviceId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "deviceId",
-									"value": ""
-								}
+								"devices"
 							]
 						},
 						"description": ""
@@ -715,10 +646,18 @@
 					"name": "Update Device",
 					"request": {
 						"method": "PATCH",
-						"header": [],
-						"body": {},
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\",\n\t\"Attribute\": \"defaultAttribute\"\n}"
+						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/:tenantId/products/:productId/devices/:deviceId",
+							"raw": "http://localhost:8080/iot/api/v1/devices",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -728,26 +667,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants",
-								":tenantId",
-								"products",
-								":productId",
-								"devices",
-								":deviceId"
-							],
-							"variable": [
-								{
-									"key": "tenantId",
-									"value": ""
-								},
-								{
-									"key": "productId",
-									"value": ""
-								},
-								{
-									"key": "deviceId",
-									"value": ""
-								}
+								"devices"
 							]
 						},
 						"description": ""
