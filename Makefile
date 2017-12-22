@@ -13,13 +13,8 @@ GCFLAGS  := -gcflags "-N -l"
 .PHONY: all
 all: build
 
-.PHONY: docker
-docker: all
-	$Q docker build -f broker/Dockerfile -t sentel/broker .
-	$Q docker build -f iothub/Dockerfile -t sentel/iothub .
-
 .PHONY: build
-build: .GOPATH/.ok apiserver meter broker iothub conductor sentel-ctl mqtt-cli k8s-test kafka-consumer kafka-producer
+build: .GOPATH/.ok apiserver meter broker iothub conductor
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
@@ -46,30 +41,6 @@ meter: .GOPATH/.ok
 .PHONY: conductor 
 conductor: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/conductor
-
-.PHONY: sentel-ctl
-sentel-ctrl: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-ctl
-
-.PHONY: k8s-test
-k8s-test: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/k8s-test
-
-.PHONY: kafka-consumer
-kafka-consumer: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/kafka-consumer
-
-.PHONY: kafka-producer
-kafka-producer: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/kafka-producer
-
-.PHONY: tools
-mqtt-cli: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-mqtt-cli
-
-.PHONY: sentel-cli
-sentel-cli: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/sentel-cli
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
