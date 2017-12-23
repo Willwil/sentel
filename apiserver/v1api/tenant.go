@@ -69,6 +69,10 @@ func loginTenant(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, echo.Map{"token": t})
 }
 
+func logoutTenant(ctx echo.Context) error {
+	return nil
+}
+
 // addTenant add a new tenant
 func registerTenant(ctx echo.Context) error {
 	req := new(tenantAddRequest)

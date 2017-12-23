@@ -87,6 +87,14 @@ func removeRule(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String()})
 }
 
+func startRule(ctx echo.Context) error {
+	return nil
+}
+
+func stopRule(ctx echo.Context) error {
+	return nil
+}
+
 // UpdateRule update existed rule
 func updateRule(ctx echo.Context) error {
 	req := new(ruleAddRequest)

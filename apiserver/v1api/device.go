@@ -129,7 +129,7 @@ func bulkRegisterDevices(ctx echo.Context) error {
 
 // Retrieve a device from the identify registry of an IoT hub
 // curl -XDELETE "http://localhost:4145/api/v1/devices/3?api-version=v1"
-func getDevice(ctx echo.Context) error {
+func getOneDevice(ctx echo.Context) error {
 	glog.Infof("getDevice ctx:[%s] :%s, %s ", ctx, ctx.ParamNames(), ctx.QueryParams())
 	// Get product
 	req := new(registerDeviceRequest)
@@ -165,8 +165,7 @@ func getDevice(ctx echo.Context) error {
 }
 
 // Delete the identify of a device from the identity registry of an IoT Hub
-// curl -XDELETE "http://localhost:4145/api/v1/devices/3?api-version=v1"
-func deleteDevice(ctx echo.Context) error {
+func deleteOneDevice(ctx echo.Context) error {
 	// Get product
 	req := new(registerDeviceRequest)
 	if err := ctx.Bind(req); err != nil {

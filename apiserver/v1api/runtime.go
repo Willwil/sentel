@@ -36,12 +36,11 @@ func receiveDeviceBoundNotification(ctx echo.Context) error {
 	return nil
 }
 
-// Send a device-to-cloud message
-func sendDeviceEvent(ctx echo.Context) error {
+// Send a could-to-device message
+func sendMessageToDevice(ctx echo.Context) error {
 	return nil
 }
 
-// Notify an IoT hub of a complete file upload
-func updateFileUploadStatus(ctx echo.Context) error {
+func broadcastMessage(ctx echo.Context) error {
 	return nil
 }

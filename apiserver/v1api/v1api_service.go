@@ -121,36 +121,36 @@ func (p *v1apiService) initialize(c com.Config) error {
 	//ie: curl -XGET -H'Origin: *' "http://localhost:4145/api/v1/devices/mytest?api-version=v1"
 	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
 
-	// Login
-	p.echo.POST("/iot/api/v1/tenants", registerTenant)
+	// register
+	p.echo.POST("/iot/api/v1/tenant", registerTenant)
 
 	// Tenant
 	g := p.echo.Group("/iot/api/v1/tenant")
 	p.setAuth(c, g)
 	g.POST("/login", loginTenant)
+	g.POST("/logout", logoutTenant)
 	g.DELETE("", deleteTenant)
 	g.GET("", getTenant)
-	g.GET("/products", getTenantProductList)
 	g.PATCH("", updateTenant)
 
 	// Product Api
-	g = p.echo.Group("/iot//api/v1/product")
+	g = p.echo.Group("/iot/api/v1/product")
 	p.setAuth(c, g)
 	g.POST("", registerProduct)
 	g.DELETE("", deleteProduct)
 	g.PATCH("", updateProduct)
-	g.GET("", getProduct)
+	g.GET("", getOneProduct)
 	g.GET("/devices", getProductDevices)
+	g.GET("/all", getTenantProductList)
+	g.POST("/device", registerDevice)
+	g.POST("/device/bulk", bulkRegisterDevices)
 
 	// Device Api
 	g = p.echo.Group("/iot/api/v1/device")
 	p.setAuth(c, g)
-	g.POST("", registerDevice)
-	g.POST("/bulk", bulkRegisterDevices)
-	g.GET("", getDevice)
-	g.DELETE("", deleteDevice)
+	g.GET("", getOneDevice)
+	g.DELETE("", deleteOneDevice)
 	g.PATCH("", updateDevice)
-	g.DELETE("/commands", purgeCommandQueue)
 
 	// Rule
 	g = p.echo.Group("/iot/api/v1/rule")
@@ -159,36 +159,27 @@ func (p *v1apiService) initialize(c com.Config) error {
 	g.DELETE("", removeRule)
 	g.GET("", getRule)
 	g.PATCH("", updateRule)
+	g.PUT("/start", startRule)
+	g.PUT("/stop", stopRule)
 
-	// Http Runtip. Api
-	g.POST(":id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
-	g.DELETE(":id/messages/devicesBound/:etag", completeDeviceBoundNotification)
+	// Http Runtime Api
+	g = p.echo.Group("/iot/api/v1/runtime")
+	// Only support send message to specified product or device
+	g.POST("/message/device", sendMessageToDevice)
+	g.POST("/message/broadcast", broadcastMessage)
 
-	g.POST(":ideviceId/files", createFileUploadSasUri)
-	g.GET(":id/message/deviceBound", receiveDeviceBoundNotification)
-	g.POST(":deviceId/files/notifications", updateFileUploadStatus)
-	g.POST(":id/messages/event", sendDeviceEvent)
-
-	// Statics Api
-	g = p.echo.Group("/api/v1/statics/")
-	p.setAuth(c, g)
-	g.GET("devices", getRegistryStatistics)
-	g.GET("service", getServiceStatistics)
-
-	// Device Twin Api
+	// Shadow Device Api(TODO)
 	g = p.echo.Group("/api/v1/twins/")
 	p.setAuth(c, g)
 	g.GET(":id", getDeviceTwin)
 	g.POST(":id/methods", invokeDeviceMethod)
 	g.PATCH(":id", updateDeviceTwin)
 
-	// Job Api
-	g = p.echo.Group("/api/v1/jobs/")
+	// Statics Api(TODO)
+	g = p.echo.Group("/api/v1/statics/")
 	p.setAuth(c, g)
-	g.POST(":jobid/cancel", cancelJob)
-	g.PUT(":jobid", createJob)
-	g.GET(":jobid", getJob)
-	g.GET("query", queryJobs)
+	g.GET("devices", getRegistryStatistics)
+	g.GET("service", getServiceStatistics)
 
 	return nil
 }

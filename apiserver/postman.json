@@ -1,14 +1,13 @@
 {
 	"info": {
 		"name": "sentel-apiserver",
-		"_postman_id": "34572015-f0e2-2561-e4bf-2a5461a67f87",
+		"_postman_id": "0ad12559-b091-3cae-b4cc-643c9eb156f6",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "Tenant",
-			"description": "",
 			"item": [
 				{
 					"name": "Register Tenant",
@@ -22,10 +21,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"default\",\n\t\"Password\": \"default\"\n}"
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"Password\": \"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants",
+							"raw": "http://localhost:8080/iot/api/v1/tenant",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -35,10 +34,42 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants"
+								"tenant"
 							]
 						},
 						"description": "register new tenant"
+					},
+					"response": []
+				},
+				{
+					"name": "Add Product",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"ProductId\": \"default\",\n\t\"Category\":\"default\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/tenant/product",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"tenant",
+								"product"
+							]
+						}
 					},
 					"response": []
 				},
@@ -54,10 +85,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"default\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\":\"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants",
+							"raw": "http://localhost:8080/iot/api/v1/tenant",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -67,7 +98,7 @@
 								"iot",
 								"api",
 								"v1",
-								"tenants"
+								"tenant"
 							]
 						},
 						"description": "delete tenant"
@@ -79,7 +110,10 @@
 					"request": {
 						"method": "GET",
 						"header": [],
-						"body": {},
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
 						"url": {
 							"raw": "http://localhost:8080/iot/api/v1/tenants?tenantId=:tenantId",
 							"protocol": "http",
@@ -117,7 +151,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"Name\": \"default\",\n\t\"Password\": \"default\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\":\"default\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/iot/api/v1/tenants?tenantId=:tenantId",
@@ -145,45 +179,7 @@
 					"response": []
 				},
 				{
-					"name": "Get Teanant's All Products",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {},
-						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/tenants/products?teantId=:tenantId",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"iot",
-								"api",
-								"v1",
-								"tenants",
-								"products"
-							],
-							"query": [
-								{
-									"key": "teantId",
-									"value": ":tenantId",
-									"equals": true
-								}
-							]
-						},
-						"description": ""
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Product",
-			"description": "",
-			"item": [
-				{
-					"name": "Add Product",
+					"name": "Tenant Login",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -194,10 +190,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"Password\": \"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/products",
+							"raw": "http://localhost:8080/iot/api/v1/tenant/login",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -207,10 +203,73 @@
 								"iot",
 								"api",
 								"v1",
-								"products"
+								"tenant",
+								"login"
 							]
 						},
 						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Tenant Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\":\"default\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/tenant/logout",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"tenant",
+								"logout"
+							]
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Product",
+			"item": [
+				{
+					"name": "Get Teanant's All Products",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/product/all",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"product",
+								"all"
+							]
+						}
 					},
 					"response": []
 				},
@@ -226,7 +285,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\":\"default\",\n\t\"ProductId\": \"default\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/iot/api/v1/products",
@@ -241,8 +300,7 @@
 								"v1",
 								"products"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -253,7 +311,7 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/products/devices?tenantId=:tenantId&productId=:productId",
+							"raw": "http://localhost:8080/iot/api/v1/product/devices",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -263,23 +321,10 @@
 								"iot",
 								"api",
 								"v1",
-								"products",
+								"product",
 								"devices"
-							],
-							"query": [
-								{
-									"key": "tenantId",
-									"value": ":tenantId",
-									"equals": true
-								},
-								{
-									"key": "productId",
-									"value": ":productId",
-									"equals": true
-								}
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -290,15 +335,16 @@
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/json",
+								"disabled": true
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\":\"default\",\n\t\"ProductKey\": \"default\",\n\t\"ProductId\":\"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/products",
+							"raw": "http://localhost:8080/iot/api/v1/product",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -308,7 +354,95 @@
 								"iot",
 								"api",
 								"v1",
-								"products"
+								"product"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Device",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\":\"default\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/product/device",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"product",
+								"device"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bulk Register Devices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"ProductKey\": \"default\",\n\t\"DeviceNumber\": 10,\n\t\"Devices\": [\n\t {\n\t \t\"DeviceId\": \"defaultDeviceId1\"\n\t },\n\t {\n\t \t\"DeviceId\": \"defaultDeviceId2\"\n\t }\n\t]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/product/device/bulk",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"product",
+								"device",
+								"bulk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get One Product",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"url": {
+							"raw": "http://localhost:8080/ioit/api/v1/product",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"ioit",
+								"api",
+								"v1",
+								"product"
 							]
 						},
 						"description": ""
@@ -319,7 +453,6 @@
 		},
 		{
 			"name": "Rule",
-			"description": "",
 			"item": [
 				{
 					"name": "Create Rule",
@@ -333,10 +466,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/rules/",
+							"raw": "http://localhost:8080/iot/api/v1/rule",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -346,11 +479,9 @@
 								"iot",
 								"api",
 								"v1",
-								"rules",
-								""
+								"rule"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -366,7 +497,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
 						},
 						"url": {
 							"raw": "http://localhost:8080/iot/api/v1/rules",
@@ -381,8 +512,7 @@
 								"v1",
 								"rules"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -393,7 +523,7 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/apl/v1/rules/product?teantId=:tenantId&productId=:productId",
+							"raw": "http://localhost:8080/iot/apl/v1/rule/all",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -403,23 +533,10 @@
 								"iot",
 								"apl",
 								"v1",
-								"rules",
-								"product"
-							],
-							"query": [
-								{
-									"key": "teantId",
-									"value": ":tenantId",
-									"equals": true
-								},
-								{
-									"key": "productId",
-									"value": ":productId",
-									"equals": true
-								}
+								"rule",
+								"all"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -430,7 +547,7 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/apl/v1/rules/one?teantId=:tenantId&productId=:productId&ruleName=:ruleName",
+							"raw": "http://localhost:8080/iot/apl/v1/rule",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -440,28 +557,9 @@
 								"iot",
 								"apl",
 								"v1",
-								"rules",
-								"one"
-							],
-							"query": [
-								{
-									"key": "teantId",
-									"value": ":tenantId",
-									"equals": true
-								},
-								{
-									"key": "productId",
-									"value": ":productId",
-									"equals": true
-								},
-								{
-									"key": "ruleName",
-									"value": ":ruleName",
-									"equals": true
-								}
+								"rule"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -492,6 +590,70 @@
 								"v1",
 								"rules"
 							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Rule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/rule/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"rule",
+								"start"
+							]
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Stop Rule",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"TenantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"RuleName\": \"defaultRule\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/iot/api/v1/rule",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"iot",
+								"api",
+								"v1",
+								"rule"
+							]
 						},
 						"description": ""
 					},
@@ -501,74 +663,7 @@
 		},
 		{
 			"name": "Device",
-			"description": "",
 			"item": [
-				{
-					"name": "Register Device",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\"\n}"
-						},
-						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/devices/",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"iot",
-								"api",
-								"v1",
-								"devices",
-								""
-							]
-						},
-						"description": ""
-					},
-					"response": []
-				},
-				{
-					"name": "Bulk Register Devices",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceNumber\": 10,\n\t\"Devices\": [\n\t {\n\t \t\"DeviceId\": \"defaultDeviceId1\",\n\t \t\"DeviceKey\": \"defaultDeviceKey1\"\n\t },\n\t \t {\n\t \t\"DeviceId\": \"defaultDeviceId2\",\n\t \t\"DeviceKey\": \"defaultDeviceKey2\"\n\t }\n\t]\n}"
-						},
-						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/devices/bulk",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "8080",
-							"path": [
-								"iot",
-								"api",
-								"v1",
-								"devices",
-								"bulk"
-							]
-						},
-						"description": ""
-					},
-					"response": []
-				},
 				{
 					"name": "Get One Device",
 					"request": {
@@ -576,7 +671,7 @@
 						"header": [],
 						"body": {},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/devices?teantId=:tenantId&productId=:productId&deviceId=:deviceId",
+							"raw": "http://localhost:8080/iot/api/v1/device",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -586,27 +681,9 @@
 								"iot",
 								"api",
 								"v1",
-								"devices"
-							],
-							"query": [
-								{
-									"key": "teantId",
-									"value": ":tenantId",
-									"equals": true
-								},
-								{
-									"key": "productId",
-									"value": ":productId",
-									"equals": true
-								},
-								{
-									"key": "deviceId",
-									"value": ":deviceId",
-									"equals": true
-								}
+								"device"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -622,10 +699,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TeantId\": \"default\",\n\t\"ProductId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\",\n\t\"DeviceKey\": \"defaultDeviceKey\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"DeviceKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\":\"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/devices",
+							"raw": "http://localhost:8080/iot/api/v1/device",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -635,10 +712,9 @@
 								"iot",
 								"api",
 								"v1",
-								"devices"
+								"device"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -654,10 +730,10 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n\t\"TenantId\": \"default\",\n\t\"ProductKey\": \"default\",\n\t\"DeviceId\": \"defaultDeviceId\",\n\t\"Attribute\": \"defaultAttribute\"\n}"
+							"raw": "{\n\t\"Auth\": {\n\t\t\"TenantId\": \"default\",\n\t\t\"TenantKey\": \"default\",\n\t\t\"ProductKey\": \"default\",\n\t\t\"DeviceKey\": \"default\",\n\t\t\"SecurityMode\": 2,\n\t\t\"SignMethod\": \"sha1mac\",\n\t\t\"Timestamp\":\"default\",\n\t\t\"Password\":\"default\"\n\t},\n\t\"ProductKey\": \"default\",\n\t\"DeviceKey\":\"default\",\n\t\"DeviceId\":\"default\"\n}"
 						},
 						"url": {
-							"raw": "http://localhost:8080/iot/api/v1/devices",
+							"raw": "http://localhost:8080/iot/api/v1/device",
 							"protocol": "http",
 							"host": [
 								"localhost"
@@ -667,10 +743,9 @@
 								"iot",
 								"api",
 								"v1",
-								"devices"
+								"device"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				}

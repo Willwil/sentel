@@ -205,7 +205,7 @@ func deleteProductByName(ctx echo.Context) error {
 }
 
 // getProduct retrieve production information from registry store
-func getProduct(ctx echo.Context) error {
+func getOneProduct(ctx echo.Context) error {
 	if ctx.Param("id") == "" {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
 	}
