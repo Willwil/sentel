@@ -12,85 +12,22 @@
 
 package auth
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io/ioutil"
-	"net/http"
-
-	com "github.com/cloustone/sentel/common"
-)
-
-const (
-	RoleTenant = "tenant"
-	RoleDevice = "device"
-)
-
-var (
-	ErrorInvalidArgument = errors.New("invalid argument")
-	ErrorAuthDenied      = errors.New("authentication denied")
-)
-
-type TenantAuthOption struct {
-	AccessKey    string `json:"accessKey"`
-	SecurityMode int    `json:"securityMode"`
-	SignMethod   string `json:"signMethod"`
-	Timestamp    string `json:"timestamp"`
-	Sign         string `json:"sign"`
-}
-
-type DeviceAuthOption struct {
-	ClientId     string `json:"clientId"`
-	DeviceName   string `json:"deviceName"`
-	ProductKey   string `json:"productKey"`
-	SecurityMode int    `json:"securityMode"`
-	SignMethod   string `json:"signMethod"`
-	Timestamp    string `json:"timestamp"`
-	Sign         string `json:"sign"`
-	DeviceSecret string `json:"deviceSecret"`
-}
-
-type DeviceAuthorizeOption struct {
-}
-
-type authResponse struct {
-	Success bool `json:"success"`
-}
-
-func Authenticate(c com.Config, opts interface{}) error {
-	hosts := c.MustString("keystone", "hosts")
-	format := "application/json;charset=utf-8"
-
+func authenticate(opts interface{}) error {
 	switch opts.(type) {
 	case TenantAuthOption:
-		if buf, err := json.Marshal(opts); err == nil {
-			url := "http://" + hosts + "/keystone/api/v1/auth/tenant"
-			req := bytes.NewBuffer([]byte(buf))
-			if resp, err := http.Post(url, format, req); err == nil {
-				body, _ := ioutil.ReadAll(resp.Body)
-				result := authResponse{}
-				if err := json.Unmarshal(body, &result); err == nil && result.Success == true {
-					return nil
-				}
-			}
+		opt := opts.(*TenantAuthOption)
+		if signer, err := newSigner(opt.SignMethod); err == nil {
+			return signer.signTenant(opt)
 		}
 	case DeviceAuthOption:
-		if buf, err := json.Marshal(opts.(*DeviceAuthOption)); err == nil {
-			url := "http://" + hosts + "/keystone/api/v1/auth/device"
-			req := bytes.NewBuffer([]byte(buf))
-			if resp, err := http.Post(url, format, req); err == nil {
-				body, _ := ioutil.ReadAll(resp.Body)
-				result := authResponse{}
-				if err := json.Unmarshal(body, &result); err == nil && result.Success == true {
-					return nil
-				}
-			}
+		opt := opts.(*DeviceAuthOption)
+		if signer, err := newSigner(opt.SignMethod); err == nil {
+			return signer.signDevice(opt)
 		}
 	}
 	return ErrorAuthDenied
 }
 
-func Authorize(c com.Config, role string, opts interface{}) error {
+func authorize(opts interface{}) error {
 	return nil
 }

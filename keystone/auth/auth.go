@@ -12,22 +12,36 @@
 
 package auth
 
-func authenticate(opts interface{}) error {
-	switch opts.(type) {
-	case TenantAuthOption:
-		opt := opts.(*TenantAuthOption)
-		if signer, err := newSigner(opt.SignMethod); err == nil {
-			return signer.signTenant(opt)
-		}
-	case DeviceAuthOption:
-		opt := opts.(*DeviceAuthOption)
-		if signer, err := newSigner(opt.SignMethod); err == nil {
-			return signer.signDevice(opt)
-		}
-	}
-	return ErrorAuthDenied
+import "errors"
+
+const (
+	RoleTenant = "tenant"
+	RoleDevice = "device"
+)
+
+var (
+	ErrorInvalidArgument = errors.New("invalid argument")
+	ErrorAuthDenied      = errors.New("authentication denied")
+)
+
+type TenantAuthOption struct {
+	AccessKey    string `json:"accessKey"`
+	SecurityMode int    `json:"securityMode"`
+	SignMethod   string `json:"signMethod"`
+	Timestamp    string `json:"timestamp"`
+	Sign         string `json:"sign"`
 }
 
-func authorize(opts interface{}) error {
-	return nil
+type DeviceAuthOption struct {
+	ClientId     string `json:"clientId"`
+	DeviceName   string `json:"deviceName"`
+	ProductKey   string `json:"productKey"`
+	SecurityMode int    `json:"securityMode"`
+	SignMethod   string `json:"signMethod"`
+	Timestamp    string `json:"timestamp"`
+	Sign         string `json:"sign"`
+	DeviceSecret string `json:"deviceSecret"`
+}
+
+type DeviceAuthorizeOption struct {
 }

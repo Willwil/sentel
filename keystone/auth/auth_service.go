@@ -37,10 +37,8 @@ type apiContext struct {
 	config com.Config
 }
 
-type response struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Result  interface{} `json:"result"`
+type authResponse struct {
+	Success bool `json:"success"`
 }
 
 // restapiServiceFactory
