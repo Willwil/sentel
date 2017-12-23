@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
 	"github.com/cloustone/sentel/broker/metadata"
@@ -54,7 +53,7 @@ func main() {
 	broker.AddService(event.ServiceFactory{})
 	broker.AddService(queue.ServiceFactory{})
 	broker.AddService(sessionmgr.ServiceFactory{})
-	broker.AddService(auth.ServiceFactory{})
+	//broker.AddService(auth.ServiceFactory{})
 	broker.AddService(rpc.ServiceFactory{})
 	broker.AddService(metric.ServiceFactory{})
 	broker.AddService(metadata.ServiceFactory{})

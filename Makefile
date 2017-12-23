@@ -14,7 +14,7 @@ GCFLAGS  := -gcflags "-N -l"
 all: build
 
 .PHONY: build
-build: .GOPATH/.ok apiserver meter broker iothub conductor
+build: .GOPATH/.ok apiserver meter broker iothub conductor keystone
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
@@ -41,6 +41,11 @@ meter: .GOPATH/.ok
 .PHONY: conductor 
 conductor: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/conductor
+
+.PHONY: keystone 
+keystone: .GOPATH/.ok
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/keystone
+
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
