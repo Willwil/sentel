@@ -191,4 +191,9 @@ func updateTenant(ctx echo.Context) error {
 		})
 
 	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &t})
+
+}
+
+func getTenantProductList(ctx echo.Context) error {
+	return nil
 }

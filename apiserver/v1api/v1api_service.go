@@ -122,49 +122,43 @@ func (p *v1apiService) initialize(c com.Config) error {
 	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
 
 	// Login
-	p.echo.POST("/api/v1/tenant", registerTenant)
-	p.echo.POST("/api/v1/login", loginTenant)
+	p.echo.POST("/iot/api/v1/tenants", registerTenant)
 
 	// Tenant
-	g := p.echo.Group("/api/v1/tenants/")
+	g := p.echo.Group("/iot/api/v1/tenant")
 	p.setAuth(c, g)
-	g.DELETE(":id", deleteTenant)
-	g.GET(":id", getTenant)
-	g.PUT(":id", updateTenant)
+	g.POST("/login", loginTenant)
+	g.DELETE("", deleteTenant)
+	g.GET("", getTenant)
+	g.GET("/products", getTenantProductList)
+	g.PATCH("", updateTenant)
 
 	// Product Api
-	g = p.echo.Group("/api/v1/products/")
+	g = p.echo.Group("/iot//api/v1/product")
 	p.setAuth(c, g)
-	g.POST(":id", registerProduct)
-	g.DELETE(":id", deleteProduct)
-	g.DELETE(":name/products", deleteProductByName)
-	g.PUT("", updateProduct)
-	g.GET(":id", getProduct)
-	g.GET(":cat/products", getProductsByCat)
-	g.GET(":id/devices", getProductDevices)
-	g.GET("devices/page", getProductDevicesPage)
-	g.GET(":name/devicesname", getProductDevicesByName)
-	g.GET(":name/devicesname/page", getProductDevicesPageByName)
-
-	// Rule
-	g = p.echo.Group("/api/v1/rules/")
-	p.setAuth(c, g)
-	g.POST("", createRule)
-	g.DELETE(":productId/:ruleName", removeRule)
-	g.GET(":productId/:ruleName", getRule)
-	g.PATCH(":productId/:ruleName", updateRule)
+	g.POST("", registerProduct)
+	g.DELETE("", deleteProduct)
+	g.PATCH("", updateProduct)
+	g.GET("", getProduct)
+	g.GET("/devices", getProductDevices)
 
 	// Device Api
-	g = p.echo.Group("/api/v1/devices/")
+	g = p.echo.Group("/iot/api/v1/device")
 	p.setAuth(c, g)
-	g.POST(":id", registerDevice)
-	g.POST(":number/bulk", bulkRegisterDevices)
-	g.GET(":id", getDevice)
-	g.DELETE(":id", deleteDevice)
-	g.PATCH(":id", updateDevice)
-	//g.DELETE(":id/commands", purgeCommandQueue)
-	//g.GET(":name/all", getMultipleDevices)
-	//g.POST("query", queryDevices)
+	g.POST("", registerDevice)
+	g.POST("/bulk", bulkRegisterDevices)
+	g.GET("", getDevice)
+	g.DELETE("", deleteDevice)
+	g.PATCH("", updateDevice)
+	g.DELETE("/commands", purgeCommandQueue)
+
+	// Rule
+	g = p.echo.Group("/iot/api/v1/rule")
+	p.setAuth(c, g)
+	g.POST("", createRule)
+	g.DELETE("", removeRule)
+	g.GET("", getRule)
+	g.PATCH("", updateRule)
 
 	// Http Runtip. Api
 	g.POST(":id/messages/deviceBound/:etag/abandon", abandonDeviceBoundNotification)
