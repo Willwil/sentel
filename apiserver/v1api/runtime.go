@@ -41,6 +41,6 @@ func sendMessageToDevice(ctx echo.Context) error {
 	return nil
 }
 
-func broadcastMessage(ctx echo.Context) error {
+func broadcastProductMessage(ctx echo.Context) error {
 	return nil
 }

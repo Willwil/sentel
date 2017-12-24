@@ -286,3 +286,35 @@ func getMultipleDevices(ctx echo.Context) error {
 		})
 	//	return nil
 }
+
+func bulkApplyDevices(ctx echo.Context) error {
+	return nil
+}
+
+func bulkApplyGetStatus(ctx echo.Context) error {
+	return nil
+}
+
+func bulkApplyGetDevices(ctx echo.Context) error {
+	return nil
+}
+
+func getDeviceList(ctx echo.Context) error {
+	return nil
+}
+
+func bulkGetDeviceStatus(ctx echo.Context) error {
+	return nil
+}
+func getDeviceByName(ctx echo.Context) error {
+	return nil
+}
+func saveDevicePropsByName(ctx echo.Context) error {
+	return nil
+}
+func getDevicePropsByName(ctx echo.Context) error {
+	return nil
+}
+func deleteDevicePropsByName(ctx echo.Context) error {
+	return nil
+}

@@ -108,24 +108,25 @@ func (p *v1apiService) initialize(c com.Config) error {
 	}))
 
 	//Cross-Origin
-	//ie: curl -XGET -H'Origin: *' "http://localhost:4145/api/v1/devices/mytest?api-version=v1"
 	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
 
-	g := p.echo.Group("/iot/api/v1/sys")
+	// Api for console
+	g := p.echo.Group("/iot/api/v1/console")
+	p.setAuth(c, g)
 	g.POST("/tenants", registerTenant)
 	g.POST("/tenants/:tenantiId/login", loginTenant)
 	g.POST("/tenants/:tenantiId/logout", logoutTenant)
 	g.DELETE("/tenants/:tenantId", deleteTenant)
 	g.GET("/tenants/:tenantId", getTenant)
 	g.PATCH("/tenants/:tenantId", updateTenant)
-	g.POST("/tenants/:tenantId/products", registerProduct)
+	g.POST("/products", registerProduct)
 	g.DELETE("/products/:productKey", deleteProduct)
 	g.PATCH("/products/:productKey", updateProduct)
 	g.GET("/products/:productKey", getOneProduct)
 	g.GET("/products/:productKey/devices", getProductDevices)
 	g.GET("/tenants/:tenantId/products", getTenantProductList)
 	g.POST("/prodcuts/:productKey/devices/bulk", bulkRegisterDevices)
-	g.POST("/products/:productKey/device", registerDevice)
+	g.POST("/products/:productKey/devices", registerDevice)
 	g.GET("/products/:productKey/devices/:deviceId", getOneDevice)
 	g.DELETE("/products/:productKey/devices/:deviceId", deleteOneDevice)
 	g.PATCH("/products/:productKey/device/:deviceId", updateDevice)
@@ -136,23 +137,37 @@ func (p *v1apiService) initialize(c com.Config) error {
 	g.PUT("/products/:productKey/rules/:ruleName/start", startRule)
 	g.PUT("/products/:productKey/rules/:ruleName/stop", stopRule)
 
-	g.POST("/message/device", sendMessageToDevice)
-	g.POST("/message/broadcast", broadcastMessage)
-	g.GET("/products/:productKey/devices/:deviceId/shardow", getDeviceTwin)
-	g.PATCH("/products/:productKey/devices/:deviceId/shadow", updateDeviceTwin)
+	g.POST("/products/:productKey/devices/:deviceId/message", sendMessageToDevice)
+	g.POST("/products/:productKey/message", broadcastProductMessage)
+	g.GET("/products/:productKey/devices/:deviceId/shardow", getShadowDevice)
+	g.PATCH("/products/:productKey/devices/:deviceId/shadow", updateShadowDevice)
 
 	g.GET("/products/:productKey/devices/statics", getRegistryStatistics)
 	g.GET("/service", getServiceStatistics)
 
+	// API for end users with restapi support
 	g = p.echo.Group("/iot/api/v1")
-	g.POST("/tenants/:tenantId/products", registerProduct)
-	g.POST("/prodcuts/:productKey/devices/bulk", bulkRegisterDevices)
-	g.POST("/products/:productKey/device", registerDevice)
+	p.setAuth(c, g)
+	g.POST("/products", registerProduct)
+	g.PATCH("/products/:productKey", updateProduct)
+	g.GET("/products/:productKey/devices", getProductDevices)
 
-	g.POST("/message/device", sendMessageToDevice)
-	g.POST("/message/broadcast", broadcastMessage)
-	g.GET("/products/:productKey/devices/:deviceId/shardow", getDeviceTwin)
-	g.PATCH("/products/:productKey/devices/:deviceId/shadow", updateDeviceTwin)
+	g.POST("/products/:productKey/device", registerDevice)
+	g.POST("/prodcuts/:productKey/devices/bulk", bulkApplyDevices)
+	g.GET("/products/:productKey/devices/bulk/:id", bulkApplyGetStatus)
+	g.GET("/products/:productKey/devices/bulk", bulkApplyGetDevices)
+	g.GET("/products/:productKey/devices/list", getDeviceList)
+	g.GET("/products/:productKey/devices/status", bulkGetDeviceStatus)
+	g.GET("/products/:productKey/devices/:deviceName", getDeviceByName)
+
+	g.POST("/products/:productKey/devices/:deviceId/props", saveDevicePropsByName)
+	g.GET("/products/:productKey/devices/:deviceId/props/:props", getDevicePropsByName)
+	g.DELETE("/products/:productKey/devices/:deviceId/props/:props", getDevicePropsByName)
+
+	g.POST("/products/:productKey/devices/:deviceId/message", sendMessageToDevice)
+	g.POST("/products/:productKey/message", broadcastProductMessage)
+	g.GET("/products/:productKey/devices/:deviceId/shardow", getShadowDevice)
+	g.PATCH("/products/:productKey/devices/:deviceId/shadow", updateShadowDevice)
 
 	return nil
 }

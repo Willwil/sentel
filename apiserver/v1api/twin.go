@@ -17,7 +17,7 @@ import "github.com/labstack/echo"
 // Twin Api
 
 // Get a device twin
-func getDeviceTwin(ctx echo.Context) error {
+func getShadowDevice(ctx echo.Context) error {
 	return nil
 }
 
@@ -27,6 +27,6 @@ func invokeDeviceMethod(ctx echo.Context) error {
 }
 
 // Updates tags and desired properties of a device twin
-func updateDeviceTwin(ctx echo.Context) error {
+func updateShadowDevice(ctx echo.Context) error {
 	return nil
 }
