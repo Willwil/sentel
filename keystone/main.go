@@ -17,7 +17,7 @@ import (
 	"os"
 
 	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/keystone/auth"
+	"github.com/cloustone/sentel/iothub/restapi"
 
 	"github.com/golang/glog"
 )
@@ -35,7 +35,7 @@ func main() {
 	if err != nil {
 		glog.Fatalf("keystone create failed: '%s'", err.Error())
 	}
-	mgr.AddService(auth.ServiceFactory{})
+	mgr.AddService(restapi.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
 

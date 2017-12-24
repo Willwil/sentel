@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package auth
+package restapi
 
 import (
 	"net/http"
@@ -120,21 +120,21 @@ func removeToken(ctx echo.Context) error {
 }
 
 func authenticateTenant(ctx echo.Context) error {
-	r := ApiAuthParam{}
+	r := auth.ApiAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
 	}
-	err := authenticate(r)
+	err := auth.authenticate(r)
 	return ctx.JSON(http.StatusOK, &authResponse{Success: (err == nil)})
 
 }
 
 func authenticateDevice(ctx echo.Context) error {
-	r := DeviceAuthParam{}
+	r := auth.DeviceAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
 	}
-	err := authenticate(r)
+	err := auth.authenticate(r)
 	return ctx.JSON(http.StatusOK, &authResponse{Success: (err == nil)})
 }
 
