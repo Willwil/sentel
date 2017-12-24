@@ -14,13 +14,13 @@ package auth
 
 func authenticate(opts interface{}) error {
 	switch opts.(type) {
-	case TenantAuthOption:
-		opt := opts.(*TenantAuthOption)
+	case ApiAuthParam:
+		opt := opts.(*ApiAuthParam)
 		if signer, err := newSigner(opt.SignMethod); err == nil {
-			return signer.signTenant(opt)
+			return signer.signApi(opt)
 		}
-	case DeviceAuthOption:
-		opt := opts.(*DeviceAuthOption)
+	case DeviceAuthParam:
+		opt := opts.(*DeviceAuthParam)
 		if signer, err := newSigner(opt.SignMethod); err == nil {
 			return signer.signDevice(opt)
 		}

@@ -21,10 +21,10 @@ type sha1macSigner struct{}
 
 func (p *sha1macSigner) name() string { return "sha1mac" }
 
-func (p *sha1macSigner) signTenant(opt *TenantAuthOption) error {
+func (p *sha1macSigner) signApi(opt *ApiAuthParam) error {
 	return nil
 }
-func (p *sha1macSigner) signDevice(opt *DeviceAuthOption) error {
+func (p *sha1macSigner) signDevice(opt *DeviceAuthParam) error {
 	content := "clientId" + opt.ClientId + "deviceName" + opt.DeviceName + "productKey" + opt.ProductKey + "timestamp" + opt.Timestamp
 	mac := hmac.New(sha1.New, []byte(opt.DeviceSecret))
 	mac.Write([]byte(content))

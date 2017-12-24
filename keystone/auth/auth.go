@@ -24,15 +24,18 @@ var (
 	ErrorAuthDenied      = errors.New("authentication denied")
 )
 
-type TenantAuthOption struct {
-	AccessKey    string `json:"accessKey"`
-	SecurityMode int    `json:"securityMode"`
-	SignMethod   string `json:"signMethod"`
-	Timestamp    string `json:"timestamp"`
-	Sign         string `json:"sign"`
+type ApiAuthParam struct {
+	Format      string `json:"format"`
+	Version     string `json:"version"`
+	AccessKey   string `json:"accessKey"`
+	Signature   string `json:"sign"`
+	SignMethod  string `json:"signMethod"`
+	SignVersion string `json:"signVersion"`
+	SignNonce   string `json:"singNonce"`
+	Timestamp   string `json:"timestamp"`
 }
 
-type DeviceAuthOption struct {
+type DeviceAuthParam struct {
 	ClientId     string `json:"clientId"`
 	DeviceName   string `json:"deviceName"`
 	ProductKey   string `json:"productKey"`
@@ -43,5 +46,5 @@ type DeviceAuthOption struct {
 	DeviceSecret string `json:"deviceSecret"`
 }
 
-type DeviceAuthorizeOption struct {
+type DeviceAuthorizeParam struct {
 }

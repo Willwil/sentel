@@ -120,7 +120,7 @@ func removeToken(ctx echo.Context) error {
 }
 
 func authenticateTenant(ctx echo.Context) error {
-	r := TenantAuthOption{}
+	r := ApiAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
 	}
@@ -130,7 +130,7 @@ func authenticateTenant(ctx echo.Context) error {
 }
 
 func authenticateDevice(ctx echo.Context) error {
-	r := DeviceAuthOption{}
+	r := DeviceAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
 	}

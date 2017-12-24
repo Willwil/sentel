@@ -16,8 +16,8 @@ import "fmt"
 
 type signer interface {
 	name() string
-	signTenant(opt *TenantAuthOption) error
-	signDevice(opt *DeviceAuthOption) error
+	signApi(opt *ApiAuthParam) error
+	signDevice(opt *DeviceAuthParam) error
 }
 
 var (

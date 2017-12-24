@@ -31,7 +31,7 @@ func Authenticate(c com.Config, opts interface{}) error {
 	format := "application/json;charset=utf-8"
 
 	switch opts.(type) {
-	case auth.TenantAuthOption:
+	case auth.ApiAuthParam:
 		if buf, err := json.Marshal(opts); err == nil {
 			url := "http://" + hosts + "/keystone/api/v1/auth/tenant"
 			req := bytes.NewBuffer([]byte(buf))
@@ -43,7 +43,7 @@ func Authenticate(c com.Config, opts interface{}) error {
 				}
 			}
 		}
-	case auth.DeviceAuthOption:
+	case auth.DeviceAuthParam:
 		if buf, err := json.Marshal(opts); err == nil {
 			url := "http://" + hosts + "/keystone/api/v1/auth/device"
 			req := bytes.NewBuffer([]byte(buf))
