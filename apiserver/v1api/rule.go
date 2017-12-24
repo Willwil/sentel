@@ -18,20 +18,21 @@ import (
 
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/labstack/echo"
 	uuid "github.com/satori/go.uuid"
 )
 
 // Rule Api
-type ruleAddRequest struct {
-	requestBase
-	db.Rule
+type ruleRequest struct {
+	auth.ApiAuthParam
+	rule db.Rule `json:"rule"`
 }
 
 // addRule add new rule for product
 func createRule(ctx echo.Context) error {
-	req := new(ruleAddRequest)
-	if err := ctx.Bind(req); err != nil {
+	req := ruleRequest{}
+	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
@@ -42,8 +43,8 @@ func createRule(ctx echo.Context) error {
 	defer r.Release()
 	// TODO: add rule detail information
 	rule := db.Rule{
-		RuleName:    req.RuleName,
-		ProductId:   req.ProductId,
+		RuleName:    req.rule.RuleName,
+		ProductId:   req.rule.ProductId,
 		TimeCreated: time.Now(),
 		TimeUpdated: time.Now(),
 	}
@@ -64,8 +65,19 @@ func createRule(ctx echo.Context) error {
 
 // deleteRule delete existed rule
 func removeRule(ctx echo.Context) error {
-	productId := ctx.Param("productId")
-	ruleName := ctx.Param("ruleName")
+	// unmarshal rule requst
+	req := ruleRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+	}
+	// check request parameter
+	productId := req.rule.ProductId
+	ruleName := req.rule.RuleName
+	if productId == "" || ruleName == "" {
+		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+	}
+	// authorization
+
 	// Connect with registry
 	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
 	if err != nil {
@@ -97,8 +109,8 @@ func stopRule(ctx echo.Context) error {
 
 // UpdateRule update existed rule
 func updateRule(ctx echo.Context) error {
-	req := new(ruleAddRequest)
-	if err := ctx.Bind(req); err != nil {
+	req := ruleRequest{}
+	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
@@ -108,8 +120,8 @@ func updateRule(ctx echo.Context) error {
 	}
 	defer r.Release()
 	rule := db.Rule{
-		RuleName:    req.RuleName,
-		ProductId:   req.ProductId,
+		RuleName:    req.rule.RuleName,
+		ProductId:   req.rule.ProductId,
 		TimeUpdated: time.Now(),
 	}
 	if err := r.UpdateRule(&rule); err != nil {

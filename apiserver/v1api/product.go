@@ -18,6 +18,7 @@ import (
 
 	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 
@@ -28,14 +29,14 @@ import (
 // req:name,category,desc
 // rsp:id,productkey(both are auto generated and unique)
 type productAddRequest struct {
-	requestBase
+	auth.ApiAuthParam
 	Name        string `bson:"Name"`
 	CategoryId  string `bson:"CategoryId"`
 	Description string `bson:"Description"`
 }
 
 type productPageRequest struct {
-	requestBase
+	auth.ApiAuthParam
 	Id     string `bson:"Id"`
 	Name   string `bson:"Name"`
 	LastId string `bson:"LastId"`
@@ -92,7 +93,7 @@ func registerProduct(ctx echo.Context) error {
 }
 
 type productUpdateRequest struct {
-	requestBase
+	auth.ApiAuthParam
 	Id          string `bson:"Id"`
 	Name        string `bson:"Name"`
 	Description string `bson:"Description"`

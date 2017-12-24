@@ -39,16 +39,6 @@ type apiContext struct {
 	config com.Config
 }
 
-type requestBase struct {
-	Format           string `json:"format"`
-	AccessKeyId      string `json:"accessKeyID"`
-	Signature        string `json:"signature"`
-	Timestamp        string `json:"timestamp"`
-	SignatureVersion string `json:"signatureVersion"`
-	SignatueNonce    string `json:"signatureNonce"`
-	RegionId         string `json:"regiionID"`
-}
-
 type response struct {
 	RequestId string      `json:"requestID"`
 	Success   bool        `json:"success"`

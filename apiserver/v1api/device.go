@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/golang/glog"
 
 	"github.com/labstack/echo"
@@ -26,7 +27,7 @@ import (
 
 // Device internal definition
 type registerDeviceRequest struct {
-	requestBase
+	auth.ApiAuthParam
 	ProductKey string `bson:"ProductKey"`
 	DeviceName string `bson:"DeviceName"`
 }
@@ -191,7 +192,7 @@ func deleteOneDevice(ctx echo.Context) error {
 }
 
 type updateDeviceRequest struct {
-	requestBase
+	auth.ApiAuthParam
 	DeviceId     string `bson:"DeviceId"`
 	DeviceName   string `bson:"DeviceName"`
 	ProductKey   string `bson:"ProductKey"`
