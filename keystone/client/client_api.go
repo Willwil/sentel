@@ -33,7 +33,7 @@ func Authenticate(c com.Config, opts interface{}) error {
 	switch opts.(type) {
 	case auth.ApiAuthParam:
 		if buf, err := json.Marshal(opts); err == nil {
-			url := "http://" + hosts + "/keystone/api/v1/auth/tenant"
+			url := "http://" + hosts + "/keystone/api/v1/auth/api"
 			req := bytes.NewBuffer([]byte(buf))
 			if resp, err := http.Post(url, format, req); err == nil {
 				body, _ := ioutil.ReadAll(resp.Body)

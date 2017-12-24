@@ -68,12 +68,12 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, err
 	e.DELETE("keystone/api/v1/token/:token", removeToken)
 
 	// Authentication
-	e.POST("keystone/api/v1/auth/tenant", authenticateTenant)
+	e.POST("keystone/api/v1/auth/api", authenticateApi)
 	e.POST("keystone/api/v1/auth/device", authenticateDevice)
 
 	// Authorization
-	e.POST("keystone/api/v1/authoriize/tenant", authorizeTenant)
-	e.POST("keystone/api/v1/authorize/device", authorizeTenant)
+	e.POST("keystone/api/v1/authoriize/api", authorizeApi)
+	e.POST("keystone/api/v1/authorize/device", authorizeApi)
 
 	return &restapiService{
 		ServiceBase: com.ServiceBase{
@@ -106,11 +106,6 @@ func (p *restapiService) Stop() {
 	close(p.Quit)
 }
 
-// addTenant
-type addTenantRequest struct {
-	auth.Options
-}
-
 func createToken(ctx echo.Context) error {
 	return nil
 }
@@ -119,7 +114,7 @@ func removeToken(ctx echo.Context) error {
 	return nil
 }
 
-func authenticateTenant(ctx echo.Context) error {
+func authenticateApi(ctx echo.Context) error {
 	r := auth.ApiAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
@@ -138,7 +133,7 @@ func authenticateDevice(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, &authResponse{Success: (err == nil)})
 }
 
-func authorizeTenant(ctx echo.Context) error {
+func authorizeApi(ctx echo.Context) error {
 	return nil
 }
 
