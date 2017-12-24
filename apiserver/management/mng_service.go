@@ -18,6 +18,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
@@ -79,7 +80,7 @@ func (p *managementService) initialize(c com.Config) error {
 
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
-			cc := &v1api.ApiContext{Context: e, Config: c}
+			cc := &base.ApiContext{Context: e, Config: c}
 			return h(cc)
 		}
 	})
@@ -130,7 +131,7 @@ func (p *managementService) setAuth(c com.Config, g *echo.Group) {
 	case "jwt":
 		// Authentication config
 		config := mw.JWTConfig{
-			Claims:     &v1api.JwtApiClaims{},
+			Claims:     &base.JwtApiClaims{},
 			SigningKey: []byte("secret"),
 		}
 		g.Use(mw.JWTWithConfig(config))

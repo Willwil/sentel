@@ -10,27 +10,3 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 package v1api
-
-import (
-	"github.com/cloustone/sentel/common"
-	jwt "github.com/dgrijalva/jwt-go"
-
-	echo "github.com/labstack/echo"
-)
-
-type ApiContext struct {
-	echo.Context
-	Config com.Config
-}
-
-type ApiResponse struct {
-	RequestId string      `json:"requestID"`
-	Success   bool        `json:"success"`
-	Message   string      `json:"message"`
-	Result    interface{} `json:"result"`
-}
-
-type JwtApiClaims struct {
-	jwt.StandardClaims
-	Name string `json:"name"`
-}

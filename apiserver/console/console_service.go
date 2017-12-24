@@ -18,6 +18,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
@@ -79,7 +80,7 @@ func (p *consoleService) initialize(c com.Config) error {
 
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
-			cc := &v1api.ApiContext{Context: e, Config: c}
+			cc := &base.ApiContext{Context: e, Config: c}
 			return h(cc)
 		}
 	})
@@ -105,7 +106,7 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.POST("/products", v1api.RegisterProduct)
 	g.DELETE("/products/:productKey", v1api.DeleteProduct)
 	g.PATCH("/products/:productKey", v1api.UpdateProduct)
-	g.GET("/products/:productKey", v1api.GetOneProduct)
+	g.GET("/products/:productKey", v1api.GetProduct)
 	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
 	g.GET("/tenants/:tenantId/products", v1api.GetTenantProductList)
 	g.POST("/prodcuts/:productKey/devices/bulk", v1api.BulkRegisterDevices)
@@ -114,6 +115,7 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.DELETE("/products/:productKey/devices/:deviceId", v1api.DeleteDevice)
 	g.PATCH("/products/:productKey/device/:deviceId", v1api.UpdateDevice)
 	g.POST("/products/:productKey/rules", v1api.CreateRule)
+	g.GET("/products/:productKey/rules", v1api.GetProductRules)
 	g.DELETE("/products/:prouctKey/rules/:ruleName", v1api.RemoveRule)
 	g.GET("/products/:productKey/rules/:ruleName", v1api.GetRule)
 	g.PATCH("/products/:productKey/rules/:ruleName", v1api.UpdateRule)
@@ -125,8 +127,8 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.GET("/products/:productKey/devices/:deviceId/shardow", v1api.GetShadowDevice)
 	g.PATCH("/products/:productKey/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 
-	g.GET("/products/:productKey/devices/statics", v1api.GetRegistryStatistics)
-	g.GET("/service", v1api.GetServiceStatistics)
+	g.GET("/products/:productKey/devices/statics", v1api.GetDeviceStatics)
+	g.GET("/service", v1api.GetServiceStatics)
 
 	return nil
 }
@@ -141,7 +143,7 @@ func (p *consoleService) setAuth(c com.Config, g *echo.Group) {
 	case "jwt":
 		// Authentication config
 		config := mw.JWTConfig{
-			Claims:     &v1api.JwtApiClaims{},
+			Claims:     &base.JwtApiClaims{},
 			SigningKey: []byte("secret"),
 		}
 		g.Use(mw.JWTWithConfig(config))
