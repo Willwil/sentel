@@ -42,18 +42,18 @@ type productPageRequest struct {
 	LastId string `bson:"LastId"`
 }
 
-func registerProduct(ctx echo.Context) error {
+func RegisterProduct(ctx echo.Context) error {
 	// Get product
 	req := new(productAddRequest)
 	if err := ctx.Bind(req); err != nil {
 		glog.Error("addProduct:%v", err)
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
 		glog.Error("Registry connection failed")
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
@@ -71,11 +71,11 @@ func registerProduct(ctx echo.Context) error {
 	}
 	if err = r.RegisterProduct(&dp); err != nil {
 		return ctx.JSON(http.StatusOK,
-			&response{RequestId: id, Success: false, Message: err.Error()})
+			&ApiResponse{RequestId: id, Success: false, Message: err.Error()})
 	}
 
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*ApiContext).Config,
 		"product",
 		com.TopicNameProduct,
 		&com.ProductTopic{
@@ -83,7 +83,7 @@ func registerProduct(ctx echo.Context) error {
 			ProductName: dp.Name,
 			Action:      com.ObjectActionRegister,
 		})
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(),
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String(),
 		Result: &db.Product{
 			Id:          dp.Id,
 			Name:        dp.Name,
@@ -101,18 +101,18 @@ type productUpdateRequest struct {
 }
 
 // updateProduct update product information in registry
-func updateProduct(ctx echo.Context) error {
+func UpdateProduct(ctx echo.Context) error {
 	// Get product
 	req := new(productUpdateRequest)
 	if err := ctx.Bind(req); err != nil {
 		glog.Infof("productUpdateRequest err:%s\n", req)
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
 		glog.Infof("updateProduct err:%s\n", err.Error())
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
@@ -125,10 +125,10 @@ func updateProduct(ctx echo.Context) error {
 		TimeModified: time.Now(),
 	}
 	if err = r.UpdateProduct(&dp); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*ApiContext).Config,
 		"product",
 		com.TopicNameProduct,
 		&com.ProductTopic{
@@ -137,27 +137,27 @@ func updateProduct(ctx echo.Context) error {
 			Action:      com.ObjectActionUpdate,
 		})
 
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Success: true})
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String(), Success: true})
 }
 
 // deleteProduct delete product from registry store
-func deleteProduct(ctx echo.Context) error {
+func DeleteProduct(ctx echo.Context) error {
 	if ctx.Param("id") == "" {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: "Invalid parameter"})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	if err = r.DeleteProduct(ctx.Param("id")); err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.SyncProduceMessage(ctx.(*apiContext).config,
+	com.SyncProduceMessage(ctx.(*ApiContext).Config,
 		"todo",
 		com.TopicNameProduct,
 		&com.ProductTopic{
@@ -166,31 +166,31 @@ func deleteProduct(ctx echo.Context) error {
 		})
 
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 		})
 }
 
 // deleteProduct delete product from registry store
-func deleteProductByName(ctx echo.Context) error {
+func DeleteProductByName(ctx echo.Context) error {
 	if ctx.Param("name") == "" {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: "Invalid parameter"})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	var id string
 	if id, err = r.DeleteProductByName(ctx.Param("name")); err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.SyncProduceMessage(ctx.(*apiContext).config,
+	com.SyncProduceMessage(ctx.(*ApiContext).Config,
 		"todo",
 		com.TopicNameProduct,
 		&com.ProductTopic{
@@ -199,31 +199,31 @@ func deleteProductByName(ctx echo.Context) error {
 		})
 
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 		})
 }
 
 // getProduct retrieve production information from registry store
-func getOneProduct(ctx echo.Context) error {
+func GetOneProduct(ctx echo.Context) error {
 	if ctx.Param("id") == "" {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: "Invalid parameter"})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	p, err := r.GetProduct(ctx.Param("id"))
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, &response{Message: err.Error()})
+		return ctx.JSON(http.StatusNotFound, &ApiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 			Result: &db.Product{
@@ -236,17 +236,17 @@ func getOneProduct(ctx echo.Context) error {
 }
 
 // getProductDevices retrieve product devices list from registry store
-func getProductsByCat(ctx echo.Context) error {
+func GetProductsByCat(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	ps, err := r.GetProductsByCat(ctx.Param("cat"))
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	rps := []db.Product{}
 	for _, p := range ps {
@@ -259,7 +259,7 @@ func getProductsByCat(ctx echo.Context) error {
 		})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 			Result:    rps,
@@ -273,24 +273,24 @@ type device struct {
 }
 
 // getProductDevices retrieve product devices list from registry store
-func getProductDevices(ctx echo.Context) error {
+func GetProductDevices(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	pdevices, err := r.GetProductDevices(ctx.Param("id"))
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 			Result:    rdevices,
@@ -304,25 +304,25 @@ func getProductDevicesPage(ctx echo.Context) error {
 	req := new(productPageRequest)
 	if err := ctx.Bind(req); err != nil {
 		glog.Infof("productPageRequest err:%s\n", req)
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	pdevices, lastId, err := r.GetProductDevicesPage(req.Id, req.LastId)
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Result: lastId, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Result: lastId, Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: lastId, //uuid.NewV4().String(),
 			Success:   true,
 			Result:    rdevices,
@@ -333,23 +333,23 @@ func getProductDevicesPage(ctx echo.Context) error {
 // getProductDevices retrieve product devices list from registry store
 func getProductDevicesByName(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	glog.Infof("getDevicebyname:%s\n", ctx.Param("name"))
 	pdevices, err := r.GetProductDevicesByName(ctx.Param("name"))
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 			Result:    rdevices,
@@ -358,24 +358,24 @@ func getProductDevicesByName(ctx echo.Context) error {
 }
 
 // getAllProducts list from registry store
-func getProductDevicesPageByName(ctx echo.Context) error {
+func GetProductDevicesPageByName(ctx echo.Context) error {
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 
 	pdevices, lastId, err := r.GetProductDevicesPageByName(ctx.Param("name"), ctx.Param("indexId"))
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &response{Success: false, Result: lastId, Message: err.Error()})
+		return ctx.JSON(http.StatusOK, &ApiResponse{Success: false, Result: lastId, Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(http.StatusOK,
-		&response{
+		&ApiResponse{
 			RequestId: uuid.NewV4().String(),
 			Success:   true,
 			Result:    rdevices,

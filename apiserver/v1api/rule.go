@@ -30,15 +30,15 @@ type ruleRequest struct {
 }
 
 // addRule add new rule for product
-func createRule(ctx echo.Context) error {
+func CreateRule(ctx echo.Context) error {
 	req := ruleRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 	// TODO: add rule detail information
@@ -49,10 +49,10 @@ func createRule(ctx echo.Context) error {
 		TimeUpdated: time.Now(),
 	}
 	if err := r.RegisterRule(&rule); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*ApiContext).Config,
 		"rule",
 		com.TopicNameRule,
 		&com.RuleTopic{
@@ -60,35 +60,35 @@ func createRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionCreate,
 		})
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String(), Result: &rule})
 }
 
 // deleteRule delete existed rule
-func removeRule(ctx echo.Context) error {
+func RemoveRule(ctx echo.Context) error {
 	// unmarshal rule requst
 	req := ruleRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// check request parameter
 	productId := req.rule.ProductId
 	ruleName := req.rule.RuleName
 	if productId == "" || ruleName == "" {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid parameter"})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: "Invalid parameter"})
 	}
 	// authorization
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 	if err := r.DeleteRule(productId, ruleName); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*ApiContext).Config,
 		"rule",
 		com.TopicNameRule,
 		&com.RuleTopic{
@@ -96,27 +96,27 @@ func removeRule(ctx echo.Context) error {
 			ProductId:  productId,
 			RuleAction: com.RuleActionRemove,
 		})
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String()})
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String()})
 }
 
-func startRule(ctx echo.Context) error {
+func StartRule(ctx echo.Context) error {
 	return nil
 }
 
-func stopRule(ctx echo.Context) error {
+func StopRule(ctx echo.Context) error {
 	return nil
 }
 
 // UpdateRule update existed rule
-func updateRule(ctx echo.Context) error {
+func UpdateRule(ctx echo.Context) error {
 	req := ruleRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 	rule := db.Rule{
@@ -125,10 +125,10 @@ func updateRule(ctx echo.Context) error {
 		TimeUpdated: time.Now(),
 	}
 	if err := r.UpdateRule(&rule); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*apiContext).config,
+	com.AsyncProduceMessage(ctx.(*ApiContext).Config,
 		"rule",
 		com.TopicNameRule,
 		&com.RuleTopic{
@@ -136,22 +136,22 @@ func updateRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionUpdate,
 		})
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String(), Result: &rule})
 }
 
 // getRule retrieve a rule
-func getRule(ctx echo.Context) error {
+func GetRule(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*apiContext).config)
+	r, err := db.NewRegistry("apiserver", ctx.(*ApiContext).Config)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
 	defer r.Release()
 	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusInternalServerError, &ApiResponse{Success: false, Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &response{RequestId: uuid.NewV4().String(), Result: &rule})
+	return ctx.JSON(http.StatusOK, &ApiResponse{RequestId: uuid.NewV4().String(), Result: &rule})
 }

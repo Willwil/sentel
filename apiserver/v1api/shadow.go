@@ -14,13 +14,12 @@ package v1api
 
 import "github.com/labstack/echo"
 
-// Http Runtime Api
-
-// Send a could-to-device message
-func SendMessageToDevice(ctx echo.Context) error {
+// Get a device twin
+func GetShadowDevice(ctx echo.Context) error {
 	return nil
 }
 
-func BroadcastProductMessage(ctx echo.Context) error {
+// Updates tags and desired properties of a device twin
+func UpdateShadowDevice(ctx echo.Context) error {
 	return nil
 }

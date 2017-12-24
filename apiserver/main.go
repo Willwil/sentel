@@ -16,7 +16,8 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/apiserver/v1api"
+	"github.com/cloustone/sentel/apiserver/console"
+	"github.com/cloustone/sentel/apiserver/management"
 	com "github.com/cloustone/sentel/common"
 
 	"github.com/golang/glog"
@@ -35,7 +36,8 @@ func main() {
 	if err != nil {
 		glog.Fatalf("apiserver create failed: '%s'", err.Error())
 	}
-	mgr.AddService(v1api.ServiceFactory{})
+	mgr.AddService(console.ServiceFactory{})
+	mgr.AddService(management.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
 
