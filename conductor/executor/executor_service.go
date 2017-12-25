@@ -100,15 +100,15 @@ func (p *executorService) Stop() {
 func (p *executorService) handleRule(ctx ruleContext) error {
 	r := ctx.rule
 	// Get engine instance according to product id
-	if _, ok := p.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(p.Config, r.TenantId, r.ProductId)
+	if _, ok := p.engines[r.ProductKey]; !ok { // not found
+		engine, err := newRuleEngine(p.Config, r.TenantId, r.ProductKey)
 		if err != nil {
-			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
+			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductKey)
 			return err
 		}
-		p.engines[r.ProductId] = engine
+		p.engines[r.ProductKey] = engine
 	}
-	engine := p.engines[r.ProductId]
+	engine := p.engines[r.ProductKey]
 
 	switch ctx.action {
 	case com.RuleActionCreate:
@@ -138,15 +138,15 @@ func HandleRuleNotification(t *com.RuleTopic) error {
 	case com.RuleActionStart:
 	case com.RuleActionStop:
 	default:
-		return fmt.Errorf("Invalid rule action(%s) for product(%s)", t.RuleAction, t.ProductId)
+		return fmt.Errorf("Invalid rule action(%s) for product(%s)", t.RuleAction, t.ProductKey)
 	}
 	// Now just simply send rule to executor
 	executor := com.GetServiceManager().GetService("executor").(*executorService)
 	ctx := ruleContext{
 		action: t.RuleAction,
 		rule: &db.Rule{
-			ProductId: t.ProductId,
-			RuleName:  t.RuleName,
+			ProductKey: t.ProductKey,
+			RuleName:   t.RuleName,
 		},
 	}
 	executor.ruleChan <- ctx

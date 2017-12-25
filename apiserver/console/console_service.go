@@ -114,6 +114,7 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.GET("/products/:productKey/devices/:deviceId", v1api.GetOneDevice)
 	g.DELETE("/products/:productKey/devices/:deviceId", v1api.DeleteDevice)
 	g.PATCH("/products/:productKey/device/:deviceId", v1api.UpdateDevice)
+	// Rules
 	g.POST("/products/:productKey/rules", v1api.CreateRule)
 	g.GET("/products/:productKey/rules", v1api.GetProductRules)
 	g.DELETE("/products/:prouctKey/rules/:ruleName", v1api.RemoveRule)

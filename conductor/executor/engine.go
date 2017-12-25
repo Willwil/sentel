@@ -147,7 +147,7 @@ func (p *ruleEngine) getRuleObject(productId, ruleName string) (*db.Rule, error)
 // createRule add a rule received from apiserver to this engine
 func (p *ruleEngine) createRule(r *db.Rule) error {
 	glog.Infof("ruld:%s is added", r.RuleName)
-	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
+	obj, err := p.getRuleObject(r.ProductKey, r.RuleName)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (p *ruleEngine) removeRule(r *db.Rule) error {
 func (p *ruleEngine) updateRule(r *db.Rule) error {
 	glog.Infof("Rule:%s is updated", r.RuleName)
 
-	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
+	obj, err := p.getRuleObject(r.ProductKey, r.RuleName)
 	if err != nil {
 		return err
 	}

@@ -617,7 +617,7 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"ruleName": rule.RuleName, "productId": rule.ProductId}); err == nil {
+	if err := c.Find(bson.M{"ruleName": rule.RuleName, "productKey": rule.ProductKey}); err == nil {
 		return fmt.Errorf("rule %s already exist", rule.RuleName)
 	}
 	return c.Insert(rule)
@@ -632,17 +632,17 @@ func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetAllRules(productId string) ([]Rule, error) {
+func (r *Registry) GetProductRuleNames(productKey string) ([]string, error) {
 	c := r.db.C(dbNameRules)
 
 	rule := Rule{}
-	rules := []Rule{}
-	iter := c.Find(bson.M{"productId": productId}).Sort("ruleName").Iter()
+	rules := []string{}
+	iter := c.Find(bson.M{"productKey": productKey}).Sort("ruleName").Iter()
 	for iter.Next(&rule) {
 		if iter.Err() == nil {
 			break
 		}
-		rules = append(rules, rule)
+		rules = append(rules, rule.RuleName)
 	}
 	return rules, nil
 }
@@ -656,5 +656,5 @@ func (r *Registry) DeleteRule(productId string, ruleName string) error {
 // UpdateRule update rule information in registry
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	return c.Update(bson.M{"ruleName": rule.RuleName, "productId": rule.ProductId}, rule)
+	return c.Update(bson.M{"ruleName": rule.RuleName, "productKey": rule.ProductKey}, rule)
 }

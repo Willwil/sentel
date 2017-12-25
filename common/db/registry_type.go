@@ -77,7 +77,7 @@ const (
 
 type Rule struct {
 	TenantId    string          `json:"tenantId" bson:"tenantId"`
-	ProductId   string          `json:"productId" bson:"productId"`
+	ProductKey  string          `json:"productKey" bson:"productKey"`
 	RuleName    string          `json:"ruleName" bson:"ruleName"`
 	DataFormat  string          `json:"format" bson:"format"`
 	Description string          `json:"desc" bson:"desc"`
