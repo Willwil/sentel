@@ -55,10 +55,10 @@ func InitializeRegistry(c com.Config) error {
 	}
 	session.SetMode(mgo.Monotonic, true)
 
-	EnsureDevicesIndex(session)
-	EnsureProductsIndex(session)
-	EnsureTenantsIndex(session)
-	EnsureRulesIndex(session)
+	ensureDevicesIndex(session)
+	ensureProductsIndex(session)
+	ensureTenantsIndex(session)
+	ensureRulesIndex(session)
 
 	session.Close()
 	return nil
@@ -75,12 +75,11 @@ func NewRegistry(owner string, c com.Config) (*Registry, error) {
 	return &Registry{session: session, db: session.DB("registry"), config: c}, nil
 }
 
-func EnsureDevicesIndex(s *mgo.Session) {
+func ensureDevicesIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
 
 	c := session.DB("registry").C(dbNameDevices)
-
 	index := mgo.Index{
 		Key:        []string{"Id", "Name", "ProductId", "ProductKey"},
 		Unique:     true,
@@ -88,71 +87,52 @@ func EnsureDevicesIndex(s *mgo.Session) {
 		Background: true,
 		Sparse:     true,
 	}
-	err := c.EnsureIndex(index)
-	if err != nil {
-		glog.Infof("Create dev INDEX error! %s\n", err)
-		panic(err)
-	}
+	glog.Fatal(c.EnsureIndex(index))
 }
 
-func EnsureProductsIndex(s *mgo.Session) {
+func ensureProductsIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
 
 	c := session.DB("registry").C(dbNameProducts)
-
 	index := mgo.Index{
-		Key:        []string{"Id", "Name"},
+		Key:        []string{"Id", "ProductId"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
 		Sparse:     true,
 	}
-	err := c.EnsureIndex(index)
-	if err != nil {
-		glog.Infof("Create INDEX error! %s\n", err)
-		panic(err)
-	}
+	glog.Fatal(c.EnsureIndex(index))
 }
 
-func EnsureTenantsIndex(s *mgo.Session) {
+func ensureTenantsIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
 
 	c := session.DB("registry").C(dbNameTenants)
-
 	index := mgo.Index{
-		Key:        []string{"Name"},
+		Key:        []string{"TenantId"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
 		Sparse:     true,
 	}
-	err := c.EnsureIndex(index)
-	if err != nil {
-		glog.Infof("Create INDEX error! %s\n", err)
-		panic(err)
-	}
+	glog.Fatal(c.EnsureIndex(index))
 }
 
-func EnsureRulesIndex(s *mgo.Session) {
+func ensureRulesIndex(s *mgo.Session) {
 	session := s.Copy()
 	defer session.Close()
 
 	c := session.DB("registry").C(dbNameRules)
-
 	index := mgo.Index{
-		Key:        []string{"Id", "Name"},
+		Key:        []string{"Id", "RuleName"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
 		Sparse:     true,
 	}
-	err := c.EnsureIndex(index)
-	if err != nil {
-		glog.Infof("Create INDEX error! %s\n", err)
-		panic(err)
-	}
+	glog.Fatal(c.EnsureIndex(index))
 }
 
 // Release release registry rources and disconnect with background database
@@ -192,29 +172,9 @@ func (r *Registry) GetTenant(id string) (*Tenant, error) {
 // GetProduct retrieve product detail information from registry
 func (r *Registry) GetAllTenants() ([]Tenant, error) {
 	c := r.db.C(dbNameTenants)
-	tn := Tenant{}
-	tns := []Tenant{}
-	var lastId string
-
-	iter := c.Find(nil).Sort("Name").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&tn) == false {
-			break
-		} else {
-			lastId = tn.TenantId
-			tns = append(tns, tn)
-		}
-		for iter.Next(&tn) {
-			lastId = tn.TenantId
-			tns = append(tns, tn)
-		}
-		if iter.Err() != nil {
-			break
-		}
-		iter = c.Find(bson.M{"Name": bson.M{"$gt": lastId}}).Sort("Name").Limit(PageSize).Iter()
-	}
-	iter.Close()
-	return tns, nil
+	tenants := []Tenant{}
+	err := c.Find(nil).Sort("TenantId").All(&tenants)
+	return tenants, err
 }
 
 func (r *Registry) UpdateTenant(id string, t *Tenant) error {
@@ -262,84 +222,33 @@ func (r *Registry) GetProduct(tenantId string, productId string) (*Product, erro
 // GetProduct retrieve product detail information from registry
 func (r *Registry) GetProducts(tenantId string) ([]Product, error) {
 	c := r.db.C(dbNameProducts)
-	pro := Product{}
 	products := []Product{}
-	var lastId string
 
-	iter := c.Find(bson.M{"TenantId": tenantId}).Sort("ProductId").Iter()
-	for {
-		if iter.Next(&pro) == false {
-			break
-		} else {
-			lastId = pro.ProductId
-			products = append(products, pro)
-		}
-		for iter.Next(&pro) {
-			lastId = pro.ProductId
-			products = append(products, pro)
-		}
-		if iter.Err() != nil {
-			break
-		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
-	}
-	iter.Close()
-	return products, nil
+	err := c.Find(bson.M{"TenantId": tenantId}).Sort("ProductId").All(&products)
+	return products, err
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProductsByCategory(tenantId string, cat string) ([]Product, error) {
+func (r *Registry) GetProductsWithCondition(tenantId string, conditions map[string]string) ([]Product, error) {
 	c := r.db.C(dbNameProducts)
-	pro := Product{}
 	products := []Product{}
-	var lastId string
-
-	iter := c.Find(bson.M{"TenantId": tenantId, "CategoryId": cat}).Sort("ProductId").Iter()
-	for {
-		if iter.Next(&pro) == false {
-			break
-		} else {
-			lastId = pro.ProductId
-			products = append(products, pro)
-		}
-		for iter.Next(&pro) {
-			lastId = pro.ProductId
-			products = append(products, pro)
-		}
-		if iter.Err() != nil {
-			break
-		}
-		iter = c.Find(bson.M{"CategoryId": bson.M{"$regex": cat, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
+	query := make(bson.M)
+	for k, v := range conditions {
+		query[k] = v
 	}
-	iter.Close()
-	return products, nil
+	query["TenantId"] = tenantId
+
+	err := c.Find(query).Sort("ProductId").All(&products)
+	return products, err
 }
 
 // GetProductDevices get product's device list
-// mongo golang:
-// http://www.jianshu.com/p/b63e5cfa4ce5
-func (r *Registry) GetProductDevices(productKey string) ([]Device, error) {
+func (r *Registry) GetProductDevices(productId string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
 
 	devices := []Device{}
-	var device Device
-
-	iter := c.Find(bson.M{"ProductKey": productKey}).Sort("DeviceId").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&device) == false {
-			break
-		} else {
-			devices = append(devices, device)
-		}
-		for iter.Next(&device) {
-			devices = append(devices, device)
-		}
-		if iter.Err() != nil {
-			break
-		}
-	}
-	iter.Close()
-	return devices, nil
+	err := c.Find(bson.M{"ProductId": productId}).Sort("DeviceId").All(&devices)
+	return devices, err
 }
 
 // UpdateProduct update product detail information in registry
@@ -361,54 +270,11 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetMultipleDevices(name string) ([]Device, error) {
-	c := r.db.C(dbNameDevices)
-	devices := []Device{}
-	var device Device
-
-	iter := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).Iter()
-	for iter.Next(&device) {
-		fmt.Println(device)
-		devices = append(devices, device)
-	}
-	return devices, nil
-}
-
-// GetDevice retrieve a device information from registry/
-func (r *Registry) GetDevice(tenantId string, productKey string, deviceId string) (*Device, error) {
+func (r *Registry) GetDevice(tenantId string, productId string, deviceId string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"TenantId": tenantId, "ProductKey": productKey, "DeviceId": deviceId}).One(device)
+	err := c.Find(bson.M{"TenantId": tenantId, "ProductId": productId, "DeviceId": deviceId}).One(device)
 	return device, err
-}
-
-// GetProduct retrieve product detail information from registry
-func (r *Registry) GetAllDevices() ([]Device, error) {
-	c := r.db.C(dbNameDevices)
-	dev := Device{}
-	devices := []Device{}
-	//err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(product)
-	var lastId string
-
-	iter := c.Find(nil).Sort("Id").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&dev) == false {
-			glog.Infof("\nSearch end!\n\n")
-			break
-		}
-		for iter.Next(&dev) {
-			lastId = dev.DeviceId
-			glog.Infof("\nId:%s\n", lastId)
-			devices = append(devices, dev)
-		}
-		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
-			break
-		}
-		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
-	}
-	iter.Close()
-	return devices, nil
 }
 
 // BulkRegisterDevice add a lot of devices into registry
@@ -474,16 +340,9 @@ func (r *Registry) GetRule(productKey string, ruleName string) (*Rule, error) {
 func (r *Registry) GetProductRuleNames(productKey string) ([]string, error) {
 	c := r.db.C(dbNameRules)
 
-	rule := Rule{}
 	rules := []string{}
-	iter := c.Find(bson.M{"ProductKey": productKey}).Sort("RuleName").Iter()
-	for iter.Next(&rule) {
-		if iter.Err() == nil {
-			break
-		}
-		rules = append(rules, rule.RuleName)
-	}
-	return rules, nil
+	err := c.Find(bson.M{"ProductKey": productKey}).Sort("RuleName").All(&rules)
+	return rules, err
 }
 
 // DeleteRule delete a rule from registry
