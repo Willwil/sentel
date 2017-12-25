@@ -98,22 +98,27 @@ func (p *consoleService) initialize(c com.Config) error {
 	g := p.echo.Group("/iot/api/v1/console")
 	p.setAuth(c, g)
 	g.POST("/tenants", v1api.RegisterTenant)
-	g.POST("/tenants/:tenantiId/login", v1api.LoginTenant)
-	g.POST("/tenants/:tenantiId/logout", v1api.LogoutTenant)
+	g.POST("/tenants/login", v1api.LoginTenant)
+	g.POST("/tenants/logout", v1api.LogoutTenant)
 	g.DELETE("/tenants/:tenantId", v1api.DeleteTenant)
 	g.GET("/tenants/:tenantId", v1api.GetTenant)
 	g.PATCH("/tenants/:tenantId", v1api.UpdateTenant)
-	g.POST("/products", v1api.RegisterProduct)
-	g.DELETE("/products/:productKey", v1api.DeleteProduct)
-	g.PATCH("/products/:productKey", v1api.UpdateProduct)
+
+	// Product
+	g.POST("/products", v1api.CreateProduct)
+	g.DELETE("/products", v1api.RemoveProduct)
+	g.PATCH("/products", v1api.UpdateProduct)
+	g.GET("/products", v1api.GetProductList)
 	g.GET("/products/:productKey", v1api.GetProduct)
-	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
-	g.GET("/tenants/:tenantId/products", v1api.GetTenantProductList)
-	g.POST("/prodcuts/:productKey/devices/bulk", v1api.BulkRegisterDevices)
-	g.POST("/products/:productKey/devices", v1api.RegisterDevice)
-	g.GET("/products/:productKey/devices/:deviceId", v1api.GetOneDevice)
-	g.DELETE("/products/:productKey/devices/:deviceId", v1api.DeleteDevice)
-	g.PATCH("/products/:productKey/device/:deviceId", v1api.UpdateDevice)
+	g.GET("/products/devices", v1api.GetProductDevices)
+
+	// Device
+	g.POST("/devices", v1api.RegisterDevice)
+	g.GET("/devices/:deviceId", v1api.GetOneDevice)
+	g.DELETE("/devices", v1api.DeleteDevice)
+	g.PATCH("/devices", v1api.UpdateDevice)
+	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
+
 	// Rules
 	g.POST("/products/:productKey/rules", v1api.CreateRule)
 	g.GET("/products/:productKey/rules", v1api.GetProductRules)
@@ -123,6 +128,7 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.PUT("/products/:productKey/rules/:ruleName/start", v1api.StartRule)
 	g.PUT("/products/:productKey/rules/:ruleName/stop", v1api.StopRule)
 
+	// Runtime
 	g.POST("/products/:productKey/devices/:deviceId/message", v1api.SendMessageToDevice)
 	g.POST("/products/:productKey/message", v1api.BroadcastProductMessage)
 	g.GET("/products/:productKey/devices/:deviceId/shardow", v1api.GetShadowDevice)

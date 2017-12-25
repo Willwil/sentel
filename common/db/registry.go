@@ -13,7 +13,6 @@
 package db
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -242,23 +241,26 @@ func (r *Registry) RegisterProduct(p *Product) error {
 }
 
 // DeleteProduct delete a product from registry
-func (r *Registry) DeleteProduct(productKey string) error {
-	c := r.db.C(dbNameDevices)
-	c.Remove(bson.M{"ProductKey": productKey})
-	c = r.db.C(dbNameProducts)
-	return c.Remove(bson.M{"ProductKey": productKey})
+func (r *Registry) DeleteProduct(p *Product) error {
+	c := r.db.C(dbNameProducts)
+	if err := c.Find(bson.M{"TeantId": p.TenantId, "ProductKey": p.ProductKey}); err == nil {
+		c.Remove(bson.M{"TenantId": p.TenantId, "ProductKey": p.ProductKey})
+		c = r.db.C(dbNameDevices)
+		return c.Remove(bson.M{"ProductKey": p.ProductKey})
+	}
+	return fmt.Errorf("no product '%s' in tenant '%s'", p.ProductKey, p.TenantId)
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProduct(productKey string) (*Product, error) {
+func (r *Registry) GetProduct(tenantId string, productKey string) (*Product, error) {
 	c := r.db.C(dbNameProducts)
 	product := &Product{}
-	err := c.Find(bson.M{"ProductKey": productKey}).One(product)
+	err := c.Find(bson.M{"TeantId": tenantId, "ProductKey": productKey}).One(product)
 	return product, err
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetTenantProducts(tenantId string) ([]Product, error) {
+func (r *Registry) GetProducts(tenantId string) ([]Product, error) {
 	c := r.db.C(dbNameProducts)
 	pro := Product{}
 	products := []Product{}
@@ -313,15 +315,6 @@ func (r *Registry) GetProductsByCategory(tenantId string, cat string) ([]Product
 	return products, nil
 }
 
-// GetProduct retrieve product detail information from registry
-// bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}
-func (r *Registry) GetProductByDef(query bson.M) (*Product, error) {
-	c := r.db.C(dbNameProducts)
-	product := &Product{}
-	err := c.Find(query).One(product)
-	return product, err
-}
-
 // GetProductDevices get product's device list
 // mongo golang:
 // http://www.jianshu.com/p/b63e5cfa4ce5
@@ -362,7 +355,7 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
 	device := Device{}
 	if err := c.Find(bson.M{"Id": bson.M{"$regex": dev.DeviceId, "$options": "$i"}}).One(&device); err == nil { // found existed device
-		return fmt.Errorf("device %s already exist", dev.ProductId)
+		return fmt.Errorf("device %s already exist", dev.DeviceId)
 	}
 	return c.Insert(dev)
 }
@@ -382,12 +375,10 @@ func (r *Registry) GetMultipleDevices(name string) ([]Device, error) {
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetDevice(id string) (*Device, error) {
+func (r *Registry) GetDevice(tenantId string, productKey string, deviceId string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(device)
-	v, _ := json.Marshal(*device)
-	glog.Infof("\ndevice %s\n", v)
+	err := c.Find(bson.M{"TenantId": tenantId, "ProductKey": productKey, "DeviceId": deviceId}).One(device)
 	return device, err
 }
 
@@ -431,25 +422,23 @@ func (r *Registry) BulkRegisterDevices(devices []Device) error {
 }
 
 // DeleteDevice delete a device from registry
-func (r *Registry) DeleteDevice(id string) error {
+func (r *Registry) DeleteDevice(tenantId string, productKey string, deviceId string) error {
 	c := r.db.C(dbNameDevices)
-	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
+	if err := c.Find(bson.M{"TeantId": tenantId, "ProductKey": productKey, "deviceId": deviceId}); err == nil {
+		return c.Remove(bson.M{"TeantId": tenantId, "ProductKey": productKey, "deviceId": deviceId})
+	}
+	return fmt.Errorf("invalid operataion")
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
 func (r *Registry) BulkDeleteDevice(devices []string) error {
-	for _, id := range devices {
-		if err := r.DeleteDevice(id); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"Id": bson.M{"$regex": dev.DeviceId, "$options": "$i"}}, dev)
+	return c.Update(bson.M{"TeantId": dev.TenantId, "ProductKey": dev.ProductKey, "DeviceId": dev.DeviceId}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry

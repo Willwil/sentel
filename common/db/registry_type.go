@@ -25,23 +25,23 @@ type Tenant struct {
 // Product
 type Product struct {
 	TenantId     string    `bson:"TenantId" json:"tenantId"`
-	ProductId    string    `bson:"ProductId"`
-	Description  string    `bson:"Description"`
+	ProductId    string    `bson:"ProductId" json:"productId"`
+	Description  string    `bson:"Description" json:"description"`
 	TimeCreated  time.Time `bson:"TimeCreated"`
 	TimeModified time.Time `bson:"TimeModified"`
-	CategoryId   string    `bson:"CategoryId"`
+	CategoryId   string    `bson:"CategoryId" json:"category"`
 	ProductKey   string    `bson:"ProductKey"`
 }
 
 // Device
 type Device struct {
-	DeviceId     string    `bson:"DeviceId"`
-	ProductId    string    `bson:"ProductId"`
-	ProductKey   string    `bson:"ProductKey"`
+	TenantId     string    `bson:"tenantId" json:"tenantId"`
+	ProductKey   string    `bson:"ProductKey" json:"productKey"`
+	DeviceId     string    `bson:"DeviceId" json:"deviceId"`
 	DeviceStatus string    `bson:"DeviceStatus"`
-	DeviceSecret string    `bson:"DeviceSecret"`
-	TimeCreated  time.Time `bson:"TimeCreated"`
-	TimeModified time.Time `bson:"TimeModified"`
+	DeviceSecret string    `bson:"DeviceSecret" json:"deviceSecret"`
+	TimeCreated  time.Time `bson:"TimeCreated" json:"timeCreated"`
+	TimeUpdated  time.Time `bson:"TimeModified" json:"timeUpdated`
 }
 
 // Rule

@@ -20,7 +20,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func SyncProduceMessage(c Config, topic string, key string, value sarama.Encoder) error {
+func SyncProduceMessage(hosts string, key string, topic string, value sarama.Encoder) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10
@@ -32,8 +32,7 @@ func SyncProduceMessage(c Config, topic string, key string, value sarama.Encoder
 		Value: value,
 	}
 
-	kafka := c.MustString("apiserver", "kafka")
-	producer, err := sarama.NewSyncProducer(strings.Split(kafka, ","), config)
+	producer, err := sarama.NewSyncProducer(strings.Split(hosts, ","), config)
 	if err != nil {
 		glog.Errorf("Failed to produce message:%s", err.Error())
 		return err
@@ -46,7 +45,7 @@ func SyncProduceMessage(c Config, topic string, key string, value sarama.Encoder
 	return err
 }
 
-func AsyncProduceMessage(c Config, key string, topic string, value sarama.Encoder) error {
+func AsyncProduceMessage(hosts string, key string, topic string, value sarama.Encoder) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10
@@ -57,11 +56,10 @@ func AsyncProduceMessage(c Config, key string, topic string, value sarama.Encode
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
-		Value: sarama.ByteEncoder(v), //value,
+		Value: sarama.ByteEncoder(v),
 	}
 
-	kafka := c.MustString("apiserver", "kafka")
-	producer, err := sarama.NewAsyncProducer(strings.Split(kafka, ","), config)
+	producer, err := sarama.NewAsyncProducer(strings.Split(hosts, ","), config)
 	if err != nil {
 		glog.Errorf("Failed to produce message:%s", err.Error())
 		return err

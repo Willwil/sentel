@@ -97,7 +97,7 @@ func (p *managementService) initialize(c com.Config) error {
 	// API for end users with restapi support
 	g := p.echo.Group("/iot/api/v1")
 	p.setAuth(c, g)
-	g.POST("/products", v1api.RegisterProduct)
+	g.POST("/products", v1api.CreateProduct)
 	g.PATCH("/products/:productKey", v1api.UpdateProduct)
 	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
 

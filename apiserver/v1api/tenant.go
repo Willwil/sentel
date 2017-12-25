@@ -20,21 +20,51 @@ import (
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
 
-type tenantAddRequest struct {
+type tenantRequest struct {
 	TenantId string `json:"tenantId"`
 	Password string `json:"password"`
 }
 
-// Get a device twin
+// addTenant add a new tenant
+func RegisterTenant(ctx echo.Context) error {
+	req := tenantRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+	}
+	// get registry store instance by context
+	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	if err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+	}
+	defer r.Release()
+	t := db.Tenant{
+		TenantId:  req.TenantId,
+		Password:  req.Password,
+		CreatedAt: time.Now(),
+	}
+	if err := r.RegisterTenant(&t); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+	}
+	// Notify kafka
+	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
+		&com.TenantTopic{
+			TenantId: req.TenantId,
+			Action:   com.ObjectActionRegister,
+		})
+
+	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Result: &t})
+}
+
 func LoginTenant(ctx echo.Context) error {
-	name := ctx.FormValue("username")
-	pwd := ctx.FormValue("password")
+	req := tenantRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+	}
 
 	// Get registry store instance by context
 	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
@@ -43,11 +73,11 @@ func LoginTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	tenant, err := r.GetTenant(name)
+	tenant, err := r.GetTenant(req.TenantId)
 	if err == db.ErrorNotFound {
 		return ctx.JSON(http.StatusNotFound, &base.ApiResponse{Message: err.Error()})
 	}
-	if pwd != tenant.Password {
+	if req.Password != tenant.Password {
 		return echo.ErrUnauthorized
 	}
 
@@ -58,7 +88,6 @@ func LoginTenant(ctx echo.Context) error {
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 		},
 	}
-
 	// Creat token with claims
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
@@ -74,48 +103,9 @@ func LogoutTenant(ctx echo.Context) error {
 	return nil
 }
 
-// addTenant add a new tenant
-func RegisterTenant(ctx echo.Context) error {
-	req := new(tenantAddRequest)
-	if err := ctx.Bind(req); err != nil {
-		glog.Error("addTenant:%s", err.Error())
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
-	}
-	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
-	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
-	}
-	defer r.Release()
-
-	t := db.Tenant{
-		TenantId:  req.TenantId,
-		Password:  req.Password,
-		CreatedAt: time.Now(),
-	}
-
-	// Check name available
-	if err := r.CheckTenantNameAvailable(req.TenantId); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "Same tenant identifier already exist"})
-	}
-	if err := r.RegisterTenant(&t); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
-	}
-	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"tenant",
-		com.TopicNameTenant,
-		&com.TenantTopic{
-			TenantId: req.TenantId,
-			Action:   com.ObjectActionRegister,
-		})
-
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Result: &t})
-}
-
 // deleteTenant delete tenant
 func DeleteTenant(ctx echo.Context) error {
-	id := ctx.Param("id")
+	tenantId := ctx.Param("tenantId")
 	// Get registry store instance by context
 	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
 	if err != nil {
@@ -123,15 +113,13 @@ func DeleteTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	if err := r.DeleteTenant(id); err != nil {
+	if err := r.DeleteTenant(tenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"tenant",
-		com.TopicNameTenant,
+	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: id,
+			TenantId: tenantId,
 			Action:   com.ObjectActionDelete,
 		})
 
@@ -140,7 +128,7 @@ func DeleteTenant(ctx echo.Context) error {
 
 // getTenant return tenant's information
 func GetTenant(ctx echo.Context) error {
-	id := ctx.Param("id")
+	tenantId := ctx.Param("tenantIdd")
 	// Get registry store instance by context
 	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
 	if err != nil {
@@ -148,26 +136,18 @@ func GetTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	if err := r.DeleteTenant(id); err != nil {
+	if t, err := r.GetTenant(tenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+	} else {
+		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true, Result: &t})
 	}
-	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"tenant",
-		com.TopicNameTenant,
-		&com.TenantTopic{
-			TenantId: id,
-			Action:   com.ObjectActionDelete,
-		})
-
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{})
 }
 
 // updateTenant update tenant's information
 func UpdateTenant(ctx echo.Context) error {
-	req := new(tenantAddRequest)
-	if err := ctx.Bind(req); err != nil {
-		glog.Error("updateTenant:%s", err.Error())
+	tenantId := ctx.Param("tenantId")
+	t := db.Tenant{}
+	if err := ctx.Bind(&t); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	}
 	// Get registry store instance by context
@@ -177,21 +157,12 @@ func UpdateTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	t := db.Tenant{
-		TenantId:  req.TenantId,
-		Password:  req.Password,
-		UpdatedAt: time.Now(),
-	}
-
-	if err := r.UpdateTenant(req.TenantId, &t); err != nil {
+	if err := r.UpdateTenant(tenantId, &t); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
 	}
-	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"tenant",
-		com.TopicNameTenant,
+	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: req.TenantId,
+			TenantId: tenantId,
 			Action:   com.ObjectActionUpdate,
 		})
 

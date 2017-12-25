@@ -49,8 +49,7 @@ func CreateRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"rule",
+	base.AsyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			ProductKey: rule.ProductKey,
@@ -88,8 +87,7 @@ func RemoveRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
 	}
 	// Notify kafka
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"rule",
+	base.AsyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   ruleName,
@@ -102,8 +100,7 @@ func RemoveRule(ctx echo.Context) error {
 func StartRule(ctx echo.Context) error {
 	productKey := ctx.Param("productKey")
 	ruleName := ctx.Param("ruleName")
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"rule",
+	base.AsyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   ruleName,
@@ -116,8 +113,7 @@ func StartRule(ctx echo.Context) error {
 func StopRule(ctx echo.Context) error {
 	productKey := ctx.Param("productKey")
 	ruleName := ctx.Param("ruleName")
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"rule",
+	base.AsyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   ruleName,
@@ -143,8 +139,7 @@ func UpdateRule(ctx echo.Context) error {
 	if err := r.UpdateRule(rule); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
 	}
-	com.AsyncProduceMessage(ctx.(*base.ApiContext).Config,
-		"rule",
+	base.AsyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   rule.RuleName,
