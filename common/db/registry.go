@@ -166,32 +166,28 @@ func (r *Registry) Release() {
 // CheckTenantNamveAvailable return true if name is available
 func (r *Registry) CheckTenantNameAvailable(id string) error {
 	c := r.db.C(dbNameTenants)
-	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(nil)
-	return err
+	return c.Find(bson.M{"TenantId": id}).One(nil)
 }
 
-// AddTenant insert a tenant into registry
+// RegisterTenant insert a tenant into registry
 func (r *Registry) RegisterTenant(t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	if err := c.Find(bson.M{"Name": bson.M{"$regex": t.Name, "$options": "$i"}}).One(nil); err == nil {
-		return fmt.Errorf("Tenant %s already exist", t.Name)
+	if err := c.Find(bson.M{"TenantId": t.TenantId}).One(nil); err == nil {
+		return fmt.Errorf("Tenant %s already exist", t.TenantId)
 	}
 	return c.Insert(t, nil)
 }
 
 func (r *Registry) DeleteTenant(id string) error {
 	c := r.db.C(dbNameTenants)
-	return c.Remove(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}})
+	return c.Remove(bson.M{"TenantId": id})
 }
 
 func (r *Registry) GetTenant(id string) (*Tenant, error) {
 	c := r.db.C(dbNameTenants)
 	t := Tenant{}
-	err := c.Find(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}).One(&t)
-	if err != nil {
-		return nil, ErrorNotFound
-	}
-	return &t, nil
+	err := c.Find(bson.M{"TenantId": id}).One(&t)
+	return &t, err
 }
 
 // GetProduct retrieve product detail information from registry
@@ -204,20 +200,16 @@ func (r *Registry) GetAllTenants() ([]Tenant, error) {
 	iter := c.Find(nil).Sort("Name").Limit(PageSize).Iter()
 	for {
 		if iter.Next(&tn) == false {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		} else {
-			lastId = tn.Name
-			glog.Infof("\nName:%s\n", lastId)
+			lastId = tn.TenantId
 			tns = append(tns, tn)
 		}
 		for iter.Next(&tn) {
-			lastId = tn.Name
-			glog.Infof("\nName:%s\n", lastId)
+			lastId = tn.TenantId
 			tns = append(tns, tn)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		}
 		iter = c.Find(bson.M{"Name": bson.M{"$gt": lastId}}).Sort("Name").Limit(PageSize).Iter()
@@ -228,88 +220,63 @@ func (r *Registry) GetAllTenants() ([]Tenant, error) {
 
 func (r *Registry) UpdateTenant(id string, t *Tenant) error {
 	c := r.db.C(dbNameTenants)
-	return c.Update(bson.M{"Name": bson.M{"$regex": id, "$options": "$i"}}, t)
+	return c.Update(bson.M{"TenantId": id}, t)
 }
 
 // Product
 // CheckProductNameAvailable check wethere product name is available
 func (r *Registry) CheckProductNameAvailable(p *Product) bool {
 	c := r.db.C(dbNameProducts)
-	err := c.Find(bson.M{"Id": bson.M{"$regex": p.Id, "$options": "$i"}}).One(nil)
+	err := c.Find(bson.M{"TenantId": p.TenantId, "ProductId": p.ProductId}).One(nil)
 	return err != nil
 }
 
 // RegisterProduct register a product into registry
 func (r *Registry) RegisterProduct(p *Product) error {
 	c := r.db.C(dbNameProducts)
-	glog.Infof("use products")
 	product := &Product{}
-	if err := c.Find(bson.M{"Name": bson.M{"$regex": p.Name, "$options": "$i"}}).One(product); err == nil {
-		return fmt.Errorf("product %s already exist", p.Name)
+	if err := c.Find(bson.M{"TenantId": p.TenantId, "ProductId": p.ProductId}).One(product); err == nil {
+		return fmt.Errorf("product %s already exist", p.ProductId)
 	}
 	return c.Insert(p)
-
 }
 
 // DeleteProduct delete a product from registry
-func (r *Registry) DeleteProduct(id string) error {
+func (r *Registry) DeleteProduct(productKey string) error {
 	c := r.db.C(dbNameDevices)
-	c.Remove(bson.M{"ProductKey": bson.M{"$regex": id, "$options": "$i"}})
+	c.Remove(bson.M{"ProductKey": productKey})
 	c = r.db.C(dbNameProducts)
-	return c.Remove(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}})
-}
-
-// DeleteProduct delete a product from registry
-func (r *Registry) DeleteProductByName(name string) (string, error) {
-	c := r.db.C(dbNameProducts)
-	product := &Product{}
-	err := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).One(product)
-	if err != nil {
-		glog.Infof("NOT found product name[%s], err=%s\n", name, err)
-		return product.Id, err
-	}
-	c = r.db.C(dbNameDevices)
-	err = c.Remove(bson.M{"ProductKey": bson.M{"$regex": product.ProductKey, "$options": "$i"}})
-	if err != nil {
-		glog.Infof("NOT delete product name[%s], err=%s\n", name, err)
-		return product.Id, err
-	}
-	c = r.db.C(dbNameProducts)
-	return product.Id, c.Remove(bson.M{"Id": bson.M{"$regex": product.Id, "$options": "$i"}})
+	return c.Remove(bson.M{"ProductKey": productKey})
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProduct(id string) (*Product, error) {
+func (r *Registry) GetProduct(productKey string) (*Product, error) {
 	c := r.db.C(dbNameProducts)
 	product := &Product{}
-	err := c.Find(bson.M{"Id": bson.M{"$regex": id, "$options": "$i"}}).One(product)
+	err := c.Find(bson.M{"ProductKey": productKey}).One(product)
 	return product, err
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetAllProducts() ([]Product, error) {
+func (r *Registry) GetTenantProducts(tenantId string) ([]Product, error) {
 	c := r.db.C(dbNameProducts)
 	pro := Product{}
 	products := []Product{}
 	var lastId string
 
-	iter := c.Find(nil).Sort("Id").Limit(PageSize).Iter()
+	iter := c.Find(bson.M{"TenantId": tenantId}).Sort("ProductId").Iter()
 	for {
 		if iter.Next(&pro) == false {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		} else {
-			lastId = pro.Id
-			glog.Infof("\nId:%s\n", lastId)
+			lastId = pro.ProductId
 			products = append(products, pro)
 		}
 		for iter.Next(&pro) {
-			lastId = pro.Id
-			glog.Infof("\nId:%s\n", lastId)
+			lastId = pro.ProductId
 			products = append(products, pro)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		}
 		iter = c.Find(bson.M{"Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
@@ -319,43 +286,31 @@ func (r *Registry) GetAllProducts() ([]Product, error) {
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProductsByCat(cat string) ([]Product, error) {
+func (r *Registry) GetProductsByCategory(tenantId string, cat string) ([]Product, error) {
 	c := r.db.C(dbNameProducts)
 	pro := Product{}
 	products := []Product{}
 	var lastId string
 
-	iter := c.Find(bson.M{"CategoryId": bson.M{"$regex": cat, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+	iter := c.Find(bson.M{"TenantId": tenantId, "CategoryId": cat}).Sort("ProductId").Iter()
 	for {
 		if iter.Next(&pro) == false {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		} else {
-			lastId = pro.Id
-			glog.Infof("\nId:%s\n", lastId)
+			lastId = pro.ProductId
 			products = append(products, pro)
 		}
 		for iter.Next(&pro) {
-			lastId = pro.Id
-			glog.Infof("\nId:%s\n", lastId)
+			lastId = pro.ProductId
 			products = append(products, pro)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		}
 		iter = c.Find(bson.M{"CategoryId": bson.M{"$regex": cat, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return products, nil
-}
-
-// GetProduct retrieve product detail information from registry
-func (r *Registry) GetProductByName(name string) (*Product, error) {
-	c := r.db.C(dbNameProducts)
-	product := &Product{}
-	err := c.Find(bson.M{"Name": bson.M{"$regex": name, "$options": "$i"}}).One(product)
-	return product, err
 }
 
 // GetProduct retrieve product detail information from registry
@@ -370,147 +325,43 @@ func (r *Registry) GetProductByDef(query bson.M) (*Product, error) {
 // GetProductDevices get product's device list
 // mongo golang:
 // http://www.jianshu.com/p/b63e5cfa4ce5
-func (r *Registry) GetProductDevices(id string) ([]Device, error) {
+func (r *Registry) GetProductDevices(productKey string) ([]Device, error) {
 	c := r.db.C(dbNameDevices)
 
 	devices := []Device{}
 	var device Device
-	var lastId string
 
-	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": id, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
+	iter := c.Find(bson.M{"ProductKey": productKey}).Sort("DeviceId").Limit(PageSize).Iter()
 	for {
 		if iter.Next(&device) == false {
-			glog.Infof("\nSearch end!\n\n")
 			break
 		} else {
-			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
 			devices = append(devices, device)
 		}
 		for iter.Next(&device) {
-			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
 			devices = append(devices, device)
 		}
 		if iter.Err() != nil {
-			glog.Infof("\nError=%s,Search end!\n\n", iter.Err())
 			break
 		}
-		iter = c.Find(bson.M{"ProductKey": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
 	}
 	iter.Close()
 	return devices, nil
-}
-
-// GetProductDevices get product's device list
-func (r *Registry) GetProductDevicesPage(id string, indexId string) ([]Device, string, error) {
-	c := r.db.C(dbNameDevices)
-
-	devices := []Device{}
-	var device Device
-	var lastId string
-	cx := 0
-
-	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": id, "$options": "$i"}, "Id": bson.M{"$gt": indexId}}).Limit(PageSize).Iter()
-	for iter.Next(&device) {
-		lastId = device.Id
-		glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
-		devices = append(devices, device)
-		cx++
-	}
-	if cx < PageSize {
-		lastId = "0"
-	}
-	iter.Close()
-	return devices, lastId, nil
-}
-
-// GetProductDevices get product's device list
-// curl -XGET "http://localhost:4145/api/vi/products/mytest?api-version=v1
-func (r *Registry) GetProductDevicesByName(name string) ([]Device, error) {
-	glog.Infof("\n Product name:%s\n\n", name)
-	pro, err := r.GetProductByName(name)
-	if err != nil {
-		glog.Infof("\nNot found! Product name:%s\n\n", name)
-		return nil, ErrorNotFound
-	}
-
-	devices := []Device{}
-	var device Device
-	var lastId string
-	cx := 0
-
-	c := r.db.C(dbNameDevices)
-
-	glog.Infof("\nSearch all device by productKey:%s ...\n\n", pro.ProductKey)
-	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}}).Sort("Id").Limit(PageSize).Iter()
-	for {
-		if iter.Next(&device) == false {
-			glog.Infof("\nSearch end!\n\n")
-			break
-		} else {
-			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
-			devices = append(devices, device)
-			cx++
-		}
-		for iter.Next(&device) {
-			lastId = device.Id
-			glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
-			devices = append(devices, device)
-			cx++
-		}
-		if cx < PageSize {
-			lastId = "0"
-		}
-		if iter.Err() != nil {
-			glog.Infof("\nErr, Search end!\n\n")
-			break
-		}
-		iter = c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}, "Id": bson.M{"$gt": lastId}}).Sort("Id").Limit(PageSize).Iter()
-	}
-	iter.Close()
-	return devices, nil
-}
-
-// GetProductDevices get product's device list
-func (r *Registry) GetProductDevicesPageByName(name string, indexId string) ([]Device, string, error) {
-	glog.Infof("\n Product name:%s\n\n", name)
-	pro, err := r.GetProductByName(name)
-	if err != nil {
-		glog.Infof("\nNot found! Product name:%s\n\n", name)
-		return nil, "0", ErrorNotFound
-	}
-	c := r.db.C(dbNameDevices)
-
-	devices := []Device{}
-	var device Device
-	var lastId string
-
-	iter := c.Find(bson.M{"ProductKey": bson.M{"$regex": pro.ProductKey, "$options": "$i"}, "Id": bson.M{"$gt": indexId}}).Sort("Id").Limit(PageSize).Iter()
-	for iter.Next(&device) {
-		lastId = device.Id
-		glog.Infof("\nId:%s\ndev:%s\n\n", lastId, device)
-		devices = append(devices, device)
-	}
-	iter.Close()
-	return devices, lastId, nil
 }
 
 // UpdateProduct update product detail information in registry
 func (r *Registry) UpdateProduct(p *Product) error {
 	c := r.db.C(dbNameProducts)
-	return c.Update(bson.M{"Id": p.Id}, p)
+	return c.Update(bson.M{"ProductKey": p.ProductKey}, p)
 }
 
 // Device
 
 // RegisterDevice add a new device into registry
 func (r *Registry) RegisterDevice(dev *Device) error {
-	glog.Infof("RegisterDevice:[%s].%s", dev.Id, dev)
 	c := r.db.C(dbNameDevices)
 	device := Device{}
-	if err := c.Find(bson.M{"Id": bson.M{"$regex": dev.Id, "$options": "$i"}}).One(&device); err == nil { // found existed device
+	if err := c.Find(bson.M{"Id": bson.M{"$regex": dev.DeviceId, "$options": "$i"}}).One(&device); err == nil { // found existed device
 		return fmt.Errorf("device %s already exist", dev.ProductId)
 	}
 	return c.Insert(dev)
@@ -527,7 +378,6 @@ func (r *Registry) GetMultipleDevices(name string) ([]Device, error) {
 		fmt.Println(device)
 		devices = append(devices, device)
 	}
-	fmt.Println("find end!")
 	return devices, nil
 }
 
@@ -556,7 +406,7 @@ func (r *Registry) GetAllDevices() ([]Device, error) {
 			break
 		}
 		for iter.Next(&dev) {
-			lastId = dev.Id
+			lastId = dev.DeviceId
 			glog.Infof("\nId:%s\n", lastId)
 			devices = append(devices, dev)
 		}
@@ -599,7 +449,7 @@ func (r *Registry) BulkDeleteDevice(devices []string) error {
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"Id": bson.M{"$regex": dev.Id, "$options": "$i"}}, dev)
+	return c.Update(bson.M{"Id": bson.M{"$regex": dev.DeviceId, "$options": "$i"}}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry

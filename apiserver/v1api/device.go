@@ -63,8 +63,7 @@ func RegisterDevice(ctx echo.Context) error {
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Device{
-		Id:           uuid.NewV4().String(),
-		Name:         req.DeviceName,
+		DeviceId:     uuid.NewV4().String(),
 		ProductKey:   req.ProductKey,
 		TimeCreated:  time.Now(),
 		TimeModified: time.Now(),
@@ -75,8 +74,7 @@ func RegisterDevice(ctx echo.Context) error {
 	}
 	return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true,
 		Result: &registerDeviceResponse{
-			DeviceId:     dp.Id,
-			DeviceName:   dp.Name,
+			DeviceId:     dp.DeviceId,
 			ProductKey:   dp.ProductKey,
 			DeviceSecret: dp.DeviceSecret,
 			TimeCreated:  dp.TimeCreated,
@@ -108,13 +106,12 @@ func BulkRegisterDevices(ctx echo.Context) error {
 	rdevices := []db.Device{}
 	for i := 0; i < max; i++ {
 		dp := db.Device{
-			Id:           uuid.NewV4().String(),
-			Name:         req.DeviceName,
+			DeviceId:     uuid.NewV4().String(),
 			ProductKey:   req.ProductKey,
 			TimeCreated:  time.Now(),
 			TimeModified: time.Now(),
 		}
-		glog.Infof("+++%d,%s\n", i, dp.Id)
+		glog.Infof("+++%d,%s\n", i, dp.DeviceId)
 		rdevices = append(rdevices, dp)
 	}
 	err = r.BulkRegisterDevices(rdevices)
@@ -156,8 +153,7 @@ func GetOneDevice(ctx echo.Context) error {
 		&base.ApiResponse{
 			Success: true,
 			Result: &registerDeviceResponse{
-				DeviceId:     dev.Id,
-				DeviceName:   dev.Name,
+				DeviceId:     dev.DeviceId,
 				ProductKey:   dev.ProductKey,
 				DeviceSecret: dev.DeviceSecret,
 				TimeCreated:  dev.TimeCreated,
@@ -228,7 +224,6 @@ func UpdateDevice(ctx echo.Context) error {
 	// will be modified to retrieve specific information sucha as
 	// product.id and creation time
 	dp := db.Device{
-		Name:         req.DeviceName,
 		ProductId:    ctx.Param("id"),
 		ProductKey:   req.ProductKey,
 		DeviceStatus: req.DeviceStatus,
@@ -242,8 +237,7 @@ func UpdateDevice(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK,
 		&base.ApiResponse{Success: true,
 			Result: &updateDeviceResponse{
-				DeviceId:     dp.Id,
-				DeviceName:   dp.Name,
+				DeviceId:     dp.DeviceId,
 				ProductKey:   dp.ProductKey,
 				DeviceSecret: dp.DeviceSecret,
 				TimeCreated:  dp.TimeCreated,
@@ -276,7 +270,7 @@ func GetMultipleDevices(ctx echo.Context) error {
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
-		rdevices = append(rdevices, device{Id: dev.Id, Status: dev.DeviceStatus})
+		rdevices = append(rdevices, device{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(http.StatusOK,
 		&base.ApiResponse{

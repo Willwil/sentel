@@ -134,10 +134,10 @@ func (p *notifyService) handleProductNotify(value []byte) error {
 	}
 	switch tf.Action {
 	case com.ObjectActionRegister:
-		_, err := hub.CreateProduct(tf.TenantId, tf.ProductId, tf.Replicas)
+		_, err := hub.CreateProduct(tf.TenantId, tf.ProductKey, tf.Replicas)
 		return err
 	case com.ObjectActionDelete:
-		return hub.RemoveProduct(tf.TenantId, tf.ProductId)
+		return hub.RemoveProduct(tf.TenantId, tf.ProductKey)
 	}
 	return nil
 }

@@ -27,7 +27,7 @@ import (
 )
 
 type tenantAddRequest struct {
-	Name     string `json:"username"`
+	TenantId string `json:"tenantId"`
 	Password string `json:"password"`
 }
 
@@ -53,7 +53,7 @@ func LoginTenant(ctx echo.Context) error {
 
 	// Authorized
 	claims := &base.JwtApiClaims{
-		Name: tenant.Name,
+		Name: tenant.TenantId,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 		},
@@ -89,13 +89,13 @@ func RegisterTenant(ctx echo.Context) error {
 	defer r.Release()
 
 	t := db.Tenant{
-		Name:      req.Name,
+		TenantId:  req.TenantId,
 		Password:  req.Password,
 		CreatedAt: time.Now(),
 	}
 
 	// Check name available
-	if err := r.CheckTenantNameAvailable(req.Name); err != nil {
+	if err := r.CheckTenantNameAvailable(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "Same tenant identifier already exist"})
 	}
 	if err := r.RegisterTenant(&t); err != nil {
@@ -106,7 +106,7 @@ func RegisterTenant(ctx echo.Context) error {
 		"tenant",
 		com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: req.Name,
+			TenantId: req.TenantId,
 			Action:   com.ObjectActionRegister,
 		})
 
@@ -178,12 +178,12 @@ func UpdateTenant(ctx echo.Context) error {
 	defer r.Release()
 
 	t := db.Tenant{
-		Name:      req.Name,
+		TenantId:  req.TenantId,
 		Password:  req.Password,
 		UpdatedAt: time.Now(),
 	}
 
-	if err := r.UpdateTenant(req.Name, &t); err != nil {
+	if err := r.UpdateTenant(req.TenantId, &t); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
 	}
 	// Notify kafka
@@ -191,7 +191,7 @@ func UpdateTenant(ctx echo.Context) error {
 		"tenant",
 		com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: req.Name,
+			TenantId: req.TenantId,
 			Action:   com.ObjectActionUpdate,
 		})
 

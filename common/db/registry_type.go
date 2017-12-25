@@ -16,7 +16,7 @@ import "time"
 
 // Tenant
 type Tenant struct {
-	Name      string    `bson:"Name"`
+	TenantId  string    `bson:"Name"`
 	Password  string    `bson:"Password"`
 	CreatedAt time.Time `bson:"CreatedAt"`
 	UpdatedAt time.Time `bson:"UpdatedAt"`
@@ -24,8 +24,8 @@ type Tenant struct {
 
 // Product
 type Product struct {
-	Id           string    `bson:"Id"`
-	Name         string    `bson:"Name"`
+	TenantId     string    `bson:"TenantId" json:"tenantId"`
+	ProductId    string    `bson:"ProductId"`
 	Description  string    `bson:"Description"`
 	TimeCreated  time.Time `bson:"TimeCreated"`
 	TimeModified time.Time `bson:"TimeModified"`
@@ -35,8 +35,7 @@ type Product struct {
 
 // Device
 type Device struct {
-	Id           string    `bson:"Id"`
-	Name         string    `bson:"Name"`
+	DeviceId     string    `bson:"DeviceId"`
 	ProductId    string    `bson:"ProductId"`
 	ProductKey   string    `bson:"ProductKey"`
 	DeviceStatus string    `bson:"DeviceStatus"`
