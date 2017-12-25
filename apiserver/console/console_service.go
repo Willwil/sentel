@@ -110,7 +110,8 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.PATCH("/products", v1api.UpdateProduct)
 	g.GET("/products", v1api.GetProductList)
 	g.GET("/products/:productKey", v1api.GetProduct)
-	g.GET("/products/devices", v1api.GetProductDevices)
+	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
+	g.GET("/products/:productKey/rules", v1api.GetProductRules)
 
 	// Device
 	g.POST("/devices", v1api.RegisterDevice)
@@ -120,13 +121,12 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
 
 	// Rules
-	g.POST("/products/:productKey/rules", v1api.CreateRule)
-	g.GET("/products/:productKey/rules", v1api.GetProductRules)
-	g.DELETE("/products/:prouctKey/rules/:ruleName", v1api.RemoveRule)
-	g.GET("/products/:productKey/rules/:ruleName", v1api.GetRule)
-	g.PATCH("/products/:productKey/rules/:ruleName", v1api.UpdateRule)
-	g.PUT("/products/:productKey/rules/:ruleName/start", v1api.StartRule)
-	g.PUT("/products/:productKey/rules/:ruleName/stop", v1api.StopRule)
+	g.POST("/rules", v1api.CreateRule)
+	g.DELETE("/rules", v1api.RemoveRule)
+	g.PATCH("/rules", v1api.UpdateRule)
+	g.PUT("/rules/start", v1api.StartRule)
+	g.PUT("/rules/stop", v1api.StopRule)
+	g.GET("/rules/:ruleName", v1api.GetRule)
 
 	// Runtime
 	g.POST("/products/:productKey/devices/:deviceId/message", v1api.SendMessageToDevice)

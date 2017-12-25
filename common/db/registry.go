@@ -456,17 +456,17 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"ruleName": rule.RuleName, "productKey": rule.ProductKey}); err == nil {
+	if err := c.Find(bson.M{"RuleName": rule.RuleName, "ProductKey": rule.ProductKey}); err == nil {
 		return fmt.Errorf("rule %s already exist", rule.RuleName)
 	}
 	return c.Insert(rule)
 }
 
 // GetRule retrieve a rule information from registry/
-func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
+func (r *Registry) GetRule(productKey string, ruleName string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
 	rule := Rule{}
-	err := c.Find(bson.M{"ruleName": ruleName, "productId": productId}).One(&rule)
+	err := c.Find(bson.M{"RuleName": ruleName, "ProductKey": productKey}).One(&rule)
 	return &rule, err
 }
 
@@ -476,7 +476,7 @@ func (r *Registry) GetProductRuleNames(productKey string) ([]string, error) {
 
 	rule := Rule{}
 	rules := []string{}
-	iter := c.Find(bson.M{"productKey": productKey}).Sort("ruleName").Iter()
+	iter := c.Find(bson.M{"ProductKey": productKey}).Sort("RuleName").Iter()
 	for iter.Next(&rule) {
 		if iter.Err() == nil {
 			break
@@ -487,13 +487,13 @@ func (r *Registry) GetProductRuleNames(productKey string) ([]string, error) {
 }
 
 // DeleteRule delete a rule from registry
-func (r *Registry) DeleteRule(productId string, ruleName string) error {
+func (r *Registry) DeleteRule(productKey string, ruleName string) error {
 	c := r.db.C(dbNameRules)
-	return c.Remove(bson.M{"ruleName": ruleName, "productId": productId})
+	return c.Remove(bson.M{"RuleName": ruleName, "ProductKey": productKey})
 }
 
 // UpdateRule update rule information in registry
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	return c.Update(bson.M{"ruleName": rule.RuleName, "productKey": rule.ProductKey}, rule)
+	return c.Update(bson.M{"RuleName": rule.RuleName, "ProductKey": rule.ProductKey}, rule)
 }

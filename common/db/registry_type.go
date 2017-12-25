@@ -75,14 +75,14 @@ const (
 )
 
 type Rule struct {
-	TenantId    string          `json:"tenantId" bson:"tenantId"`
-	ProductKey  string          `json:"productKey" bson:"productKey"`
-	RuleName    string          `json:"ruleName" bson:"ruleName"`
-	DataFormat  string          `json:"format" bson:"format"`
-	Description string          `json:"desc" bson:"desc"`
-	DataProcess RuleDataProcess `json:"dataprocess" bson"dataprocess"`
-	DataTarget  RuleDataTarget  `json:"datatarget", bson:"datatarget"`
-	Status      string          `json:status, bson:"status"`
-	TimeCreated time.Time       `json:timeCreated, bson:"timeCreated"`
-	TimeUpdated time.Time       `json:timeUpdated, bson:"timeUpdated"`
+	TenantId    string          `json:"tenantId" bson:"TenantId"`
+	ProductKey  string          `json:"productKey" bson:"ProductKey"`
+	RuleName    string          `json:"ruleName" bson:"RuleName"`
+	DataFormat  string          `json:"format" bson:"Format"`
+	Description string          `json:"desc" bson:"Desc"`
+	DataProcess RuleDataProcess `json:"dataprocess" bson"Dataprocess"`
+	DataTarget  RuleDataTarget  `json:"datatarget", bson:"Datatarget"`
+	Status      string          `json:status, bson:"Status"`
+	TimeCreated time.Time       `json:timeCreated, bson:"TimeCreated"`
+	TimeUpdated time.Time       `json:timeUpdated, bson:"TimeUpdated"`
 }
