@@ -24,13 +24,13 @@ type Tenant struct {
 
 // Product
 type Product struct {
-	TenantId     string    `bson:"TenantId" json:"tenantId"`
-	ProductId    string    `bson:"ProductId" json:"productId"`
-	Description  string    `bson:"Description" json:"description"`
-	TimeCreated  time.Time `bson:"TimeCreated"`
-	TimeModified time.Time `bson:"TimeModified"`
-	CategoryId   string    `bson:"CategoryId" json:"category"`
-	ProductKey   string    `bson:"ProductKey"`
+	TenantId    string    `bson:"TenantId" json:"tenantId"`
+	ProductId   string    `bson:"ProductId" json:"productId"`
+	ProductName string    `bson:"ProductId" json:"productId"`
+	Description string    `bson:"Description" json:"description"`
+	TimeCreated time.Time `bson:"TimeCreated"`
+	TimeUpdated time.Time `bson:"TimeModified"`
+	Category    string    `bson:"CategoryId" json:"category"`
 }
 
 // Device

@@ -106,9 +106,9 @@ func (p *consoleService) initialize(c com.Config) error {
 
 	// Product
 	g.POST("/products", v1api.CreateProduct)
-	g.DELETE("/products", v1api.RemoveProduct)
-	g.PATCH("/products", v1api.UpdateProduct)
-	g.GET("/products", v1api.GetProductList)
+	g.DELETE("/products/:productId", v1api.RemoveProduct)
+	g.PATCH("/products/:productId", v1api.UpdateProduct)
+	g.GET("/products/", v1api.GetProductList)
 	g.GET("/products/:productId", v1api.GetProduct)
 	g.GET("/products/:productId/devices", v1api.GetProductDevices)
 	g.GET("/products/:productId/rules", v1api.GetProductRules)

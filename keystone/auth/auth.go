@@ -27,7 +27,7 @@ var (
 type ApiAuthParam struct {
 	Format      string `json:"format"`
 	Version     string `json:"version"`
-	AccessKey   string `json:"accessKey"`
+	AccessId    string `json:"accessId"`
 	Signature   string `json:"sign"`
 	SignMethod  string `json:"signMethod"`
 	SignVersion string `json:"signVersion"`

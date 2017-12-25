@@ -62,10 +62,10 @@ type TenantTopic struct {
 // ProductTopic
 type ProductTopic struct {
 	TopicBase
-	ProductKey string `json:"productId"`
-	Action     string `json:"action"`
-	TenantId   string `json:"tenantId"`
-	Replicas   int32  `json:"replicas"`
+	ProductId string `json:"productId"`
+	Action    string `json:"action"`
+	TenantId  string `json:"tenantId"`
+	Replicas  int32  `json:"replicas"`
 }
 
 // DeviceTopic

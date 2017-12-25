@@ -11,37 +11,9 @@
 //  under the License.
 package base
 
-import (
-	"fmt"
-
-	"github.com/cloustone/sentel/keystone/auth"
-	"github.com/cloustone/sentel/keystone/rac"
-	"github.com/labstack/echo"
-)
-
 const (
-	ResourceCategoryTenant  = "tenant"
-	ResourceCategoryProduct = "product"
-	ResourceCategoryDevice  = "device"
-	ResourceCategoryRule    = "rule"
+	RootObjectTenants  = "tenants"
+	RootObjectProducts = "products"
+	RootObjectDevices  = "devices"
+	RootObjectRules    = "rules"
 )
-
-func CreateResource(ctx echo.Context, category string, resource string, ower string) {
-	req := auth.ApiAuthParam{}
-	if err := ctx.Bind(&req); err == nil {
-		rac.CreateResource(category, resource, ower, req.AccessKey)
-	}
-}
-func AccessResource(ctx echo.Context, category string, resource string, right rac.AccessRight) error {
-	req := auth.ApiAuthParam{}
-	if err := ctx.Bind(&req); err == nil {
-		return rac.AccessResource(category, resource, req.AccessKey, right)
-	}
-	return fmt.Errorf("in valid access to resource '%s'", resource)
-}
-func ReleaseResource(ctx echo.Context, category string, resource string) {
-	req := auth.ApiAuthParam{}
-	if err := ctx.Bind(&req); err == nil {
-		rac.ReleaseResource(category, resource, req.AccessKey)
-	}
-}

@@ -19,20 +19,21 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/orm"
 	jwt "github.com/dgrijalva/jwt-go"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
 
-type tenantRequest struct {
+type registerRequest struct {
 	TenantId string `json:"tenantId"`
 	Password string `json:"password"`
 }
 
-// addTenant add a new tenant
+// RegisterTenant add a new tenant
 func RegisterTenant(ctx echo.Context) error {
-	req := tenantRequest{}
+	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	}
@@ -50,6 +51,14 @@ func RegisterTenant(ctx echo.Context) error {
 	if err := r.RegisterTenant(&t); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
 	}
+	// notify keystone to register the object
+	orm.CreateObject(&orm.Object{
+		ObjectName:  req.TenantId,
+		ObjectId:    req.TenantId,
+		Category:    "tenant",
+		CreatedTime: time.Now(),
+		Owner:       req.TenantId,
+	})
 	// Notify kafka
 	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
@@ -61,7 +70,7 @@ func RegisterTenant(ctx echo.Context) error {
 }
 
 func LoginTenant(ctx echo.Context) error {
-	req := tenantRequest{}
+	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	}

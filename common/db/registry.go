@@ -201,21 +201,16 @@ func (r *Registry) RegisterProduct(p *Product) error {
 }
 
 // DeleteProduct delete a product from registry
-func (r *Registry) DeleteProduct(p *Product) error {
+func (r *Registry) DeleteProduct(productId string) error {
 	c := r.db.C(dbNameProducts)
-	if err := c.Find(bson.M{"TeantId": p.TenantId, "ProductKey": p.ProductKey}); err == nil {
-		c.Remove(bson.M{"TenantId": p.TenantId, "ProductKey": p.ProductKey})
-		c = r.db.C(dbNameDevices)
-		return c.Remove(bson.M{"ProductKey": p.ProductKey})
-	}
-	return fmt.Errorf("no product '%s' in tenant '%s'", p.ProductKey, p.TenantId)
+	return c.Remove(bson.M{"ProductId": productId})
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProduct(tenantId string, productId string) (*Product, error) {
+func (r *Registry) GetProduct(productId string) (*Product, error) {
 	c := r.db.C(dbNameProducts)
 	product := &Product{}
-	err := c.Find(bson.M{"TeantId": tenantId, "ProductId": productId}).One(product)
+	err := c.Find(bson.M{"ProductId": productId}).One(product)
 	return product, err
 }
 
@@ -254,7 +249,7 @@ func (r *Registry) GetProductDevices(productId string) ([]Device, error) {
 // UpdateProduct update product detail information in registry
 func (r *Registry) UpdateProduct(p *Product) error {
 	c := r.db.C(dbNameProducts)
-	return c.Update(bson.M{"ProductKey": p.ProductKey}, p)
+	return c.Update(bson.M{"ProductId": p.ProductId}, p)
 }
 
 // Device
