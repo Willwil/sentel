@@ -10,3 +10,17 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 package rac
+
+type AccessRight uint16
+
+const (
+	AccessRightRead  AccessRight = 1
+	AccessRightWrite AccessRight = 2
+	AccessRightFull  AccessRight = 3
+)
+
+func CreateResource(category string, name string, ower string, key string) {}
+func AccessResource(category string, name string, key string, right AccessRight) error {
+	return nil
+}
+func ReleaseResource(category string, name string, key string) {}

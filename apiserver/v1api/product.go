@@ -19,6 +19,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/rac"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
@@ -43,6 +44,8 @@ func CreateProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusOK,
 			&base.ApiResponse{RequestId: uuid.NewV4().String(), Success: false, Message: err.Error()})
 	}
+	// Notify keystone
+	base.CreateResource(ctx, base.ResourceCategoryProduct, p.ProductKey, p.TenantId)
 
 	// Notify kafka
 	base.AsyncProduceMessage(ctx,
@@ -61,6 +64,10 @@ func RemoveProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	} else if p.TenantId == "" || p.ProductKey == "" {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+	}
+
+	if err := base.AccessResource(ctx, base.ResourceCategoryProduct, p.ProductKey, rac.AccessRightFull); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	}
 
 	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
