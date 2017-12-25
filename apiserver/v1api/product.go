@@ -19,25 +19,10 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
-	"github.com/cloustone/sentel/keystone/auth"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
-
-type productAddRequest struct {
-	auth.ApiAuthParam
-	Name        string `bson:"Name"`
-	CategoryId  string `bson:"CategoryId"`
-	Description string `bson:"Description"`
-}
-
-type productPageRequest struct {
-	auth.ApiAuthParam
-	Id     string `bson:"Id"`
-	Name   string `bson:"Name"`
-	LastId string `bson:"LastId"`
-}
 
 func CreateProduct(ctx echo.Context) error {
 	p := db.Product{}
@@ -101,7 +86,7 @@ func UpdateProduct(ctx echo.Context) error {
 	p := db.Product{}
 	if err := ctx.Bind(&p); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
-	} else if p.TenantId == "" || p.ProductKey == "" {
+	} else if p.TenantId == "" || p.ProductId == "" {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
 	}
 	// Connect with registry
@@ -154,9 +139,9 @@ func GetProductList(ctx echo.Context) error {
 
 // getProduct retrieve production information from registry store
 func GetProduct(ctx echo.Context) error {
-	productKey := ctx.Param("productKey")
+	productId := ctx.Param("productId")
 	tenantId := ctx.QueryParam("tenantId")
-	if tenantId == "" || productKey == "" {
+	if tenantId == "" || productId == "" {
 		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
 	}
 
@@ -167,7 +152,7 @@ func GetProduct(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	p, err := r.GetProduct(tenantId, productKey)
+	p, err := r.GetProduct(tenantId, productId)
 	if err != nil {
 		return ctx.JSON(http.StatusNotFound, &base.ApiResponse{Message: err.Error()})
 	}
@@ -183,7 +168,7 @@ func GetProductDevices(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	pdevices, err := r.GetProductDevices(ctx.Param("id"))
+	pdevices, err := r.GetProductDevices(ctx.Param("productId"))
 	if err != nil {
 		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: false, Message: err.Error()})
 	}

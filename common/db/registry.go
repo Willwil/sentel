@@ -252,10 +252,10 @@ func (r *Registry) DeleteProduct(p *Product) error {
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProduct(tenantId string, productKey string) (*Product, error) {
+func (r *Registry) GetProduct(tenantId string, productId string) (*Product, error) {
 	c := r.db.C(dbNameProducts)
 	product := &Product{}
-	err := c.Find(bson.M{"TeantId": tenantId, "ProductKey": productKey}).One(product)
+	err := c.Find(bson.M{"TeantId": tenantId, "ProductId": productId}).One(product)
 	return product, err
 }
 

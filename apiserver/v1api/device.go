@@ -201,3 +201,10 @@ func BulkRegisterDevices(ctx echo.Context) error {
 	*/
 	return nil
 }
+func GetShadowDevice(ctx echo.Context) error {
+	return nil
+}
+
+func UpdateShadowDevice(ctx echo.Context) error {
+	return nil
+}

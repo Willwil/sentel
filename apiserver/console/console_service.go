@@ -109,9 +109,10 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.DELETE("/products", v1api.RemoveProduct)
 	g.PATCH("/products", v1api.UpdateProduct)
 	g.GET("/products", v1api.GetProductList)
-	g.GET("/products/:productKey", v1api.GetProduct)
-	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
-	g.GET("/products/:productKey/rules", v1api.GetProductRules)
+	g.GET("/products/:productId", v1api.GetProduct)
+	g.GET("/products/:productId/devices", v1api.GetProductDevices)
+	g.GET("/products/:productId/rules", v1api.GetProductRules)
+	g.GET("/products/:productId/devices/statics", v1api.GetDeviceStatics)
 
 	// Device
 	g.POST("/devices", v1api.RegisterDevice)
@@ -119,6 +120,8 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.DELETE("/devices", v1api.DeleteDevice)
 	g.PATCH("/devices", v1api.UpdateDevice)
 	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
+	g.PATCH("/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
+	g.GET("/devices/:deviceId/shardow", v1api.GetShadowDevice)
 
 	// Rules
 	g.POST("/rules", v1api.CreateRule)
@@ -129,12 +132,9 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.GET("/rules/:ruleName", v1api.GetRule)
 
 	// Runtime
-	g.POST("/products/:productKey/devices/:deviceId/message", v1api.SendMessageToDevice)
-	g.POST("/products/:productKey/message", v1api.BroadcastProductMessage)
-	g.GET("/products/:productKey/devices/:deviceId/shardow", v1api.GetShadowDevice)
-	g.PATCH("/products/:productKey/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
+	g.POST("/message", v1api.SendMessageToDevice)
+	g.POST("/message/broadcast", v1api.BroadcastProductMessage)
 
-	g.GET("/products/:productKey/devices/statics", v1api.GetDeviceStatics)
 	g.GET("/service", v1api.GetServiceStatics)
 
 	return nil
