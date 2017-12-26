@@ -19,7 +19,6 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
 	"github.com/golang/glog"
@@ -96,45 +95,26 @@ func (p *managementService) initialize(c com.Config) error {
 
 	// API for end users with restapi support
 	g := p.echo.Group("/iot/api/v1")
-	p.setAuth(c, g)
-	g.POST("/products", v1api.CreateProduct)
-	g.PATCH("/products/:productKey", v1api.UpdateProduct)
-	g.GET("/products/:productKey/devices", v1api.GetProductDevices)
+	g.POST("/products", createProduct)
+	g.PATCH("/products/:productId", updateProduct)
+	g.GET("/products/:productId/devices", getProductDevices)
 
-	g.POST("/products/:productKey/device", v1api.RegisterDevice)
-	g.POST("/prodcuts/:productKey/devices/bulk", v1api.BulkApplyDevices)
-	g.GET("/products/:productKey/devices/bulk/:id", v1api.BulkApplyGetStatus)
-	g.GET("/products/:productKey/devices/bulk", v1api.BulkApplyGetDevices)
-	g.GET("/products/:productKey/devices/list", v1api.GetDeviceList)
-	g.GET("/products/:productKey/devices/status", v1api.BulkGetDeviceStatus)
-	g.GET("/products/:productKey/devices/:deviceName", v1api.GetDeviceByName)
+	g.POST("/products/:productId/device", registerDevice)
+	g.POST("/prodcuts/:productId/devices/bulk", bulkApplyDevices)
+	g.GET("/products/:productId/devices/bulk/:id", bulkApplyGetStatus)
+	g.GET("/products/:productId/devices/bulk", bulkApplyGetDevices)
+	g.GET("/products/:productId/devices/list", getDeviceList)
+	g.GET("/products/:productId/devices/status", bulkGetDeviceStatus)
+	g.GET("/products/:productId/devices/:deviceName", getDeviceByName)
 
-	g.POST("/products/:productKey/devices/:deviceId/props", v1api.SaveDevicePropsByName)
-	g.GET("/products/:productKey/devices/:deviceId/props/:props", v1api.GetDevicePropsByName)
-	g.DELETE("/products/:productKey/devices/:deviceId/props/:props", v1api.GetDevicePropsByName)
+	g.POST("/products/:productId/devices/:deviceId/props", saveDevicePropsByName)
+	g.GET("/products/:productId/devices/:deviceId/props/:props", getDevicePropsByName)
+	g.DELETE("/products/:productId/devices/:deviceId/props/:props", getDevicePropsByName)
 
-	g.POST("/products/:productKey/devices/:deviceId/message", v1api.SendMessageToDevice)
-	g.POST("/products/:productKey/message", v1api.BroadcastProductMessage)
-	g.GET("/products/:productKey/devices/:deviceId/shardow", v1api.GetShadowDevice)
-	g.PATCH("/products/:productKey/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
+	g.POST("/message", sendMessageToDevice)
+	g.POST("/message/broadcast", broadcastProductMessage)
+	g.GET("/products/:productId/devices/:deviceId/shardow", getShadowDevice)
+	g.PATCH("/products/:productId/devices/:deviceId/shadow", updateShadowDevice)
 
 	return nil
-}
-
-// setAuth setup api group 's authentication method
-func (p *managementService) setAuth(c com.Config, g *echo.Group) {
-	auth := "jwt"
-	if _, err := c.String("apiserver", "auth"); err == nil {
-		auth = c.MustString("apiserver", "auth")
-	}
-	switch auth {
-	case "jwt":
-		// Authentication config
-		config := mw.JWTConfig{
-			Claims:     &base.JwtApiClaims{},
-			SigningKey: []byte("secret"),
-		}
-		g.Use(mw.JWTWithConfig(config))
-	default:
-	}
 }

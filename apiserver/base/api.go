@@ -32,7 +32,7 @@ type ApiResponse struct {
 
 type JwtApiClaims struct {
 	jwt.StandardClaims
-	Name string `json:"name"`
+	AccessId string `json:"accessId"`
 }
 
 type ConsoleApi interface {

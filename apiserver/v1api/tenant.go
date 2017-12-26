@@ -92,7 +92,7 @@ func LoginTenant(ctx echo.Context) error {
 
 	// Authorized
 	claims := &base.JwtApiClaims{
-		Name: tenant.TenantId,
+		AccessId: tenant.TenantId,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 		},

@@ -97,22 +97,22 @@ func (p *consoleService) initialize(c com.Config) error {
 	// Api for console
 	g := p.echo.Group("/iot/api/v1/console")
 	p.setAuth(c, g)
-	g.POST("/tenants", v1api.RegisterTenant)
-	g.POST("/tenants/login", v1api.LoginTenant)
-	g.POST("/tenants/logout", v1api.LogoutTenant)
-	g.DELETE("/tenants/:tenantId", v1api.DeleteTenant)
-	g.GET("/tenants/:tenantId", v1api.GetTenant)
-	g.PATCH("/tenants/:tenantId", v1api.UpdateTenant)
+	g.POST("/tenants", registerTenant)
+	g.POST("/tenants/login", loginTenant)
+	g.POST("/tenants/logout", logoutTenant)
+	g.DELETE("/tenants/:tenantId", deleteTenant)
+	g.GET("/tenants/:tenantId", getTenant)
+	g.PATCH("/tenants/:tenantId", updateTenant)
 
 	// Product
-	g.POST("/products", v1api.CreateProduct)
-	g.DELETE("/products/:productId", v1api.RemoveProduct)
-	g.PATCH("/products/:productId", v1api.UpdateProduct)
-	g.GET("/products/", v1api.GetProductList)
-	g.GET("/products/:productId", v1api.GetProduct)
-	g.GET("/products/:productId/devices", v1api.GetProductDevices)
-	g.GET("/products/:productId/rules", v1api.GetProductRules)
-	g.GET("/products/:productId/devices/statics", v1api.GetDeviceStatics)
+	g.POST("/products", createProduct)
+	g.DELETE("/products/:productId", removeProduct)
+	g.PATCH("/products/:productId", updateProduct)
+	g.GET("/products/", getProductList)
+	g.GET("/products/:productId", getProduct)
+	g.GET("/products/:productId/devices", getProductDevices)
+	g.GET("/products/:productId/rules", getProductRules)
+	g.GET("/products/:productId/devices/statics", getDeviceStatics)
 
 	// Device
 	g.POST("/devices", v1api.RegisterDevice)
@@ -124,18 +124,18 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.GET("/devices/:deviceId/shardow", v1api.GetShadowDevice)
 
 	// Rules
-	g.POST("/rules", v1api.CreateRule)
-	g.DELETE("/rules", v1api.RemoveRule)
-	g.PATCH("/rules", v1api.UpdateRule)
-	g.PUT("/rules/start", v1api.StartRule)
-	g.PUT("/rules/stop", v1api.StopRule)
-	g.GET("/rules/:ruleName", v1api.GetRule)
+	g.POST("/rules", createRule)
+	g.DELETE("/rules", removeRule)
+	g.PATCH("/rules", updateRule)
+	g.PUT("/rules/start", startRule)
+	g.PUT("/rules/stop", stopRule)
+	g.GET("/rules/:ruleName", getRule)
 
 	// Runtime
-	g.POST("/message", v1api.SendMessageToDevice)
-	g.POST("/message/broadcast", v1api.BroadcastProductMessage)
+	g.POST("/message", sendMessageToDevice)
+	g.POST("/message/broadcast", broadcastProductMessage)
 
-	g.GET("/service", v1api.GetServiceStatics)
+	g.GET("/service", getServiceStatics)
 
 	return nil
 }
