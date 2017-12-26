@@ -13,7 +13,6 @@
 package v1api
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -21,34 +20,33 @@ import (
 	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/orm"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
 
 type productCreateRequest struct {
-	auth.ApiAuthParam
 	ProductName string `json:"productName"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
 }
 
 func CreateProduct(ctx echo.Context) error {
+	accessId := ctx.Get("AccessId").(string)
 	req := productCreateRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	if req.ProductName == "" {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// inquery object access management service to authorization
-	if err := orm.AccessObject(base.RootObjectProducts, req.AccessId, orm.AccessRightFull); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+	if err := orm.AccessObject(base.RootObjectProducts, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
@@ -61,27 +59,26 @@ func CreateProduct(ctx echo.Context) error {
 	}
 
 	if err = r.RegisterProduct(p); err != nil {
-		return ctx.JSON(http.StatusOK,
-			&base.ApiResponse{RequestId: uuid.NewV4().String(), Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
 	orm.CreateObject(&orm.Object{
 		ObjectName:     req.ProductName,
 		ObjectId:       p.ProductId,
-		ParentObjectId: req.AccessId,
+		ParentObjectId: accessId,
 		Category:       "product",
 		CreatedTime:    time.Now(),
-		Owner:          req.AccessId,
+		Owner:          accessId,
 	})
 
 	// Notify kafka
-	base.AsyncProduceMessage(ctx,
+	asyncProduceMessage(ctx,
 		com.TopicNameProduct,
 		&com.ProductTopic{
 			ProductId: p.ProductId,
 			Action:    com.ObjectActionRegister,
 		})
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Result: &p})
+	return reply(ctx, OK, apiResponse{Result: &p})
 }
 
 // removeProduct delete product from registry store
@@ -89,29 +86,29 @@ func RemoveProduct(ctx echo.Context) error {
 	req := auth.ApiAuthParam{}
 	productId := ctx.Param("productId")
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
 	if err := orm.AccessObject(productId, req.AccessId, orm.AccessRightFull); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	if err := r.DeleteProduct(productId); err != nil {
-		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	base.SyncProduceMessage(ctx, com.TopicNameProduct,
+	syncProduceMessage(ctx, com.TopicNameProduct,
 		&com.ProductTopic{
 			ProductId: productId,
 			Action:    com.ObjectActionDelete,
 		})
 
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Success: true})
+	return reply(ctx, OK, apiResponse{})
 }
 
 type productUpdateRequest struct {
@@ -128,16 +125,16 @@ func UpdateProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	if err := orm.AccessObject(req.ProductId, req.AccessId, orm.AccessRightFull); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
@@ -150,32 +147,32 @@ func UpdateProduct(ctx echo.Context) error {
 	}
 
 	if err := r.UpdateProduct(p); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	base.AsyncProduceMessage(ctx, com.TopicNameProduct,
+	asyncProduceMessage(ctx, com.TopicNameProduct,
 		&com.ProductTopic{
 			ProductId: p.ProductId,
 			Action:    com.ObjectActionUpdate,
 		})
 
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Success: true})
+	return reply(ctx, OK, apiResponse{})
 }
 
 func GetProductList(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	if err := orm.AccessObject(base.RootObjectProducts, accessId, orm.AccessRightReadOnly); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 	if products, err := r.GetProducts(accessId); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	} else {
 		type product struct {
 			ProductId   string `json:"productId"`
@@ -185,8 +182,7 @@ func GetProductList(ctx echo.Context) error {
 		for _, p := range products {
 			result = append(result, product{ProductId: p.ProductId, ProductName: p.ProductName})
 		}
-		return ctx.JSON(http.StatusOK,
-			&base.ApiResponse{RequestId: uuid.NewV4().String(), Success: true, Result: result})
+		return reply(ctx, OK, apiResponse{Result: result})
 	}
 }
 
@@ -196,22 +192,21 @@ func GetProduct(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 
 	if err := orm.AccessObject(productId, accessId, orm.AccessRightReadOnly); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	p, err := r.GetProduct(productId)
 	if err != nil {
-		return ctx.JSON(http.StatusNotFound, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, NotFound, apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK,
-		&base.ApiResponse{RequestId: uuid.NewV4().String(), Success: true, Result: p})
+	return reply(ctx, OK, apiResponse{Result: p})
 }
 
 // getProductDevices retrieve product devices list from registry store
@@ -219,27 +214,22 @@ func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
 	if err := orm.AccessObject(productId, accessId, orm.AccessRightReadOnly); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	pdevices, err := r.GetProductDevices(productId)
 	if err != nil {
-		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, OK, apiResponse{Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
 	}
-	return ctx.JSON(http.StatusOK,
-		&base.ApiResponse{
-			RequestId: uuid.NewV4().String(),
-			Success:   true,
-			Result:    rdevices,
-		})
+	return reply(ctx, OK, apiResponse{Result: rdevices})
 }

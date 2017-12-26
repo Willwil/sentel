@@ -13,10 +13,8 @@
 package v1api
 
 import (
-	"net/http"
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/common/db"
 
 	"github.com/labstack/echo"
@@ -27,15 +25,14 @@ import (
 func RegisterDevice(ctx echo.Context) error {
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	config := ctx.(*base.ApiContext).Config
-	r, err := db.NewRegistry("apiserver", config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
@@ -43,32 +40,31 @@ func RegisterDevice(ctx echo.Context) error {
 	device.TimeUpdated = time.Now()
 	device.DeviceSecret = uuid.NewV4().String()
 	if err = r.RegisterDevice(&device); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true, Result: &device})
+	return reply(ctx, OK, apiResponse{Result: &device})
 }
 
 // Delete the identify of a device from the identity registry of an IoT Hub
 func DeleteDevice(ctx echo.Context) error {
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	config := ctx.(*base.ApiContext).Config
-	registry, err := db.NewRegistry("apiserver", config)
+	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
 	defer registry.Release()
 
 	// Get device into registry, the created product
 	if err := registry.DeleteDevice(device.TenantId, device.ProductKey, device.DeviceId); err != nil {
-		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, base.ApiResponse{Success: true})
+	return reply(ctx, OK, apiResponse{})
 }
 
 type device struct {
@@ -83,46 +79,43 @@ func GetOneDevice(ctx echo.Context) error {
 	tenantId := ctx.QueryParam("tenantId")
 
 	if tenantId == "" || productKey == "" || deviceId == "" {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
 	}
 	// Connect with registry
-	config := ctx.(*base.ApiContext).Config
-	registry, err := db.NewRegistry("apiserver", config)
+	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
 	defer registry.Release()
 
 	// Get device into registry, the created product
 	dev, err := registry.GetDevice(tenantId, productKey, deviceId)
 	if err != nil {
-		return ctx.JSON(http.StatusOK,
-			&base.ApiResponse{RequestId: uuid.NewV4().String(), Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true, Result: dev})
+	return reply(ctx, OK, &apiResponse{Result: dev})
 }
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
 func UpdateDevice(ctx echo.Context) error {
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, &apiResponse{Message: err.Error()})
 	}
 	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
 	}
-	config := ctx.(*base.ApiContext).Config
-	r, err := db.NewRegistry("apiserver", config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	device.TimeUpdated = time.Now()
 	if err = r.UpdateDevice(&device); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true, Result: &device})
+	return reply(ctx, OK, &apiResponse{Result: &device})
 }
 
 func BulkApplyDevices(ctx echo.Context) error {
@@ -163,13 +156,13 @@ func BulkRegisterDevices(ctx echo.Context) error {
 		glog.Infof("RegisterDevice ctx:[%s] ", ctx.Param("number"))
 		req := new(registerDeviceRequest)
 		if err := ctx.Bind(req); err != nil {
-			return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Success: false, Message: err.Error()})
+			return ctx.JSON(http.StatusBadRequest, &apiResponse{Success: false, Message: err.Error()})
 		}
-		config := ctx.(*base.ApiContext).Config
+		config := ctx.(*ApiContext).Config
 		// Connect with registry
 		r, err := db.NewRegistry("apiserver", config)
 		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+			return ctx.JSON(http.StatusInternalServerError, &apiResponse{Success: false, Message: err.Error()})
 		}
 		defer r.Release()
 
@@ -191,10 +184,10 @@ func BulkRegisterDevices(ctx echo.Context) error {
 		}
 		err = r.BulkRegisterDevices(rdevices)
 		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Success: false, Message: err.Error()})
+			return ctx.JSON(http.StatusInternalServerError, &apiResponse{Success: false, Message: err.Error()})
 		}
 		return ctx.JSON(http.StatusOK,
-			&base.ApiResponse{
+			&apiResponse{
 				Success: true,
 				Result:  rdevices,
 			})

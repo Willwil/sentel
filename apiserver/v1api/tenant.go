@@ -13,7 +13,6 @@
 package v1api
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -21,7 +20,6 @@ import (
 	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/orm"
 	jwt "github.com/dgrijalva/jwt-go"
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/labstack/echo"
 )
@@ -35,12 +33,12 @@ type registerRequest struct {
 func RegisterTenant(ctx echo.Context) error {
 	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	// get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 	t := db.Tenant{
@@ -49,7 +47,7 @@ func RegisterTenant(ctx echo.Context) error {
 		CreatedAt: time.Now(),
 	}
 	if err := r.RegisterTenant(&t); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// notify keystone to register the object
 	orm.CreateObject(&orm.Object{
@@ -60,36 +58,35 @@ func RegisterTenant(ctx echo.Context) error {
 		Owner:       req.TenantId,
 	})
 	// Notify kafka
-	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
+	asyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
 			TenantId: req.TenantId,
 			Action:   com.ObjectActionRegister,
 		})
 
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Result: &t})
+	return reply(ctx, OK, apiResponse{Result: &t})
 }
 
 func LoginTenant(ctx echo.Context) error {
 	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	tenant, err := r.GetTenant(req.TenantId)
-	if err == db.ErrorNotFound {
-		return ctx.JSON(http.StatusNotFound, &base.ApiResponse{Message: err.Error()})
+	if err != nil {
+		return reply(ctx, NotFound, apiResponse{Message: err.Error()})
 	}
 	if req.Password != tenant.Password {
 		return echo.ErrUnauthorized
 	}
-
 	// Authorized
 	claims := &base.JwtApiClaims{
 		AccessId: tenant.TenantId,
@@ -105,7 +102,7 @@ func LoginTenant(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return ctx.JSON(http.StatusOK, echo.Map{"token": t})
+	return reply(ctx, OK, echo.Map{"token": t})
 }
 
 func LogoutTenant(ctx echo.Context) error {
@@ -116,39 +113,39 @@ func LogoutTenant(ctx echo.Context) error {
 func DeleteTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tenantId")
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	if err := r.DeleteTenant(tenantId); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
+	asyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
 			TenantId: tenantId,
 			Action:   com.ObjectActionDelete,
 		})
 
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{})
+	return reply(ctx, OK, apiResponse{})
 }
 
 // getTenant return tenant's information
 func GetTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tenantIdd")
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	if t, err := r.GetTenant(tenantId); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	} else {
-		return ctx.JSON(http.StatusOK, &base.ApiResponse{Success: true, Result: &t})
+		return reply(ctx, OK, apiResponse{Result: &t})
 	}
 }
 
@@ -157,25 +154,25 @@ func UpdateTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tenantId")
 	t := db.Tenant{}
 	if err := ctx.Bind(&t); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", ctx.(*base.ApiContext).Config)
+	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	if err := r.UpdateTenant(tenantId, &t); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &base.ApiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	base.AsyncProduceMessage(ctx, com.TopicNameTenant,
+	asyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
 			TenantId: tenantId,
 			Action:   com.ObjectActionUpdate,
 		})
 
-	return ctx.JSON(http.StatusOK, &base.ApiResponse{RequestId: uuid.NewV4().String(), Result: &t})
+	return reply(ctx, OK, apiResponse{Result: &t})
 
 }
 

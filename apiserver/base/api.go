@@ -23,13 +23,6 @@ type ApiContext struct {
 	Config com.Config
 }
 
-type ApiResponse struct {
-	RequestId string      `json:"requestID"`
-	Success   bool        `json:"success"`
-	Message   string      `json:"message"`
-	Result    interface{} `json:"result"`
-}
-
 type JwtApiClaims struct {
 	jwt.StandardClaims
 	AccessId string `json:"accessId"`

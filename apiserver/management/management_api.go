@@ -16,6 +16,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/labstack/echo"
+	uuid "github.com/satori/go.uuid"
 )
 
 func setAccessId(ctx echo.Context) {
@@ -23,7 +24,8 @@ func setAccessId(ctx echo.Context) {
 	// the authentication paramters must bevalid
 	param := auth.ApiAuthParam{}
 	ctx.Bind(&param)
-	ctx.Set("accessId", param.AccessId)
+	ctx.Set("AccessId", param.AccessId)
+	ctx.Set("RequestId", uuid.NewV4().String())
 }
 
 // Product

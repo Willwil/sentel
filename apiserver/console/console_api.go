@@ -16,13 +16,15 @@ import (
 	"github.com/cloustone/sentel/apiserver/v1api"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
+	uuid "github.com/satori/go.uuid"
 )
 
 func setAccessId(ctx echo.Context) {
 	user := ctx.Get("user").(*jwt.Token)
 	claims := user.Claims.(jwt.MapClaims)
 	accessId := claims["accessId"].(string)
-	ctx.Set("accessId", accessId)
+	ctx.Set("AccessId", accessId)
+	ctx.Set("RequestId", uuid.NewV4().String())
 }
 
 func registerTenant(ctx echo.Context) error {

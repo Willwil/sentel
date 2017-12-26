@@ -10,3 +10,52 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 package v1api
+
+import (
+	"net/http"
+
+	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/apiserver/base"
+	com "github.com/cloustone/sentel/common"
+	"github.com/labstack/echo"
+)
+
+const (
+	OK          = http.StatusOK
+	ServerError = http.StatusInternalServerError
+	BadRequest  = http.StatusBadRequest
+	NotFound    = http.StatusNotFound
+)
+
+type apiResponse struct {
+	RequestId string      `json:"requestID"`
+	Message   string      `json:"message"`
+	Result    interface{} `json:"result"`
+}
+
+func reply(ctx echo.Context, code int, r interface{}) error {
+	switch r.(type) {
+	case apiResponse:
+		requestId := ctx.Get("RequestId").(string)
+		r.(*apiResponse).RequestId = requestId
+	}
+	return ctx.JSON(code, r)
+}
+
+func getConfig(ctx echo.Context) com.Config {
+	return ctx.(*base.ApiContext).Config
+}
+
+func syncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
+	c := getConfig(ctx)
+	hosts := c.MustString("apiserver", "kafka")
+	key := "iot"
+	return com.SyncProduceMessage(hosts, key, topic, value)
+}
+
+func asyncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
+	c := getConfig(ctx)
+	hosts := c.MustString("apiserver", "kafka")
+	key := "iot"
+	return com.AsyncProduceMessage(hosts, key, topic, value)
+}
