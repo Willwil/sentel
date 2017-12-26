@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -23,7 +24,8 @@ import (
 	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/common"
-	auth "github.com/cloustone/sentel/iothub/auth"
+	auth "github.com/cloustone/sentel/keystone/auth"
+	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/labstack/echo"
 )
 
@@ -38,7 +40,7 @@ type apiContext struct {
 }
 
 type authResponse struct {
-	Success bool `json:"success"`
+	Message string `json:"message"`
 }
 
 // restapiServiceFactory
@@ -72,8 +74,10 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, err
 	e.POST("keystone/api/v1/auth/device", authenticateDevice)
 
 	// Authorization
-	e.POST("keystone/api/v1/authoriize/api", authorizeApi)
-	e.POST("keystone/api/v1/authorize/device", authorizeApi)
+	e.POST("keystone/api/v1/orm/object", createOrmObject)
+	e.GET("keystone/api/v1/orm/:objectId", accessOrmObject)
+	e.PUT("keystone/api/v1/orm/:objectId", asignOrmObjectRight)
+	e.DELETE("keystone/api/v1/orm/:objectId", destroyOrmObject)
 
 	return &restapiService{
 		ServiceBase: com.ServiceBase{
@@ -117,26 +121,59 @@ func removeToken(ctx echo.Context) error {
 func authenticateApi(ctx echo.Context) error {
 	r := auth.ApiAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
+		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
 	}
 	err := auth.authenticate(r)
-	return ctx.JSON(http.StatusOK, &authResponse{Success: (err == nil)})
+	return ctx.JSON(http.StatusOK, &authResponse{})
 
 }
 
 func authenticateDevice(ctx echo.Context) error {
 	r := auth.DeviceAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &authResponse{Success: false})
+		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
 	}
 	err := auth.authenticate(r)
-	return ctx.JSON(http.StatusOK, &authResponse{Success: (err == nil)})
+	return ctx.JSON(http.StatusOK, &authResponse{})
 }
 
-func authorizeApi(ctx echo.Context) error {
-	return nil
+func createOrmObject(ctx echo.Context) error {
+	r := orm.Object{}
+	if err := ctx.Bind(&r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
+	}
+	if err := orm.createObject(r); err != nil {
+		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &authResponse{})
 }
 
-func authorizeDevice(ctx echo.Context) error {
-	return nil
+func accessOrmObject(ctx echo.Context) error {
+	objid := ctx.Param("objectId")
+	accessId := ctx.QueryParam("accessId")
+	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
+
+	if err := orm.accessObject(objid, accessId, right); err != nil {
+		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &authResponse{})
+}
+func assignOrmObjectRight(ctx echo.Context) error {
+	objid := ctx.Param("objectId")
+	accessId := ctx.QueryParam("accessId")
+	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
+
+	if err := orm.assignObjectRight(objid, accessId, right); err != nil {
+		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &authResponse{})
+
+}
+func destroyOrmObject(ctx echo.Context) error {
+	objid := ctx.Param("objectId")
+	accessId := ctx.QueryParam("accessId")
+	if err := orm.destoryObjectt(objid, accessId); err != nil {
+		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &authResponse{})
 }

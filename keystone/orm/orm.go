@@ -11,15 +11,29 @@
 //  under the License.
 package orm
 
-func createObject(obj Object) error {
-	return nil
+import (
+	"time"
+
+	uuid "github.com/satori/go.uuid"
+)
+
+type AccessRight uint8
+
+const (
+	AccessRightReadOnly AccessRight = 1
+	AccessRightWrite    AccessRight = 2
+	AccessRightFull     AccessRight = 3
+)
+
+type Object struct {
+	ObjectName     string    `json:"objectName"`
+	ObjectId       string    `json:"objectId"`
+	ParentObjectId string    `json:"parentObjectId"`
+	Category       string    `json:"category"`
+	CreatedTime    time.Time `json:"createdTime"`
+	Owner          string    `json:"owner"`
 }
 
-func accessObject(objectId string, accessId string, right AccessRight) error {
-	return nil
-}
-
-func destroyObject(objName string, accessId string) {}
-func assignObjectRight(objName string, accessId string, right AccessRight) error {
-	return nil
+func NewObjectId() string {
+	return uuid.NewV4().String()
 }
