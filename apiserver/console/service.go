@@ -100,9 +100,9 @@ func (p *consoleService) initialize(c com.Config) error {
 	g.POST("/tenants", registerTenant)
 	g.POST("/tenants/login", loginTenant)
 	g.POST("/tenants/logout", logoutTenant)
-	g.DELETE("/tenants/:tenantId", deleteTenant)
+	g.DELETE("/tenants", deleteTenant)
 	g.GET("/tenants/:tenantId", getTenant)
-	g.PATCH("/tenants/:tenantId", updateTenant)
+	g.PATCH("/tenants", updateTenant)
 
 	// Product
 	g.POST("/products", createProduct)

@@ -110,7 +110,14 @@ func LogoutTenant(ctx echo.Context) error {
 
 // deleteTenant delete tenant
 func DeleteTenant(ctx echo.Context) error {
-	tenantId := ctx.Param("tenantId")
+	req := registerRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.TenantId == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	// Get registry store instance by context
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
@@ -118,13 +125,13 @@ func DeleteTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	if err := r.DeleteTenant(tenantId); err != nil {
+	if err := r.DeleteTenant(req.TenantId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: tenantId,
+			TenantId: req.TenantId,
 			Action:   com.ObjectActionDelete,
 		})
 
@@ -150,7 +157,6 @@ func GetTenant(ctx echo.Context) error {
 
 // updateTenant update tenant's information
 func UpdateTenant(ctx echo.Context) error {
-	tenantId := ctx.Param("tenantId")
 	t := db.Tenant{}
 	if err := ctx.Bind(&t); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
@@ -162,12 +168,12 @@ func UpdateTenant(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	if err := r.UpdateTenant(tenantId, &t); err != nil {
+	if err := r.UpdateTenant(t.TenantId, &t); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx, com.TopicNameTenant,
 		&com.TenantTopic{
-			TenantId: tenantId,
+			TenantId: t.TenantId,
 			Action:   com.ObjectActionUpdate,
 		})
 
