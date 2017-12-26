@@ -265,10 +265,10 @@ func (r *Registry) RegisterDevice(dev *Device) error {
 }
 
 // GetDevice retrieve a device information from registry/
-func (r *Registry) GetDevice(tenantId string, productId string, deviceId string) (*Device, error) {
+func (r *Registry) GetDevice(productId string, deviceId string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
-	err := c.Find(bson.M{"TenantId": tenantId, "ProductId": productId, "DeviceId": deviceId}).One(device)
+	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(device)
 	return device, err
 }
 
@@ -283,10 +283,10 @@ func (r *Registry) BulkRegisterDevices(devices []Device) error {
 }
 
 // DeleteDevice delete a device from registry
-func (r *Registry) DeleteDevice(tenantId string, productKey string, deviceId string) error {
+func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 	c := r.db.C(dbNameDevices)
-	if err := c.Find(bson.M{"TeantId": tenantId, "ProductKey": productKey, "deviceId": deviceId}); err == nil {
-		return c.Remove(bson.M{"TeantId": tenantId, "ProductKey": productKey, "deviceId": deviceId})
+	if err := c.Find(bson.M{"ProductId": productId, "deviceId": deviceId}); err == nil {
+		return c.Remove(bson.M{"ProductId": productId, "deviceId": deviceId})
 	}
 	return fmt.Errorf("invalid operataion")
 }
@@ -299,7 +299,7 @@ func (r *Registry) BulkDeleteDevice(devices []string) error {
 // UpdateDevice update device information in registry
 func (r *Registry) UpdateDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
-	return c.Update(bson.M{"TeantId": dev.TenantId, "ProductKey": dev.ProductKey, "DeviceId": dev.DeviceId}, dev)
+	return c.Update(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId}, dev)
 }
 
 // BulkUpdateDevice update a lot of devices in registry
@@ -317,37 +317,36 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	if err := c.Find(bson.M{"RuleName": rule.RuleName, "ProductKey": rule.ProductKey}); err == nil {
+	if err := c.Find(bson.M{"RuleName": rule.RuleName, "ProductId": rule.ProductId}); err == nil {
 		return fmt.Errorf("rule %s already exist", rule.RuleName)
 	}
 	return c.Insert(rule)
 }
 
 // GetRule retrieve a rule information from registry/
-func (r *Registry) GetRule(productKey string, ruleName string) (*Rule, error) {
+func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
 	rule := Rule{}
-	err := c.Find(bson.M{"RuleName": ruleName, "ProductKey": productKey}).One(&rule)
+	err := c.Find(bson.M{"RuleName": ruleName, "ProductId": productId}).One(&rule)
 	return &rule, err
 }
 
 // GetProduct retrieve product detail information from registry
-func (r *Registry) GetProductRuleNames(productKey string) ([]string, error) {
+func (r *Registry) GetProductRuleNames(productId string) ([]string, error) {
 	c := r.db.C(dbNameRules)
-
 	rules := []string{}
-	err := c.Find(bson.M{"ProductKey": productKey}).Sort("RuleName").All(&rules)
+	err := c.Find(bson.M{"ProductId": productId}).Sort("RuleName").All(&rules)
 	return rules, err
 }
 
 // DeleteRule delete a rule from registry
-func (r *Registry) DeleteRule(productKey string, ruleName string) error {
+func (r *Registry) DeleteRule(productId string, ruleName string) error {
 	c := r.db.C(dbNameRules)
-	return c.Remove(bson.M{"RuleName": ruleName, "ProductKey": productKey})
+	return c.Remove(bson.M{"RuleName": ruleName, "ProductId": productId})
 }
 
 // UpdateRule update rule information in registry
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
-	return c.Update(bson.M{"RuleName": rule.RuleName, "ProductKey": rule.ProductKey}, rule)
+	return c.Update(bson.M{"RuleName": rule.RuleName, "ProductId": rule.ProductId}, rule)
 }

@@ -50,9 +50,8 @@ func RegisterTenant(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// notify keystone to register the object
-	orm.CreateObject(&orm.Object{
+	orm.CreateObject(orm.Object{
 		ObjectName:  req.TenantId,
-		ObjectId:    req.TenantId,
 		Category:    "tenant",
 		CreatedTime: time.Now(),
 		Owner:       req.TenantId,

@@ -25,7 +25,7 @@ type ruleWraper struct {
 }
 
 func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
-	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductKey)
+	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	dataProcessor, _ := data.NewProcessor(c, p.rule)
 	endpoint, err := data.NewEndpoint(c, p.rule)
 	if err != nil {

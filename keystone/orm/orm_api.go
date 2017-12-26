@@ -37,14 +37,15 @@ type Object struct {
 func NewObjectId() string {
 	return uuid.NewV4().String()
 }
-func CreateObject(obj *Object) {
+func CreateObject(obj Object) {
 
 }
 
-func AccessObject(objName string, accessId string, right AccessRight) error {
+func AccessObject(objectId string, accessId string, right AccessRight) error {
 	return nil
 }
-func ReleaseObject(objName string, accessId string) {}
+
+func DestroyObject(objName string, accessId string) {}
 func AssignObjectRight(objName string, accessId string, right AccessRight) error {
 	return nil
 }

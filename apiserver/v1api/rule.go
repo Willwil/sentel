@@ -17,15 +17,25 @@ import (
 
 	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/labstack/echo"
 )
 
 // createRule add new rule for product
 func CreateRule(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	rule := db.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
+	if rule.ProductId == "" || rule.RuleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := rule.ProductId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+	}
+
 	// Connect with registry
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
@@ -38,10 +48,9 @@ func CreateRule(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx,
-		com.TopicNameRule,
+	asyncProduceMessage(ctx, com.TopicNameRule,
 		&com.RuleTopic{
-			ProductKey: rule.ProductKey,
+			ProductId:  rule.ProductId,
 			RuleName:   rule.RuleName,
 			RuleAction: com.RuleActionCreate,
 		})
@@ -50,24 +59,32 @@ func CreateRule(ctx echo.Context) error {
 
 // deleteRule delete existed rule
 func RemoveRule(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	rule := db.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
+	if rule.ProductId == "" || rule.RuleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := rule.ProductId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+	}
+
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
-	if err := r.DeleteRule(rule.ProductKey, rule.RuleName); err != nil {
+	if err := r.DeleteRule(rule.ProductId, rule.RuleName); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx,
-		com.TopicNameRule,
+	asyncProduceMessage(ctx, com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   rule.RuleName,
-			ProductKey: rule.ProductKey,
+			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionRemove,
 		})
 	return reply(ctx, OK, apiResponse{})
@@ -75,9 +92,17 @@ func RemoveRule(ctx echo.Context) error {
 
 // UpdateRule update existed rule
 func UpdateRule(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	rule := db.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	}
+	if rule.ProductId == "" || rule.RuleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := rule.ProductId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -93,37 +118,54 @@ func UpdateRule(ctx echo.Context) error {
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   rule.RuleName,
-			ProductKey: rule.ProductKey,
+			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionUpdate,
 		})
 	return reply(ctx, OK, apiResponse{Result: rule})
 }
 
 func StartRule(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	rule := db.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
+	if rule.ProductId == "" || rule.RuleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := rule.ProductId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+	}
+
 	asyncProduceMessage(ctx,
 		com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   rule.RuleName,
-			ProductKey: rule.ProductKey,
+			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionStart,
 		})
 	return reply(ctx, OK, apiResponse{})
 }
 
 func StopRule(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	rule := db.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
-	asyncProduceMessage(ctx,
-		com.TopicNameRule,
+	if rule.ProductId == "" || rule.RuleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := rule.ProductId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+	}
+
+	asyncProduceMessage(ctx, com.TopicNameRule,
 		&com.RuleTopic{
 			RuleName:   rule.RuleName,
-			ProductKey: rule.ProductKey,
+			ProductId:  rule.ProductId,
 			RuleAction: com.RuleActionStop,
 		})
 	return reply(ctx, OK, apiResponse{})
@@ -131,11 +173,18 @@ func StopRule(ctx echo.Context) error {
 
 // getRule retrieve a rule
 func GetRule(ctx echo.Context) error {
-	tenantId := ctx.QueryParam("tenantId")
-	productKey := ctx.QueryParam("productKey")
+	accessId := getAccessId(ctx)
+	productId := ctx.QueryParam("productId")
 	ruleName := ctx.Param("ruleName")
-	if tenantId == "" || productKey == "" || ruleName == "" {
+	if productId == "" || ruleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	if productId == "" || ruleName == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := productId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	// Connect with registry
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
@@ -143,7 +192,7 @@ func GetRule(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
-	rule, err := r.GetRule(productKey, ruleName)
+	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -151,10 +200,14 @@ func GetRule(ctx echo.Context) error {
 }
 
 func GetProductRules(ctx echo.Context) error {
-	tenantId := ctx.QueryParam("tenantId")
-	productKey := ctx.QueryParam("productKey")
-	if tenantId == "" || productKey == "" {
+	accessId := getAccessId(ctx)
+	productId := ctx.Param("productId")
+	if productId == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	objname := productId + "/rules"
+	if err := orm.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -163,7 +216,7 @@ func GetProductRules(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
-	if names, err := r.GetProductRuleNames(productKey); err != nil {
+	if names, err := r.GetProductRuleNames(productId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	} else {
 		return reply(ctx, OK, apiResponse{Result: names})

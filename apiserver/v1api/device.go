@@ -16,19 +16,25 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/keystone/orm"
 
 	"github.com/labstack/echo"
-	uuid "github.com/satori/go.uuid"
 )
 
 // RegisterDevice register a new device in IoT hub
 func RegisterDevice(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
-	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
+	if device.ProductId == "" || device.DeviceName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	// Authorization
+	objectName := device.ProductId + "/$devices"
+	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
@@ -36,24 +42,42 @@ func RegisterDevice(ctx echo.Context) error {
 	}
 	defer r.Release()
 
+	device.DeviceId = orm.NewObjectId()
 	device.TimeCreated = time.Now()
 	device.TimeUpdated = time.Now()
-	device.DeviceSecret = uuid.NewV4().String()
+	device.DeviceSecret = orm.NewObjectId()
 	if err = r.RegisterDevice(&device); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
+	// Declare keystone object
+	orm.CreateObject(orm.Object{
+		ObjectName:     device.DeviceName,
+		ObjectId:       device.DeviceId,
+		ParentObjectId: device.ProductId,
+		Category:       "device",
+		CreatedTime:    time.Now(),
+		Owner:          accessId,
+	})
+
 	return reply(ctx, OK, apiResponse{Result: &device})
 }
 
 // Delete the identify of a device from the identity registry of an IoT Hub
 func DeleteDevice(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
-	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
+	if device.ProductId == "" || device.DeviceId == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
+	// Authorization
+	objectName := device.ProductId + "/$devices"
+	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	}
+
 	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
@@ -61,9 +85,10 @@ func DeleteDevice(ctx echo.Context) error {
 	defer registry.Release()
 
 	// Get device into registry, the created product
-	if err := registry.DeleteDevice(device.TenantId, device.ProductKey, device.DeviceId); err != nil {
+	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
+	orm.DestroyObject(device.DeviceId, accessId)
 	return reply(ctx, OK, apiResponse{})
 }
 
@@ -74,13 +99,19 @@ type device struct {
 
 // Retrieve a device from the identify registry of an IoT hub
 func GetOneDevice(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	deviceId := ctx.Param("deviceId")
-	productKey := ctx.QueryParam("productKey")
-	tenantId := ctx.QueryParam("tenantId")
+	productId := ctx.QueryParam("productId")
 
-	if tenantId == "" || productKey == "" || deviceId == "" {
+	if productId == "" || deviceId == "" {
 		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
 	}
+	// Authorization
+	objectName := productId + "/$devices"
+	if err := orm.AccessObject(objectName, accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	}
+
 	// Connect with registry
 	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
@@ -89,7 +120,7 @@ func GetOneDevice(ctx echo.Context) error {
 	defer registry.Release()
 
 	// Get device into registry, the created product
-	dev, err := registry.GetDevice(tenantId, productKey, deviceId)
+	dev, err := registry.GetDevice(productId, deviceId)
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
@@ -98,13 +129,20 @@ func GetOneDevice(ctx echo.Context) error {
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
 func UpdateDevice(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	device := db.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, &apiResponse{Message: err.Error()})
 	}
-	if device.TenantId == "" || device.ProductKey == "" || device.DeviceId == "" {
+	if device.ProductId == "" || device.DeviceId == "" {
 		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
 	}
+	// Authorization
+	objectName := device.ProductId + "/$devices"
+	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	}
+
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})

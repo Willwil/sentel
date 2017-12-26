@@ -18,7 +18,6 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/common/db"
-	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/orm"
 
 	"github.com/labstack/echo"
@@ -40,8 +39,8 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// inquery object access management service to authorization
-	if err := orm.AccessObject(base.RootObjectProducts, accessId, orm.AccessRightFull); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
@@ -62,13 +61,20 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
-	orm.CreateObject(&orm.Object{
-		ObjectName:     req.ProductName,
-		ObjectId:       p.ProductId,
-		ParentObjectId: accessId,
-		Category:       "product",
-		CreatedTime:    time.Now(),
-		Owner:          accessId,
+	orm.CreateObject(orm.Object{
+		ObjectName: req.ProductName, ObjectId: p.ProductId,
+		ParentObjectId: "/$products", Category: "product",
+		CreatedTime: time.Now(), Owner: accessId,
+	})
+	orm.CreateObject(orm.Object{
+		ObjectName: "$rules", ObjectId: orm.NewObjectId(),
+		ParentObjectId: p.ProductId, Category: "rule",
+		CreatedTime: time.Now(), Owner: accessId,
+	})
+	orm.CreateObject(orm.Object{
+		ObjectName: "$devices", ObjectId: orm.NewObjectId(),
+		ParentObjectId: p.ProductId, Category: "device",
+		CreatedTime: time.Now(), Owner: accessId,
 	})
 
 	// Notify kafka
@@ -83,14 +89,11 @@ func CreateProduct(ctx echo.Context) error {
 
 // removeProduct delete product from registry store
 func RemoveProduct(ctx echo.Context) error {
-	req := auth.ApiAuthParam{}
+	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
-	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
-	}
 
-	if err := orm.AccessObject(productId, req.AccessId, orm.AccessRightFull); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))
@@ -112,7 +115,6 @@ func RemoveProduct(ctx echo.Context) error {
 }
 
 type productUpdateRequest struct {
-	auth.ApiAuthParam
 	ProductId   string `json:"productId"`
 	ProductName string `json:"productName"`
 	Category    string `json:"category"`
@@ -121,14 +123,15 @@ type productUpdateRequest struct {
 
 // updateProduct update product information in registry
 func UpdateProduct(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	req := productUpdateRequest{}
 	productId := ctx.Param("productId")
 
 	if err := ctx.Bind(&req); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
-	if err := orm.AccessObject(req.ProductId, req.AccessId, orm.AccessRightFull); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -160,9 +163,12 @@ func UpdateProduct(ctx echo.Context) error {
 }
 
 func GetProductList(ctx echo.Context) error {
-	accessId := ctx.QueryParam("accessId")
+	accessId := getAccessId(ctx)
 	if err := orm.AccessObject(base.RootObjectProducts, accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	}
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -188,11 +194,11 @@ func GetProductList(ctx echo.Context) error {
 
 // getProduct retrieve production information from registry store
 func GetProduct(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
-	accessId := ctx.QueryParam("accessId")
 
-	if err := orm.AccessObject(productId, accessId, orm.AccessRightReadOnly); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -213,8 +219,8 @@ func GetProduct(ctx echo.Context) error {
 func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
-	if err := orm.AccessObject(productId, accessId, orm.AccessRightReadOnly); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r, err := db.NewRegistry("apiserver", getConfig(ctx))

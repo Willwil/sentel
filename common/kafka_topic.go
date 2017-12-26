@@ -89,6 +89,6 @@ const (
 type RuleTopic struct {
 	TopicBase
 	RuleName   string `json:"ruleName"`
-	ProductKey string `json:"productKey"`
+	ProductId  string `json:"productId"`
 	RuleAction string `json:"action"`
 }

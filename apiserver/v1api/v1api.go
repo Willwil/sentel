@@ -21,16 +21,21 @@ import (
 )
 
 const (
-	OK          = http.StatusOK
-	ServerError = http.StatusInternalServerError
-	BadRequest  = http.StatusBadRequest
-	NotFound    = http.StatusNotFound
+	OK           = http.StatusOK
+	ServerError  = http.StatusInternalServerError
+	BadRequest   = http.StatusBadRequest
+	NotFound     = http.StatusNotFound
+	Unauthorized = http.StatusUnauthorized
 )
 
 type apiResponse struct {
 	RequestId string      `json:"requestID"`
 	Message   string      `json:"message"`
 	Result    interface{} `json:"result"`
+}
+
+func getAccessId(ctx echo.Context) string {
+	return ctx.Get("AccessId").(string)
 }
 
 func reply(ctx echo.Context, code int, r interface{}) error {

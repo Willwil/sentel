@@ -35,9 +35,9 @@ type Product struct {
 
 // Device
 type Device struct {
-	TenantId     string    `bson:"tenantId" json:"tenantId"`
-	ProductKey   string    `bson:"ProductKey" json:"productKey"`
+	ProductId    string    `bson:"ProductKey" json:"productKey"`
 	DeviceId     string    `bson:"DeviceId" json:"deviceId"`
+	DeviceName   string    `bson:"DeviceName" json:"deviceName"`
 	DeviceStatus string    `bson:"DeviceStatus"`
 	DeviceSecret string    `bson:"DeviceSecret" json:"deviceSecret"`
 	TimeCreated  time.Time `bson:"TimeCreated" json:"timeCreated"`
@@ -75,8 +75,7 @@ const (
 )
 
 type Rule struct {
-	TenantId    string          `json:"tenantId" bson:"TenantId"`
-	ProductKey  string          `json:"productKey" bson:"ProductKey"`
+	ProductId   string          `json:"productKey" bson:"ProductKey"`
 	RuleName    string          `json:"ruleName" bson:"RuleName"`
 	DataFormat  string          `json:"format" bson:"Format"`
 	Description string          `json:"desc" bson:"Desc"`
