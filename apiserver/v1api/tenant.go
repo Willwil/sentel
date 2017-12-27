@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -50,7 +51,7 @@ func RegisterTenant(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// notify keystone to register the object
-	orm.CreateObject(orm.Object{
+	client.CreateObject(orm.Object{
 		ObjectName:  req.TenantId,
 		Category:    "tenant",
 		CreatedTime: time.Now(),

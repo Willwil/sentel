@@ -16,7 +16,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/iothub/restapi"
+	"github.com/cloustone/sentel/keystone/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 

@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package auth
+package client
 
 import (
 	"bytes"
@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
@@ -30,7 +31,7 @@ func Authenticate(c config.Config, opts interface{}) error {
 	format := "application/json;charset=utf-8"
 
 	switch opts.(type) {
-	case ApiAuthParam:
+	case auth.ApiAuthParam:
 		if buf, err := json.Marshal(opts); err == nil {
 			url := "http://" + hosts + "/keystone/api/v1/auth/api"
 			req := bytes.NewBuffer([]byte(buf))
@@ -42,7 +43,7 @@ func Authenticate(c config.Config, opts interface{}) error {
 				}
 			}
 		}
-	case DeviceAuthParam:
+	case auth.DeviceAuthParam:
 		if buf, err := json.Marshal(opts); err == nil {
 			url := "http://" + hosts + "/keystone/api/v1/auth/device"
 			req := bytes.NewBuffer([]byte(buf))
@@ -55,7 +56,7 @@ func Authenticate(c config.Config, opts interface{}) error {
 			}
 		}
 	}
-	return ErrorAuthDenied
+	return auth.ErrorAuthDenied
 }
 
 func Authorize(c config.Config, opts interface{}) error {

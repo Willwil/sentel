@@ -9,15 +9,15 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package orm
+package client
 
-import "errors"
+import (
+	"errors"
 
-type authResponse struct {
-	Message bool `json:"success"`
-}
+	"github.com/cloustone/sentel/keystone/orm"
+)
 
-func CreateObject(obj Object) error {
+func CreateObject(obj orm.Object) error {
 	/*
 		url := "http://" + hosts + "/keystone/api/v1/orm/object"
 		if buf, err := json.Marshal(obj); err == nil {
@@ -40,11 +40,11 @@ func CreateObject(obj Object) error {
 	return errors.New("object creation failed")
 }
 
-func AccessObject(objid string, accessId string, right AccessRight) error {
+func AccessObject(objid string, accessId string, right orm.AccessRight) error {
 	return nil
 }
 
 func DestroyObject(objid string, accessId string) {}
-func AssignObjectRight(objid string, accessId string, right AccessRight) error {
+func AssignObjectRight(objid string, accessId string, right orm.AccessRight) error {
 	return nil
 }

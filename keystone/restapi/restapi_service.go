@@ -77,7 +77,7 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	// Authorization
 	e.POST("keystone/api/v1/orm/object", createOrmObject)
 	e.GET("keystone/api/v1/orm/:objectId", accessOrmObject)
-	e.PUT("keystone/api/v1/orm/:objectId", asignOrmObjectRight)
+	e.PUT("keystone/api/v1/orm/:objectId", assignOrmObjectRight)
 	e.DELETE("keystone/api/v1/orm/:objectId", destroyOrmObject)
 
 	return &restapiService{
@@ -124,7 +124,9 @@ func authenticateApi(ctx echo.Context) error {
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
 	}
-	err := auth.authenticate(r)
+	if err := auth.Authenticate(r); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 
 }
@@ -134,17 +136,19 @@ func authenticateDevice(ctx echo.Context) error {
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
 	}
-	err := auth.authenticate(r)
+	if err := auth.Authenticate(r); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 }
 
 func createOrmObject(ctx echo.Context) error {
 	r := orm.Object{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
+		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
 	}
-	if err := orm.createObject(r); err != nil {
-		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	if err := orm.CreateObject(r); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &authResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 }
@@ -154,8 +158,8 @@ func accessOrmObject(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
 
-	if err := orm.accessObject(objid, accessId, right); err != nil {
-		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	if err := orm.AccessObject(objid, accessId, orm.AccessRight(right)); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 }
@@ -164,8 +168,8 @@ func assignOrmObjectRight(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
 
-	if err := orm.assignObjectRight(objid, accessId, right); err != nil {
-		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	if err := orm.AssignObjectRight(objid, accessId, orm.AccessRight(right)); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 
@@ -173,8 +177,8 @@ func assignOrmObjectRight(ctx echo.Context) error {
 func destroyOrmObject(ctx echo.Context) error {
 	objid := ctx.Param("objectId")
 	accessId := ctx.QueryParam("accessId")
-	if err := orm.destoryObjectt(objid, accessId); err != nil {
-		return ctx.JSON(http.StatusServerInternalError, &authResponse{Message: err.Error()})
+	if err := orm.DestroyObject(objid, accessId); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &authResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &authResponse{})
 }

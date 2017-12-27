@@ -11,15 +11,17 @@
 //  under the License.
 package orm
 
-func createObject(obj Object) error {
+func CreateObject(obj Object) error {
 	return nil
 }
 
-func accessObject(objectId string, accessId string, right AccessRight) error {
+func AccessObject(objectId string, accessId string, right AccessRight) error {
 	return nil
 }
 
-func destroyObject(objName string, accessId string) {}
-func assignObjectRight(objName string, accessId string, right AccessRight) error {
+func DestroyObject(objName string, accessId string) error {
+	return nil
+}
+func AssignObjectRight(objName string, accessId string, right AccessRight) error {
 	return nil
 }

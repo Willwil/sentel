@@ -15,6 +15,7 @@ package v1api
 import (
 	"time"
 
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -32,7 +33,7 @@ func CreateRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -68,7 +69,7 @@ func RemoveRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -101,7 +102,7 @@ func UpdateRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -134,7 +135,7 @@ func StartRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -158,7 +159,7 @@ func StopRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -183,7 +184,7 @@ func GetRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := productId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	// Connect with registry
@@ -206,7 +207,7 @@ func GetProductRules(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := productId + "/rules"
-	if err := orm.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject(objname, accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

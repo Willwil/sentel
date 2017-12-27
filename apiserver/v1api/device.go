@@ -15,6 +15,7 @@ package v1api
 import (
 	"time"
 
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -33,7 +34,7 @@ func RegisterDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/$devices"
-	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 	r, err := registry.New("apiserver", getConfig(ctx))
@@ -49,8 +50,8 @@ func RegisterDevice(ctx echo.Context) error {
 	if err = r.RegisterDevice(&device); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	// Declare keystone object
-	orm.CreateObject(orm.Object{
+	// Declare client object
+	client.CreateObject(orm.Object{
 		ObjectName:     device.DeviceName,
 		ObjectId:       device.DeviceId,
 		ParentObjectId: device.ProductId,
@@ -74,7 +75,7 @@ func DeleteDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/$devices"
-	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 
@@ -88,7 +89,7 @@ func DeleteDevice(ctx echo.Context) error {
 	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
-	orm.DestroyObject(device.DeviceId, accessId)
+	client.DestroyObject(device.DeviceId, accessId)
 	return reply(ctx, OK, apiResponse{})
 }
 
@@ -108,7 +109,7 @@ func GetOneDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := productId + "/$devices"
-	if err := orm.AccessObject(objectName, accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject(objectName, accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 
@@ -139,7 +140,7 @@ func UpdateDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/$devices"
-	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
+	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 

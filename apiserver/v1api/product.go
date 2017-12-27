@@ -15,6 +15,7 @@ package v1api
 import (
 	"time"
 
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/keystone/orm"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -38,7 +39,7 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// inquery object access management service to authorization
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -60,17 +61,17 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
-	orm.CreateObject(orm.Object{
+	client.CreateObject(orm.Object{
 		ObjectName: req.ProductName, ObjectId: p.ProductId,
 		ParentObjectId: "/$products", Category: "product",
 		CreatedTime: time.Now(), Owner: accessId,
 	})
-	orm.CreateObject(orm.Object{
+	client.CreateObject(orm.Object{
 		ObjectName: "$rules", ObjectId: orm.NewObjectId(),
 		ParentObjectId: p.ProductId, Category: "rule",
 		CreatedTime: time.Now(), Owner: accessId,
 	})
-	orm.CreateObject(orm.Object{
+	client.CreateObject(orm.Object{
 		ObjectName: "$devices", ObjectId: orm.NewObjectId(),
 		ParentObjectId: p.ProductId, Category: "device",
 		CreatedTime: time.Now(), Owner: accessId,
@@ -91,7 +92,7 @@ func RemoveProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -129,7 +130,7 @@ func UpdateProduct(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -163,7 +164,7 @@ func UpdateProduct(ctx echo.Context) error {
 
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -193,7 +194,7 @@ func GetProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -215,7 +216,7 @@ func GetProduct(ctx echo.Context) error {
 func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
-	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

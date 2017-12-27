@@ -12,7 +12,7 @@
 
 package auth
 
-func authenticate(opts interface{}) error {
+func Authenticate(opts interface{}) error {
 	switch opts.(type) {
 	case ApiAuthParam:
 		opt := opts.(*ApiAuthParam)
@@ -26,8 +26,4 @@ func authenticate(opts interface{}) error {
 		}
 	}
 	return ErrorAuthDenied
-}
-
-func authorize(opts interface{}) error {
-	return nil
 }
