@@ -26,6 +26,9 @@ type BrokerApi struct {
 
 func NewBrokerApi(c config.Config) (*BrokerApi, error) {
 	address := "localhost:55001"
+	if val, err := c.String("rpc", "listen"); err == nil && address != "" {
+		address = val
+	}
 	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		glog.Errorf("Failed to connect with iothub:%s", err)
