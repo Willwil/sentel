@@ -18,7 +18,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -31,14 +31,14 @@ import (
 )
 
 type k8sCluster struct {
-	config    com.Config
+	config    config.Config
 	mutex     sync.Mutex
 	pods      map[string]string
 	clientset *kubernetes.Clientset
 }
 
 // newClusterManager retrieve clustermanager instance connected with clustermgr
-func newK8sCluster(c com.Config) (*k8sCluster, error) {
+func newK8sCluster(c config.Config) (*k8sCluster, error) {
 	var kubeconfig *string
 	if home := homedir.HomeDir(); home != "" {
 		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolue path to the kubeconfig file")

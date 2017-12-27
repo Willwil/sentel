@@ -27,7 +27,7 @@ import (
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/broker/sessionmgr"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -64,8 +64,8 @@ func main() {
 	glog.Fatal(broker.Run())
 }
 
-func createConfig(fileName string) (com.Config, error) {
-	config := com.NewConfig()
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}

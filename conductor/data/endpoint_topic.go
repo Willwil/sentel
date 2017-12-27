@@ -18,17 +18,17 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
 )
 
 type topicEndpoint struct {
-	config com.Config
-	rule   *db.Rule
+	config config.Config
+	rule   *registry.Rule
 }
 
-func newTopicEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+func newTopicEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
 	return &topicEndpoint{config: c, rule: r}, nil
 }
 

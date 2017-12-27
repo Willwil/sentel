@@ -18,14 +18,14 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 )
 
 type authResponse struct {
 	Success bool `json:"success"`
 }
 
-func Authenticate(c com.Config, opts interface{}) error {
+func Authenticate(c config.Config, opts interface{}) error {
 	hosts := c.MustString("keystone", "hosts")
 	format := "application/json;charset=utf-8"
 
@@ -58,6 +58,6 @@ func Authenticate(c com.Config, opts interface{}) error {
 	return ErrorAuthDenied
 }
 
-func Authorize(c com.Config, opts interface{}) error {
+func Authorize(c config.Config, opts interface{}) error {
 	return nil
 }

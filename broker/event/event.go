@@ -15,7 +15,7 @@ package event
 import (
 	"encoding/json"
 
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 const (
@@ -30,7 +30,7 @@ const (
 )
 
 type EventCommon struct {
-	com.TopicBase
+	message.TopicBase
 	BrokerId string `json:"brokerId"` // Broker identifier where event come from
 	Type     uint32 `json:"type"`     // Event type
 	ClientId string `json:"clientId"` // Client identifier where event come from

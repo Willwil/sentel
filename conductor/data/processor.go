@@ -17,8 +17,8 @@ import (
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/event"
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/elgs/jsonql"
 )
 
@@ -26,13 +26,13 @@ type DataProcessor interface {
 	Execute(e *event.Event) (map[string]interface{}, error)
 }
 
-func NewProcessor(c com.Config, r *db.Rule) (DataProcessor, error) {
+func NewProcessor(c config.Config, r *registry.Rule) (DataProcessor, error) {
 	return &simpleDataProcessor{config: c, rule: r}, nil
 }
 
 type simpleDataProcessor struct {
-	config com.Config
-	rule   *db.Rule
+	config config.Config
+	rule   *registry.Rule
 }
 
 func (p *simpleDataProcessor) Execute(e *event.Event) (map[string]interface{}, error) {

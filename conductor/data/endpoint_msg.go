@@ -15,16 +15,16 @@ package data
 import (
 	"errors"
 
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 type msgEndpoint struct {
-	config com.Config
-	rule   *db.Rule
+	config config.Config
+	rule   *registry.Rule
 }
 
-func newMsgEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+func newMsgEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
 	return &msgEndpoint{config: c, rule: r}, nil
 }
 

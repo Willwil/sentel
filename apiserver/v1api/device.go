@@ -15,8 +15,8 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/pkg/registry"
 
 	"github.com/labstack/echo"
 )
@@ -24,7 +24,7 @@ import (
 // RegisterDevice register a new device in IoT hub
 func RegisterDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	device := db.Device{}
+	device := registry.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -36,7 +36,7 @@ func RegisterDevice(ctx echo.Context) error {
 	if err := orm.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -65,7 +65,7 @@ func RegisterDevice(ctx echo.Context) error {
 // Delete the identify of a device from the identity registry of an IoT Hub
 func DeleteDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	device := db.Device{}
+	device := registry.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -78,7 +78,7 @@ func DeleteDevice(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 
-	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
+	registry, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
@@ -113,7 +113,7 @@ func GetOneDevice(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	registry, err := db.NewRegistry("apiserver", getConfig(ctx))
+	registry, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
@@ -130,7 +130,7 @@ func GetOneDevice(ctx echo.Context) error {
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
 func UpdateDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	device := db.Device{}
+	device := registry.Device{}
 	if err := ctx.Bind(&device); err != nil {
 		return reply(ctx, BadRequest, &apiResponse{Message: err.Error()})
 	}
@@ -143,7 +143,7 @@ func UpdateDevice(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
 	}
 
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
 	}
@@ -198,7 +198,7 @@ func BulkRegisterDevices(ctx echo.Context) error {
 		}
 		config := ctx.(*ApiContext).Config
 		// Connect with registry
-		r, err := db.NewRegistry("apiserver", config)
+		r, err := registry.New("apiserver", config)
 		if err != nil {
 			return ctx.JSON(http.StatusInternalServerError, &apiResponse{Success: false, Message: err.Error()})
 		}
@@ -209,9 +209,9 @@ func BulkRegisterDevices(ctx echo.Context) error {
 		// will be modified to retrieve specific information sucha as
 		// product.id and creation time
 		max, err := strconv.Atoi(ctx.Param("number"))
-		rdevices := []db.Device{}
+		rdevices := []registry.Device{}
 		for i := 0; i < max; i++ {
-			dp := db.Device{
+			dp := registry.Device{
 				DeviceId:     uuid.NewV4().String(),
 				ProductKey:   req.ProductKey,
 				TimeCreated:  time.Now(),

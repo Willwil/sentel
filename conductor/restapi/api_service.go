@@ -19,19 +19,21 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/conductor/executor"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
 )
 
 type restapiService struct {
-	com.ServiceBase
+	service.ServiceBase
 	echo *echo.Echo
 }
 
 type apiContext struct {
 	echo.Context
-	config com.Config
+	config config.Config
 }
 
 type response struct {
@@ -43,7 +45,7 @@ type response struct {
 // restapiServiceFactory
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -61,7 +63,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, err
 	e.PATCH("conductor/api/v1/rules/:ruleName", updateRule)
 
 	return &restapiService{
-		ServiceBase: com.ServiceBase{
+		ServiceBase: service.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
@@ -92,7 +94,7 @@ func (p *restapiService) Stop() {
 }
 
 func createRule(ctx echo.Context) error {
-	r := com.RuleTopic{}
+	r := message.RuleTopic{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
@@ -101,28 +103,28 @@ func createRule(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 func updateRule(ctx echo.Context) error {
-	r := com.RuleTopic{}
+	r := message.RuleTopic{}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	r.RuleAction = com.RuleActionUpdate
+	r.RuleAction = message.RuleActionUpdate
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 
 func removeRule(ctx echo.Context) error {
-	r := com.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: com.RuleActionRemove}
+	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionRemove}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 
 func startRule(ctx echo.Context) error {
-	r := com.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: com.RuleActionStart}
+	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionStart}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }
 func stopRule(ctx echo.Context) error {
-	r := com.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: com.RuleActionStop}
+	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionStop}
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }

@@ -16,10 +16,11 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/conductor/indicator"
 	"github.com/cloustone/sentel/conductor/restapi"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -32,15 +33,15 @@ func main() {
 	glog.Info("conductor is starting...")
 
 	config, _ := createConfig(*configFile)
-	mgr, _ := com.NewServiceManager("conductor", config)
+	mgr, _ := service.NewServiceManager("conductor", config)
 	mgr.AddService(executor.ServiceFactory{})
 	mgr.AddService(indicator.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (com.Config, error) {
-	config := com.NewConfig()
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}

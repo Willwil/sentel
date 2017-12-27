@@ -19,14 +19,15 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 	uuid "github.com/satori/go.uuid"
 )
 
 type Broker struct {
 	sync.Once
-	config           com.Config            // Global config
+	config           config.Config         // Global config
 	serviceFactories []base.ServiceFactory // All service factory
 	services         []base.Service        // All service created by config.Protocols
 	quits            []chan os.Signal      // Notification channel for each service
@@ -39,7 +40,7 @@ const (
 )
 
 // newBroker create global broker
-func NewBroker(c com.Config) (*Broker, error) {
+func NewBroker(c config.Config) (*Broker, error) {
 	broker := &Broker{
 		config:           c,
 		quits:            []chan os.Signal{},
@@ -60,7 +61,7 @@ func (p *Broker) AddService(factory base.ServiceFactory) {
 }
 
 // getServicesByName return service instance by name, or matched by part of name
-func (p *Broker) GetService(name string) com.Service {
+func (p *Broker) GetService(name string) service.Service {
 	for _, service := range p.services {
 		if service.Name() == name {
 			return service

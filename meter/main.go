@@ -15,9 +15,10 @@ package main
 import (
 	"flag"
 
-	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/meter/api"
 	"github.com/cloustone/sentel/meter/collector"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -27,9 +28,9 @@ var (
 
 func main() {
 	flag.Parse()
-	config := com.NewConfig()
+	config := config.New()
 	config.AddConfig(defaultConfigs)
-	mgr, _ := com.NewServiceManager("meter", config)
+	mgr, _ := service.NewServiceManager("meter", config)
 	mgr.AddService(api.ServiceFactory{})
 	mgr.AddService(collector.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())

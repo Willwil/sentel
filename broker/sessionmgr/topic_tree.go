@@ -15,7 +15,7 @@ package sessionmgr
 import (
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/queue"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 )
 
 type subscription struct {
@@ -53,6 +53,6 @@ type topicTree interface {
 	deleteMessageWithValidator(clientId string, validator func(*base.Message) bool)
 }
 
-func newTopicTree(c com.Config) (topicTree, error) {
+func newTopicTree(c config.Config) (topicTree, error) {
 	return newSimpleTopicTree(c)
 }

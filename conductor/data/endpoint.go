@@ -15,8 +15,8 @@ package data
 import (
 	"fmt"
 
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 type DataEndpoint interface {
@@ -24,15 +24,15 @@ type DataEndpoint interface {
 	Write(data map[string]interface{}) error
 }
 
-func NewEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+func NewEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
 	switch r.DataTarget.Type {
-	case db.DataTargetTypeTopic:
+	case registry.DataTargetTypeTopic:
 		return newTopicEndpoint(c, r)
-	case db.DataTargetTypeOuterDatabase:
+	case registry.DataTargetTypeOuterDatabase:
 		return newOuterdbEndpoint(c, r)
-	case db.DataTargetTypeInnerDatabase:
+	case registry.DataTargetTypeInnerDatabase:
 		return newInnerdbEndpoint(c, r)
-	case db.DataTargetTypeMessageService:
+	case registry.DataTargetTypeMessageService:
 		return newMsgEndpoint(c, r)
 	}
 	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)

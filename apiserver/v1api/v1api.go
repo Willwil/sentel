@@ -16,7 +16,8 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/apiserver/base"
-	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/labstack/echo"
 )
 
@@ -47,7 +48,7 @@ func reply(ctx echo.Context, code int, r interface{}) error {
 	return ctx.JSON(code, r)
 }
 
-func getConfig(ctx echo.Context) com.Config {
+func getConfig(ctx echo.Context) config.Config {
 	return ctx.(*base.ApiContext).Config
 }
 
@@ -55,12 +56,12 @@ func syncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) er
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
 	key := "iot"
-	return com.SyncProduceMessage(hosts, key, topic, value)
+	return message.SyncProduceMessage(hosts, key, topic, value)
 }
 
 func asyncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
 	key := "iot"
-	return com.AsyncProduceMessage(hosts, key, topic, value)
+	return message.AsyncProduceMessage(hosts, key, topic, value)
 }

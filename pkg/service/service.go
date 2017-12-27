@@ -9,7 +9,7 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 
-package com
+package service
 
 import (
 	"errors"
@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -27,12 +28,12 @@ type Service interface {
 }
 
 type ServiceFactory interface {
-	New(c Config, quit chan os.Signal) (Service, error)
+	New(c config.Config, quit chan os.Signal) (Service, error)
 }
 
 type ServiceManager struct {
 	sync.Once
-	Config           Config // Global config
+	Config           config.Config // Global config
 	serviceFactories []ServiceFactory
 	services         []Service                 // All service created by config.Protocols
 	quits            map[string]chan os.Signal // Notification channel for each service
@@ -50,7 +51,7 @@ var (
 func GetServiceManager() *ServiceManager { return serviceManager }
 
 // NewServiceManager create ServiceManager only in main context
-func NewServiceManager(name string, c Config) (*ServiceManager, error) {
+func NewServiceManager(name string, c config.Config) (*ServiceManager, error) {
 	if serviceManager != nil {
 		return serviceManager, errors.New("NewServiceManager had been called many times")
 	}

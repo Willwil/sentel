@@ -14,17 +14,17 @@ package executor
 
 import (
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/conductor/data"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
 )
 
 type ruleWraper struct {
-	rule *db.Rule
+	rule *registry.Rule
 }
 
-func (p *ruleWraper) execute(c com.Config, e *event.Event) error {
+func (p *ruleWraper) execute(c config.Config, e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	dataProcessor, _ := data.NewProcessor(c, p.rule)
 	endpoint, err := data.NewEndpoint(c, p.rule)

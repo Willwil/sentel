@@ -15,16 +15,16 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
 )
 
 // createRule add new rule for product
 func CreateRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := db.Rule{}
+	rule := registry.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -37,7 +37,7 @@ func CreateRule(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -48,11 +48,11 @@ func CreateRule(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, com.TopicNameRule,
-		&com.RuleTopic{
+	asyncProduceMessage(ctx, message.TopicNameRule,
+		&message.RuleTopic{
 			ProductId:  rule.ProductId,
 			RuleName:   rule.RuleName,
-			RuleAction: com.RuleActionCreate,
+			RuleAction: message.RuleActionCreate,
 		})
 	return reply(ctx, OK, apiResponse{Result: &rule})
 }
@@ -60,7 +60,7 @@ func CreateRule(ctx echo.Context) error {
 // deleteRule delete existed rule
 func RemoveRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := db.Rule{}
+	rule := registry.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -72,7 +72,7 @@ func RemoveRule(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -81,11 +81,11 @@ func RemoveRule(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, com.TopicNameRule,
-		&com.RuleTopic{
+	asyncProduceMessage(ctx, message.TopicNameRule,
+		&message.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: com.RuleActionRemove,
+			RuleAction: message.RuleActionRemove,
 		})
 	return reply(ctx, OK, apiResponse{})
 }
@@ -93,7 +93,7 @@ func RemoveRule(ctx echo.Context) error {
 // UpdateRule update existed rule
 func UpdateRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := db.Rule{}
+	rule := registry.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -106,7 +106,7 @@ func UpdateRule(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -115,18 +115,18 @@ func UpdateRule(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx,
-		com.TopicNameRule,
-		&com.RuleTopic{
+		message.TopicNameRule,
+		&message.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: com.RuleActionUpdate,
+			RuleAction: message.RuleActionUpdate,
 		})
 	return reply(ctx, OK, apiResponse{Result: rule})
 }
 
 func StartRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := db.Rule{}
+	rule := registry.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -139,18 +139,18 @@ func StartRule(ctx echo.Context) error {
 	}
 
 	asyncProduceMessage(ctx,
-		com.TopicNameRule,
-		&com.RuleTopic{
+		message.TopicNameRule,
+		&message.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: com.RuleActionStart,
+			RuleAction: message.RuleActionStart,
 		})
 	return reply(ctx, OK, apiResponse{})
 }
 
 func StopRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := db.Rule{}
+	rule := registry.Rule{}
 	if err := ctx.Bind(&rule); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
@@ -162,11 +162,11 @@ func StopRule(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	asyncProduceMessage(ctx, com.TopicNameRule,
-		&com.RuleTopic{
+	asyncProduceMessage(ctx, message.TopicNameRule,
+		&message.RuleTopic{
 			RuleName:   rule.RuleName,
 			ProductId:  rule.ProductId,
-			RuleAction: com.RuleActionStop,
+			RuleAction: message.RuleActionStop,
 		})
 	return reply(ctx, OK, apiResponse{})
 }
@@ -187,7 +187,7 @@ func GetRule(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -211,7 +211,7 @@ func GetProductRules(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}

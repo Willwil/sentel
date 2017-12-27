@@ -23,20 +23,21 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	"github.com/cloustone/sentel/common"
 	auth "github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
 )
 
 type restapiService struct {
-	com.ServiceBase
+	service.ServiceBase
 	echo *echo.Echo
 }
 
 type apiContext struct {
 	echo.Context
-	config com.Config
+	config config.Config
 }
 
 type authResponse struct {
@@ -46,7 +47,7 @@ type authResponse struct {
 // restapiServiceFactory
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("keystone", "mongo")
 	timeout := c.MustInt("keystone", "connect_timeout")
@@ -80,7 +81,7 @@ func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, err
 	e.DELETE("keystone/api/v1/orm/:objectId", destroyOrmObject)
 
 	return &restapiService{
-		ServiceBase: com.ServiceBase{
+		ServiceBase: service.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,

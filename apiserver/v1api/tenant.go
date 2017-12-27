@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/registry"
 	jwt "github.com/dgrijalva/jwt-go"
 
 	"github.com/labstack/echo"
@@ -36,12 +36,12 @@ func RegisterTenant(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	// get registry store instance by context
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
-	t := db.Tenant{
+	t := registry.Tenant{
 		TenantId:  req.TenantId,
 		Password:  req.Password,
 		CreatedAt: time.Now(),
@@ -57,10 +57,10 @@ func RegisterTenant(ctx echo.Context) error {
 		Owner:       req.TenantId,
 	})
 	// Notify kafka
-	asyncProduceMessage(ctx, com.TopicNameTenant,
-		&com.TenantTopic{
+	asyncProduceMessage(ctx, message.TopicNameTenant,
+		&message.TenantTopic{
 			TenantId: req.TenantId,
-			Action:   com.ObjectActionRegister,
+			Action:   message.ObjectActionRegister,
 		})
 
 	return reply(ctx, OK, apiResponse{Result: &t})
@@ -73,7 +73,7 @@ func LoginTenant(ctx echo.Context) error {
 	}
 
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -119,7 +119,7 @@ func DeleteTenant(ctx echo.Context) error {
 	}
 
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -129,10 +129,10 @@ func DeleteTenant(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, com.TopicNameTenant,
-		&com.TenantTopic{
+	asyncProduceMessage(ctx, message.TopicNameTenant,
+		&message.TenantTopic{
 			TenantId: req.TenantId,
-			Action:   com.ObjectActionDelete,
+			Action:   message.ObjectActionDelete,
 		})
 
 	return reply(ctx, OK, apiResponse{})
@@ -142,7 +142,7 @@ func DeleteTenant(ctx echo.Context) error {
 func GetTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tenantIdd")
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -157,12 +157,12 @@ func GetTenant(ctx echo.Context) error {
 
 // updateTenant update tenant's information
 func UpdateTenant(ctx echo.Context) error {
-	t := db.Tenant{}
+	t := registry.Tenant{}
 	if err := ctx.Bind(&t); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	// Get registry store instance by context
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -171,10 +171,10 @@ func UpdateTenant(ctx echo.Context) error {
 	if err := r.UpdateTenant(t.TenantId, &t); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	asyncProduceMessage(ctx, com.TopicNameTenant,
-		&com.TenantTopic{
+	asyncProduceMessage(ctx, message.TopicNameTenant,
+		&message.TenantTopic{
 			TenantId: t.TenantId,
-			Action:   com.ObjectActionUpdate,
+			Action:   message.ObjectActionUpdate,
 		})
 
 	return reply(ctx, OK, apiResponse{Result: &t})

@@ -12,7 +12,7 @@
 package base
 
 import (
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	jwt "github.com/dgrijalva/jwt-go"
 
 	echo "github.com/labstack/echo"
@@ -20,7 +20,7 @@ import (
 
 type ApiContext struct {
 	echo.Context
-	Config com.Config
+	Config config.Config
 }
 
 type JwtApiClaims struct {

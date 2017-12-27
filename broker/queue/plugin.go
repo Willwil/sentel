@@ -14,7 +14,7 @@ package queue
 
 import (
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 )
 
 type queuePlugin interface {
@@ -37,7 +37,7 @@ type queuePlugin interface {
 }
 
 // newPlugin return backend queue plugin accoriding to configuration and id
-func newPlugin(clientId string, c com.Config) (queuePlugin, error) {
+func newPlugin(clientId string, c config.Config) (queuePlugin, error) {
 	q, err := newMongoPlugin(clientId, c)
 	if q != nil {
 		err = q.initialize()

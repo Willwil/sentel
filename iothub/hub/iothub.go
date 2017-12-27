@@ -19,14 +19,14 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/iothub/cluster"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
 type Iothub struct {
 	sync.Once
-	config     com.Config
+	config     config.Config
 	clustermgr cluster.ClusterManager
 	tenants    map[string]*tenant
 	mutex      sync.Mutex
@@ -50,7 +50,7 @@ var (
 )
 
 // InitializeIothub create iothub global instance at startup time
-func InitializeIothub(c com.Config) error {
+func InitializeIothub(c config.Config) error {
 	clustermgr, err := cluster.New(c)
 	if err != nil {
 		return err

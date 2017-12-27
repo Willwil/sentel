@@ -9,15 +9,17 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 
-package com
+package service
 
 import (
 	"os"
 	"sync"
+
+	"github.com/cloustone/sentel/pkg/config"
 )
 
 type ServiceBase struct {
-	Config    Config
+	Config    config.Config
 	Quit      chan os.Signal
 	WaitGroup sync.WaitGroup
 }

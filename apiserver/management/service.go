@@ -19,8 +19,9 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 
 	echo "github.com/labstack/echo"
@@ -28,17 +29,17 @@ import (
 )
 
 type managementService struct {
-	com.ServiceBase
+	service.ServiceBase
 	version string
-	config  com.Config
+	config  config.Config
 	echo    *echo.Echo
 }
 
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (com.Service, error) {
+func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
 	service := &managementService{
-		ServiceBase: com.ServiceBase{
+		ServiceBase: service.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
@@ -71,8 +72,8 @@ func (p *managementService) Stop() {
 }
 
 // Initialize initialize api manager with configuration
-func (p *managementService) initialize(c com.Config) error {
-	if err := db.InitializeRegistry(c); err != nil {
+func (p *managementService) initialize(c config.Config) error {
+	if err := registry.Initialize(c); err != nil {
 		return fmt.Errorf("registry initialize failed:%v", err)
 	}
 	glog.Infof("Registry is initialized successfuly")

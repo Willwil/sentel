@@ -16,8 +16,9 @@ import (
 	"flag"
 	"os"
 
-	com "github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/iothub/restapi"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"github.com/golang/glog"
 )
@@ -31,7 +32,7 @@ func main() {
 	glog.Info("Starting keystone server...")
 
 	config, _ := createConfig(*configFileName)
-	mgr, err := com.NewServiceManager("keystone", config)
+	mgr, err := service.NewServiceManager("keystone", config)
 	if err != nil {
 		glog.Fatalf("keystone create failed: '%s'", err.Error())
 	}
@@ -39,8 +40,8 @@ func main() {
 	glog.Fatal(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (com.Config, error) {
-	config := com.NewConfig()
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}

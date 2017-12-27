@@ -15,7 +15,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 )
 
 type Service interface {
@@ -26,12 +26,12 @@ type Service interface {
 }
 
 type ServiceBase struct {
-	Config    com.Config
+	Config    config.Config
 	Quit      chan os.Signal
 	WaitGroup sync.WaitGroup
 }
 type ServiceFactory interface {
-	New(c com.Config, quit chan os.Signal) (Service, error)
+	New(c config.Config, quit chan os.Signal) (Service, error)
 }
 
 var (

@@ -13,16 +13,16 @@
 package data
 
 import (
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 type outerdbEndpoint struct {
-	config com.Config
-	rule   *db.Rule
+	config config.Config
+	rule   *registry.Rule
 }
 
-func newOuterdbEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+func newOuterdbEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
 	return &outerdbEndpoint{config: c, rule: r}, nil
 }
 

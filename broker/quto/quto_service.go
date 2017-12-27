@@ -24,7 +24,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
 	"github.com/go-redis/redis"
@@ -53,7 +53,7 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")

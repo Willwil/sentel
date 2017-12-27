@@ -20,7 +20,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/queue"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -226,7 +226,7 @@ func (p *simpleTopicTree) getSubscription(clientId, topic string) (*subscription
 	return node.subs[clientId], nil
 }
 
-func newSimpleTopicTree(c com.Config) (topicTree, error) {
+func newSimpleTopicTree(c config.Config) (topicTree, error) {
 	d := &simpleTopicTree{
 		root: topicNode{
 			level:    "root",

@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package db
+package registry
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -39,14 +39,14 @@ var (
 
 // Registry is wraper of mongo database about for iot object
 type Registry struct {
-	config  com.Config
+	config  config.Config
 	session *mgo.Session
 	db      *mgo.Database
 }
 
 // InitializeRegistry try to connect with background database
 // to confirm wether it is normal
-func InitializeRegistry(c com.Config) error {
+func Initialize(c config.Config) error {
 	hosts := c.MustString("registry", "hosts")
 	glog.Infof("Initializing registry:%s...", hosts)
 	session, err := mgo.Dial(hosts)
@@ -65,7 +65,7 @@ func InitializeRegistry(c com.Config) error {
 }
 
 // NewRegistry create registry instance
-func NewRegistry(owner string, c com.Config) (*Registry, error) {
+func New(owner string, c config.Config) (*Registry, error) {
 	hosts := c.MustString(owner, "mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {

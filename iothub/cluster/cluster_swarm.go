@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -28,13 +28,13 @@ import (
 )
 
 type swarmCluster struct {
-	config   com.Config
+	config   config.Config
 	mutex    sync.Mutex
 	services map[string]string
 	client   *client.Client
 }
 
-func newSwarmCluster(c com.Config) (*swarmCluster, error) {
+func newSwarmCluster(c config.Config) (*swarmCluster, error) {
 	// Get requried images
 	images := make(map[string]bool)
 	if v, err := c.String("iothub", "docker-images"); err != nil || v == "" {

@@ -15,16 +15,16 @@ package data
 import (
 	"errors"
 
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 type innerdbEndpoint struct {
-	config com.Config
-	rule   *db.Rule
+	config config.Config
+	rule   *registry.Rule
 }
 
-func newInnerdbEndpoint(c com.Config, r *db.Rule) (DataEndpoint, error) {
+func newInnerdbEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
 	return &innerdbEndpoint{config: c, rule: r}, nil
 }
 

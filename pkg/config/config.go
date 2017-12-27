@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package com
+package config
 
 import (
 	"fmt"
@@ -38,14 +38,14 @@ type config struct {
 	sections map[string]map[string]string
 }
 
-func NewConfig() Config {
+func New() Config {
 	return &config{
 		sections: make(map[string]map[string]string),
 	}
 }
 
 // NewConfigWithFile load configurations from files
-func NewConfigWithFile(fileName string, moreFiles ...string) (Config, error) {
+func NewWithFile(fileName string, moreFiles ...string) (Config, error) {
 	c := &config{
 		sections: make(map[string]map[string]string),
 	}

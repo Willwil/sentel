@@ -15,10 +15,9 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
-	com "github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
 	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/registry"
 
 	"github.com/labstack/echo"
 )
@@ -43,13 +42,13 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
-	p := &db.Product{
+	p := &registry.Product{
 		ProductId:   orm.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
@@ -79,10 +78,10 @@ func CreateProduct(ctx echo.Context) error {
 
 	// Notify kafka
 	asyncProduceMessage(ctx,
-		com.TopicNameProduct,
-		&com.ProductTopic{
+		message.TopicNameProduct,
+		&message.ProductTopic{
 			ProductId: p.ProductId,
-			Action:    com.ObjectActionRegister,
+			Action:    message.ObjectActionRegister,
 		})
 	return reply(ctx, OK, apiResponse{Result: &p})
 }
@@ -96,7 +95,7 @@ func RemoveProduct(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -105,10 +104,10 @@ func RemoveProduct(ctx echo.Context) error {
 	if err := r.DeleteProduct(productId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	syncProduceMessage(ctx, com.TopicNameProduct,
-		&com.ProductTopic{
+	syncProduceMessage(ctx, message.TopicNameProduct,
+		&message.ProductTopic{
 			ProductId: productId,
-			Action:    com.ObjectActionDelete,
+			Action:    message.ObjectActionDelete,
 		})
 
 	return reply(ctx, OK, apiResponse{})
@@ -135,13 +134,13 @@ func UpdateProduct(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
-	p := &db.Product{
+	p := &registry.Product{
 		ProductId:   productId,
 		ProductName: req.ProductName,
 		TimeUpdated: time.Now(),
@@ -153,10 +152,10 @@ func UpdateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, com.TopicNameProduct,
-		&com.ProductTopic{
+	asyncProduceMessage(ctx, message.TopicNameProduct,
+		&message.ProductTopic{
 			ProductId: p.ProductId,
-			Action:    com.ObjectActionUpdate,
+			Action:    message.ObjectActionUpdate,
 		})
 
 	return reply(ctx, OK, apiResponse{})
@@ -164,15 +163,12 @@ func UpdateProduct(ctx echo.Context) error {
 
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	if err := orm.AccessObject(base.RootObjectProducts, accessId, orm.AccessRightReadOnly); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
-	}
 	if err := orm.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -202,7 +198,7 @@ func GetProduct(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -223,7 +219,7 @@ func GetProductDevices(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := db.NewRegistry("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}

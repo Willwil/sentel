@@ -23,7 +23,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -57,7 +57,7 @@ type subscriberContext struct {
 type ServiceFactory struct{}
 
 // New create global broker
-func (p ServiceFactory) New(c com.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 

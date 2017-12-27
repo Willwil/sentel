@@ -27,7 +27,7 @@ import (
 	"github.com/cloustone/sentel/broker/metric"
 	"github.com/cloustone/sentel/broker/queue"
 	sm "github.com/cloustone/sentel/broker/sessionmgr"
-	"github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
 
 	auth "github.com/cloustone/sentel/broker/auth"
 
@@ -36,7 +36,7 @@ import (
 
 // mqttSession handle mqtt protocol session
 type mqttSession struct {
-	config         com.Config       // Session Configuration
+	config         config.Config    // Session Configuration
 	conn           net.Conn         // Underlay network connection handle
 	clientId       string           // Session's client identifier
 	keepalive      uint16           // MQTT protocol kepalive time

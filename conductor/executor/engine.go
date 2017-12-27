@@ -20,8 +20,8 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/common"
-	"github.com/cloustone/sentel/common/db"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
 )
 
@@ -34,14 +34,14 @@ type ruleEngine struct {
 	productId string                // one product have one rule engine
 	rules     map[string]ruleWraper // all product's rule
 	consumer  sarama.Consumer       // one product have one consumer
-	config    com.Config            // configuration
+	config    config.Config         // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
 	wg        sync.WaitGroup        // waitgroup for consumper partions
 }
 
 // newRuleEngine create a engine according to product id and configuration
-func newRuleEngine(c com.Config, productId string) (*ruleEngine, error) {
+func newRuleEngine(c config.Config, productId string) (*ruleEngine, error) {
 	return &ruleEngine{
 		productId: productId,
 		config:    c,
@@ -135,8 +135,8 @@ func (p *ruleEngine) stop() {
 }
 
 // getRuleObject get all rule's information from backend database
-func (p *ruleEngine) getRuleObject(productId, ruleName string) (*db.Rule, error) {
-	if registry, err := db.NewRegistry("conductor", p.config); err == nil {
+func (p *ruleEngine) getRuleObject(productId, ruleName string) (*registry.Rule, error) {
+	if registry, err := registry.New("conductor", p.config); err == nil {
 		defer registry.Release()
 		return registry.GetRule(ruleName, productId)
 	} else {
@@ -145,7 +145,7 @@ func (p *ruleEngine) getRuleObject(productId, ruleName string) (*db.Rule, error)
 }
 
 // createRule add a rule received from apiserver to this engine
-func (p *ruleEngine) createRule(r *db.Rule) error {
+func (p *ruleEngine) createRule(r *registry.Rule) error {
 	glog.Infof("ruld:%s is added", r.RuleName)
 	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
 	if err != nil {
@@ -161,7 +161,7 @@ func (p *ruleEngine) createRule(r *db.Rule) error {
 }
 
 // removeRule remove a rule from current rule engine
-func (p *ruleEngine) removeRule(r *db.Rule) error {
+func (p *ruleEngine) removeRule(r *registry.Rule) error {
 	glog.Infof("Rule:%s is deleted", r.RuleName)
 
 	// Get rule detail
@@ -175,7 +175,7 @@ func (p *ruleEngine) removeRule(r *db.Rule) error {
 }
 
 // updateRule update rule in engine
-func (p *ruleEngine) updateRule(r *db.Rule) error {
+func (p *ruleEngine) updateRule(r *registry.Rule) error {
 	glog.Infof("Rule:%s is updated", r.RuleName)
 
 	obj, err := p.getRuleObject(r.ProductId, r.RuleName)
@@ -194,7 +194,7 @@ func (p *ruleEngine) updateRule(r *db.Rule) error {
 }
 
 // startRule start rule in engine
-func (p *ruleEngine) startRule(r *db.Rule) error {
+func (p *ruleEngine) startRule(r *registry.Rule) error {
 	glog.Infof("rule:%s is started", r.RuleName)
 
 	// Check wether the rule engine is started
@@ -210,14 +210,14 @@ func (p *ruleEngine) startRule(r *db.Rule) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[r.RuleName]; ok {
-		p.rules[r.RuleName].rule.Status = db.RuleStatusStarted
+		p.rules[r.RuleName].rule.Status = registry.RuleStatusStarted
 		return nil
 	}
 	return fmt.Errorf("rule:%s doesn't exist", r.RuleName)
 }
 
 // stopRule stop rule in engine
-func (p *ruleEngine) stopRule(r *db.Rule) error {
+func (p *ruleEngine) stopRule(r *registry.Rule) error {
 	glog.Infof("rule:%s is stoped", r.RuleName)
 
 	p.mutex.Lock()
@@ -225,11 +225,11 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 	if _, ok := p.rules[r.RuleName]; !ok { // not found
 		return fmt.Errorf("Invalid rule:%s", r.RuleName)
 	}
-	p.rules[r.RuleName].rule.Status = db.RuleStatusStoped
+	p.rules[r.RuleName].rule.Status = registry.RuleStatusStoped
 	// Stop current engine if all rules are stoped
 	for _, w := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
-		if w.rule.Status != db.RuleStatusStoped {
+		if w.rule.Status != registry.RuleStatusStoped {
 			return nil
 		}
 	}
@@ -241,7 +241,7 @@ func (p *ruleEngine) stopRule(r *db.Rule) error {
 // Data recevied from iothub will be processed here and transformed into database
 func (p *ruleEngine) execute(e *event.Event) error {
 	for _, w := range p.rules {
-		if w.rule.Status == db.RuleStatusStarted {
+		if w.rule.Status == registry.RuleStatusStarted {
 			if err := w.execute(p.config, e); err != nil {
 				glog.Infof("conductor execute rule '%s' failed, reason: '%s'", w.rule.RuleName, err.Error())
 			}

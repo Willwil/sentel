@@ -18,7 +18,8 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/console"
 	"github.com/cloustone/sentel/apiserver/management"
-	com "github.com/cloustone/sentel/common"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"github.com/golang/glog"
 )
@@ -32,7 +33,7 @@ func main() {
 	glog.Info("Starting api server...")
 
 	config, _ := createConfig(*configFileName)
-	mgr, err := com.NewServiceManager("apiserver", config)
+	mgr, err := service.NewServiceManager("apiserver", config)
 	if err != nil {
 		glog.Fatalf("apiserver create failed: '%s'", err.Error())
 	}
@@ -41,8 +42,8 @@ func main() {
 	glog.Fatal(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (com.Config, error) {
-	config := com.NewConfig()
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}

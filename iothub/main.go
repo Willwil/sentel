@@ -16,10 +16,11 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/common"
 	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/cloustone/sentel/iothub/notify"
 	"github.com/cloustone/sentel/iothub/restapi"
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -37,14 +38,14 @@ func main() {
 	}
 
 	// Create service manager according to the configuration
-	mgr, _ := com.NewServiceManager("iothub", config)
+	mgr, _ := service.NewServiceManager("iothub", config)
 	mgr.AddService(notify.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (com.Config, error) {
-	config := com.NewConfig()
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	options := map[string]map[string]string{}
