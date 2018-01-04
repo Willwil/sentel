@@ -46,10 +46,15 @@ func createConfig(fileName string) (config.Config, error) {
 	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-	options := map[string]map[string]string{}
-	options["apiserver"] = map[string]string{}
-	options["apiserver"]["kafka"] = os.Getenv("KAFKA_HOST")
-	options["apiserver"]["mongo"] = os.Getenv("MONGO_HOST")
-	config.AddConfig(options)
+
+	kafka := os.Getenv("KAFKA_HOST")
+	mongo := os.Getenv("MONGO_HOST")
+	if kafka != "" && mongo != "" {
+		options := make(map[string]map[string]string)
+		options["apiserver"] = make(map[string]string)
+		options["apiserver"]["kafka"] = os.Getenv("KAFKA_HOST")
+		options["apiserver"]["mongo"] = os.Getenv("MONGO_HOST")
+		config.AddConfig(options)
+	}
 	return config, nil
 }
