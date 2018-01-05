@@ -102,7 +102,7 @@ func LoginTenant(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return reply(ctx, OK, echo.Map{"token": t})
+	return reply(ctx, OK, apiResponse{Result: echo.Map{"token": t}})
 }
 
 func LogoutTenant(ctx echo.Context) error {

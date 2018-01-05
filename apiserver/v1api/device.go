@@ -81,13 +81,13 @@ func DeleteDevice(ctx echo.Context) error {
 
 	registry, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer registry.Release()
 
 	// Get device into registry, the created product
 	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	client.DestroyObject(device.DeviceId, accessId)
 	return reply(ctx, OK, apiResponse{})
@@ -105,7 +105,7 @@ func GetOneDevice(ctx echo.Context) error {
 	productId := ctx.QueryParam("productId")
 
 	if productId == "" || deviceId == "" {
-		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
 	objectName := productId + "/$devices"
@@ -116,16 +116,16 @@ func GetOneDevice(ctx echo.Context) error {
 	// Connect with registry
 	registry, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer registry.Release()
 
 	// Get device into registry, the created product
 	dev, err := registry.GetDevice(productId, deviceId)
 	if err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	return reply(ctx, OK, &apiResponse{Result: dev})
+	return reply(ctx, OK, apiResponse{Result: dev})
 }
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
@@ -133,10 +133,10 @@ func UpdateDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	device := registry.Device{}
 	if err := ctx.Bind(&device); err != nil {
-		return reply(ctx, BadRequest, &apiResponse{Message: err.Error()})
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
 	}
 	if device.ProductId == "" || device.DeviceId == "" {
-		return reply(ctx, BadRequest, &apiResponse{Message: "invalid parameter"})
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
 	objectName := device.ProductId + "/$devices"
@@ -146,15 +146,15 @@ func UpdateDevice(ctx echo.Context) error {
 
 	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	defer r.Release()
 
 	device.TimeUpdated = time.Now()
 	if err = r.UpdateDevice(&device); err != nil {
-		return reply(ctx, ServerError, &apiResponse{Message: err.Error()})
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	return reply(ctx, OK, &apiResponse{Result: &device})
+	return reply(ctx, OK, apiResponse{Result: &device})
 }
 
 func BulkApplyDevices(ctx echo.Context) error {

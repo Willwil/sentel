@@ -39,12 +39,8 @@ func getAccessId(ctx echo.Context) string {
 	return ctx.Get("AccessId").(string)
 }
 
-func reply(ctx echo.Context, code int, r interface{}) error {
-	switch r.(type) {
-	case apiResponse:
-		requestId := ctx.Get("RequestId").(string)
-		r.(*apiResponse).RequestId = requestId
-	}
+func reply(ctx echo.Context, code int, r apiResponse) error {
+	r.RequestId = ctx.Get("RequestId").(string)
 	return ctx.JSON(code, r)
 }
 
