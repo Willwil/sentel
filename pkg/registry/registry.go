@@ -87,7 +87,10 @@ func ensureDevicesIndex(s *mgo.Session) {
 		Background: true,
 		Sparse:     true,
 	}
-	glog.Fatal(c.EnsureIndex(index))
+	err := c.EnsureIndex(index)
+	if err != nil {
+		glog.Errorf("Create dev INDEX error! %s\n", err)
+	}
 }
 
 func ensureProductsIndex(s *mgo.Session) {
@@ -102,7 +105,10 @@ func ensureProductsIndex(s *mgo.Session) {
 		Background: true,
 		Sparse:     true,
 	}
-	glog.Fatal(c.EnsureIndex(index))
+	err := c.EnsureIndex(index)
+	if err != nil {
+		glog.Errorf("Create dev INDEX error! %s\n", err)
+	}
 }
 
 func ensureTenantsIndex(s *mgo.Session) {
@@ -117,7 +123,10 @@ func ensureTenantsIndex(s *mgo.Session) {
 		Background: true,
 		Sparse:     true,
 	}
-	glog.Fatal(c.EnsureIndex(index))
+	err := c.EnsureIndex(index)
+	if err != nil {
+		glog.Errorf("Create dev INDEX error! %s\n", err)
+	}
 }
 
 func ensureRulesIndex(s *mgo.Session) {
@@ -132,7 +141,10 @@ func ensureRulesIndex(s *mgo.Session) {
 		Background: true,
 		Sparse:     true,
 	}
-	glog.Fatal(c.EnsureIndex(index))
+	err := c.EnsureIndex(index)
+	if err != nil {
+		glog.Errorf("Create dev INDEX error! %s\n", err)
+	}
 }
 
 // Release release registry rources and disconnect with background database
