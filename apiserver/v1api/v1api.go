@@ -40,7 +40,9 @@ func getAccessId(ctx echo.Context) string {
 }
 
 func reply(ctx echo.Context, code int, r apiResponse) error {
-	r.RequestId = ctx.Get("RequestId").(string)
+	if ctx.Get("RequestId") != nil {
+		r.RequestId = ctx.Get("RequestId").(string)
+	}
 	return ctx.JSON(code, r)
 }
 
