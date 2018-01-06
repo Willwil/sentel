@@ -79,7 +79,7 @@ func RemoveProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	// Authrozie
-	if err := base.Authorize(productId, accessId, "f"); err != nil {
+	if err := base.Authorize(productId, accessId, "x"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

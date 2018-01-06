@@ -19,15 +19,17 @@ func main() {
 	})
 	client.Initialize(c)
 	glog.Error(client.CreateAccount("account1"))
+	rid := ram.NewObjectId()
 	glog.Error(client.CreateResource("account1", ram.ResourceCreateOption{
+		ObjectId:   rid,
 		Name:       "product1",
 		Attributes: []string{"devices", "rules"},
 	}))
-	glog.Error(client.AddResourceGrantee("product1", "client1", ram.RightRead))
-	glog.Error(client.AddResourceGrantee("product1/devices", "client1", ram.RightRead))
-	glog.Error(client.AddResourceGrantee("product1/devices", "client1", ram.RightWrite))
-	glog.Error(client.Authorize("product1", "client1", "r"))
-	glog.Error(client.Authorize("product1/devices", "client1", "r"))
-	glog.Error(client.DestroyResource("product1", "account1"))
+	glog.Error(client.AddResourceGrantee(rid, "client1", ram.RightRead))
+	glog.Error(client.AddResourceGrantee(rid+"/devices", "client1", ram.RightRead))
+	glog.Error(client.AddResourceGrantee(rid+"/devices", "client1", ram.RightWrite))
+	glog.Error(client.Authorize(rid, "client1", "r"))
+	glog.Error(client.Authorize(rid+"/devices", "client1", "r"))
+	glog.Error(client.DestroyResource(rid, "account1"))
 	glog.Error(client.DestroyAccount("account1"))
 }

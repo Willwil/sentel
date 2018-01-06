@@ -78,6 +78,7 @@ func (p *Object) AddAttribute(attr string, granteeList []Grantee) {
 			}
 			if !found {
 				grantees = append(grantees, grantee)
+				p.Attributes[attr] = grantees
 			}
 		}
 	} else {
@@ -86,6 +87,7 @@ func (p *Object) AddAttribute(attr string, granteeList []Grantee) {
 }
 
 func (p *Object) RemoveAttribute(attr string) {
+	delete(p.Attributes, attr)
 }
 
 func (p *Object) GetAttributeGranteeList(key string) ([]Grantee, error) {
@@ -119,6 +121,7 @@ func (p *Object) AddAttributeGrantee(attr string, g Grantee) {
 			}
 		}
 		granteeList = append(granteeList, g)
+		p.Attributes[attr] = granteeList
 	} else {
 		p.Attributes[attr] = []Grantee{g}
 	}
