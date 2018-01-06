@@ -10,12 +10,30 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package auth
+package l2
 
-type sha1macSigner struct{}
+import (
+	"fmt"
 
-func (p *sha1macSigner) name() string { return "sha1mac" }
+	"github.com/cloustone/sentel/pkg/config"
+)
 
-func (p *sha1macSigner) signApi(opt *ApiAuthParam) error {
-	return nil
+type Api interface {
+	CreateAccount(name string) error
+	DestroyAccount(name string) error
+	CreateObject(*Object) error
+	DestroyObject(objid string) error
+	GetObject(objid string) (*Object, error)
+	UpdateObject(*Object) error
+}
+
+func NewApi(name string, c config.Config) (Api, error) {
+	switch name {
+	case "default":
+		return &defaultApi{config: c}, nil
+	case "direct":
+		return &directApi{config: c}, nil
+	default:
+		return nil, fmt.Errorf("invalid api '%s'", name)
+	}
 }

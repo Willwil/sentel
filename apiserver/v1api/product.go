@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/keystone/client"
-	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -38,11 +38,6 @@ func CreateProduct(ctx echo.Context) error {
 	if req.ProductName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	// inquery object access management service to authorization
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
@@ -50,7 +45,7 @@ func CreateProduct(ctx echo.Context) error {
 	defer r.Release()
 
 	p := &registry.Product{
-		ProductId:   orm.NewObjectId(),
+		ProductId:   ram.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
 		Description: req.Description,
@@ -61,22 +56,14 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
-	client.CreateObject(orm.Object{
-		ObjectName: req.ProductName, ObjectId: p.ProductId,
-		ParentObjectId: "/$products", Category: "product",
-		CreatedTime: time.Now(), Owner: accessId,
+	client, _ := client.New(getConfig(ctx))
+	client.CreateResource(p.ProductId, ram.ResourceCreateOption{
+		Name:       req.ProductName,
+		ObjectId:   p.ProductId,
+		Creator:    accessId,
+		Category:   "product",
+		Attributes: []string{"rules", "devices"},
 	})
-	client.CreateObject(orm.Object{
-		ObjectName: "$rules", ObjectId: orm.NewObjectId(),
-		ParentObjectId: p.ProductId, Category: "rule",
-		CreatedTime: time.Now(), Owner: accessId,
-	})
-	client.CreateObject(orm.Object{
-		ObjectName: "$devices", ObjectId: orm.NewObjectId(),
-		ParentObjectId: p.ProductId, Category: "device",
-		CreatedTime: time.Now(), Owner: accessId,
-	})
-
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		message.TopicNameProduct,
@@ -92,7 +79,9 @@ func RemoveProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+	// Authrozie
+	client, _ := client.New(getConfig(ctx))
+	if err := client.Authorize(productId, accessId, "f"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -124,16 +113,18 @@ type productUpdateRequest struct {
 // updateProduct update product information in registry
 func UpdateProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	req := productUpdateRequest{}
 	productId := ctx.Param("productId")
 
-	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
-	}
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightFull); err != nil {
+	// Authrozie
+	client, _ := client.New(getConfig(ctx))
+	if err := client.Authorize(productId, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
+	req := productUpdateRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	}
 	// Connect with registry
 	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
@@ -164,7 +155,9 @@ func UpdateProduct(ctx echo.Context) error {
 
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+
+	client, _ := client.New(getConfig(ctx))
+	if err := client.Authorize(accessId+"/products", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -194,7 +187,8 @@ func GetProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+	client, _ := client.New(getConfig(ctx))
+	if err := client.Authorize(productId, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -216,7 +210,9 @@ func GetProduct(ctx echo.Context) error {
 func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
-	if err := client.AccessObject("/$products", accessId, orm.AccessRightReadOnly); err != nil {
+
+	client, _ := client.New(getConfig(ctx))
+	if err := client.Authorize(productId+"/devices", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

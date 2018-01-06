@@ -16,15 +16,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
-	"time"
-
-	mgo "gopkg.in/mgo.v2"
 
 	auth "github.com/cloustone/sentel/keystone/auth"
-	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
@@ -40,23 +36,18 @@ type apiContext struct {
 	config config.Config
 }
 
-type authResponse struct {
-	Message string `json:"message"`
+type apiResponse struct {
+	Message string      `json:"message"`
+	Result  interface{} `json:"result"`
 }
 
 // restapiServiceFactory
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
-	// check mongo db configuration
-	hosts := c.MustString("keystone", "mongo")
-	timeout := c.MustInt("keystone", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
+	if err := ram.Initialize(c, "direct"); err != nil {
 		return nil, err
 	}
-	session.Close()
-
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -66,19 +57,18 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 		}
 	})
 
-	// Token
-	e.POST("keystone/api/v1/token", createToken)
-	e.DELETE("keystone/api/v1/token/:token", removeToken)
-
 	// Authentication
 	e.POST("keystone/api/v1/auth/api", authenticateApi)
-	e.POST("keystone/api/v1/auth/device", authenticateDevice)
+
+	// Account
+	e.POST("keystone/api/v1/ram/account/:account", createAccount)
+	e.DELETE("keystone/api/v1/ram/account/:account", destroyAccount)
 
 	// Authorization
-	e.POST("keystone/api/v1/orm/object", createOrmObject)
-	e.GET("keystone/api/v1/orm/:objectId", accessOrmObject)
-	e.PUT("keystone/api/v1/orm/:objectId", assignOrmObjectRight)
-	e.DELETE("keystone/api/v1/orm/:objectId", destroyOrmObject)
+	e.POST("keystone/api/v1/ram/resource", createResource)
+	e.GET("keystone/api/v1/ram/resource", accessResource)
+	e.PUT("keystone/api/v1/ram/resource", addResourceGrantee)
+	e.DELETE("keystone/api/v1/ram/resource", destroyResource)
 
 	return &restapiService{
 		ServiceBase: service.ServiceBase{
@@ -88,7 +78,6 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 		},
 		echo: e,
 	}, nil
-
 }
 
 // Name
@@ -97,7 +86,7 @@ func (p *restapiService) Name() string { return "restapi" }
 // Start
 func (p *restapiService) Start() error {
 	go func(s *restapiService) {
-		addr := p.Config.MustString("restapi", "listen")
+		addr := p.Config.MustString("keystone", "listen")
 		p.echo.Start(addr)
 		p.WaitGroup.Add(1)
 	}(p)
@@ -111,74 +100,74 @@ func (p *restapiService) Stop() {
 	close(p.Quit)
 }
 
-func createToken(ctx echo.Context) error {
-	return nil
-}
-
-func removeToken(ctx echo.Context) error {
-	return nil
-}
-
 func authenticateApi(ctx echo.Context) error {
 	r := auth.ApiAuthParam{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &apiResponse{Message: err.Error()})
 	}
 	if err := auth.Authenticate(r); err != nil {
-		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
+	return ctx.JSON(http.StatusOK, &apiResponse{})
 
 }
 
-func authenticateDevice(ctx echo.Context) error {
-	r := auth.DeviceAuthParam{}
+func createResource(ctx echo.Context) error {
+	accessId := ctx.QueryParam("accessId")
+	r := ram.ResourceCreateOption{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &authResponse{Message: err.Error()})
+		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
 	}
-	if err := auth.Authenticate(r); err != nil {
-		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+	if r, err := ram.CreateResource(accessId, &r); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &apiResponse{Message: err.Error()})
+	} else {
+		return ctx.JSON(http.StatusOK, &apiResponse{Result: r})
 	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
 }
 
-func createOrmObject(ctx echo.Context) error {
-	r := orm.Object{}
+func accessResource(ctx echo.Context) error {
+	resource := ctx.QueryParam("resource")
+	accessId := ctx.QueryParam("accessId")
+	action := ctx.QueryParam("action")
+
+	if err := ram.Authorize(resource, accessId, ram.Action(action)); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &apiResponse{})
+}
+func addResourceGrantee(ctx echo.Context) error {
+	resource := ctx.QueryParam("resource")
+	accessId := ctx.QueryParam("accessId")
+	right := ctx.QueryParam("right")
+	if err := ram.AddResourceGrantee(resource, accessId, ram.Right(right)); err != nil {
+		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, &apiResponse{})
+
+}
+func destroyResource(ctx echo.Context) error {
+	r := ram.ResourceDestroyOption{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, &apiResponse{Message: err.Error()})
 	}
-	if err := orm.CreateObject(r); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &authResponse{Message: err.Error()})
+	if err := ram.DestroyResource(r.ObjectId); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
+	return ctx.JSON(http.StatusOK, &apiResponse{})
 }
 
-func accessOrmObject(ctx echo.Context) error {
-	objid := ctx.Param("objectId")
-	accessId := ctx.QueryParam("accessId")
-	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
-
-	if err := orm.AccessObject(objid, accessId, orm.AccessRight(right)); err != nil {
-		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+func createAccount(ctx echo.Context) error {
+	account := ctx.Param("account")
+	if err := ram.CreateAccount(account); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
+	return ctx.JSON(http.StatusOK, &apiResponse{})
 }
-func assignOrmObjectRight(ctx echo.Context) error {
-	objid := ctx.Param("objectId")
-	accessId := ctx.QueryParam("accessId")
-	right, _ := strconv.Atoi(ctx.QueryParam("accessRight"))
 
-	if err := orm.AssignObjectRight(objid, accessId, orm.AccessRight(right)); err != nil {
-		return ctx.JSON(http.StatusUnauthorized, &authResponse{Message: err.Error()})
+func destroyAccount(ctx echo.Context) error {
+	account := ctx.Param("account")
+	if err := ram.DestroyAccount(account); err != nil {
+		return ctx.JSON(http.StatusInternalServerError, &apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
-
-}
-func destroyOrmObject(ctx echo.Context) error {
-	objid := ctx.Param("objectId")
-	accessId := ctx.QueryParam("accessId")
-	if err := orm.DestroyObject(objid, accessId); err != nil {
-		return ctx.JSON(http.StatusInternalServerError, &authResponse{Message: err.Error()})
-	}
-	return ctx.JSON(http.StatusOK, &authResponse{})
+	return ctx.JSON(http.StatusOK, &apiResponse{})
 }

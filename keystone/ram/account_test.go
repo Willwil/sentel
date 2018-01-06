@@ -9,21 +9,4 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-
-package auth
-
-func Authenticate(opts interface{}) error {
-	switch opts.(type) {
-	case ApiAuthParam:
-		opt := opts.(*ApiAuthParam)
-		if signer, err := newSigner(opt.SignMethod); err == nil {
-			return signer.signApi(opt)
-		}
-	case DeviceAuthParam:
-		opt := opts.(*DeviceAuthParam)
-		if signer, err := newSigner(opt.SignMethod); err == nil {
-			return signer.signDevice(opt)
-		}
-	}
-	return ErrorAuthDenied
-}
+package ram

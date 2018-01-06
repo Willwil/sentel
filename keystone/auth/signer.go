@@ -17,7 +17,6 @@ import "fmt"
 type signer interface {
 	name() string
 	signApi(opt *ApiAuthParam) error
-	signDevice(opt *DeviceAuthParam) error
 }
 
 var (

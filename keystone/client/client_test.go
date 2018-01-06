@@ -10,12 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package auth
-
-type sha1macSigner struct{}
-
-func (p *sha1macSigner) name() string { return "sha1mac" }
-
-func (p *sha1macSigner) signApi(opt *ApiAuthParam) error {
-	return nil
-}
+package client

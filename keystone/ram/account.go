@@ -9,19 +9,12 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package orm
+package ram
 
-func CreateObject(obj Object) error {
-	return nil
-}
+import l2 "github.com/cloustone/sentel/keystone/l2os"
 
-func AccessObject(objectId string, accessId string, right AccessRight) error {
-	return nil
+type Account struct {
+	l2.Object
 }
 
-func DestroyObject(objName string, accessId string) error {
-	return nil
-}
-func AssignObjectRight(objName string, accessId string, right AccessRight) error {
-	return nil
-}
+func (p *Account) GetAccountName() string { return p.Name }

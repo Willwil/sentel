@@ -14,11 +14,6 @@ package auth
 
 import "errors"
 
-const (
-	RoleTenant = "tenant"
-	RoleDevice = "device"
-)
-
 var (
 	ErrorInvalidArgument = errors.New("invalid argument")
 	ErrorAuthDenied      = errors.New("authentication denied")
@@ -35,16 +30,13 @@ type ApiAuthParam struct {
 	Timestamp   string `json:"timestamp"`
 }
 
-type DeviceAuthParam struct {
-	ClientId     string `json:"clientId"`
-	DeviceName   string `json:"deviceName"`
-	ProductKey   string `json:"productKey"`
-	SecurityMode int    `json:"securityMode"`
-	SignMethod   string `json:"signMethod"`
-	Timestamp    string `json:"timestamp"`
-	Sign         string `json:"sign"`
-	DeviceSecret string `json:"deviceSecret"`
-}
-
-type DeviceAuthorizeParam struct {
+func Authenticate(opts interface{}) error {
+	switch opts.(type) {
+	case ApiAuthParam:
+		opt := opts.(*ApiAuthParam)
+		if signer, err := newSigner(opt.SignMethod); err == nil {
+			return signer.signApi(opt)
+		}
+	}
+	return ErrorAuthDenied
 }

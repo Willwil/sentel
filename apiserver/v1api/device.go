@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/keystone/client"
-	"github.com/cloustone/sentel/keystone/orm"
+	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/registry"
 
 	"github.com/labstack/echo"
@@ -33,9 +33,10 @@ func RegisterDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/$devices"
-	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	client, _ := client.New(getConfig(ctx))
+	objectName := device.ProductId + "/devices"
+	if err := client.Authorize(accessId, objectName, "w"); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
@@ -43,23 +44,13 @@ func RegisterDevice(ctx echo.Context) error {
 	}
 	defer r.Release()
 
-	device.DeviceId = orm.NewObjectId()
+	device.DeviceId = ram.NewObjectId()
 	device.TimeCreated = time.Now()
 	device.TimeUpdated = time.Now()
-	device.DeviceSecret = orm.NewObjectId()
+	device.DeviceSecret = ram.NewObjectId()
 	if err = r.RegisterDevice(&device); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	// Declare client object
-	client.CreateObject(orm.Object{
-		ObjectName:     device.DeviceName,
-		ObjectId:       device.DeviceId,
-		ParentObjectId: device.ProductId,
-		Category:       "device",
-		CreatedTime:    time.Now(),
-		Owner:          accessId,
-	})
-
 	return reply(ctx, OK, apiResponse{Result: &device})
 }
 
@@ -74,9 +65,10 @@ func DeleteDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/$devices"
-	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	client, _ := client.New(getConfig(ctx))
+	objectName := device.ProductId + "/devices"
+	if err := client.Authorize(accessId, objectName, "w"); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	registry, err := registry.New("apiserver", getConfig(ctx))
@@ -89,7 +81,7 @@ func DeleteDevice(ctx echo.Context) error {
 	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	client.DestroyObject(device.DeviceId, accessId)
+	client.DestroyResource(device.DeviceId, accessId)
 	return reply(ctx, OK, apiResponse{})
 }
 
@@ -108,9 +100,10 @@ func GetOneDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := productId + "/$devices"
-	if err := client.AccessObject(objectName, accessId, orm.AccessRightReadOnly); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	client, _ := client.New(getConfig(ctx))
+	objectName := productId + "/devices"
+	if err := client.Authorize(accessId, objectName, "r"); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	// Connect with registry
@@ -139,9 +132,10 @@ func UpdateDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/$devices"
-	if err := client.AccessObject(objectName, accessId, orm.AccessRightWrite); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: "access denied"})
+	client, _ := client.New(getConfig(ctx))
+	objectName := device.ProductId + "/devices"
+	if err := client.Authorize(accessId, objectName, "r"); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r, err := registry.New("apiserver", getConfig(ctx))

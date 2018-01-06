@@ -9,4 +9,11 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package orm
+package l2
+
+import "time"
+
+type Account struct {
+	Name      string    `json:"name" bson:"name"`
+	CreatedAt time.Time `json:"createdAt" bson:"createdAt"`
+}

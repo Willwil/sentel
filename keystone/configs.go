@@ -14,12 +14,13 @@ package main
 
 var defaultConfigs = map[string]map[string]string{
 	"keystone": {
-		"listen":          "localhost:4145",
+		"listen":          "localhost:4146",
 		"loglevel":        "debug",
 		"version":         "v1",
 		"auth":            "none",
 		"mongo":           "localhost:27017",
 		"connect_timeout": "2",
+		"storage":         "mongo",
 	},
 	"registry": {
 		"hosts":    "localhost:27017",

@@ -9,13 +9,6 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
+package ram
 
-package auth
-
-type sha1macSigner struct{}
-
-func (p *sha1macSigner) name() string { return "sha1mac" }
-
-func (p *sha1macSigner) signApi(opt *ApiAuthParam) error {
-	return nil
-}
+const rightAttr = "right"

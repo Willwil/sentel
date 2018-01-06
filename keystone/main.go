@@ -16,6 +16,7 @@ import (
 	"flag"
 	"os"
 
+	l2 "github.com/cloustone/sentel/keystone/l2os"
 	"github.com/cloustone/sentel/keystone/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -36,6 +37,7 @@ func main() {
 	if err != nil {
 		glog.Fatalf("keystone create failed: '%s'", err.Error())
 	}
+	mgr.AddService(l2.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
@@ -44,9 +46,11 @@ func createConfig(fileName string) (config.Config, error) {
 	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-	options := map[string]map[string]string{}
-	options["keystone"] = map[string]string{}
-	options["keystone"]["mongo"] = os.Getenv("MONGO_HOST")
-	config.AddConfig(options)
+	if os.Getenv("MONGO_HOST") != "" {
+		options := map[string]map[string]string{}
+		options["keystone"] = map[string]string{}
+		options["keystone"]["mongo"] = os.Getenv("MONGO_HOST")
+		config.AddConfig(options)
+	}
 	return config, nil
 }
