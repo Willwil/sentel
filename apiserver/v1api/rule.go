@@ -31,7 +31,6 @@ func CreateRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := rule.ProductId + "/rules"
 	if err := client.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -68,7 +67,6 @@ func RemoveRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := rule.ProductId + "/rules"
 	if err := client.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -102,7 +100,6 @@ func UpdateRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := rule.ProductId + "/rules"
 	if err := client.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -136,7 +133,6 @@ func StartRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := rule.ProductId + "/rules"
 	if err := client.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -161,7 +157,6 @@ func StopRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := rule.ProductId + "/rules"
 	if err := client.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -186,7 +181,6 @@ func GetRule(ctx echo.Context) error {
 	if productId == "" || ruleName == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := productId + "/rules"
 	if err := client.Authorize(objname, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -211,7 +205,6 @@ func GetProductRules(ctx echo.Context) error {
 	if productId == "" {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	client, _ := client.New(getConfig(ctx))
 	objname := productId + "/rules"
 	if err := client.Authorize(objname, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})

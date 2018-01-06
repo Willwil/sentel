@@ -13,13 +13,13 @@ import (
 func main() {
 	flag.Parse()
 	c := config.New()
+	client.Initialize(c)
 	c.AddConfig(map[string]map[string]string{
 		"keystone": {
 			"hosts": "localhost:4146",
 		},
 	})
 
-	client, _ := client.New(c)
 	glog.Error(client.CreateAccount("account1"))
 	glog.Error(client.CreateResource("account1", ram.ResourceCreateOption{
 		Name: "product1",

@@ -56,7 +56,6 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
-	client, _ := client.New(getConfig(ctx))
 	client.CreateResource(p.ProductId, ram.ResourceCreateOption{
 		Name:       req.ProductName,
 		ObjectId:   p.ProductId,
@@ -80,7 +79,6 @@ func RemoveProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	// Authrozie
-	client, _ := client.New(getConfig(ctx))
 	if err := client.Authorize(productId, accessId, "f"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
@@ -116,7 +114,6 @@ func UpdateProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	// Authrozie
-	client, _ := client.New(getConfig(ctx))
 	if err := client.Authorize(productId, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
@@ -156,7 +153,6 @@ func UpdateProduct(ctx echo.Context) error {
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	client, _ := client.New(getConfig(ctx))
 	if err := client.Authorize(accessId+"/products", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
@@ -187,7 +183,6 @@ func GetProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	client, _ := client.New(getConfig(ctx))
 	if err := client.Authorize(productId, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
@@ -211,7 +206,6 @@ func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
 
-	client, _ := client.New(getConfig(ctx))
 	if err := client.Authorize(productId+"/devices", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}

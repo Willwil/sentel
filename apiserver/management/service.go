@@ -19,6 +19,7 @@ import (
 	"syscall"
 
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -38,6 +39,9 @@ type managementService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+	if err := client.Initialize(c); err != nil {
+		return nil, fmt.Errorf("keystone connection failed")
+	}
 	service := &managementService{
 		ServiceBase: service.ServiceBase{
 			Config:    c,

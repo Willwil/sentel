@@ -24,23 +24,25 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type Client struct {
-	hosts string
-}
-
 type apiResponse struct {
 	Message string `json:"message"`
 }
 
-func New(c config.Config) (*Client, error) {
+var (
+	khosts = ""
+)
+
+func Initialize(c config.Config) error {
 	hosts, err := c.String("keystone", "hosts")
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &Client{hosts: hosts}, nil
+	khosts = hosts
+	// TODO:ping
+	return nil
 }
 
-func (p *Client) Authenticate(opts interface{}) error {
+func Authenticate(opts interface{}) error {
 	buf, err := json.Marshal(opts)
 	if err != nil {
 		return err
@@ -51,7 +53,7 @@ func (p *Client) Authenticate(opts interface{}) error {
 
 	switch opts.(type) {
 	case auth.ApiAuthParam:
-		url = "http://" + p.hosts + "/keystone/api/v1/auth/api"
+		url = "http://" + khosts + "/keystone/api/v1/auth/api"
 	default:
 		return errors.New("invalid type")
 	}
@@ -69,8 +71,8 @@ func (p *Client) Authenticate(opts interface{}) error {
 	return err
 }
 
-func (p *Client) Authorize(accessId string, resource string, action string) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&accessRight=%s", p.hosts, resource, accessId, action)
+func Authorize(accessId string, resource string, action string) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&accessRight=%s", khosts, resource, accessId, action)
 	resp, err := http.Get(url)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		return nil
@@ -93,8 +95,8 @@ func handleResponse(resp *http.Response) error {
 	return err
 }
 
-func (p *Client) CreateResource(accessId string, res ram.ResourceCreateOption) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?accessId=%s", p.hosts, accessId)
+func CreateResource(accessId string, res ram.ResourceCreateOption) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?accessId=%s", khosts, accessId)
 	format := "application/json;charset=utf-8"
 
 	if buf, err := json.Marshal(res); err == nil {
@@ -109,8 +111,8 @@ func (p *Client) CreateResource(accessId string, res ram.ResourceCreateOption) e
 	return errors.New("object creation failed")
 }
 
-func (p *Client) AccessResource(res string, accessId string, action ram.Action) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%d", p.hosts, res, accessId, action)
+func AccessResource(res string, accessId string, action ram.Action) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%d", khosts, res, accessId, action)
 	resp, err := http.Get(url)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		return nil
@@ -120,10 +122,10 @@ func (p *Client) AccessResource(res string, accessId string, action ram.Action) 
 	return err
 }
 
-func (p *Client) DestroyResource(resourceId string, accessId string) error {
+func DestroyResource(resourceId string, accessId string) error {
 	opt := ram.ResourceDestroyOption{ObjectId: resourceId, AccessId: accessId}
 	if buf, err := json.Marshal(opt); err == nil {
-		url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource", p.hosts)
+		url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource", khosts)
 		body := bytes.NewBuffer([]byte(buf))
 
 		client := &http.Client{}
@@ -143,9 +145,9 @@ func (p *Client) DestroyResource(resourceId string, accessId string) error {
 	return errors.New("object destroy failed")
 }
 
-func (p *Client) AddResourceGrantee(res string, accessId string, right ram.Right) error {
+func AddResourceGrantee(res string, accessId string, right ram.Right) error {
 	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&right=%s",
-		p.hosts, res, accessId, string(right))
+		khosts, res, accessId, string(right))
 	client := &http.Client{}
 	req, err := http.NewRequest("PUT", url, nil)
 	if err != nil {
@@ -160,8 +162,8 @@ func (p *Client) AddResourceGrantee(res string, accessId string, right ram.Right
 	return err
 }
 
-func (p *Client) CreateAccount(account string) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/account/%s", p.hosts, account)
+func CreateAccount(account string) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/account/%s", khosts, account)
 	format := "application/json;charset=utf-8"
 	resp, err := http.Post(url, format, nil)
 	if err == nil && resp.StatusCode == http.StatusOK {
@@ -172,8 +174,8 @@ func (p *Client) CreateAccount(account string) error {
 	return err
 }
 
-func (p *Client) DestroyAccount(account string) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/account/%s", p.hosts, account)
+func DestroyAccount(account string) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/account/%s", khosts, account)
 	client := &http.Client{}
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {

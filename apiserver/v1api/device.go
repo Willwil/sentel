@@ -33,7 +33,6 @@ func RegisterDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	client, _ := client.New(getConfig(ctx))
 	objectName := device.ProductId + "/devices"
 	if err := client.Authorize(accessId, objectName, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -65,7 +64,6 @@ func DeleteDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	client, _ := client.New(getConfig(ctx))
 	objectName := device.ProductId + "/devices"
 	if err := client.Authorize(accessId, objectName, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -100,7 +98,6 @@ func GetOneDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	client, _ := client.New(getConfig(ctx))
 	objectName := productId + "/devices"
 	if err := client.Authorize(accessId, objectName, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
@@ -132,7 +129,6 @@ func UpdateDevice(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	client, _ := client.New(getConfig(ctx))
 	objectName := device.ProductId + "/devices"
 	if err := client.Authorize(accessId, objectName, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
