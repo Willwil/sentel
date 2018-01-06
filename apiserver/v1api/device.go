@@ -15,7 +15,7 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/keystone/client"
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -34,7 +34,7 @@ func RegisterDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/devices"
-	if err := client.Authorize(accessId, objectName, "w"); err != nil {
+	if err := base.Authorize(accessId, objectName, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	r, err := registry.New("apiserver", getConfig(ctx))
@@ -65,7 +65,7 @@ func DeleteDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/devices"
-	if err := client.Authorize(accessId, objectName, "w"); err != nil {
+	if err := base.Authorize(accessId, objectName, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -79,7 +79,7 @@ func DeleteDevice(ctx echo.Context) error {
 	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	client.DestroyResource(device.DeviceId, accessId)
+	base.DestroyResource(device.DeviceId, accessId)
 	return reply(ctx, OK, apiResponse{})
 }
 
@@ -99,7 +99,7 @@ func GetOneDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := productId + "/devices"
-	if err := client.Authorize(accessId, objectName, "r"); err != nil {
+	if err := base.Authorize(accessId, objectName, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -130,7 +130,7 @@ func UpdateDevice(ctx echo.Context) error {
 	}
 	// Authorization
 	objectName := device.ProductId + "/devices"
-	if err := client.Authorize(accessId, objectName, "r"); err != nil {
+	if err := base.Authorize(accessId, objectName, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

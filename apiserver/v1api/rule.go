@@ -15,7 +15,7 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/keystone/client"
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
@@ -32,7 +32,7 @@ func CreateRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := client.Authorize(objname, accessId, "w"); err != nil {
+	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -68,7 +68,7 @@ func RemoveRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := client.Authorize(objname, accessId, "w"); err != nil {
+	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -101,7 +101,7 @@ func UpdateRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := client.Authorize(objname, accessId, "w"); err != nil {
+	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -134,7 +134,7 @@ func StartRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := client.Authorize(objname, accessId, "w"); err != nil {
+	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -158,7 +158,7 @@ func StopRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
-	if err := client.Authorize(objname, accessId, "w"); err != nil {
+	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx, message.TopicNameRule,
@@ -182,7 +182,7 @@ func GetRule(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := productId + "/rules"
-	if err := client.Authorize(objname, accessId, "r"); err != nil {
+	if err := base.Authorize(objname, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -206,7 +206,7 @@ func GetProductRules(ctx echo.Context) error {
 		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := productId + "/rules"
-	if err := client.Authorize(objname, accessId, "r"); err != nil {
+	if err := base.Authorize(objname, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

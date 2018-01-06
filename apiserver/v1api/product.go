@@ -15,7 +15,7 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/keystone/client"
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -56,7 +56,7 @@ func CreateProduct(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
-	client.CreateResource(p.ProductId, ram.ResourceCreateOption{
+	base.CreateResource(p.ProductId, ram.ResourceCreateOption{
 		Name:       req.ProductName,
 		ObjectId:   p.ProductId,
 		Creator:    accessId,
@@ -79,7 +79,7 @@ func RemoveProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	// Authrozie
-	if err := client.Authorize(productId, accessId, "f"); err != nil {
+	if err := base.Authorize(productId, accessId, "f"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -114,7 +114,7 @@ func UpdateProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	// Authrozie
-	if err := client.Authorize(productId, accessId, "w"); err != nil {
+	if err := base.Authorize(productId, accessId, "w"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -153,7 +153,7 @@ func UpdateProduct(ctx echo.Context) error {
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	if err := client.Authorize(accessId+"/products", accessId, "r"); err != nil {
+	if err := base.Authorize(accessId+"/products", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -183,7 +183,7 @@ func GetProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
-	if err := client.Authorize(productId, accessId, "r"); err != nil {
+	if err := base.Authorize(productId, accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
@@ -206,7 +206,7 @@ func GetProductDevices(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	productId := ctx.Param("productId")
 
-	if err := client.Authorize(productId+"/devices", accessId, "r"); err != nil {
+	if err := base.Authorize(productId+"/devices", accessId, "r"); err != nil {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 

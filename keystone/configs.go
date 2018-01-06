@@ -14,7 +14,7 @@ package main
 
 var defaultConfigs = map[string]map[string]string{
 	"keystone": {
-		"listen":          "localhost:4146",
+		"listen":          "localhost:4147",
 		"loglevel":        "debug",
 		"version":         "v1",
 		"auth":            "none",

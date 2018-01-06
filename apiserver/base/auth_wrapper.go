@@ -11,9 +11,76 @@
 //  under the License.
 package base
 
-const (
-	RootObjectTenants  = "tenants"
-	RootObjectProducts = "products"
-	RootObjectDevices  = "devices"
-	RootObjectRules    = "rules"
+import (
+	"github.com/cloustone/sentel/keystone/client"
+	"github.com/cloustone/sentel/keystone/ram"
+	"github.com/cloustone/sentel/pkg/config"
 )
+
+var (
+	noAuth = false
+)
+
+func Initialize(c config.Config) error {
+	if auth, err := c.String("apiserver", "auth"); err != nil || auth == "none" {
+		noAuth = true
+		return nil
+	}
+	return client.Initialize(c)
+}
+
+func Authenticate(opts interface{}) error {
+	if !noAuth {
+		return client.Authenticate(opts)
+	}
+	return nil
+}
+
+func Authorize(accessId string, resource string, action string) error {
+	if !noAuth {
+		return client.Authorize(accessId, resource, action)
+	}
+	return nil
+}
+
+func CreateResource(accessId string, res ram.ResourceCreateOption) error {
+	if !noAuth {
+		return client.CreateResource(accessId, res)
+	}
+	return nil
+}
+
+func AccessResource(res string, accessId string, action ram.Action) error {
+	if !noAuth {
+		return client.AccessResource(res, accessId, action)
+	}
+	return nil
+}
+
+func DestroyResource(rid string, accessId string) error {
+	if !noAuth {
+		return client.DestroyResource(rid, accessId)
+	}
+	return nil
+}
+
+func AddResourceGrantee(res string, accessId string, right ram.Right) error {
+	if !noAuth {
+		return client.AddResourceGrantee(res, accessId, right)
+	}
+	return nil
+}
+
+func CreateAccount(account string) error {
+	if !noAuth {
+		return client.CreateAccount(account)
+	}
+	return nil
+}
+
+func DestroyAccount(account string) error {
+	if !noAuth {
+		return client.DestroyAccount(account)
+	}
+	return nil
+}

@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -50,7 +49,7 @@ func RegisterTenant(ctx echo.Context) error {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	// notify keystone to register the object
-	client.CreateAccount(req.TenantId)
+	base.CreateAccount(req.TenantId)
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{

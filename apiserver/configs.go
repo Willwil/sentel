@@ -37,4 +37,7 @@ var defaultConfigs = map[string]map[string]string{
 	"management": {
 		"listen": "localhost:4146",
 	},
+	"keystone": {
+		"hosts": "localhost:4147",
+	},
 }
