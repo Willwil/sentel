@@ -86,15 +86,19 @@ func (p *Object) AddAttribute(attr string, granteeList []Grantee) {
 	}
 }
 
-func (p *Object) RemoveAttribute(attr string) {
+func (p *Object) RemoveAttribute(attr string) error {
+	if _, found := p.Attributes[attr]; !found {
+		return fmt.Errorf("attribute '%s' not found", attr)
+	}
 	delete(p.Attributes, attr)
+	return nil
 }
 
-func (p *Object) GetAttributeGranteeList(key string) ([]Grantee, error) {
-	if _, found := p.Attributes[key]; !found {
-		return nil, fmt.Errorf("attribute '%s' not found", key)
+func (p *Object) GetAttributeGranteeList(attr string) ([]Grantee, error) {
+	if _, found := p.Attributes[attr]; !found {
+		return nil, fmt.Errorf("attribute '%s' not found", attr)
 	}
-	return p.Attributes[key], nil
+	return p.Attributes[attr], nil
 }
 
 func (p *Object) AddGrantee(g Grantee) {
@@ -127,13 +131,15 @@ func (p *Object) AddAttributeGrantee(attr string, g Grantee) {
 	}
 }
 
-func (p *Object) RemoveAttributeGrantee(attr string, accessorId string) {
+func (p *Object) RemoveAttributeGrantee(attr string, accessorId string) error {
 	if _, found := p.Attributes[attr]; found {
 		granteeList := p.Attributes[attr]
 		for index, grantee := range granteeList {
 			if grantee.AccessorId == accessorId {
 				granteeList = append(granteeList[:index], granteeList[index+1:]...)
+				return nil
 			}
 		}
 	}
+	return fmt.Errorf("invalid attribute '%s' in object '%s'", attr, p.ObjectId)
 }

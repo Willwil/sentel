@@ -88,27 +88,22 @@ func (p *Resource) AccessAttribute(attr string, accessorId string, action l2.Act
 }
 
 // AddAccessor add resource accessor
-func (p *Resource) AddGrantee(accessorId string, right l2.Right) error {
+func (p *Resource) AddGrantee(accessorId string, right l2.Right) {
 	p.Object.AddGrantee(l2.Grantee{AccessorId: accessorId, Right: right})
-	return l2api.UpdateObject(&p.Object)
 }
 
-func (p *Resource) AddAttributeGrantee(attr string, accessorId string, right l2.Right) error {
+func (p *Resource) AddAttributeGrantee(attr string, accessorId string, right l2.Right) {
 	p.Object.AddAttributeGrantee(attr, l2.Grantee{AccessorId: accessorId, Right: right})
-	return l2api.UpdateObject(&p.Object)
 }
 
-func (p *Resource) AddAttribute(attr string, granteeList []l2.Grantee) error {
+func (p *Resource) AddAttribute(attr string, granteeList []l2.Grantee) {
 	p.Object.AddAttribute(attr, granteeList)
-	return l2api.UpdateObject(&p.Object)
 }
 
 func (p *Resource) RemoveAttribute(attr string) error {
-	p.Object.RemoveAttribute(attr)
-	return l2api.UpdateObject(&p.Object)
+	return p.Object.RemoveAttribute(attr)
 }
 
 func (p *Resource) RemoveAttributeGrantee(attr string, accessorId string) error {
-	p.Object.RemoveAttributeGrantee(attr, accessorId)
-	return l2api.UpdateObject(&p.Object)
+	return p.Object.RemoveAttributeGrantee(attr, accessorId)
 }

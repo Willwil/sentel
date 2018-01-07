@@ -12,7 +12,6 @@
 package ram
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -42,15 +41,9 @@ func NewObjectId() string {
 }
 
 func Initialize(c config.Config, apiName string) error {
-	if l2api != nil {
-		return errors.New("l2api had beend initialized")
-	}
 	api, err := l2.NewApi(apiName, c)
-	if err != nil {
-		return err
-	}
 	l2api = api
-	return nil
+	return err
 }
 
 func convertAction(action Action) l2.Action {
@@ -132,8 +125,9 @@ func CreateResource(account string, opt *ResourceCreateOption) (*Resource, error
 func GetResource(rid string) (*Resource, error) {
 	if obj, err := l2api.GetObject(rid); err == nil {
 		return &Resource{Object: *obj}, nil
+	} else {
+		return nil, err
 	}
-	return nil, fmt.Errorf("invalid resource id '%s'", rid)
 }
 
 func AddResourceGrantee(resource string, accessorId string, right Right) error {
@@ -146,10 +140,11 @@ func AddResourceGrantee(resource string, accessorId string, right Right) error {
 		return err
 	} else {
 		if len(names) == 2 {
-			return resource.AddAttributeGrantee(names[1], accessorId, convertRight(right))
+			resource.AddAttributeGrantee(names[1], accessorId, convertRight(right))
 		} else {
-			return resource.AddGrantee(accessorId, convertRight(right))
+			resource.AddGrantee(accessorId, convertRight(right))
 		}
+		return l2api.UpdateObject(&resource.Object)
 	}
 }
 

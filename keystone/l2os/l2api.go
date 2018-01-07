@@ -13,9 +13,10 @@
 package l2
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/golang/glog"
 )
 
 type Api interface {
@@ -28,12 +29,40 @@ type Api interface {
 }
 
 func NewApi(name string, c config.Config) (Api, error) {
+	var api Api
+	var err error
+
 	switch name {
 	case "default":
-		return newDefaultApi(c)
+		api, err = newDefaultApi(c)
 	case "direct":
-		return newDirectApi(c)
+		api, err = newDirectApi(c)
 	default:
-		return nil, fmt.Errorf("invalid api '%s'", name)
+		glog.Errorf("invalid l2api '%s'", name)
 	}
+	if err != nil || api == nil {
+		return &nilApi{}, errors.New("l2api initialize failed, using nilapi")
+	}
+	return api, nil
+}
+
+type nilApi struct{}
+
+func (p *nilApi) CreateAccount(name string) error {
+	return errors.New("l2api is null")
+}
+func (p *nilApi) DestroyAccount(name string) error {
+	return errors.New("l2api is null")
+}
+func (p *nilApi) CreateObject(*Object) error {
+	return errors.New("l2api is null")
+}
+func (p *nilApi) DestroyObject(objid string) error {
+	return errors.New("l2api is null")
+}
+func (p *nilApi) GetObject(objid string) (*Object, error) {
+	return nil, errors.New("l2api is null")
+}
+func (p *nilApi) UpdateObject(*Object) error {
+	return errors.New("l2api is null")
 }

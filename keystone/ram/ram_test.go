@@ -31,14 +31,14 @@ func Test_Initialize(t *testing.T) {
 		},
 	})
 	if err := Initialize(c, "direct"); err != nil {
-		t.Errorf("ram initialization failed:%s", err.Error())
+		t.Error(err)
 		return
 	}
 }
 
 func Test_CreateAccount(t *testing.T) {
 	if err := CreateAccount("account1"); err != nil {
-		t.Errorf("CreateAccount failed:%s", err.Error())
+		t.Error(err)
 	}
 }
 
@@ -48,14 +48,14 @@ func Test_CreateResource(t *testing.T) {
 		Name:       "product1",
 		Attributes: []string{"devices", "rules"},
 	}); err != nil {
-		t.Errorf("CreateResource failed:%s", err.Error())
+		t.Error(err)
 	}
 	if _, err := CreateResource("account1", &ResourceCreateOption{
 		ObjectId:   resourceId,
 		Name:       "product1",
 		Attributes: []string{"devices", "rules"},
 	}); err == nil {
-		t.Errorf("CreateResource with sample id failed:%s", err.Error())
+		t.Error(err)
 	}
 }
 
