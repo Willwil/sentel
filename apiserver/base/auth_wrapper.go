@@ -36,7 +36,7 @@ func Authenticate(opts interface{}) error {
 	return nil
 }
 
-func Authorize(accessId string, resource string, action string) error {
+func Authorize(accessId string, resource string, action ram.Action) error {
 	if !noAuth {
 		return client.Authorize(accessId, resource, action)
 	}

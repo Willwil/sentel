@@ -71,8 +71,9 @@ func Authenticate(opts interface{}) error {
 	return err
 }
 
-func Authorize(accessId string, resource string, action string) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&accessRight=%s", khosts, resource, accessId, action)
+func Authorize(accessId string, resource string, action ram.Action) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%s",
+		khosts, resource, accessId, string(action))
 	resp, err := http.Get(url)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		return nil
@@ -112,7 +113,7 @@ func CreateResource(accessId string, res ram.ResourceCreateOption) error {
 }
 
 func AccessResource(res string, accessId string, action ram.Action) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%d", khosts, res, accessId, action)
+	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%s", khosts, res, accessId, action)
 	resp, err := http.Get(url)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		return nil

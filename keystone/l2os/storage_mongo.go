@@ -90,10 +90,5 @@ func (p *mongoStorage) createAccount(name string) error {
 }
 func (p *mongoStorage) destroyAccount(name string) error {
 	c := p.db.C("accounts")
-	err := c.Remove(bson.M{"name": name})
-	if err == nil {
-		c := p.db.C(name)
-		return c.DropCollection()
-	}
-	return err
+	return c.Remove(bson.M{"name": name})
 }
