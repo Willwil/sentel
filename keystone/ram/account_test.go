@@ -10,3 +10,35 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 package ram
+
+import (
+	"testing"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
+func TestAccount_initialize(t *testing.T) {
+	c := config.New()
+	c.AddConfig(map[string]map[string]string{
+		"keystone": {
+			"hosts":           "localhost:4147",
+			"mongo":           "localhost:27017",
+			"connect_timeout": "2",
+		},
+	})
+	if err := Initialize(c, "direct"); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRam_CreateAccount(t *testing.T) {
+	if err := CreateAccount("account1"); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestRam_DestroyAccount(t *testing.T) {
+	if err := DestroyAccount("account1"); err != nil {
+		t.Error(err)
+	}
+}

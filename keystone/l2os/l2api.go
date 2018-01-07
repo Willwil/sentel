@@ -48,21 +48,11 @@ func NewApi(name string, c config.Config) (Api, error) {
 
 type nilApi struct{}
 
-func (p *nilApi) CreateAccount(name string) error {
-	return errors.New("l2api is null")
-}
-func (p *nilApi) DestroyAccount(name string) error {
-	return errors.New("l2api is null")
-}
-func (p *nilApi) CreateObject(*Object) error {
-	return errors.New("l2api is null")
-}
-func (p *nilApi) DestroyObject(objid string) error {
-	return errors.New("l2api is null")
-}
-func (p *nilApi) GetObject(objid string) (*Object, error) {
-	return nil, errors.New("l2api is null")
-}
-func (p *nilApi) UpdateObject(*Object) error {
-	return errors.New("l2api is null")
-}
+var errInvalidApi = errors.New("invalid l2api")
+
+func (p *nilApi) CreateAccount(string) error        { return errInvalidApi }
+func (p *nilApi) DestroyAccount(string) error       { return errInvalidApi }
+func (p *nilApi) CreateObject(*Object) error        { return errInvalidApi }
+func (p *nilApi) DestroyObject(string) error        { return errInvalidApi }
+func (p *nilApi) GetObject(string) (*Object, error) { return nil, errInvalidApi }
+func (p *nilApi) UpdateObject(*Object) error        { return errInvalidApi }

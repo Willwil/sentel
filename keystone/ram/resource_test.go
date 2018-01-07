@@ -10,3 +10,26 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 package ram
+
+import "testing"
+
+func TestResource_initialize(t *testing.T) {
+}
+
+func TestResource_Access(t *testing.T) {
+}
+
+func TestResource_AccessAttribute(t *testing.T) {
+}
+
+func TestResource_AddGrantee(t *testing.T) {
+}
+
+func TestResource_AddAttributeGrantee(t *testing.T) {
+}
+
+func TestResource_AddAttribute(t *testing.T) {
+}
+
+func TestResource_RemoveAttribute(t *testing.T) {
+}

@@ -21,7 +21,7 @@ var (
 	resourceId = NewObjectId()
 )
 
-func Test_Initialize(t *testing.T) {
+func TestRam_initialize(t *testing.T) {
 	c := config.New()
 	c.AddConfig(map[string]map[string]string{
 		"keystone": {
@@ -32,17 +32,10 @@ func Test_Initialize(t *testing.T) {
 	})
 	if err := Initialize(c, "direct"); err != nil {
 		t.Error(err)
-		return
 	}
 }
 
-func Test_CreateAccount(t *testing.T) {
-	if err := CreateAccount("account1"); err != nil {
-		t.Error(err)
-	}
-}
-
-func Test_CreateResource(t *testing.T) {
+func TestRam_CreateResource(t *testing.T) {
 	if _, err := CreateResource("account1", &ResourceCreateOption{
 		ObjectId:   resourceId,
 		Name:       "product1",
@@ -59,7 +52,7 @@ func Test_CreateResource(t *testing.T) {
 	}
 }
 
-func Test_AddResourceGrantee(t *testing.T) {
+func TestRam_AddResourceGrantee(t *testing.T) {
 	if err := AddResourceGrantee(resourceId, "client1", RightRead); err != nil {
 		t.Error(err)
 	}
@@ -68,7 +61,7 @@ func Test_AddResourceGrantee(t *testing.T) {
 	}
 }
 
-func Test_Authorize(t *testing.T) {
+func TestRam_Authorize(t *testing.T) {
 	if err := Authorize(resourceId, "client1", ActionRead); err != nil {
 		t.Error(err)
 	}
@@ -77,14 +70,8 @@ func Test_Authorize(t *testing.T) {
 	}
 }
 
-func Test_DestroyResource(t *testing.T) {
+func TestRam_DestroyResource(t *testing.T) {
 	if err := DestroyResource(resourceId); err != nil {
 		t.Error(err.Error())
-	}
-}
-
-func Test_DestroyAccount(t *testing.T) {
-	if err := DestroyAccount("account1"); err != nil {
-		t.Error(err)
 	}
 }
