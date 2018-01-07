@@ -30,7 +30,7 @@ type productCreateRequest struct {
 }
 
 func CreateProduct(ctx echo.Context) error {
-	accessId := ctx.Get("AccessId").(string)
+	accessId := getAccessId(ctx)
 	req := productCreateRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})

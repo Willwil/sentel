@@ -13,6 +13,7 @@
 package v1api
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -163,6 +164,13 @@ func GetDeviceList(ctx echo.Context) error {
 	return nil
 }
 
+// Device bulk req.
+type DeviceBulkRequest struct {
+	Number     string
+	ProductId  string
+	DeviceName string
+}
+
 func BulkGetDeviceStatus(ctx echo.Context) error {
 	return nil
 }
@@ -180,49 +188,47 @@ func DeleteDevicePropsByName(ctx echo.Context) error {
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
-	/*
-		// Get product
-		glog.Infof("RegisterDevice ctx:[%s] ", ctx.Param("number"))
-		req := new(registerDeviceRequest)
-		if err := ctx.Bind(req); err != nil {
-			return ctx.JSON(http.StatusBadRequest, &apiResponse{Success: false, Message: err.Error()})
-		}
-		config := ctx.(*ApiContext).Config
-		// Connect with registry
-		r, err := registry.New("apiserver", config)
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, &apiResponse{Success: false, Message: err.Error()})
-		}
-		defer r.Release()
+	accessId := getAccessId(ctx)
+	req := DeviceBulkRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.Number == "" || req.ProductId == "" {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	// Authorization
+	objectName := req.ProductId + "/devices"
+	if err := base.Authorize(accessId, objectName, "r"); err != nil {
+		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+	}
 
-		//
-		// Insert device into registry, the created product
-		// will be modified to retrieve specific information sucha as
-		// product.id and creation time
-		max, err := strconv.Atoi(ctx.Param("number"))
-		rdevices := []registry.Device{}
-		for i := 0; i < max; i++ {
-			dp := registry.Device{
-				DeviceId:     uuid.NewV4().String(),
-				ProductKey:   req.ProductKey,
-				TimeCreated:  time.Now(),
-				TimeModified: time.Now(),
-			}
-			glog.Infof("+++%d,%s\n", i, dp.DeviceId)
-			rdevices = append(rdevices, dp)
+	r, err := registry.New("apiserver", getConfig(ctx))
+	if err != nil {
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+	}
+	defer r.Release()
+
+	n, err := strconv.Atoi(req.Number)
+	if err != nil || n < 1 {
+		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	rdevices := []registry.Device{}
+	for i := 0; i < n; i++ {
+		d := registry.Device{
+			ProductId:    req.ProductId,
+			DeviceId:     ram.NewObjectId(),
+			DeviceName:   req.DeviceName,
+			TimeCreated:  time.Now(),
+			DeviceSecret: ram.NewObjectId(),
 		}
-		err = r.BulkRegisterDevices(rdevices)
-		if err != nil {
-			return ctx.JSON(http.StatusInternalServerError, &apiResponse{Success: false, Message: err.Error()})
-		}
-		return ctx.JSON(http.StatusOK,
-			&apiResponse{
-				Success: true,
-				Result:  rdevices,
-			})
-	*/
-	return nil
+		rdevices = append(rdevices, d)
+	}
+	if err = r.BulkRegisterDevices(rdevices); err != nil {
+		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+	}
+	return reply(ctx, OK, apiResponse{Result: rdevices})
 }
+
 func GetShadowDevice(ctx echo.Context) error {
 	return nil
 }

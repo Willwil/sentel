@@ -36,6 +36,9 @@ type apiResponse struct {
 }
 
 func getAccessId(ctx echo.Context) string {
+	if ctx.Get("AccessId") == nil {
+		return "aaaaa"
+	}
 	return ctx.Get("AccessId").(string)
 }
 
