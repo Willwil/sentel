@@ -28,7 +28,7 @@ var versionCmd = &cobra.Command{
 			fmt.Printf("Broker Api call failed:%s", err.Error())
 			return
 		} else {
-			fmt.Println("Version:%s", reply.Version)
+			fmt.Printf("Version:%s", reply.Version)
 		}
 	},
 }

@@ -26,7 +26,7 @@ type Tenant struct {
 type Product struct {
 	TenantId    string    `bson:"TenantId" json:"tenantId"`
 	ProductId   string    `bson:"ProductId" json:"productId"`
-	ProductName string    `bson:"ProductId" json:"productId"`
+	ProductName string    `bson:"ProductName" json:"productName"`
 	Description string    `bson:"Description" json:"description"`
 	TimeCreated time.Time `bson:"TimeCreated"`
 	TimeUpdated time.Time `bson:"TimeModified"`
@@ -41,7 +41,7 @@ type Device struct {
 	DeviceStatus string    `bson:"DeviceStatus"`
 	DeviceSecret string    `bson:"DeviceSecret" json:"deviceSecret"`
 	TimeCreated  time.Time `bson:"TimeCreated" json:"timeCreated"`
-	TimeUpdated  time.Time `bson:"TimeModified" json:"timeUpdated`
+	TimeUpdated  time.Time `bson:"TimeUpdated" json:"timeUpdated"`
 }
 
 // Rule
@@ -79,9 +79,9 @@ type Rule struct {
 	RuleName    string          `json:"ruleName" bson:"RuleName"`
 	DataFormat  string          `json:"format" bson:"Format"`
 	Description string          `json:"desc" bson:"Desc"`
-	DataProcess RuleDataProcess `json:"dataprocess" bson"Dataprocess"`
-	DataTarget  RuleDataTarget  `json:"datatarget", bson:"Datatarget"`
-	Status      string          `json:status, bson:"Status"`
-	TimeCreated time.Time       `json:timeCreated, bson:"TimeCreated"`
-	TimeUpdated time.Time       `json:timeUpdated, bson:"TimeUpdated"`
+	DataProcess RuleDataProcess `json:"dataprocess" bson:"Dataprocess"`
+	DataTarget  RuleDataTarget  `json:"datatarget" bson:"Datatarget"`
+	Status      string          `json:"status" bson:"Status"`
+	TimeCreated time.Time       `json:"timeCreated" bson:"TimeCreated"`
+	TimeUpdated time.Time       `json:"timeUpdated" bson:"TimeUpdated"`
 }

@@ -22,7 +22,7 @@ type ResourceCreateOption struct {
 	Name       string   `json:"name"`
 	ObjectId   string   `json:"objectId"`
 	Creator    string   `json:"creator"`
-	Category   string   `json:'category"`
+	Category   string   `json:"category"`
 	Attributes []string `json:"attributes"`
 }
 

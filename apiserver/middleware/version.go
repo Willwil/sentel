@@ -13,7 +13,6 @@
 package middleware
 
 import (
-	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/golang/glog"
 
 	"github.com/labstack/echo"
@@ -45,10 +44,10 @@ func ApiVersionWithConfig(config ApiVersionConfig) echo.MiddlewareFunc {
 		return func(c echo.Context) error {
 			glog.Infof("api-version:%s", c.QueryParam("api-version"))
 			glog.Infof("config-version:%s", config.Version)
-			version := c.QueryParam("api-version")
-			if version != config.Version {
-				return c.JSON(util.ErrorInvalidApiVersion.Code, util.ErrorInvalidApiVersion)
-			}
+			//version := c.QueryParam("api-version")
+			// if version != config.Version {
+			//return c.JSON(util.ErrorInvalidApiVersion.Code, util.ErrorInvalidApiVersion)
+			//}
 			return next(c)
 		}
 	}

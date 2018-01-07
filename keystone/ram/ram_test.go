@@ -14,29 +14,48 @@ package ram
 import (
 	"testing"
 
-	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-func Test_CreateAccount(t *testing.T) {
-	config := config.New()
-	Initialize(config, "mock")
-	if err := CreateAccount("hello"); err != nil {
-		t.Errorf("failed to create account:%s", err.Error())
-	}
-	if account, err := GetAccount("hello"); err != nil || account.GetAccountName() != "hello" {
-		t.Error("account test failed")
-	}
+func newConfig() config.Config {
+	c := config.New()
+	c.AddConfig(map[string]map[string]string{
+		"keystone": {
+			"hosts":           "localhost:4147",
+			"mongo":           "localhost:27017",
+			"connect_timeout": "2",
+		},
+	})
+	return c
 }
 
-func Test_DestoryAccount(t *testing.T) {
-	config := config.New()
-	Initialize(config, "mock")
-	if err := CreateAccount("hello"); err != nil {
-		t.Errorf("failed to create account:%s", err.Error())
+func Test_CreateAccount(t *testing.T) {
+	c := newConfig()
+	if err := Initialize(c, "direct"); err != nil {
+		t.Errorf("ram initialization failed:%s", err.Error())
+		return
 	}
-	if err := ram.DestroyAccount("hello"); err != nil {
-		t.Error("account destroy test failed")
+	if err := CreateAccount("account1"); err != nil {
+		t.Errorf("CreateAccount failed:%s", err.Error())
+	}
+	if err := DestroyAccount("account1"); err != nil {
+		t.Errorf("CreateAccount failed:%s", err.Error())
 	}
 
+}
+
+func Test_CreateResource(t *testing.T) {
+	c := newConfig()
+	if err := Initialize(c, "direct"); err != nil {
+		t.Errorf("ram initialization failed:%s", err.Error())
+		return
+	}
+	rid := NewObjectId()
+	if _, err := CreateResource("account1", &ResourceCreateOption{
+		ObjectId:   rid,
+		Name:       "product1",
+		Attributes: []string{"devices", "rules"},
+	}); err != nil {
+		t.Errorf("CreateResource failed:%s", err.Error())
+	}
 }

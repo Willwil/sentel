@@ -11,12 +11,7 @@
 //  under the License.
 package l2
 
-import (
-	"errors"
-	"fmt"
-
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "github.com/cloustone/sentel/pkg/config"
 
 type objectStorage interface {
 	createAccount(name string) error
@@ -31,13 +26,14 @@ type objectStorage interface {
 func newStorage(c config.Config) (objectStorage, error) {
 	v, err := c.String("keystone", "storage")
 	if err != nil || v == "" {
-		return nil, errors.New("keystone's storage is invalid")
+		v = "mongo"
 	}
 	switch v {
 	case "mongo":
 		return newMongoStorage(c)
 	case "zookeeper":
 		return newZkStorage(c)
+	default:
+		return newMongoStorage(c)
 	}
-	return nil, fmt.Errorf("invalid storage '%s' setting", v)
 }

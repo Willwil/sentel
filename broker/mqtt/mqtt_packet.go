@@ -320,7 +320,7 @@ func (p *mqttPacket) readUint16() (uint16, error) {
 	if p.pos+2 > p.remainingLength {
 		return 0, mqttErrorInvalidProtocol
 	}
-	msb := p.payload[p.pos]
+	msb := uint16(p.payload[p.pos])
 	p.pos++
 	lsb := p.payload[p.pos]
 	p.pos++

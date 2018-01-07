@@ -193,7 +193,6 @@ func (p *mqttSession) handleMqttPacket(packet *mqttPacket) error {
 	default:
 		return fmt.Errorf("Unrecognized protocol command:%d", int(packet.command&0xF0))
 	}
-	return nil
 }
 
 // handleDataAvailableNotification read message from queue and send to client
@@ -400,7 +399,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		if found, _ := sm.FindSession(clientId); found != nil {
 			// Found old session
 			if !found.IsValid() {
-				glog.Errorf("Invalid session(%s) in store", found.Id)
+				glog.Errorf("Invalid session(%s) in store", found.Id())
 			}
 			info := found.Info()
 			if p.protocol == mqttProtocol311 {

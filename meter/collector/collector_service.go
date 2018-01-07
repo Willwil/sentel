@@ -117,7 +117,6 @@ func (p *collectorService) subscribeTopic(topic string) error {
 	partitionList, err := p.consumer.Partitions(topic)
 	if err != nil {
 		return fmt.Errorf("Failed to get list of partions:%v", err)
-		return err
 	}
 
 	for partition := range partitionList {

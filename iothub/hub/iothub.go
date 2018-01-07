@@ -32,17 +32,17 @@ type Iothub struct {
 	mutex      sync.Mutex
 }
 type tenant struct {
-	tid       string              `json:"tenantId"`
-	createdAt time.Time           `json:"createdAt"`
-	products  map[string]*product `json:"products"`
-	networkId string              `json:"network"`
+	tid       string
+	createdAt time.Time
+	products  map[string]*product
+	networkId string
 }
 
 type product struct {
-	pid         string    `json:"productId"`
-	tid         string    `json:"tenantId"`
-	createdAt   time.Time `json:"createdAt"`
-	serviceName string    `json:"serviceName"`
+	pid         string
+	tid         string
+	createdAt   time.Time
+	serviceName string
 }
 
 var (
@@ -95,7 +95,7 @@ func (p *Iothub) CreateTenant(tid string) error {
 		}
 		return nil
 	}
-	return fmt.Errorf("tenant '%s' already existed in iothub")
+	return fmt.Errorf("tenant '%s' already existed in iothub", tid)
 }
 
 // deleteTenant remove tenant from iothub
@@ -103,7 +103,7 @@ func (p *Iothub) RemoveTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
-		return fmt.Errorf("tenant '%s' doesn't exist in iothub")
+		return fmt.Errorf("tenant '%s' doesn't exist in iothub", tid)
 	}
 	t := p.tenants[tid]
 	// Remove network

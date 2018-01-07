@@ -71,8 +71,8 @@ type ProductTopic struct {
 // DeviceTopic
 type DeviceTopic struct {
 	TopicBase
-	DeviceId     string `json:deviceId"`
-	DeviceSecret string `json:deviceKey"`
+	DeviceId     string `json:"deviceId"`
+	DeviceSecret string `json:"deviceKey"`
 	Action       string `json:"action"`
 	ProductId    string `json:"productId"`
 }
