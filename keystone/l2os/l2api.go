@@ -30,9 +30,9 @@ type Api interface {
 func NewApi(name string, c config.Config) (Api, error) {
 	switch name {
 	case "default":
-		return &defaultApi{config: c}, nil
+		return newDefaultApi(c)
 	case "direct":
-		return &directApi{config: c}, nil
+		return newDirectApi(c)
 	default:
 		return nil, fmt.Errorf("invalid api '%s'", name)
 	}

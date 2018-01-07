@@ -21,6 +21,10 @@ type defaultApi struct {
 	config config.Config
 }
 
+func newDefaultApi(c config.Config) (*defaultApi, error) {
+	return &defaultApi{config: c}, nil
+}
+
 func (p *defaultApi) CreateObject(obj *Object) error {
 	req := createObjectReq{
 		object: obj,

@@ -14,35 +14,38 @@ package l2
 import "github.com/cloustone/sentel/pkg/config"
 
 type directApi struct {
-	config config.Config
+	config  config.Config
+	storage objectStorage
+}
+
+func newDirectApi(c config.Config) (*directApi, error) {
+	s, err := newStorage(c)
+	if err != nil {
+		return nil, err
+	}
+	return &directApi{config: c, storage: s}, nil
 }
 
 func (p *directApi) CreateObject(obj *Object) error {
-	s := getStorage()
-	return s.createObject(obj)
+	return p.storage.createObject(obj)
 }
 func (p *directApi) DestroyObject(objid string) error {
-	s := getStorage()
-	return s.deleteObject(objid)
+	return p.storage.deleteObject(objid)
 }
 
 // GetObject retieve object by object identifier
 func (p *directApi) GetObject(objid string) (*Object, error) {
-	s := getStorage()
-	return s.getObject(objid)
+	return p.storage.getObject(objid)
 }
 
 func (p *directApi) UpdateObject(obj *Object) error {
-	s := getStorage()
-	return s.updateObject(obj)
+	return p.storage.updateObject(obj)
 }
 
 func (p *directApi) CreateAccount(name string) error {
-	s := getStorage()
-	return s.createAccount(name)
+	return p.storage.createAccount(name)
 
 }
 func (p *directApi) DestroyAccount(name string) error {
-	s := getStorage()
-	return s.destroyAccount(name)
+	return p.storage.destroyAccount(name)
 }
