@@ -71,9 +71,9 @@ func convertRight(right Right) l2.Right {
 	case RightRead:
 		return l2.RightRead
 	case RightWrite:
-		return l2.RightWrite
+		return l2.RightWrite | l2.RightRead
 	case RightFull:
-		return l2.RightFull
+		return l2.RightFull | l2.RightWrite
 	default:
 		return l2.RightUnknown
 	}

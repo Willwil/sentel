@@ -17,7 +17,11 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-func newConfig() config.Config {
+var (
+	resourceId = NewObjectId()
+)
+
+func Test_Initialize(t *testing.T) {
 	c := config.New()
 	c.AddConfig(map[string]map[string]string{
 		"keystone": {
@@ -26,36 +30,61 @@ func newConfig() config.Config {
 			"connect_timeout": "2",
 		},
 	})
-	return c
+	if err := Initialize(c, "direct"); err != nil {
+		t.Errorf("ram initialization failed:%s", err.Error())
+		return
+	}
 }
 
 func Test_CreateAccount(t *testing.T) {
-	c := newConfig()
-	if err := Initialize(c, "direct"); err != nil {
-		t.Errorf("ram initialization failed:%s", err.Error())
-		return
-	}
 	if err := CreateAccount("account1"); err != nil {
 		t.Errorf("CreateAccount failed:%s", err.Error())
 	}
-	if err := DestroyAccount("account1"); err != nil {
-		t.Errorf("CreateAccount failed:%s", err.Error())
-	}
-
 }
 
 func Test_CreateResource(t *testing.T) {
-	c := newConfig()
-	if err := Initialize(c, "direct"); err != nil {
-		t.Errorf("ram initialization failed:%s", err.Error())
-		return
-	}
-	rid := NewObjectId()
 	if _, err := CreateResource("account1", &ResourceCreateOption{
-		ObjectId:   rid,
+		ObjectId:   resourceId,
 		Name:       "product1",
 		Attributes: []string{"devices", "rules"},
 	}); err != nil {
 		t.Errorf("CreateResource failed:%s", err.Error())
+	}
+	if _, err := CreateResource("account1", &ResourceCreateOption{
+		ObjectId:   resourceId,
+		Name:       "product1",
+		Attributes: []string{"devices", "rules"},
+	}); err == nil {
+		t.Errorf("CreateResource with sample id failed:%s", err.Error())
+	}
+}
+
+func Test_AddResourceGrantee(t *testing.T) {
+	if err := AddResourceGrantee(resourceId, "client1", RightRead); err != nil {
+		t.Error(err)
+	}
+	if err := AddResourceGrantee(resourceId+"/devices", "client1", RightWrite); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_Authorize(t *testing.T) {
+	if err := Authorize(resourceId, "client1", ActionRead); err != nil {
+		t.Error(err)
+	}
+	if err := Authorize(resourceId+"/devices", "client1", ActionRead); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_DestroyResource(t *testing.T) {
+	if err := DestroyResource(resourceId); err != nil {
+		t.Error(err.Error())
+	}
+}
+
+func Test_DestroyAccount(t *testing.T) {
+	if err := DestroyAccount("account1"); err != nil {
+		t.Error(err)
 	}
 }
