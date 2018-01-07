@@ -64,16 +64,12 @@ paths:
           schema:
             $ref: "#/definitions/tenantResponse"
       x-swagger-router-controller: "Tenant"
-  /tenants/{tenantsId}/login:
+  /tenants/login:
     post:
       tags:
       - "Tenant"
       operationId: "loginTenant"
       parameters:
-      - name: "tenantsId"
-        in: "path"
-        required: true
-        type: "string"
       - in: "body"
         name: "tenants"
         required: false
@@ -87,16 +83,12 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Tenant"
-  /tenants/{tenantsId}/logout:
+  /tenants/logout:
     post:
       tags:
       - "Tenant"
       operationId: "logoutTenant"
       parameters:
-      - name: "tenantsId"
-        in: "path"
-        required: true
-        type: "string"
       - in: "body"
         name: "tenants"
         required: false
@@ -126,7 +118,7 @@ paths:
     post:
       tags:
       - "Product"
-      operationId: "registerProduct"
+      operationId: "createProduct"
       parameters:
       - in: "body"
         name: "product"
@@ -147,13 +139,13 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Product"
-  /products/{productKey}:
+  /products/{productId}:
     get:
       tags:
       - "Product"
       operationId: "getProduct"
       parameters:
-      - name: "productKey"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
@@ -174,9 +166,9 @@ paths:
     delete:
       tags:
       - "Product"
-      operationId: "deleteProduct"
+      operationId: "removeProduct"
       parameters:
-      - name: "productKey"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
@@ -194,7 +186,7 @@ paths:
       - "Product"
       operationId: "updateProduct"
       parameters:
-      - name: "productKey"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
@@ -216,13 +208,13 @@ paths:
           description: "The authorization token cannot be validated"
           schema:
             $ref: "#/definitions/ApiResponse"
-  /products/{productKey}/devices:
+  /products/{productId}/devices:
     get:
       tags:
       - "Product"
       operationId: "getProductDevices"
       parameters:
-      - name: "productKey"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
@@ -236,13 +228,13 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Product"
-  /products/{productKey}/rules:
+  /products/{productId}/rules:
     get:
       tags:
       - "Product"
       operationId: "getProductRules"
       parameters:
-      - name: "productKey"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
@@ -260,33 +252,13 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Product"
-  /products/{productKey}/devices/statics:
+  /products/{productId}/devices/statics:
     get:
       tags:
       - "Product"
       operationId: "getDeviceStatics"
       parameters:
-      - name: "productKey"
-        in: "path"
-        required: true
-        type: "string"
-      responses:
-        200:
-          description: "response"
-          schema:
-            $ref: "#/definitions/ProductDevicesResponse"
-        401:
-          description: "The authorization token cannot be validated"
-          schema:
-            $ref: "#/definitions/ApiResponse"
-      x-swagger-router-controller: "Product"
-  /tenants/{tenantId}/products:
-    get:
-      tags:
-      - "Product"
-      operationId: "getTenantProductList"
-      parameters:
-      - name: "tenantId"
+      - name: "productId"
         in: "path"
         required: true
         type: "string"
