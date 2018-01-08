@@ -1044,7 +1044,7 @@ definitions:
     properties:
       Name:
         type: "string"
-      CategoryId:
+      Category:
         type: "string"
       Description:
         type: "string"
@@ -1055,7 +1055,7 @@ definitions:
         type: "string"
       Name:
         type: "string"
-      CategoryId:
+      Category:
         type: "string"
       Description:
         type: "string"
@@ -1072,7 +1072,7 @@ definitions:
         type: "string"
       TimeModified:
         type: "string"
-      CategoryId:
+      Category:
         type: "string"
       ProductKey:
         type: "string"
