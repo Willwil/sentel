@@ -63,8 +63,6 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 		swaggerCmd: commands.ServeCmd{
 			Port:   port,
 			Host:   host,
-			NoOpen: true,
-			NoUI:   false,
 			Flavor: "redoc",
 		},
 		swaggerFile: swaggerFile,
