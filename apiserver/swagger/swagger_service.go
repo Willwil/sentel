@@ -109,7 +109,10 @@ func (p *swaggerService) Start() error {
 
 	handler = handlers.CORS()(middleware.Spec(basePath, b, handler))
 	go func() {
-		docServer := &graceful.Server{Server: new(http.Server)}
+		docServer := &graceful.Server{
+			Server:           new(http.Server),
+			NoSignalHandling: true,
+		}
 		docServer.SetKeepAlivesEnabled(true)
 		docServer.TCPKeepAlive = 3 * time.Minute
 		docServer.Handler = handler
