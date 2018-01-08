@@ -87,6 +87,12 @@
 			"revisionTime": "2017-03-29T04:21:07Z"
 		},
 		{
+			"checksumSHA1": "2nOHmoQhJw1o0t0miTHb8XKLPog=",
+			"path": "github.com/go-swagger/go-swagger",
+			"revision": "2db0ce663570b503015389ce4b53e61534d5c66c",
+			"revisionTime": "2017-12-28T15:13:00Z"
+		},
+		{
 			"checksumSHA1": "9SXbj96wb1PgppBZzxMIN0axbFQ=",
 			"path": "github.com/go-xorm/builder",
 			"revision": "c8871c857d2555fbfbd8524f895be5386d3d8836",
