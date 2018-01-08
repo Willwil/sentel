@@ -36,7 +36,7 @@ func Authenticate(opts interface{}) error {
 	return nil
 }
 
-func Authorize(accessId string, resource string, action ram.Action) error {
+func Authorize(accessId string, resource string, action string) error {
 	if !noAuth {
 		return client.Authorize(accessId, resource, action)
 	}
@@ -50,7 +50,7 @@ func CreateResource(accessId string, res ram.ResourceCreateOption) error {
 	return nil
 }
 
-func AccessResource(res string, accessId string, action ram.Action) error {
+func AccessResource(res string, accessId string, action string) error {
 	if !noAuth {
 		return client.AccessResource(res, accessId, action)
 	}
@@ -64,7 +64,7 @@ func DestroyResource(rid string, accessId string) error {
 	return nil
 }
 
-func AddResourceGrantee(res string, accessId string, right ram.Right) error {
+func AddResourceGrantee(res string, accessId string, right string) error {
 	if !noAuth {
 		return client.AddResourceGrantee(res, accessId, right)
 	}

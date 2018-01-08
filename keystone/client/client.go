@@ -71,7 +71,7 @@ func Authenticate(opts interface{}) error {
 	return err
 }
 
-func Authorize(accessId string, resource string, action ram.Action) error {
+func Authorize(accessId string, resource string, action string) error {
 	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%s",
 		khosts, resource, accessId, string(action))
 	resp, err := http.Get(url)
@@ -112,7 +112,7 @@ func CreateResource(accessId string, res ram.ResourceCreateOption) error {
 	return errors.New("object creation failed")
 }
 
-func AccessResource(res string, accessId string, action ram.Action) error {
+func AccessResource(res string, accessId string, action string) error {
 	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%s", khosts, res, accessId, action)
 	resp, err := http.Get(url)
 	if err == nil && resp.StatusCode == http.StatusOK {
@@ -146,7 +146,7 @@ func DestroyResource(resourceId string, accessId string) error {
 	return errors.New("object destroy failed")
 }
 
-func AddResourceGrantee(res string, accessId string, right ram.Right) error {
+func AddResourceGrantee(res string, accessId string, right string) error {
 	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&right=%s",
 		khosts, res, accessId, string(right))
 	client := &http.Client{}

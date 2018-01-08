@@ -35,10 +35,11 @@ type Resource struct {
 	l2.Object
 }
 
-func (p *Resource) Access(accessorId string, action l2.Action) error {
+func (p *Resource) Access(accessorId string, action string) error {
+	act := convertAction(action)
 	for _, g := range p.GranteeList {
 		if g.AccessorId == accessorId {
-			switch action {
+			switch act {
 			case l2.ActionRead:
 				if g.Right&l2.RightRead != 0 {
 					return nil
@@ -59,14 +60,15 @@ func (p *Resource) Access(accessorId string, action l2.Action) error {
 	return errors.New("unauthorized")
 }
 
-func (p *Resource) AccessAttribute(attr string, accessorId string, action l2.Action) error {
+func (p *Resource) AccessAttribute(attr string, accessorId string, action string) error {
 	if _, found := p.Attributes[attr]; !found {
 		return fmt.Errorf("invalid resource '%s' attribute '%s'", p.Name, attr)
 	}
+	act := convertAction(action)
 	granteeList := p.Attributes[attr]
 	for _, g := range granteeList {
 		if g.AccessorId == accessorId {
-			switch action {
+			switch act {
 			case l2.ActionRead:
 				if g.Right&l2.RightRead != 0 {
 					return nil
@@ -88,22 +90,10 @@ func (p *Resource) AccessAttribute(attr string, accessorId string, action l2.Act
 }
 
 // AddAccessor add resource accessor
-func (p *Resource) AddGrantee(accessorId string, right l2.Right) {
-	p.Object.AddGrantee(l2.Grantee{AccessorId: accessorId, Right: right})
+func (p *Resource) AddGrantee(accessorId string, right string) {
+	p.Object.AddGrantee(l2.Grantee{AccessorId: accessorId, Right: convertRight(right)})
 }
 
-func (p *Resource) AddAttributeGrantee(attr string, accessorId string, right l2.Right) {
-	p.Object.AddAttributeGrantee(attr, l2.Grantee{AccessorId: accessorId, Right: right})
-}
-
-func (p *Resource) AddAttribute(attr string, granteeList []l2.Grantee) {
-	p.Object.AddAttribute(attr, granteeList)
-}
-
-func (p *Resource) RemoveAttribute(attr string) error {
-	return p.Object.RemoveAttribute(attr)
-}
-
-func (p *Resource) RemoveAttributeGrantee(attr string, accessorId string) error {
-	return p.Object.RemoveAttributeGrantee(attr, accessorId)
+func (p *Resource) AddAttributeGrantee(attr string, accessorId string, right string) {
+	p.Object.AddAttributeGrantee(attr, l2.Grantee{AccessorId: accessorId, Right: convertRight(right)})
 }

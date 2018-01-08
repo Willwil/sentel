@@ -20,16 +20,13 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type Right string
-type Action string
-
 const (
-	RightRead   Right  = "r"
-	RightWrite  Right  = "w"
-	RightFull   Right  = "x"
-	ActionRead  Action = "r"
-	ActionWrite Action = "w"
-	ActionFull  Action = "x"
+	RightRead   = "r"
+	RightWrite  = "w"
+	RightFull   = "x"
+	ActionRead  = "r"
+	ActionWrite = "w"
+	ActionFull  = "x"
 )
 
 var (
@@ -46,7 +43,7 @@ func Initialize(c config.Config, apiName string) error {
 	return err
 }
 
-func convertAction(action Action) l2.Action {
+func convertAction(action string) l2.Action {
 	switch action {
 	case ActionRead:
 		return l2.ActionRead
@@ -59,7 +56,7 @@ func convertAction(action Action) l2.Action {
 	}
 }
 
-func convertRight(right Right) l2.Right {
+func convertRight(right string) l2.Right {
 	switch right {
 	case RightRead:
 		return l2.RightRead
@@ -72,7 +69,7 @@ func convertRight(right Right) l2.Right {
 	}
 }
 
-func Authorize(resource string, accessorId string, action Action) error {
+func Authorize(resource string, accessorId string, action string) error {
 	names := strings.Split(resource, "/")
 	if len(names) == 0 || len(names) > 2 {
 		return fmt.Errorf("invalid resource '%s'", resource)
@@ -82,9 +79,9 @@ func Authorize(resource string, accessorId string, action Action) error {
 		return err
 	} else {
 		if len(names) == 2 {
-			return resource.AccessAttribute(names[1], accessorId, convertAction(action))
+			return resource.AccessAttribute(names[1], accessorId, action)
 		} else {
-			return resource.Access(accessorId, convertAction(action))
+			return resource.Access(accessorId, action)
 		}
 	}
 }
@@ -130,7 +127,7 @@ func GetResource(rid string) (*Resource, error) {
 	}
 }
 
-func AddResourceGrantee(resource string, accessorId string, right Right) error {
+func AddResourceGrantee(resource string, accessorId string, right string) error {
 	names := strings.Split(resource, "/")
 	if len(names) == 0 || len(names) > 2 {
 		return fmt.Errorf("invalid resource '%s'", resource)
@@ -140,9 +137,9 @@ func AddResourceGrantee(resource string, accessorId string, right Right) error {
 		return err
 	} else {
 		if len(names) == 2 {
-			resource.AddAttributeGrantee(names[1], accessorId, convertRight(right))
+			resource.AddAttributeGrantee(names[1], accessorId, right)
 		} else {
-			resource.AddGrantee(accessorId, convertRight(right))
+			resource.AddGrantee(accessorId, right)
 		}
 		return l2api.UpdateObject(&resource.Object)
 	}

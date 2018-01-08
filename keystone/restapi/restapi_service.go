@@ -130,7 +130,7 @@ func accessResource(ctx echo.Context) error {
 	accessId := ctx.QueryParam("accessId")
 	action := ctx.QueryParam("action")
 
-	if err := ram.Authorize(resource, accessId, ram.Action(action)); err != nil {
+	if err := ram.Authorize(resource, accessId, action); err != nil {
 		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &apiResponse{})
@@ -139,7 +139,7 @@ func addResourceGrantee(ctx echo.Context) error {
 	resource := ctx.QueryParam("resource")
 	accessId := ctx.QueryParam("accessId")
 	right := ctx.QueryParam("right")
-	if err := ram.AddResourceGrantee(resource, accessId, ram.Right(right)); err != nil {
+	if err := ram.AddResourceGrantee(resource, accessId, right); err != nil {
 		return ctx.JSON(http.StatusUnauthorized, &apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &apiResponse{})

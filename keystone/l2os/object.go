@@ -64,25 +64,16 @@ func (p *Object) GetAttributes() []string {
 	return attrs
 }
 
-func (p *Object) AddAttribute(attr string, granteeList []Grantee) {
+func (p *Object) GetAttribute(attr string) ([]Grantee, error) {
 	if _, found := p.Attributes[attr]; found {
-		grantees := p.Attributes[attr]
-		for _, grantee := range granteeList {
-			found = false
-			for _, g := range grantees {
-				if grantee.AccessorId == g.AccessorId {
-					found = true
-					g.Right |= grantee.Right
-					break
-				}
-			}
-			if !found {
-				grantees = append(grantees, grantee)
-				p.Attributes[attr] = grantees
-			}
-		}
-	} else {
-		p.Attributes[attr] = granteeList
+		return p.Attributes[attr], nil
+	}
+	return nil, fmt.Errorf("invalid attribute '%s' in resource '%s'", attr, p.Name)
+}
+
+func (p *Object) AddAttribute(attr string) {
+	if _, found := p.Attributes[attr]; !found {
+		p.Attributes[attr] = []Grantee{}
 	}
 }
 
@@ -92,13 +83,6 @@ func (p *Object) RemoveAttribute(attr string) error {
 	}
 	delete(p.Attributes, attr)
 	return nil
-}
-
-func (p *Object) GetAttributeGranteeList(attr string) ([]Grantee, error) {
-	if _, found := p.Attributes[attr]; !found {
-		return nil, fmt.Errorf("attribute '%s' not found", attr)
-	}
-	return p.Attributes[attr], nil
 }
 
 func (p *Object) AddGrantee(g Grantee) {
@@ -113,6 +97,22 @@ func (p *Object) AddGrantee(g Grantee) {
 
 func (p *Object) GetGranteeList() []Grantee {
 	return p.GranteeList
+}
+
+func (p *Object) RemoveGrantee(accessorId string) {
+	for index, g := range p.GranteeList {
+		if g.AccessorId == accessorId {
+			p.GranteeList = append(p.GranteeList[:index], p.GranteeList[index:0]...)
+			break
+		}
+	}
+}
+
+func (p *Object) GetAttributeGranteeList(attr string) ([]Grantee, error) {
+	if _, found := p.Attributes[attr]; found {
+		return p.Attributes[attr], nil
+	}
+	return nil, fmt.Errorf("object attribute '%s' not found", attr)
 }
 
 func (p *Object) AddAttributeGrantee(attr string, g Grantee) {
