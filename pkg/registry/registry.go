@@ -81,7 +81,7 @@ func ensureDevicesIndex(s *mgo.Session) {
 
 	c := session.DB("registry").C(dbNameDevices)
 	index := mgo.Index{
-		Key:        []string{"Id", "Name", "ProductId", "ProductKey"},
+		Key:        []string{"DeviceId"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
@@ -99,7 +99,7 @@ func ensureProductsIndex(s *mgo.Session) {
 
 	c := session.DB("registry").C(dbNameProducts)
 	index := mgo.Index{
-		Key:        []string{"Id", "ProductId"},
+		Key:        []string{"ProductId"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
@@ -135,7 +135,7 @@ func ensureRulesIndex(s *mgo.Session) {
 
 	c := session.DB("registry").C(dbNameRules)
 	index := mgo.Index{
-		Key:        []string{"Id", "RuleName"},
+		Key:        []string{"ProductId", "RuleName"},
 		Unique:     true,
 		DropDups:   true,
 		Background: true,
@@ -270,7 +270,7 @@ func (r *Registry) UpdateProduct(p *Product) error {
 func (r *Registry) RegisterDevice(dev *Device) error {
 	c := r.db.C(dbNameDevices)
 	device := Device{}
-	if err := c.Find(bson.M{"Id": bson.M{"$regex": dev.DeviceId, "$options": "$i"}}).One(&device); err == nil { // found existed device
+	if err := c.Find(bson.M{"DeviceId": dev.DeviceId}).One(&device); err == nil { // found existed device
 		return fmt.Errorf("device %s already exist", dev.DeviceId)
 	}
 	return c.Insert(dev)
