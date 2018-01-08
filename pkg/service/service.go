@@ -14,8 +14,10 @@ package service
 import (
 	"errors"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
@@ -76,6 +78,7 @@ func (p *ServiceManager) RunAndWait() error {
 	// Create all services
 	for _, factory := range p.serviceFactories {
 		quit := make(chan os.Signal)
+		signal.Notify(quit, syscall.SIGUSR1)
 		if service, err := factory.New(p.Config, quit); err != nil {
 			return err
 		} else {
@@ -86,7 +89,7 @@ func (p *ServiceManager) RunAndWait() error {
 	}
 
 	// Run all service
-	glog.Infof("There are %d service in '%s'", len(p.services), p.name)
+	glog.Infof("There are %d services in '%s'", len(p.services), p.name)
 	for _, service := range p.services {
 		glog.Infof("Starting service:'%s'...", service.Name())
 		if err := service.Start(); err != nil {
@@ -96,7 +99,7 @@ func (p *ServiceManager) RunAndWait() error {
 	// Wait all service to terminate in main context
 	for name, quit := range p.quits {
 		<-quit
-		glog.Info("Servide(%s) is terminated", name)
+		glog.Info("Service '%s' is terminated", name)
 	}
 	return nil
 }
@@ -104,9 +107,9 @@ func (p *ServiceManager) RunAndWait() error {
 // Run launch all serices
 func (p *ServiceManager) Run() error {
 	// Run all service
-	glog.Infof("There are %d service in '%s'", len(p.services), p.name)
+	glog.Infof("There are %d services in '%s'", len(p.services), p.name)
 	for _, service := range p.services {
-		glog.Infof("Starting service:'%s'...", service.Name())
+		glog.Infof("Starting service '%s'...", service.Name())
 		if err := service.Start(); err != nil {
 			return err
 		}
@@ -117,7 +120,7 @@ func (p *ServiceManager) Run() error {
 // stop
 func (p *ServiceManager) stop() error {
 	for _, service := range p.services {
-		glog.Infof("Stoping service:'%s'...", service.Name())
+		glog.Infof("Stoping service '%s'...", service.Name())
 		service.Stop()
 	}
 	return nil

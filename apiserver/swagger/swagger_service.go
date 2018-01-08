@@ -14,17 +14,29 @@ package swagger
 import (
 	"errors"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
+
+	"encoding/json"
+	"fmt"
+	"log"
+	"net"
+	"net/http"
+	"path"
+	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/loads/fmts"
 	"github.com/go-swagger/go-swagger/cmd/swagger/commands"
+
+	"github.com/go-openapi/runtime/middleware"
+	"github.com/go-openapi/swag"
+	"github.com/gorilla/handlers"
+	"github.com/toqueteos/webbrowser"
+	"github.com/tylerb/graceful"
 )
 
 func init() {
@@ -36,9 +48,11 @@ var (
 	Debug = os.Getenv("SWAGGER_DEBUG") != ""
 )
 
-type managementService struct {
+type swaggerService struct {
 	service.ServiceBase
 	swaggerCmd  commands.ServeCmd
+	host        string
+	port        int
 	swaggerFile string
 }
 
@@ -50,40 +64,76 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	if len(names) != 2 {
 		return nil, errors.New("swagger configuration error")
 	}
-	host := names[0]
 	port, _ := strconv.Atoi(names[1])
 	swaggerFile := c.MustString("swagger", "path")
 	// swagger file
-	return &managementService{
+	return &swaggerService{
 		ServiceBase: service.ServiceBase{
 			Config:    c,
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		swaggerCmd: commands.ServeCmd{
-			Port:   port,
-			Host:   host,
-			Flavor: "redoc",
-		},
 		swaggerFile: swaggerFile,
+		host:        names[0],
+		port:        port,
 	}, nil
 }
 
-func (p *managementService) Name() string { return "swagger" }
+func (p *swaggerService) Name() string { return "swagger" }
 
 // Start
-func (p *managementService) Start() error {
-	go func(s *managementService) {
-		args := []string{p.swaggerFile}
-		p.swaggerCmd.Execute(args)
-		p.WaitGroup.Add(1)
+func (p *swaggerService) Start() error {
+	go func(s *swaggerService) {
+		p.execute()
 	}(p)
 	return nil
 }
 
 // Stop
-func (p *managementService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+func (p *swaggerService) Stop() {}
+
+func (p *swaggerService) execute() error {
+	specDoc, err := loads.Spec(p.swaggerFile)
+	if err != nil {
+		return err
+	}
+	b, err := json.MarshalIndent(specDoc.Spec(), "", "  ")
+	if err != nil {
+		return err
+	}
+
+	basePath := "/"
+	listener, err := net.Listen("tcp4", net.JoinHostPort(p.host, strconv.Itoa(p.port)))
+	if err != nil {
+		return err
+	}
+	sh, sp, err := swag.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		return err
+	}
+	if sh == "0.0.0.0" {
+		sh = "localhost"
+	}
+
+	handler := http.NotFoundHandler()
+	handler = middleware.Redoc(middleware.RedocOpts{
+		BasePath: basePath,
+		SpecURL:  path.Join(basePath, "swagger.json"),
+		Path:     "docs",
+	}, handler)
+	visit := fmt.Sprintf("http://%s:%d%s", sh, sp, path.Join(basePath, "docs"))
+
+	handler = handlers.CORS()(middleware.Spec(basePath, b, handler))
+	go func() {
+		docServer := &graceful.Server{Server: new(http.Server)}
+		docServer.SetKeepAlivesEnabled(true)
+		docServer.TCPKeepAlive = 3 * time.Minute
+		docServer.Handler = handler
+
+		docServer.Serve(listener)
+	}()
+
+	err = webbrowser.Open(visit)
+	log.Println("serving docs at", visit)
+	return nil
 }
