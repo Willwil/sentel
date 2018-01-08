@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/console"
 	"github.com/cloustone/sentel/apiserver/management"
+	"github.com/cloustone/sentel/apiserver/swagger"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 
@@ -26,6 +27,7 @@ import (
 
 var (
 	configFileName = flag.String("c", "/etc/sentel/apiserver.conf", "config file")
+	swaggerFile    = flag.String("s", "../apiserver/swagger/console_swagger.yaml", "swagger file")
 )
 
 func main() {
@@ -39,6 +41,9 @@ func main() {
 	}
 	mgr.AddService(console.ServiceFactory{})
 	mgr.AddService(management.ServiceFactory{})
+	if _, err := config.String("apiserver", "swagger"); err == nil {
+		mgr.AddService(swagger.ServiceFactory{})
+	}
 	glog.Fatal(mgr.RunAndWait())
 }
 
@@ -56,5 +61,12 @@ func createConfig(fileName string) (config.Config, error) {
 		options["apiserver"]["mongo"] = os.Getenv("MONGO_HOST")
 		config.AddConfig(options)
 	}
+	if _, err := config.String("apiserver", "swagger"); err == nil {
+		config.AddConfig(map[string]map[string]string{
+			"swagger": {
+				"path": *swaggerFile,
+			}})
+	}
+
 	return config, nil
 }

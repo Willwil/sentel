@@ -15,6 +15,12 @@
 			"revisionTime": "2016-11-21T22:43:40Z"
 		},
 		{
+			"checksumSHA1": "4pqVzk2qBe3ms8VSlDHA+81LlSE=",
+			"path": "github.com/asaskevich/govalidator",
+			"revision": "852d82c746b23d9b357b210ea470d99f4e023b72",
+			"revisionTime": "2017-11-28T15:35:14Z"
+		},
+		{
 			"checksumSHA1": "BJXHEdzHxRPmVnt6GFaPpwgns2c=",
 			"path": "github.com/coreos/go-etcd/etcd",
 			"revision": "003851be7bb0694fe3cc457a49529a19388ee7cf",
@@ -87,8 +93,68 @@
 			"revisionTime": "2017-03-29T04:21:07Z"
 		},
 		{
+			"checksumSHA1": "K6yqgADgQUvY3zvedkHU1Wlog3s=",
+			"path": "github.com/go-openapi/analysis",
+			"revision": "0db1e4cf47d6eb0fc6b25135868c3483cc6b066e",
+			"revisionTime": "2017-12-26T17:37:43Z"
+		},
+		{
+			"checksumSHA1": "7dalNGdjLV+ArdiaCVl8HvANenE=",
+			"path": "github.com/go-openapi/errors",
+			"revision": "7bcb96a367bac6b76e6e42fa84155bb5581dcff8",
+			"revisionTime": "2017-12-26T16:16:01Z"
+		},
+		{
+			"checksumSHA1": "r4k1R0NueGJswCy05rOvm5e3MX8=",
+			"path": "github.com/go-openapi/inflect",
+			"revision": "b1f6470ffb9c552dc105dd869f16e36ba86ba7d0",
+			"revisionTime": "2013-08-29T11:07:46Z"
+		},
+		{
+			"checksumSHA1": "/oFo9KvmEya8z8F4I0d4/ayBWdQ=",
+			"path": "github.com/go-openapi/loads",
+			"revision": "2a2b323bab96e6b1fdee110e57d959322446e9c9",
+			"revisionTime": "2017-12-07T19:22:34Z"
+		},
+		{
+			"checksumSHA1": "CyXLm5hlDgY4MGvYkRR1jvvsvNU=",
+			"path": "github.com/go-openapi/loads/fmts",
+			"revision": "2a2b323bab96e6b1fdee110e57d959322446e9c9",
+			"revisionTime": "2017-12-07T19:22:34Z"
+		},
+		{
+			"checksumSHA1": "9BWAE1pUzfXCAUyt9M7OHqICoKM=",
+			"path": "github.com/go-openapi/runtime",
+			"revision": "a76104f379d3c5041f2a56e69db3ad8404ce4826",
+			"revisionTime": "2017-12-19T22:33:54Z"
+		},
+		{
+			"checksumSHA1": "rZHq1ytGyRwt6MOa9pXklPHos5A=",
+			"path": "github.com/go-openapi/strfmt",
+			"revision": "4dd3d302e100bae008baedc42d446ce83bdd10ad",
+			"revisionTime": "2017-12-22T15:40:16Z"
+		},
+		{
+			"checksumSHA1": "3LH69bAcdFto8VnWM2HPCDpUk0k=",
+			"path": "github.com/go-openapi/validate",
+			"revision": "0e805b142cf7a9f578a775ff7d05745534371f9d",
+			"revisionTime": "2017-12-22T15:45:36Z"
+		},
+		{
 			"checksumSHA1": "2nOHmoQhJw1o0t0miTHb8XKLPog=",
 			"path": "github.com/go-swagger/go-swagger",
+			"revision": "2db0ce663570b503015389ce4b53e61534d5c66c",
+			"revisionTime": "2017-12-28T15:13:00Z"
+		},
+		{
+			"checksumSHA1": "/v4dQvYdVjhpZe4EwFvlX3BpFos=",
+			"path": "github.com/go-swagger/go-swagger/generator",
+			"revision": "2db0ce663570b503015389ce4b53e61534d5c66c",
+			"revisionTime": "2017-12-28T15:13:00Z"
+		},
+		{
+			"checksumSHA1": "Nxx0CxilLhRXrMAWctC36t3jtc0=",
+			"path": "github.com/go-swagger/go-swagger/scan",
 			"revision": "2db0ce663570b503015389ce4b53e61534d5c66c",
 			"revisionTime": "2017-12-28T15:13:00Z"
 		},
@@ -217,6 +283,18 @@
 			"path": "github.com/julienschmidt/httprouter",
 			"revision": "e1b9828bc9e5904baec057a154c09ca40fe7fae0",
 			"revisionTime": "2017-10-27T13:37:09Z"
+		},
+		{
+			"checksumSHA1": "eOXF2PEvYLMeD8DSzLZJWbjYzco=",
+			"path": "github.com/kr/pretty",
+			"revision": "cfb55aafdaf3ec08f0db22699ab822c50091b1c4",
+			"revisionTime": "2016-08-23T17:07:15Z"
+		},
+		{
+			"checksumSHA1": "uulQHQ7IsRKqDudBC8Go9J0gtAc=",
+			"path": "github.com/kr/text",
+			"revision": "7cafcd837844e784b526369c9bce262804aebc60",
+			"revisionTime": "2016-05-04T02:26:26Z"
 		},
 		{
 			"checksumSHA1": "GljynElLtMiRo7Zg5Iah6QYuMIA=",
@@ -351,6 +429,12 @@
 			"revisionTime": "2017-07-23T05:52:07Z"
 		},
 		{
+			"checksumSHA1": "+7Ab5lT5cTY9Y1mmMGTUMqPYhfM=",
+			"path": "github.com/toqueteos/webbrowser",
+			"revision": "43eedf9c266f511c55ef7eace9ee549e269b54b4",
+			"revisionTime": "2017-11-28T07:50:06Z"
+		},
+		{
 			"checksumSHA1": "UvAa7W6azFmHKgYtl2+zuucsrDY=",
 			"path": "github.com/ugorji/go/codec",
 			"revision": "54210f4e076c57f351166f0ed60e67d3fca57a36",
@@ -463,6 +547,10 @@
 			"path": "golang.org/x/text/unicode/norm",
 			"revision": "ab5ac5f9a8deb4855a60fab02bc61a4ec770bd49",
 			"revisionTime": "2017-09-13T16:58:53Z"
+		},
+		{
+			"path": "golang.org/x/tools/go/loader",
+			"revision": ""
 		},
 		{
 			"checksumSHA1": "AvVpgwhxhJgjoSledwDtYrEKVE4=",

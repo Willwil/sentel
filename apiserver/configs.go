@@ -19,6 +19,7 @@ var defaultConfigs = map[string]map[string]string{
 		"version":  "v1",
 		"auth":     "none",
 		"mongo":    "localhost:27017",
+		"swagger":  "localhost:53384",
 	},
 	"registry": {
 		"hosts":    "localhost:27017",
