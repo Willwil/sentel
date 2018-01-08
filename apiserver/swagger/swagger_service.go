@@ -30,7 +30,6 @@ import (
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/loads/fmts"
-	"github.com/go-swagger/go-swagger/cmd/swagger/commands"
 
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/go-openapi/swag"
@@ -43,17 +42,10 @@ func init() {
 	loads.AddLoader(fmts.YAMLMatcher, fmts.YAMLDoc)
 }
 
-var (
-	// Debug is true when the SWAGGER_DEBUG env var is not empty
-	Debug = os.Getenv("SWAGGER_DEBUG") != ""
-)
-
 type swaggerService struct {
 	service.ServiceBase
-	swaggerCmd  commands.ServeCmd
-	host        string
-	port        int
-	swaggerFile string
+	host string
+	port int
 }
 
 type ServiceFactory struct{}
@@ -65,7 +57,6 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 		return nil, errors.New("swagger configuration error")
 	}
 	port, _ := strconv.Atoi(names[1])
-	swaggerFile := c.MustString("swagger", "path")
 	// swagger file
 	return &swaggerService{
 		ServiceBase: service.ServiceBase{
@@ -73,9 +64,8 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 			WaitGroup: sync.WaitGroup{},
 			Quit:      quit,
 		},
-		swaggerFile: swaggerFile,
-		host:        names[0],
-		port:        port,
+		host: names[0],
+		port: port,
 	}, nil
 }
 
@@ -83,17 +73,11 @@ func (p *swaggerService) Name() string { return "swagger" }
 
 // Start
 func (p *swaggerService) Start() error {
-	go func(s *swaggerService) {
-		p.execute()
-	}(p)
-	return nil
-}
-
-// Stop
-func (p *swaggerService) Stop() {}
-
-func (p *swaggerService) execute() error {
-	specDoc, err := loads.Spec(p.swaggerFile)
+	specFile, err := p.Config.String("swagger", "path")
+	if err != nil || specFile == "" {
+		return errors.New("invalid swagger file")
+	}
+	specDoc, err := loads.Spec(specFile)
 	if err != nil {
 		return err
 	}
@@ -136,4 +120,8 @@ func (p *swaggerService) execute() error {
 	err = webbrowser.Open(visit)
 	log.Println("serving docs at", visit)
 	return nil
+
 }
+
+// Stop
+func (p *swaggerService) Stop() {}
