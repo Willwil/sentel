@@ -91,7 +91,7 @@ func (p *authService) Initialize() error {
 	if products, err := r.GetProducts(tenantId); err == nil {
 		// load topic flavor for each products
 		for _, product := range products {
-			flavors := r.GetProductTopicFlavor(product.ProductId)
+			flavors := r.GetProductTopicFlavors(product.ProductId)
 			if len(flavors) > 0 {
 				p.flavors[product.ProductId] = flavors
 			}

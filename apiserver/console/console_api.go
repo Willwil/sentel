@@ -180,7 +180,6 @@ func getTenantTopicFlavors(ctx echo.Context) error {
 	setAccessId(ctx)
 	return v1api.GetTenantTopicFlavors(ctx)
 }
-
 func removeProductTopicFlavor(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	setAccessId(ctx)

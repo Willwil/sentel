@@ -12,39 +12,73 @@
 
 package v1api
 
-import "github.com/labstack/echo"
+import (
+	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/labstack/echo"
+)
 
 // CreateTopicFlavor create topic flavor
 func CreateTopicFlavor(ctx echo.Context) error {
-	/*
-		accessId := getAccessId(ctx)
-		flavor := registry.TopicFlavor{}
-		if err := ctx.Bind(&flavor); err != nil {
-			return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
-		}
-		r := getRegistry(ctx)
-		c := getConfig(ctx)
-	*/
-
-	return nil
+	flavor := registry.TopicFlavor{}
+	if err := ctx.Bind(&flavor); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	r := getRegistry(ctx)
+	if err := r.CreateTopicFlavor(&flavor); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(OK, apiResponse{})
 }
 
 func GetBuiltinTopicFlavors(ctx echo.Context) error {
-	return nil
+	r := getRegistry(ctx)
+	flavors := r.GetBuiltinTopicFlavors()
+	return ctx.JSON(OK, apiResponse{Result: flavors})
 }
 
 func GetProductTopicFlavors(ctx echo.Context) error {
-	return nil
+	productId := ctx.Param("productId")
+	r := getRegistry(ctx)
+	flavors := r.GetProductTopicFlavors(productId)
+	return ctx.JSON(OK, apiResponse{Result: flavors})
 }
 
 func GetTenantTopicFlavors(ctx echo.Context) error {
-	return nil
+	tenantId := ctx.Param("tenantId")
+	r := getRegistry(ctx)
+	flavors := r.GetTenantTopicFlavors(tenantId)
+	return ctx.JSON(OK, apiResponse{Result: flavors})
 }
 
 func RemoveProductTopicFlavor(ctx echo.Context) error {
-	return nil
+	productId := ctx.Param("productId")
+	r := getRegistry(ctx)
+	if p, err := r.GetProduct(productId); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	} else {
+		p.TopicFlavor = ""
+		if err := r.UpdateProduct(p); err != nil {
+			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+		}
+	}
+	return ctx.JSON(OK, apiResponse{})
 }
 
 func SetProductTopicFlavor(ctx echo.Context) error {
-	return nil
+	productId := ctx.Param("productId")
+	topicFlavor := ctx.QueryParam("topicflavor")
+	flavor := registry.TopicFlavor{}
+	if err := ctx.Bind(&flavor); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	r := getRegistry(ctx)
+	if p, err := r.GetProduct(productId); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	} else {
+		p.TopicFlavor = topicFlavor
+		if err := r.UpdateProduct(p); err != nil {
+			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+		}
+	}
+	return ctx.JSON(OK, apiResponse{})
 }

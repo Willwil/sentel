@@ -136,7 +136,8 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.DELETE("/topicflavors/:productId", removeProductTopicFlavor)
 	g.GET("/topicflavors/product/:productId", getProductTopicFlavors)
 	g.GET("/topicflavors/tenant/:tenantId", getTenantTopicFlavors)
-	g.PUT("/topicflavors/:productId", setProductTopicFlavor)
+	g.GET("topicflavors/builtin", getBuiltinTopicFlavors)
+	g.PUT("/topicflavors/:productId?flavor=:topicflavor", setProductTopicFlavor)
 
 	// Runtime
 	g.POST("/message", sendMessageToDevice)

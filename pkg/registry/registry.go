@@ -383,7 +383,7 @@ func (r *Registry) CreateTopicFlavor(t *TopicFlavor) error {
 }
 
 // GetBuiltinTopicFlavor retrieve system builtin topic flavor
-func (r *Registry) GetBuiltinTopicFlavor() []TopicFlavor {
+func (r *Registry) GetBuiltinTopicFlavors() []TopicFlavor {
 	c := r.db.C(dbNameTopicFlavors)
 	flavors := []TopicFlavor{}
 	c.Find(bson.M{"builtin": true}).All(&flavors)
@@ -409,13 +409,13 @@ func (r *Registry) GetTenantTopicFlavor(tenantId string, flavorName string) (Top
 }
 
 // RemoveTopicFlavor remove a specified topic flavor from registry
-func (r *Registry) RemoveTopicFlavor(t *TopicFlavor) {
+func (r *Registry) RemoveTopicFlavor(t *TopicFlavor) error {
 	c := r.db.C(dbNameTopicFlavors)
-	c.Remove(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId})
+	return c.Remove(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId})
 }
 
 // GetProductTopicFlavor retrieve a product's topic flavor
-func (r *Registry) GetProductTopicFlavor(productId string) []TopicFlavor {
+func (r *Registry) GetProductTopicFlavors(productId string) []TopicFlavor {
 	flavors := []TopicFlavor{}
 	// get product
 	c := r.db.C(dbNameProducts)
