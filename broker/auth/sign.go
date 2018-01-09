@@ -18,23 +18,23 @@ import (
 	"fmt"
 )
 
-var signMethods = map[string]func(*Options) error{
+var signMethods = map[string]func(ctx Context) error{
 	"sha1mac": sha1mac,
 }
 
-func sign(opt *Options) error {
-	if _, ok := signMethods[opt.SignMethod]; !ok {
-		return fmt.Errorf("auth: Invalid sign method '%s'", opt.SignMethod)
+func sign(ctx Context) error {
+	if _, ok := signMethods[ctx.SignMethod]; !ok {
+		return fmt.Errorf("auth: Invalid sign method '%s'", ctx.SignMethod)
 	}
-	return signMethods[opt.SignMethod](opt)
+	return signMethods[ctx.SignMethod](ctx)
 }
 
-func sha1mac(opts *Options) error {
-	content := "clientId" + opts.ClientId + "deviceName" + opts.DeviceName + "productKey" + opts.ProductKey + "timestamp" + opts.Timestamp
-	mac := hmac.New(sha1.New, []byte(opts.DeviceSecret))
+func sha1mac(ctx Context) error {
+	content := "clientId" + ctx.ClientId + "deviceName" + ctx.DeviceName + "productId" + ctx.ProductId + "timestamp" + ctx.Timestamp
+	mac := hmac.New(sha1.New, []byte(ctx.DeviceSecret))
 	mac.Write([]byte(content))
 	result := mac.Sum(nil)
-	if opts.Password == string(result) {
+	if ctx.Password == string(result) {
 		return nil
 	}
 	return ErrorAuthDenied

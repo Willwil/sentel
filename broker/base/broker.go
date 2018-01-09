@@ -27,11 +27,13 @@ type BrokerStartupInfo struct {
 	CreatedAt time.Time `json:"createdAt"`
 	Status    string    `json:"nodeStatus"`
 	UpdatedAt time.Time `json:"updatedAt"`
+	Tenant    string    `json:"tenant"`
 }
 
 var brokerStartupInfo BrokerStartupInfo
 
 func GetBrokerId() string                      { return brokerStartupInfo.Id }
+func GetTenant() string                        { return brokerStartupInfo.Tenant }
 func GetBrokerStartupInfo() *BrokerStartupInfo { return &brokerStartupInfo }
 
 func SetBrokerStartupInfo(info *BrokerStartupInfo) {

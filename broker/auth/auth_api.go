@@ -20,18 +20,18 @@ import (
 
 const (
 	AuthServiceVersion = "0.1"
-	AclRead            = 1
-	AclWrite           = 2
+	AclRead            = 0x01
+	AclWrite           = 0x02 | AclRead
 )
 
 var (
 	ErrorAuthDenied = errors.New("authentication denied")
 )
 
-type Options struct {
+type Context struct {
 	ClientId     string
 	DeviceName   string
-	ProductKey   string
+	ProductId    string
 	SecurityMode int
 	SignMethod   string
 	Timestamp    string
@@ -51,12 +51,12 @@ func GetVersion() string {
 	return AuthServiceVersion
 }
 
-func Authorize(clientId string, topic string, access int, opt *Options) error {
+func Authorize(ctx Context, clientId string, topic string, access int) error {
 	auth := base.GetService(ServiceName).(*authService)
-	return auth.authorize(clientId, topic, access, opt)
+	return auth.authorize(ctx, clientId, topic, access)
 }
 
-func Authenticate(opt *Options) error {
+func Authenticate(ctx Context) error {
 	auth := base.GetService(ServiceName).(*authService)
-	return auth.authenticate(opt)
+	return auth.authenticate(ctx)
 }

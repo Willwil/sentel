@@ -41,7 +41,7 @@ func CreateRule(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	rule.TimeCreated = time.Now()
 	rule.TimeUpdated = time.Now()
 	if err := r.RegisterRule(&rule); err != nil {
@@ -76,7 +76,7 @@ func RemoveRule(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	if err := r.DeleteRule(rule.ProductId, rule.RuleName); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -110,7 +110,7 @@ func UpdateRule(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	if err := r.UpdateRule(&rule); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -191,7 +191,7 @@ func GetRule(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
@@ -215,7 +215,7 @@ func GetProductRules(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	if names, err := r.GetProductRuleNames(productId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	} else {

@@ -19,11 +19,11 @@ import (
 
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
 
 	"github.com/go-redis/redis"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 )
 
 const (
@@ -34,9 +34,15 @@ type ServiceFactory struct{}
 
 // New create coap service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	s := &authService{
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		eventChan: make(chan *event.Event),
+		quitChan:  make(chan interface{}),
+	}
 	// check mongo db configuration
-	hosts := c.MustString("broker", "mongo")
-	timeout := c.MustInt("broker", "connect_timeout")
+	hosts, _ := c.String("broker", "mongo")
+	timeout, _ := c.Int("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -44,43 +50,31 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	defer session.Close()
 
 	// Connect with redis if cache policy is redis
-	var rclient *redis.Client = nil
-	if addr, err := c.String("broker", "redis"); err == nil {
-		password := c.MustString("broker", "redis_password")
-		db := c.MustInt("auth", "redis_db")
-		rclient = redis.NewClient(&redis.Options{
-			Addr:     addr,
-			Password: password,
-			DB:       db,
-		})
-		if _, err := rclient.Ping().Result(); err != nil {
-			return nil, err
-		}
+	addr, _ := c.String("broker", "redis")
+	password, _ := c.String("broker", "redis_password")
+	db, _ := c.Int("auth", "redis_db")
+	rc := redis.NewClient(&redis.Options{
+		Addr:     addr,
+		Password: password,
+		DB:       db,
+	})
+	if _, err := rc.Ping().Result(); err == nil {
+		s.redis = rc
 	}
-
-	return &authService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		rclient:   rclient,
-		eventChan: make(chan *event.Event),
-		quitChan:  make(chan interface{}),
-	}, nil
+	return s, nil
 }
 
 // Authentication Service
 type authService struct {
 	config    config.Config
 	waitgroup sync.WaitGroup
-	rclient   *redis.Client
+	redis     *redis.Client
 	eventChan chan *event.Event
 	quitChan  chan interface{}
 }
 
 // Name
-func (p *authService) Name() string {
-	return ServiceName
-}
-
+func (p *authService) Name() string      { return ServiceName }
 func (p *authService) Initialize() error { return nil }
 
 // Start
@@ -98,7 +92,6 @@ func (p *authService) Start() error {
 			}
 		}
 	}(p)
-
 	return nil
 }
 
@@ -111,64 +104,47 @@ func (p *authService) Stop() {
 }
 
 // CheckAcl check client's access control right
-func (p *authService) authorize(clientid string, topic string, access int, opt *Options) error {
+func (p *authService) authorize(ctx Context, clientid string, topic string, access int) error {
 	return nil
 }
 
 // authenticate check user's name and password
-func (p *authService) authenticate(opt *Options) error {
-	if key, err := p.getDeviceSecretKey(opt); err == nil {
-		opt.DeviceSecret = key
-		return sign(opt)
+func (p *authService) authenticate(ctx Context) error {
+	if key, err := p.getDeviceSecretKey(ctx); err == nil {
+		ctx.DeviceSecret = key
+		return sign(ctx)
 	}
-	return fmt.Errorf("auth: Failed to get device secret key for '%s'", opt.DeviceName)
+	return fmt.Errorf("auth: Failed to get device secret key for '%s'", ctx.DeviceName)
 }
 
 func (p *authService) handleEvent(e *event.Event) {
 
 }
 
-// Device
-type device struct {
-	Id           string    `bson:"Id"`
-	Name         string    `bson:"Name"`
-	ProductId    string    `bson:"ProductId"`
-	ProductKey   string    `bson:"productKey"`
-	DeviceStatus string    `bson:"deviceStatus"`
-	DeviceSecret string    `bson:"deviceSecret"`
-	TimeCreated  time.Time `bson:"timeCreated"`
-	TimeModified time.Time `bson:"TimeModified"`
-}
-
 // getDeviceSecretKey retrieve device secret key from cache or mongo
-func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
+func (p *authService) getDeviceSecretKey(ctx Context) (string, error) {
 	// Read from cache at first
-	key := opt.ProductKey + "/" + opt.DeviceName
-	if p.rclient != nil {
-		if val, err := p.rclient.Get(key).Result(); err == nil {
+	key := ctx.ProductId + "/" + ctx.DeviceName
+	if p.redis != nil {
+		if val, err := p.redis.Get(key).Result(); err == nil {
 			return val, nil
 		}
 	}
-
 	// Read from database if not found in cache
-	hosts := p.config.MustString("broker", "mongo")
-	timeout := p.config.MustInt("broker", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
+	r, err := registry.New("broker", p.config)
 	if err != nil {
 		return "", err
 	}
-	defer session.Close()
-	c := session.DB("registry").C("devices")
-
-	dev := device{}
-	if err := c.Find(bson.M{"ProductKey": opt.ProductKey, "DeviceName": opt.DeviceName}).One(&dev); err != nil {
+	defer r.Close()
+	device, err := r.GetDeviceByName(ctx.ProductId, ctx.DeviceName)
+	if err != nil {
 		return "", err
 	}
 	// Write back to redis
-	if p.rclient != nil {
-		p.rclient.Set(key, dev.DeviceSecret, 0)
+	if p.redis != nil {
+		p.redis.Set(key, device.DeviceSecret, 0)
 	}
-	return dev.DeviceSecret, nil
+	return device.DeviceSecret, nil
 }
 
 // onEventCallback will be called when notificaiton come from event service

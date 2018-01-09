@@ -46,7 +46,7 @@ type mqttSession struct {
 	mountpoint     string           // Topic's mount point
 	msgState       uint8            // Mqtt message state
 	sessionState   uint8            // Mqtt session state
-	authOptions    *auth.Options    // authentication options
+	authctx        auth.Context     // authentication options
 	aliveTimer     *time.Timer      // Keepalive timer
 	pingTime       *time.Time       // Ping timer
 	availableChan  chan int         // Event chanel for data availabel notification
@@ -84,7 +84,6 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		errorChan:     make(chan error),
 		queue:         nil,
 		pingTime:      nil,
-		authOptions:   nil,
 		nextPacketId:  0,
 		clientId:      "",
 		willMsg:       nil,
@@ -373,12 +372,12 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	if usrErr != nil || pwdErr != nil {
 		return mqttErrorInvalidProtocol
 	}
-	p.authOptions, err = p.parseRequestOptions(clientId, username, password)
+	p.authctx, err = p.parseRequestOptions(clientId, username, password)
 	if err != nil {
 		return err
 	}
 	if p.authNeed {
-		err = auth.Authenticate(p.authOptions)
+		err = auth.Authenticate(p.authctx)
 		switch err {
 		case nil:
 			// Successfuly authenticated
@@ -391,7 +390,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 			return err
 		}
 	}
-	p.clientId = p.authOptions.ClientId
+	p.clientId = p.authctx.ClientId
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
@@ -419,7 +418,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		metadata.DeleteMessageWithValidator(
 			clientId,
 			func(msg *base.Message) bool {
-				err := auth.Authorize(clientId, msg.Topic, auth.AclRead, nil)
+				err := auth.Authorize(p.authctx, clientId, msg.Topic, auth.AclRead)
 				return err != nil
 			})
 		metadata.AddMessage(clientId, willMsg)
@@ -632,7 +631,7 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		}
 	}
 	// Check for topic access
-	if err := auth.Authorize(p.clientId, topic, auth.AclWrite, nil); err != nil {
+	if err := auth.Authorize(p.authctx, p.clientId, topic, auth.AclWrite); err != nil {
 		return mqttErrorConnectRefused
 	}
 	glog.Infof("Received PUBLISH from %s(d:%d, q:%d r:%d, m:%d, '%s',..(%d)bytes",
@@ -830,44 +829,44 @@ func (p *mqttSession) writePacket(packet *mqttPacket) error {
 // getAuthOptions return authentication options from user's request
 // mqttClientId:clientId +"|securemode=3,signmethod=hmacsha1,timestampe=xxxxx|"
 // mqttUserName:deviceName+"&"+productKey
-func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (*auth.Options, error) {
-	options := &auth.Options{}
+func (p *mqttSession) parseRequestOptions(clientId, userName, password string) (auth.Context, error) {
+	ctx := auth.Context{}
 
 	names := strings.Split(userName, "&")
 	if len(names) != 2 {
-		return nil, fmt.Errorf("Invalid authentication user name options:'%s'", userName)
+		return ctx, fmt.Errorf("Invalid authentication user name options:'%s'", userName)
 	}
-	options.DeviceName = names[0]
-	options.ProductKey = names[1]
+	ctx.DeviceName = names[0]
+	ctx.ProductId = names[1]
 
 	names = strings.Split(clientId, "|")
 	if len(names) != 2 {
-		return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", clientId)
+		return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", clientId)
 	}
-	options.ClientId = names[0]
+	ctx.ClientId = names[0]
 	names = strings.Split(names[1], ",")
 	for _, pair := range names {
 		values := strings.Split(pair, "=")
 		if len(values) != 2 {
-			return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+			return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 		}
 		switch values[0] {
 		case auth.SecurityMode:
 			val, err := strconv.Atoi(values[1])
 			if err != nil {
-				return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+				return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 			}
-			options.SecurityMode = val
+			ctx.SecurityMode = val
 		case auth.SignMethod:
-			options.SignMethod = values[1]
+			ctx.SignMethod = values[1]
 		case auth.Timestamp:
 			if _, err := strconv.ParseUint(values[1], 10, 64); err != nil {
-				return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+				return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 			}
-			options.Timestamp = values[1]
+			ctx.Timestamp = values[1]
 		default:
-			return nil, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+			return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
 		}
 	}
-	return options, nil
+	return ctx, nil
 }

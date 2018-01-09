@@ -42,7 +42,7 @@ func RegisterDevice(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	device.DeviceId = ram.NewObjectId()
 	device.TimeCreated = time.Now()
@@ -70,14 +70,14 @@ func DeleteDevice(ctx echo.Context) error {
 		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	registry, err := registry.New("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer registry.Release()
+	defer r.Close()
 
 	// Get device into registry, the created product
-	if err := registry.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
+	if err := r.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
 	base.DestroyResource(device.DeviceId, accessId)
@@ -105,14 +105,14 @@ func GetOneDevice(ctx echo.Context) error {
 	}
 
 	// Connect with registry
-	registry, err := registry.New("apiserver", getConfig(ctx))
+	r, err := registry.New("apiserver", getConfig(ctx))
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer registry.Release()
+	defer r.Close()
 
 	// Get device into registry, the created product
-	dev, err := registry.GetDevice(productId, deviceId)
+	dev, err := r.GetDevice(productId, deviceId)
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
@@ -139,7 +139,7 @@ func UpdateDevice(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	device.TimeUpdated = time.Now()
 	if err = r.UpdateDevice(&device); err != nil {
@@ -206,7 +206,7 @@ func BulkRegisterDevices(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	n, err := strconv.Atoi(req.Number)
 	if err != nil || n < 1 {

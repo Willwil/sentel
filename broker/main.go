@@ -106,7 +106,11 @@ func runBrokerClient(c config.Config) {
 }
 
 func runBrokerDaemon(c config.Config) error {
-	base.SetBrokerStartupInfo(&base.BrokerStartupInfo{Id: uuid.NewV4().String()})
+	base.SetBrokerStartupInfo(
+		&base.BrokerStartupInfo{
+			Id:     uuid.NewV4().String(),
+			Tenant: c.MustString("broker", "tenant"),
+		})
 	mgr, _ := service.NewServiceManager("broker", c)
 	mgr.AddService(event.ServiceFactory{})
 	mgr.AddService(queue.ServiceFactory{})

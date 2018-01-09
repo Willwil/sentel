@@ -148,7 +148,7 @@ func ensureRulesIndex(s *mgo.Session) {
 }
 
 // Release release registry rources and disconnect with background database
-func (r *Registry) Release() {
+func (r *Registry) Close() {
 	r.session.Close()
 }
 
@@ -281,6 +281,14 @@ func (r *Registry) GetDevice(productId string, deviceId string) (*Device, error)
 	c := r.db.C(dbNameDevices)
 	device := &Device{}
 	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(device)
+	return device, err
+}
+
+// GetDeviceByName retrieve a device information from registry/
+func (r *Registry) GetDeviceByName(productId string, deviceName string) (*Device, error) {
+	c := r.db.C(dbNameDevices)
+	device := &Device{}
+	err := c.Find(bson.M{"ProductId": productId, "DeviceName": deviceName}).One(device)
 	return device, err
 }
 

@@ -136,9 +136,9 @@ func (p *ruleEngine) stop() {
 
 // getRuleObject get all rule's information from backend database
 func (p *ruleEngine) getRuleObject(productId, ruleName string) (*registry.Rule, error) {
-	if registry, err := registry.New("conductor", p.config); err == nil {
-		defer registry.Release()
-		return registry.GetRule(ruleName, productId)
+	if r, err := registry.New("conductor", p.config); err == nil {
+		defer r.Close()
+		return r.GetRule(ruleName, productId)
 	} else {
 		return nil, err
 	}

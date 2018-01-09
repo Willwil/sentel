@@ -39,7 +39,7 @@ func RegisterTenant(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	t := registry.Tenant{
 		TenantId:  req.TenantId,
 		Password:  req.Password,
@@ -71,7 +71,7 @@ func LoginTenant(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	tenant, err := r.GetTenant(req.TenantId)
 	if err != nil {
@@ -117,7 +117,7 @@ func DeleteTenant(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	if err := r.DeleteTenant(req.TenantId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
@@ -140,7 +140,7 @@ func GetTenant(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	if t, err := r.GetTenant(tenantId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
@@ -160,7 +160,7 @@ func UpdateTenant(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	if err := r.UpdateTenant(t.TenantId, &t); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})

@@ -42,7 +42,7 @@ func CreateProduct(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	p := &registry.Product{
 		ProductId:   ram.NewObjectId(),
@@ -87,7 +87,7 @@ func RemoveProduct(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	if err := r.DeleteProduct(productId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
@@ -127,7 +127,7 @@ func UpdateProduct(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	p := &registry.Product{
 		ProductId:   productId,
@@ -162,7 +162,7 @@ func GetProductList(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 	if products, err := r.GetProducts(accessId); err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	} else {
@@ -192,7 +192,7 @@ func GetProduct(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	p, err := r.GetProduct(productId)
 	if err != nil {
@@ -214,7 +214,7 @@ func GetProductDevices(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
 	}
-	defer r.Release()
+	defer r.Close()
 
 	pdevices, err := r.GetProductDevices(productId)
 	if err != nil {
