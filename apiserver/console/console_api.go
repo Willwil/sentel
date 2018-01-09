@@ -128,3 +128,33 @@ func getServiceStatics(ctx echo.Context) error {
 	setAccessId(ctx)
 	return v1api.GetServiceStatics(ctx)
 }
+
+func createTopicFlavor(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.CreateTopicFlavor(ctx)
+}
+
+func getBuiltinTopicFlavors(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.GetBuiltinTopicFlavors(ctx)
+}
+
+func getProductTopicFlavors(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.GetProductTopicFlavors(ctx)
+}
+
+func getTenantTopicFlavors(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.GetTenantTopicFlavors(ctx)
+}
+
+func removeProductTopicFlavor(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.RemoveProductTopicFlavor(ctx)
+}
+
+func setProductTopicFlavor(ctx echo.Context) error {
+	setAccessId(ctx)
+	return v1api.SetProductTopicFlavor(ctx)
+}

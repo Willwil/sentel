@@ -127,6 +127,13 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.PUT("/rules/stop", stopRule)
 	g.GET("/rules/:ruleName", getRule)
 
+	// Topic Flavor
+	g.POST("/topicflavors", createTopicFlavor)
+	g.DELETE("/topicflavors/:productId", removeProductTopicFlavor)
+	g.GET("/topicflavors/product/:productId", getProductTopicFlavors)
+	g.GET("/topicflavors/tenant/:tenantId", getTenantTopicFlavors)
+	g.PUT("/topicflavors/:productId", setProductTopicFlavor)
+
 	// Runtime
 	g.POST("/message", sendMessageToDevice)
 	g.POST("/message/broadcast", broadcastProductMessage)
