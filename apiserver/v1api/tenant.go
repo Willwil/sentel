@@ -32,21 +32,16 @@ type registerRequest struct {
 func RegisterTenant(ctx echo.Context) error {
 	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	// get registry store instance by context
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
 	t := registry.Tenant{
 		TenantId:  req.TenantId,
 		Password:  req.Password,
 		CreatedAt: time.Now(),
 	}
+	r := getRegistry(ctx)
 	if err := r.RegisterTenant(&t); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// notify keystone to register the object
 	base.CreateAccount(req.TenantId)
@@ -57,25 +52,19 @@ func RegisterTenant(ctx echo.Context) error {
 			Action:   message.ObjectActionRegister,
 		})
 
-	return reply(ctx, OK, apiResponse{Result: &t})
+	return ctx.JSON(OK, apiResponse{Result: &t})
 }
 
 func LoginTenant(ctx echo.Context) error {
 	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 
-	// Get registry store instance by context
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	tenant, err := r.GetTenant(req.TenantId)
 	if err != nil {
-		return reply(ctx, NotFound, apiResponse{Message: err.Error()})
+		return ctx.JSON(NotFound, apiResponse{Message: err.Error()})
 	}
 	if req.Password != tenant.Password {
 		return echo.ErrUnauthorized
@@ -95,7 +84,7 @@ func LoginTenant(ctx echo.Context) error {
 	if err != nil {
 		return err
 	}
-	return reply(ctx, OK, apiResponse{Result: echo.Map{"token": t}})
+	return ctx.JSON(OK, apiResponse{Result: echo.Map{"token": t}})
 }
 
 func LogoutTenant(ctx echo.Context) error {
@@ -106,21 +95,15 @@ func LogoutTenant(ctx echo.Context) error {
 func DeleteTenant(ctx echo.Context) error {
 	req := registerRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if req.TenantId == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 
-	// Get registry store instance by context
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	if err := r.DeleteTenant(req.TenantId); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameTenant,
@@ -129,23 +112,17 @@ func DeleteTenant(ctx echo.Context) error {
 			Action:   message.ObjectActionDelete,
 		})
 
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 // getTenant return tenant's information
 func GetTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tenantIdd")
-	// Get registry store instance by context
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	if t, err := r.GetTenant(tenantId); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	} else {
-		return reply(ctx, OK, apiResponse{Result: &t})
+		return ctx.JSON(OK, apiResponse{Result: &t})
 	}
 }
 
@@ -153,17 +130,12 @@ func GetTenant(ctx echo.Context) error {
 func UpdateTenant(ctx echo.Context) error {
 	t := registry.Tenant{}
 	if err := ctx.Bind(&t); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	// Get registry store instance by context
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
 
+	r := getRegistry(ctx)
 	if err := r.UpdateTenant(t.TenantId, &t); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{
@@ -171,7 +143,7 @@ func UpdateTenant(ctx echo.Context) error {
 			Action:   message.ObjectActionUpdate,
 		})
 
-	return reply(ctx, OK, apiResponse{Result: &t})
+	return ctx.JSON(OK, apiResponse{Result: &t})
 
 }
 

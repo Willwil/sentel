@@ -32,17 +32,13 @@ type productCreateRequest struct {
 func CreateProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	req := productCreateRequest{}
+
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if req.ProductName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
 
 	p := &registry.Product{
 		ProductId:   ram.NewObjectId(),
@@ -52,8 +48,9 @@ func CreateProduct(ctx echo.Context) error {
 		Category:    req.Category,
 	}
 
-	if err = r.RegisterProduct(p); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+	r := getRegistry(ctx)
+	if err := r.RegisterProduct(p); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify keystone
 	base.CreateResource(p.ProductId, ram.ResourceCreateOption{
@@ -70,7 +67,7 @@ func CreateProduct(ctx echo.Context) error {
 			ProductId: p.ProductId,
 			Action:    message.ObjectActionRegister,
 		})
-	return reply(ctx, OK, apiResponse{Result: &p})
+	return ctx.JSON(OK, apiResponse{Result: &p})
 }
 
 // removeProduct delete product from registry store
@@ -80,17 +77,12 @@ func RemoveProduct(ctx echo.Context) error {
 
 	// Authrozie
 	if err := base.Authorize(productId, accessId, "x"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	if err := r.DeleteProduct(productId); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	syncProduceMessage(ctx, message.TopicNameProduct,
 		&message.ProductTopic{
@@ -98,7 +90,7 @@ func RemoveProduct(ctx echo.Context) error {
 			Action:    message.ObjectActionDelete,
 		})
 
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 type productUpdateRequest struct {
@@ -115,19 +107,13 @@ func UpdateProduct(ctx echo.Context) error {
 
 	// Authrozie
 	if err := base.Authorize(productId, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	req := productUpdateRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
 
 	p := &registry.Product{
 		ProductId:   productId,
@@ -137,8 +123,9 @@ func UpdateProduct(ctx echo.Context) error {
 		Category:    req.Category,
 	}
 
+	r := getRegistry(ctx)
 	if err := r.UpdateProduct(p); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameProduct,
@@ -147,24 +134,19 @@ func UpdateProduct(ctx echo.Context) error {
 			Action:    message.ObjectActionUpdate,
 		})
 
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
 	if err := base.Authorize(accessId+"/products", accessId, "r"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
+	r := getRegistry(ctx)
 	if products, err := r.GetProducts(accessId); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	} else {
 		type product struct {
 			ProductId   string `json:"productId"`
@@ -174,7 +156,7 @@ func GetProductList(ctx echo.Context) error {
 		for _, p := range products {
 			result = append(result, product{ProductId: p.ProductId, ProductName: p.ProductName})
 		}
-		return reply(ctx, OK, apiResponse{Result: result})
+		return ctx.JSON(OK, apiResponse{Result: result})
 	}
 }
 
@@ -184,21 +166,15 @@ func GetProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	if err := base.Authorize(productId, accessId, "r"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	p, err := r.GetProduct(productId)
 	if err != nil {
-		return reply(ctx, NotFound, apiResponse{Message: err.Error()})
+		return ctx.JSON(NotFound, apiResponse{Message: err.Error()})
 	}
-	return reply(ctx, OK, apiResponse{Result: p})
+	return ctx.JSON(OK, apiResponse{Result: p})
 }
 
 // getProductDevices retrieve product devices list from registry store
@@ -207,22 +183,17 @@ func GetProductDevices(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 
 	if err := base.Authorize(productId+"/devices", accessId, "r"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
-
+	r := getRegistry(ctx)
 	pdevices, err := r.GetProductDevices(productId)
 	if err != nil {
-		return reply(ctx, OK, apiResponse{Message: err.Error()})
+		return ctx.JSON(OK, apiResponse{Message: err.Error()})
 	}
 	rdevices := []device{}
 	for _, dev := range pdevices {
 		rdevices = append(rdevices, device{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
 	}
-	return reply(ctx, OK, apiResponse{Result: rdevices})
+	return ctx.JSON(OK, apiResponse{Result: rdevices})
 }

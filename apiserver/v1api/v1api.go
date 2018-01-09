@@ -15,9 +15,9 @@ import (
 	"net/http"
 
 	"github.com/Shopify/sarama"
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
 )
 
@@ -42,15 +42,13 @@ func getAccessId(ctx echo.Context) string {
 	return ctx.Get("AccessId").(string)
 }
 
-func reply(ctx echo.Context, code int, r apiResponse) error {
-	if ctx.Get("RequestId") != nil {
-		r.RequestId = ctx.Get("RequestId").(string)
-	}
-	return ctx.JSON(code, r)
+func getConfig(ctx echo.Context) config.Config {
+	//return ctx.(*base.ApiContext).Config
+	return ctx.Get("config").(config.Config)
 }
 
-func getConfig(ctx echo.Context) config.Config {
-	return ctx.(*base.ApiContext).Config
+func getRegistry(ctx echo.Context) *registry.Registry {
+	return ctx.Get("registry").(*registry.Registry)
 }
 
 func syncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {

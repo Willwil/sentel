@@ -14,7 +14,18 @@ package v1api
 
 import "github.com/labstack/echo"
 
+// CreateTopicFlavor create topic flavor
 func CreateTopicFlavor(ctx echo.Context) error {
+	/*
+		accessId := getAccessId(ctx)
+		flavor := registry.TopicFlavor{}
+		if err := ctx.Bind(&flavor); err != nil {
+			return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		}
+		r := getRegistry(ctx)
+		c := getConfig(ctx)
+	*/
+
 	return nil
 }
 

@@ -16,6 +16,7 @@ import (
 	"sync"
 
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -74,6 +75,7 @@ func (p *consoleService) initialize(c config.Config) error {
 	}
 	glog.Infof("Registry is initialized successfuly")
 
+	p.echo.HideBanner = true
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
 			cc := &base.ApiContext{Context: e, Config: c}
@@ -83,6 +85,8 @@ func (p *consoleService) initialize(c config.Config) error {
 
 	// Initialize middleware
 	// p.echo.Use(middleware.ApiVersion(p.version))
+	p.echo.Use(middleware.RegistryWithConfig(c))
+	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))

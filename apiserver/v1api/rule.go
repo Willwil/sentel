@@ -25,27 +25,23 @@ import (
 func CreateRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
+
 	if err := ctx.Bind(&rule); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
 	rule.TimeCreated = time.Now()
 	rule.TimeUpdated = time.Now()
+	r := getRegistry(ctx)
 	if err := r.RegisterRule(&rule); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameRule,
@@ -54,31 +50,28 @@ func CreateRule(ctx echo.Context) error {
 			RuleName:   rule.RuleName,
 			RuleAction: message.RuleActionCreate,
 		})
-	return reply(ctx, OK, apiResponse{Result: &rule})
+	return ctx.JSON(OK, apiResponse{Result: &rule})
 }
 
 // deleteRule delete existed rule
 func RemoveRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
+
 	if err := ctx.Bind(&rule); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
+	r := getRegistry(ctx)
 	if err := r.DeleteRule(rule.ProductId, rule.RuleName); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameRule,
@@ -87,32 +80,28 @@ func RemoveRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: message.RuleActionRemove,
 		})
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 // UpdateRule update existed rule
 func UpdateRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
+
 	if err := ctx.Bind(&rule); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
+	r := getRegistry(ctx)
 	if err := r.UpdateRule(&rule); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx,
 		message.TopicNameRule,
@@ -121,21 +110,22 @@ func UpdateRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: message.RuleActionUpdate,
 		})
-	return reply(ctx, OK, apiResponse{Result: rule})
+	return ctx.JSON(OK, apiResponse{Result: rule})
 }
 
 func StartRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
+
 	if err := ctx.Bind(&rule); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	asyncProduceMessage(ctx,
@@ -145,21 +135,22 @@ func StartRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: message.RuleActionStart,
 		})
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 func StopRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
+
 	if err := ctx.Bind(&rule); err != nil {
-		return reply(ctx, BadRequest, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := rule.ProductId + "/rules"
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx, message.TopicNameRule,
 		&message.RuleTopic{
@@ -167,58 +158,48 @@ func StopRule(ctx echo.Context) error {
 			ProductId:  rule.ProductId,
 			RuleAction: message.RuleActionStop,
 		})
-	return reply(ctx, OK, apiResponse{})
+	return ctx.JSON(OK, apiResponse{})
 }
 
 // getRule retrieve a rule
 func GetRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
+
 	productId := ctx.QueryParam("productId")
 	ruleName := ctx.Param("ruleName")
 	if productId == "" || ruleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	if productId == "" || ruleName == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	objname := productId + "/rules"
-	if err := base.Authorize(objname, accessId, "r"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+	objname := productId + "/rules"
+	if err := base.Authorize(objname, accessId, "r"); err != nil {
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
-	defer r.Close()
+
+	r := getRegistry(ctx)
 	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	return reply(ctx, OK, apiResponse{Result: &rule})
+	return ctx.JSON(OK, apiResponse{Result: &rule})
 }
 
 func GetProductRules(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
+
 	productId := ctx.Param("productId")
 	if productId == "" {
-		return reply(ctx, BadRequest, apiResponse{Message: "invalid parameter"})
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	objname := productId + "/rules"
 	if err := base.Authorize(objname, accessId, "r"); err != nil {
-		return reply(ctx, Unauthorized, apiResponse{Message: err.Error()})
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
-	// Connect with registry
-	r, err := registry.New("apiserver", getConfig(ctx))
-	if err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
-	}
-	defer r.Close()
+	r := getRegistry(ctx)
 	if names, err := r.GetProductRuleNames(productId); err != nil {
-		return reply(ctx, ServerError, apiResponse{Message: err.Error()})
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	} else {
-		return reply(ctx, OK, apiResponse{Result: names})
+		return ctx.JSON(OK, apiResponse{Result: names})
 	}
 }
