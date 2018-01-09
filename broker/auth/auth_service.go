@@ -14,13 +14,9 @@ package auth
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -37,7 +33,7 @@ const (
 type ServiceFactory struct{}
 
 // New create coap service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -63,21 +59,21 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	}
 
 	return &authService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			Quit:      quit,
-			WaitGroup: sync.WaitGroup{},
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
 		rclient:   rclient,
 		eventChan: make(chan *event.Event),
+		quitChan:  make(chan interface{}),
 	}, nil
 }
 
 // Authentication Service
 type authService struct {
-	base.ServiceBase
+	config    config.Config
+	waitgroup sync.WaitGroup
 	rclient   *redis.Client
 	eventChan chan *event.Event
+	quitChan  chan interface{}
 }
 
 // Name
@@ -90,12 +86,14 @@ func (p *authService) Initialize() error { return nil }
 // Start
 func (p *authService) Start() error {
 	event.Subscribe(event.AuthChange, onEventCallback, p)
+	p.waitgroup.Add(1)
 	go func(p *authService) {
+		defer p.waitgroup.Done()
 		for {
 			select {
 			case e := <-p.eventChan:
 				p.handleEvent(e)
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -106,9 +104,10 @@ func (p *authService) Start() error {
 
 // Stop
 func (p *authService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	close(p.quitChan)
+	close(p.eventChan)
 }
 
 // CheckAcl check client's access control right
@@ -152,8 +151,8 @@ func (p *authService) getDeviceSecretKey(opt *Options) (string, error) {
 	}
 
 	// Read from database if not found in cache
-	hosts := p.Config.MustString("broker", "mongo")
-	timeout := p.Config.MustInt("broker", "connect_timeout")
+	hosts := p.config.MustString("broker", "mongo")
+	timeout := p.config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return "", err

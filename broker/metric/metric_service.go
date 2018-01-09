@@ -14,23 +14,23 @@ package metric
 
 import (
 	"container/list"
-	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/meter/collector"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
 const ServiceName = "metric"
 
 type metricService struct {
-	base.ServiceBase
+	config       config.Config
+	waitgroup    sync.WaitGroup
+	quitChan     chan interface{}
 	aliveTimer   *time.Timer
 	metricTimer  *time.Timer
 	name         string
@@ -45,14 +45,12 @@ type metricService struct {
 type ServiceFactory struct{}
 
 // New create apiService service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Get node ip, name and created time
 	return &metricService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			Quit:      quit,
-			WaitGroup: sync.WaitGroup{},
-		},
+		config:       c,
+		quitChan:     make(chan interface{}),
+		waitgroup:    sync.WaitGroup{},
 		metricsMutex: sync.Mutex{},
 		metrics:      make(map[string]*list.List),
 		statsMutex:   sync.Mutex{},
@@ -69,7 +67,7 @@ func (p *metricService) Initialize() error { return nil }
 
 // Start
 func (p *metricService) Start() error {
-	services, err := p.Config.String(ServiceName, "services")
+	services, err := p.config.String(ServiceName, "services")
 	// If no services are specified, just return simpily
 	if err != nil || services == "" {
 		glog.Errorf("No metric services are specified")
@@ -77,19 +75,20 @@ func (p *metricService) Start() error {
 	}
 	glog.Infof("metrics for '%s' is started", services)
 
-	t1 := p.Config.MustInt(ServiceName, "report_duration")
-	t2 := p.Config.MustInt(ServiceName, "keepalive")
+	t1 := p.config.MustInt(ServiceName, "report_duration")
+	t2 := p.config.MustInt(ServiceName, "keepalive")
 	p.metricTimer = time.NewTimer(time.Duration(t1) * time.Second)
 	p.aliveTimer = time.NewTimer(time.Duration(t2) * time.Second)
+	p.waitgroup.Add(1)
 	go func(p *metricService) {
+		defer p.waitgroup.Done()
 		for {
-			p.WaitGroup.Add(1)
 			select {
 			case <-p.aliveTimer.C:
 				p.reportKeepalive()
 			case <-p.metricTimer.C:
 				p.reportMetric()
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -99,24 +98,24 @@ func (p *metricService) Start() error {
 
 // Stop
 func (p *metricService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.quitChan <- true
 	if p.aliveTimer != nil {
 		p.aliveTimer.Stop()
 	}
 	if p.metricTimer != nil {
 		p.metricTimer.Stop()
 	}
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.waitgroup.Wait()
+	close(p.quitChan)
 }
 
 // reportHubStats report current iothub stats
 func (p *metricService) reportMetric() {
-	val := p.Config.MustString(ServiceName, "services")
+	val := p.config.MustString(ServiceName, "services")
 	services := strings.Split(val, ",")
 	for _, service := range services {
 		metrics := GetMetric(service)
-		collector.AsyncReport(p.Config, collector.TopicNameMetric,
+		collector.AsyncReport(p.config, collector.TopicNameMetric,
 			&collector.Metric{
 				NodeName: p.name,
 				Service:  service,
@@ -128,7 +127,7 @@ func (p *metricService) reportMetric() {
 // reportKeepalive report node information to cluster manager
 func (p *metricService) reportKeepalive() {
 	info := base.GetBrokerStartupInfo()
-	collector.AsyncReport(p.Config, collector.TopicNameNode,
+	collector.AsyncReport(p.config, collector.TopicNameNode,
 		&collector.Node{
 			NodeId:     info.Id,
 			NodeIp:     info.Ip,

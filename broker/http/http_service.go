@@ -13,14 +13,10 @@
 package http
 
 import (
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"gopkg.in/mgo.v2"
 )
@@ -30,7 +26,7 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type httpService struct {
-	base.ServiceBase
+	config config.Config
 }
 
 const (
@@ -40,7 +36,7 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -51,11 +47,7 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service,
 	defer session.Close()
 
 	return &httpService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config: c,
 	}, nil
 
 }
@@ -74,9 +66,6 @@ func (p *httpService) Start() error {
 
 // Stop
 func (p *httpService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
 }
 
 // handleNotifications handle notification from kafka

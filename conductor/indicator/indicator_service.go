@@ -15,11 +15,8 @@ package indicator
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/conductor/executor"
@@ -33,15 +30,16 @@ import (
 )
 
 type indicatorService struct {
-	service.ServiceBase
-	consumer sarama.Consumer
+	config    config.Config
+	waitgroup sync.WaitGroup
+	consumer  sarama.Consumer
 }
 
 // indicatorServiceFactory
 type ServiceFactory struct{}
 
 // New create apiService service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -52,17 +50,15 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	session.Close()
 
 	return &indicatorService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
 	}, nil
 
 }
 
 // Name
-func (p *indicatorService) Name() string { return "indicator" }
+func (p *indicatorService) Name() string      { return "indicator" }
+func (p *indicatorService) Initialize() error { return nil }
 
 // Start
 func (p *indicatorService) Start() error {
@@ -76,19 +72,17 @@ func (p *indicatorService) Start() error {
 
 // Stop
 func (p *indicatorService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
 	if p.consumer != nil {
 		p.consumer.Close()
 	}
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.waitgroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
 func (p *indicatorService) subscribeTopic(topic string) (sarama.Consumer, error) {
 	config := sarama.NewConfig()
 	config.ClientID = "sentel_conductor_indicator"
-	khosts, _ := p.Config.String("conductor", "kafka")
+	khosts, _ := p.config.String("conductor", "kafka")
 	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
@@ -105,10 +99,10 @@ func (p *indicatorService) subscribeTopic(topic string) (sarama.Consumer, error)
 			consumer.Close()
 			return nil, fmt.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
 		}
-		p.WaitGroup.Add(1)
+		p.waitgroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
+			defer p.waitgroup.Done()
 			for msg := range pc.Messages() {
 				glog.Infof("donductor recevied topic '%s': '%s'", string(msg.Topic), msg.Value)
 				p.handleNotifications(string(msg.Topic), msg.Value)

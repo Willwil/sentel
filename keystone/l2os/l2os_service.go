@@ -14,37 +14,34 @@ package l2
 
 import (
 	"errors"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 )
 
 type l2osService struct {
-	service.ServiceBase
-	cmds    chan interface{}
-	storage objectStorage
+	config    config.Config
+	waitgroup sync.WaitGroup
+	quitChan  chan interface{}
+	cmds      chan interface{}
+	storage   objectStorage
 }
 
 // l2osServiceFactory
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	s, err := newStorage(c)
 	if err != nil {
 		return nil, errors.New("create storage failed")
 	}
 	return &l2osService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		cmds:    make(chan interface{}),
-		storage: s,
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		quitChan:  make(chan interface{}),
+		cmds:      make(chan interface{}),
+		storage:   s,
 	}, nil
 
 }
@@ -62,13 +59,17 @@ func getStorage() objectStorage {
 // Name
 func (p *l2osService) Name() string { return "l2os" }
 
+// Initialize
+func (p *l2osService) Initialize() error { return nil }
+
 // Start
 func (p *l2osService) Start() error {
+	p.waitgroup.Add(1)
 	go func(s *l2osService) {
-		p.WaitGroup.Add(1)
+		defer p.waitgroup.Done()
 		for {
 			select {
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			case cmd := <-p.cmds:
 				p.handleRequest(cmd)
@@ -80,9 +81,10 @@ func (p *l2osService) Start() error {
 
 // Stop
 func (p *l2osService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	close(p.quitChan)
+	close(p.cmds)
 }
 
 func (p *l2osService) handleRequest(cmd interface{}) {

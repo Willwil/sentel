@@ -13,15 +13,13 @@
 package metadata
 
 import (
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"gopkg.in/mgo.v2"
 )
@@ -31,7 +29,9 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type metadataService struct {
-	base.ServiceBase
+	config    config.Config
+	waitgroup sync.WaitGroup
+	quitChan  chan interface{}
 	eventChan chan *event.Event
 }
 
@@ -45,7 +45,7 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -56,11 +56,9 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service,
 	defer session.Close()
 
 	return &metadataService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		quitChan:  make(chan interface{}),
 		eventChan: make(chan *event.Event),
 	}, nil
 
@@ -81,12 +79,14 @@ func (p *metadataService) Start() error {
 	event.Subscribe(event.TopicSubscribe, onEventCallback, p)
 	event.Subscribe(event.TopicUnsubscribe, onEventCallback, p)
 
+	p.waitgroup.Add(1)
 	go func(p *metadataService) {
+		defer p.waitgroup.Done()
 		for {
 			select {
 			case e := <-p.eventChan:
 				p.handleEvent(e)
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -96,9 +96,9 @@ func (p *metadataService) Start() error {
 
 // Stop
 func (p *metadataService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	close(p.quitChan)
 	close(p.eventChan)
 }
 

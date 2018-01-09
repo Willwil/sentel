@@ -14,10 +14,7 @@ package restapi
 
 import (
 	"net/http"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/pkg/config"
@@ -27,8 +24,9 @@ import (
 )
 
 type restapiService struct {
-	service.ServiceBase
-	echo *echo.Echo
+	config    config.Config
+	waitgroup sync.WaitGroup
+	echo      *echo.Echo
 }
 
 type apiContext struct {
@@ -45,7 +43,7 @@ type response struct {
 // restapiServiceFactory
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
@@ -63,34 +61,32 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	e.PATCH("conductor/api/v1/rules/:ruleName", updateRule)
 
 	return &restapiService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		echo: e,
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		echo:      e,
 	}, nil
 
 }
 
 // Name
-func (p *restapiService) Name() string { return "restapi" }
+func (p *restapiService) Name() string      { return "restapi" }
+func (p *restapiService) Initialize() error { return nil }
 
 // Start
 func (p *restapiService) Start() error {
+	p.waitgroup.Add(1)
 	go func(s *restapiService) {
-		addr := p.Config.MustString("restapi", "listen")
-		p.echo.Start(addr)
-		p.WaitGroup.Add(1)
+		defer s.waitgroup.Done()
+		addr := s.config.MustString("restapi", "listen")
+		s.echo.Start(addr)
 	}(p)
 	return nil
 }
 
 // Stop
 func (p *restapiService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.echo.Close()
+	p.waitgroup.Wait()
 }
 
 func createRule(ctx echo.Context) error {

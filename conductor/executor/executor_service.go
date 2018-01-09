@@ -14,10 +14,7 @@ package executor
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -30,10 +27,12 @@ import (
 
 // executorService manage all rule engine and execute rule
 type executorService struct {
-	service.ServiceBase
-	ruleChan chan ruleContext
-	engines  map[string]*ruleEngine
-	mutex    sync.Mutex
+	config    config.Config
+	waitgroup sync.WaitGroup
+	quitChan  chan interface{}
+	ruleChan  chan ruleContext
+	engines   map[string]*ruleEngine
+	mutex     sync.Mutex
 }
 
 type ruleContext struct {
@@ -44,7 +43,7 @@ type ruleContext struct {
 type ServiceFactory struct{}
 
 // New create executor service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// try connect with mongo db
 	hosts := c.MustString("conductor", "mongo")
 	timeout := c.MustInt("conductor", "connect_timeout")
@@ -55,29 +54,29 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	session.Close()
 
 	return &executorService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		ruleChan: make(chan ruleContext),
-		engines:  make(map[string]*ruleEngine),
-		mutex:    sync.Mutex{},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		quitChan:  make(chan interface{}),
+		ruleChan:  make(chan ruleContext),
+		engines:   make(map[string]*ruleEngine),
+		mutex:     sync.Mutex{},
 	}, nil
 }
 
 // Name
-func (p *executorService) Name() string { return "executor" }
+func (p *executorService) Name() string      { return "executor" }
+func (p *executorService) Initialize() error { return nil }
 
 // Start
 func (p *executorService) Start() error {
 	// start rule channel
+	p.waitgroup.Add(1)
 	go func(s *executorService) {
-		s.WaitGroup.Add(1)
+		defer s.waitgroup.Done()
 		select {
 		case ctx := <-s.ruleChan:
 			s.handleRule(ctx)
-		case <-s.Quit:
+		case <-s.quitChan:
 			break
 		}
 	}(p)
@@ -86,9 +85,10 @@ func (p *executorService) Start() error {
 
 // Stop
 func (p *executorService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	close(p.quitChan)
+	close(p.ruleChan)
 
 	// stop all ruleEngine
 	for _, engine := range p.engines {
@@ -103,7 +103,7 @@ func (p *executorService) handleRule(ctx ruleContext) error {
 	r := ctx.rule
 	// Get engine instance according to product id
 	if _, ok := p.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(p.Config, r.ProductId)
+		engine, err := newRuleEngine(p.config, r.ProductId)
 		if err != nil {
 			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
 			return err

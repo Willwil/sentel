@@ -13,7 +13,6 @@ package swagger
 
 import (
 	"errors"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -43,14 +42,16 @@ func init() {
 }
 
 type swaggerService struct {
-	service.ServiceBase
-	host string
-	port int
+	config    config.Config
+	waitgroup sync.WaitGroup
+	host      string
+	port      int
+	docServer *graceful.Server
 }
 
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	hosts := c.MustString("apiserver", "swagger")
 	names := strings.Split(hosts, ":")
 	if len(names) != 2 {
@@ -59,21 +60,19 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	port, _ := strconv.Atoi(names[1])
 	// swagger file
 	return &swaggerService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		host: names[0],
-		port: port,
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		host:      names[0],
+		port:      port,
 	}, nil
 }
 
-func (p *swaggerService) Name() string { return "swagger" }
+func (p *swaggerService) Name() string      { return "swagger" }
+func (p *swaggerService) Initialize() error { return nil }
 
 // Start
 func (p *swaggerService) Start() error {
-	specFile, err := p.Config.String("swagger", "path")
+	specFile, err := p.config.String("swagger", "path")
 	if err != nil || specFile == "" {
 		return errors.New("invalid swagger file")
 	}
@@ -108,19 +107,21 @@ func (p *swaggerService) Start() error {
 	visit := fmt.Sprintf("http://%s:%d%s", sh, sp, path.Join(basePath, "docs"))
 
 	handler = handlers.CORS()(middleware.Spec(basePath, b, handler))
-	go func() {
-		docServer := &graceful.Server{
+	p.waitgroup.Add(1)
+	go func(p *swaggerService) {
+		p.docServer = &graceful.Server{
 			Server:           new(http.Server),
 			NoSignalHandling: true,
 		}
-		docServer.SetKeepAlivesEnabled(true)
-		docServer.TCPKeepAlive = 3 * time.Minute
-		docServer.Handler = handler
+		p.docServer.SetKeepAlivesEnabled(true)
+		p.docServer.TCPKeepAlive = 3 * time.Minute
+		p.docServer.Handler = handler
 
-		docServer.Serve(listener)
-	}()
+		p.docServer.Serve(listener)
+		p.waitgroup.Done()
+	}(p)
 
-	if ui, err := p.Config.Bool("swagger", "open_browser"); err == nil && ui == true {
+	if ui, err := p.config.Bool("swagger", "open_browser"); err == nil && ui == true {
 		webbrowser.Open(visit)
 	}
 	log.Println("serving docs at", visit)
@@ -129,4 +130,9 @@ func (p *swaggerService) Start() error {
 }
 
 // Stop
-func (p *swaggerService) Stop() {}
+func (p *swaggerService) Stop() {
+	if p.docServer != nil {
+		p.docServer.Stop(time.Duration(1 * time.Second))
+	}
+	p.waitgroup.Wait()
+}

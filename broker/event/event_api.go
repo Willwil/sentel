@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -33,7 +34,7 @@ func Notify(e *Event) {
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 	glog.Infof("service '%s' subscribed event '%s'",
-		ctx.(base.Service).Name(), NameOfEvent(&Event{Common: EventCommon{Type: event}}))
+		ctx.(service.Service).Name(), NameOfEvent(&Event{Common: EventCommon{Type: event}}))
 	service := base.GetService(ServiceName).(*eventService)
 	service.subscribe(event, handler, ctx)
 }

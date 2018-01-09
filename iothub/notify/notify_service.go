@@ -30,7 +30,8 @@ import (
 )
 
 type notifyService struct {
-	service.ServiceBase
+	config    config.Config
+	waitgroup sync.WaitGroup
 	consumers []sarama.Consumer
 }
 
@@ -41,20 +42,18 @@ var (
 type ServiceFactory struct{}
 
 // New create apiService service factory
-func (m ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	sarama.Logger = logger
 	return &notifyService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
 		consumers: []sarama.Consumer{},
 	}, nil
 }
 
 // Name
-func (p *notifyService) Name() string { return "notify" }
+func (p *notifyService) Name() string      { return "notify" }
+func (p *notifyService) Initialize() error { return nil }
 
 // Start
 func (p *notifyService) Start() error {
@@ -73,13 +72,12 @@ func (p *notifyService) Stop() {
 	for _, consumer := range p.consumers {
 		consumer.Close()
 	}
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.waitgroup.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
 func (p *notifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
-	endpoint := p.Config.MustString("iothub", "kafka")
+	endpoint := p.config.MustString("iothub", "kafka")
 	glog.Infof("iothub get kafka service endpoint: %s", endpoint)
 
 	config := sarama.NewConfig()
@@ -97,10 +95,10 @@ func (p *notifyService) subscribeTopic(topic string) (sarama.Consumer, error) {
 		if pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest); err != nil {
 			return nil, fmt.Errorf("iothub subscribe kafka topic '%s' failed:%s", topic, err.Error())
 		} else {
-			p.WaitGroup.Add(1)
+			p.waitgroup.Add(1)
 
 			go func(p *notifyService, pc sarama.PartitionConsumer) {
-				defer p.WaitGroup.Done()
+				defer p.waitgroup.Done()
 				for msg := range pc.Messages() {
 					if err := p.handleNotification(topic, msg.Value); err != nil {
 						glog.Errorf("iothub failed to handle topic '%s': '%s'", topic, err.Error())

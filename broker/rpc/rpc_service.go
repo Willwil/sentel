@@ -15,14 +15,11 @@ package rpc
 import (
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"
@@ -33,21 +30,19 @@ import (
 const ServiceName = "rpc"
 
 type rpcService struct {
-	base.ServiceBase
-	listener net.Listener
-	srv      *grpc.Server
+	config    config.Config
+	waitgroup sync.WaitGroup
+	listener  net.Listener
+	srv       *grpc.Server
 }
 
 type ServiceFactory struct{}
 
 // New create apiService service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	server := &rpcService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			Quit:      quit,
-			WaitGroup: sync.WaitGroup{},
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
 	}
 
 	listen := c.MustString("rpc", "listen")
@@ -73,9 +68,10 @@ func (p *rpcService) Initialize() error { return nil }
 
 // Start
 func (p *rpcService) Start() error {
+	p.waitgroup.Add(1)
 	go func(p *rpcService) {
+		defer p.waitgroup.Done()
 		p.srv.Serve(p.listener)
-		p.WaitGroup.Add(1)
 	}(p)
 	return nil
 }
@@ -83,15 +79,7 @@ func (p *rpcService) Start() error {
 // Stop
 func (p *rpcService) Stop() {
 	p.listener.Close()
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
-}
-
-//
-// Wait
-func (p *rpcService) Wait() {
-	p.WaitGroup.Wait()
+	p.waitgroup.Wait()
 }
 
 func (p *rpcService) Version(ctx context.Context, req *VersionRequest) (*VersionReply, error) {

@@ -15,11 +15,8 @@ package collector
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -30,15 +27,16 @@ import (
 )
 
 type collectorService struct {
-	service.ServiceBase
-	consumer sarama.Consumer
+	config    config.Config
+	waitgroup sync.WaitGroup
+	consumer  sarama.Consumer
 }
 
 // collectorServiceFactory
 type ServiceFactory struct{}
 
 // New create apiService service factory
-func (m ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("meter", "mongo")
 	timeout := c.MustInt("meter", "connect_timeout")
@@ -56,12 +54,9 @@ func (m ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	}
 
 	return &collectorService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		consumer: consumer,
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		consumer:  consumer,
 	}, nil
 
 }
@@ -70,6 +65,8 @@ func (m ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 func (p *collectorService) Name() string {
 	return "collector"
 }
+
+func (p *collectorService) Initialize() error { return nil }
 
 // Start
 func (p *collectorService) Start() error {
@@ -85,10 +82,9 @@ func (p *collectorService) Start() error {
 
 // Stop
 func (p *collectorService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
 	p.consumer.Close()
+	p.waitgroup.Wait()
+
 }
 
 // handleNotifications handle notification from kafka
@@ -102,8 +98,8 @@ func (p *collectorService) handleNotifications(topic string, value []byte) error
 
 func (p *collectorService) getDatabase() (*mgo.Database, error) {
 	// check mongo db configuration
-	hosts := p.Config.MustString("meter", "mongo")
-	timeout := p.Config.MustInt("meter", "connect_timeout")
+	hosts := p.config.MustString("meter", "mongo")
+	timeout := p.config.MustInt("meter", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -126,10 +122,10 @@ func (p *collectorService) subscribeTopic(topic string) error {
 			continue
 		}
 		defer pc.AsyncClose()
-		p.WaitGroup.Add(1)
+		p.waitgroup.Add(1)
 
 		go func(sarama.PartitionConsumer) {
-			defer p.WaitGroup.Done()
+			defer p.waitgroup.Done()
 			for msg := range pc.Messages() {
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}

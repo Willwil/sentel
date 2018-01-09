@@ -16,33 +16,30 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/quto"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 
 	"github.com/golang/glog"
 )
 
 // MQTT service declaration
 type mqttService struct {
-	base.ServiceBase
+	config    config.Config
+	waitgroup sync.WaitGroup
+	quitChan  chan interface{}
 }
 
 type ServiceFactory struct{}
 
 // New create mqtt service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	t := &mqttService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			Quit:      quit,
-			WaitGroup: sync.WaitGroup{},
-		},
+		config:    c,
+		quitChan:  make(chan interface{}),
+		waitgroup: sync.WaitGroup{},
 	}
 	return t, nil
 }
@@ -58,18 +55,19 @@ func (p *mqttService) Initialize() error { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
-	protocol := p.Config.MustString("broker", "protocol")
-	host := p.Config.MustString("mqtt", protocol)
+	protocol := p.config.MustString("broker", "protocol")
+	host := p.config.MustString("mqtt", protocol)
 
-	listen, err := listen(protocol, host, p.Config)
+	listen, err := listen(protocol, host, p.config)
 	if err != nil {
 		glog.Errorf("Mqtt listen '%s', '%s' failed:%s", protocol, host, err)
 		return err
 	}
 	glog.Infof("Mqtt service '%s' is listening on '%s'...", protocol, host)
+
+	p.waitgroup.Add(1)
 	go func(p *mqttService) {
-		p.WaitGroup.Add(1)
-		defer p.WaitGroup.Done()
+		defer p.waitgroup.Done()
 		for {
 			conn, err := listen.Accept()
 			if err != nil {
@@ -96,9 +94,8 @@ func (p *mqttService) Start() error {
 
 // Stop
 func (p *mqttService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.waitgroup.Wait()
+	close(p.quitChan)
 }
 
 func listen(network, laddr string, c config.Config) (net.Listener, error) {

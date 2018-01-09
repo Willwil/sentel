@@ -14,11 +14,10 @@ package queue
 
 import (
 	"fmt"
-	"os"
 	"sync"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 )
 
 // Metaservice manage broker metadata
@@ -26,9 +25,10 @@ import (
 // - Global broker cluster data
 // - Shadow device
 type queueService struct {
-	base.ServiceBase
-	queues map[string]Queue // All queues
-	mutex  sync.Mutex       // Mutex for queues
+	config    config.Config
+	waitgroup sync.WaitGroup
+	queues    map[string]Queue // All queues
+	mutex     sync.Mutex       // Mutex for queues
 }
 
 const (
@@ -38,15 +38,12 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	return &queueService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		queues: make(map[string]Queue),
-		mutex:  sync.Mutex{},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		queues:    make(map[string]Queue),
+		mutex:     sync.Mutex{},
 	}, nil
 
 }
@@ -66,21 +63,11 @@ func (p *queueService) bootstrap() error {
 
 // Start
 func (p *queueService) Start() error {
-	go func(p *queueService) {
-		for {
-			select {
-			case <-p.Quit:
-				return
-			}
-		}
-	}(p)
 	return nil
 }
 
 // Stop
-func (p *queueService) Stop() {
-	p.WaitGroup.Wait()
-}
+func (p *queueService) Stop() {}
 
 // newQueue allocate queue from queue service
 func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, error) {
@@ -103,9 +90,9 @@ func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, 
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id, p.Config, o)
+		q, err = newPersistentQueue(id, p.config, o)
 	} else {
-		q, err = newTransientQueue(id, p.Config, o)
+		q, err = newTransientQueue(id, p.config, o)
 	}
 	if err != nil {
 		return nil, err

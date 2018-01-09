@@ -65,13 +65,13 @@ type mqttSession struct {
 func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 	// Retrieve authentication option
 	authNeed := true
-	if n, err := mqtt.Config.Bool("broker", "auth"); err == nil {
+	if n, err := mqtt.config.Bool("broker", "auth"); err == nil {
 		authNeed = n
 	}
 
 	// Create session instance
 	return &mqttSession{
-		config:        mqtt.Config,
+		config:        mqtt.config,
 		conn:          conn,
 		mountpoint:    "",
 		bytesReceived: 0,

@@ -11,37 +11,9 @@
 
 package base
 
-import (
-	"os"
-	"sync"
+import "github.com/cloustone/sentel/pkg/service"
 
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type Service interface {
-	Name() string
-	Initialize() error
-	Start() error
-	Stop()
-}
-
-type ServiceBase struct {
-	Config    config.Config
-	Quit      chan os.Signal
-	WaitGroup sync.WaitGroup
-}
-type ServiceFactory interface {
-	New(c config.Config, quit chan os.Signal) (Service, error)
-}
-
-var (
-	services = make(map[string]Service)
-)
-
-func RegisterService(name string, s Service) {
-	services[name] = s
-}
-
-func GetService(name string) Service {
-	return services[name]
+func GetService(name string) service.Service {
+	mgr := service.GetServiceManager()
+	return mgr.GetService(name)
 }

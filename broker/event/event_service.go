@@ -16,14 +16,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/signal"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -38,7 +37,8 @@ var (
 )
 
 type eventService struct {
-	base.ServiceBase
+	config      config.Config
+	waitgroup   sync.WaitGroup
 	brokerId    string
 	consumers   map[string]sarama.Consumer // kafka client endpoint
 	producer    sarama.SyncProducer
@@ -46,6 +46,7 @@ type eventService struct {
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	tenant      string
+	quitChan    chan interface{}
 }
 
 // subscriberContext hold subscribre's handler and context
@@ -57,7 +58,7 @@ type subscriberContext struct {
 type ServiceFactory struct{}
 
 // New create global broker
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 
@@ -103,16 +104,14 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service,
 	}
 
 	return &eventService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:      c,
+		waitgroup:   sync.WaitGroup{},
 		consumers:   consumers,
 		producer:    producer,
 		eventChan:   make(chan *Event),
 		subscribers: make(map[uint32][]subscriberContext),
 		tenant:      tenant,
+		quitChan:    make(chan interface{}),
 	}, nil
 }
 
@@ -157,10 +156,10 @@ func (p *eventService) subscribeKafkaTopic() error {
 				if err != nil {
 					return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
 				}
-				p.WaitGroup.Add(1)
+				p.waitgroup.Add(1)
 
 				go func(p *eventService, pc sarama.PartitionConsumer) {
-					defer p.WaitGroup.Done()
+					defer p.waitgroup.Done()
 					for msg := range pc.Messages() {
 						glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
 						obj := &MqttEvent{}
@@ -192,7 +191,7 @@ func (p *eventService) Start() error {
 				}
 				// notify kafka for broker synchronization
 				p.publishKafkaMsg(p.nameOfEventBus(e), e)
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -235,7 +234,7 @@ func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
 
 // Stop
 func (p *eventService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.quitChan <- true
 	for _, v := range p.consumers {
 		v.Close()
 	}
@@ -243,8 +242,9 @@ func (p *eventService) Stop() {
 	if p.producer != nil {
 		p.producer.Close()
 	}
-	p.WaitGroup.Wait()
+	p.waitgroup.Wait()
 	close(p.eventChan)
+	close(p.quitChan)
 }
 
 func (p *eventService) unmarshalDetail(e *Event, detail json.RawMessage) (interface{}, error) {

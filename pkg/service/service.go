@@ -25,21 +25,21 @@ import (
 
 type Service interface {
 	Name() string
+	Initialize() error
 	Start() error
 	Stop()
 }
 
 type ServiceFactory interface {
-	New(c config.Config, quit chan os.Signal) (Service, error)
+	New(c config.Config) (Service, error)
 }
 
 type ServiceManager struct {
 	sync.Once
 	Config           config.Config // Global config
 	serviceFactories []ServiceFactory
-	services         []Service                 // All service created by config.Protocols
-	quits            map[string]chan os.Signal // Notification channel for each service
-	name             string                    // Name of service manager
+	services         []Service // All service created by config.Protocols
+	name             string    // Name of service manager
 	signalChan       chan os.Signal
 	waitChan         chan interface{}
 }
@@ -63,7 +63,6 @@ func NewServiceManager(name string, c config.Config) (*ServiceManager, error) {
 		Config:           c,
 		serviceFactories: []ServiceFactory{},
 		services:         []Service{},
-		quits:            make(map[string]chan os.Signal),
 		name:             name,
 		signalChan:       make(chan os.Signal),
 		waitChan:         make(chan interface{}),
@@ -93,14 +92,18 @@ func (p *ServiceManager) AddService(factory ServiceFactory) *ServiceManager {
 func (p *ServiceManager) RunAndWait() error {
 	// Create all services
 	for _, factory := range p.serviceFactories {
-		quit := make(chan os.Signal)
-		signal.Notify(quit, syscall.SIGUSR1)
-		if service, err := factory.New(p.Config, quit); err != nil {
+		if service, err := factory.New(p.Config); err != nil {
 			return err
 		} else {
 			glog.Infof("service '%s' created", service.Name())
 			p.services = append(p.services, service)
-			p.quits[service.Name()] = quit
+		}
+	}
+	// Initialize all services
+	for _, service := range p.services {
+		if err := service.Initialize(); err != nil {
+			glog.Infof("service '%s' initialize failed", service.Name())
+			return err
 		}
 	}
 
@@ -114,11 +117,6 @@ func (p *ServiceManager) RunAndWait() error {
 	}
 	go signalHandler()
 	<-p.waitChan
-	// Wait all service to terminate in main context
-	//	for name, quit := range p.quits {
-	//		<-quit
-	//		glog.Infof("Service '%s' is terminated", name)
-	//	}
 	return nil
 }
 

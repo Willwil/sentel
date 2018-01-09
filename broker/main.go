@@ -29,6 +29,7 @@ import (
 	"github.com/cloustone/sentel/broker/rpc"
 	"github.com/cloustone/sentel/broker/sessionmgr"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -102,16 +103,16 @@ func runBrokerClient(c config.Config) {
 }
 
 func runBrokerDaemon(c config.Config) error {
-	broker, _ := NewBroker(c)
-	broker.AddService(event.ServiceFactory{})
-	broker.AddService(queue.ServiceFactory{})
-	broker.AddService(sessionmgr.ServiceFactory{})
-	//broker.AddService(auth.ServiceFactory{})
-	broker.AddService(rpc.ServiceFactory{})
-	broker.AddService(metric.ServiceFactory{})
-	broker.AddService(metadata.ServiceFactory{})
-	broker.AddService(quto.ServiceFactory{})
-	broker.AddService(mqtt.ServiceFactory{})
-	broker.AddService(http.ServiceFactory{})
-	return broker.Run()
+	mgr, _ := service.NewServiceManager("broker", c)
+	mgr.AddService(event.ServiceFactory{})
+	mgr.AddService(queue.ServiceFactory{})
+	mgr.AddService(sessionmgr.ServiceFactory{})
+	//mgr.AddService(auth.ServiceFactory{})
+	mgr.AddService(rpc.ServiceFactory{})
+	mgr.AddService(metric.ServiceFactory{})
+	mgr.AddService(metadata.ServiceFactory{})
+	mgr.AddService(quto.ServiceFactory{})
+	mgr.AddService(mqtt.ServiceFactory{})
+	mgr.AddService(http.ServiceFactory{})
+	return mgr.RunAndWait()
 }

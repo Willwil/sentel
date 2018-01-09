@@ -35,16 +35,16 @@ func main() {
 	glog.Info("Starting api server...")
 
 	config, _ := createConfig(*configFileName)
-	mgr, err := service.NewServiceManager("apiserver", config)
-	if err != nil {
-		glog.Fatalf("apiserver create failed: '%s'", err.Error())
-	}
+	mgr, _ := service.NewServiceManager("apiserver", config)
 	mgr.AddService(console.ServiceFactory{})
 	mgr.AddService(management.ServiceFactory{})
 	if _, err := config.String("apiserver", "swagger"); err == nil {
 		mgr.AddService(swagger.ServiceFactory{})
 	}
-	glog.Fatal(mgr.RunAndWait())
+	if err := mgr.RunAndWait(); err != nil {
+		glog.Fatal(err)
+	}
+	glog.Info("apiserver is normally terminated")
 }
 
 func createConfig(fileName string) (config.Config, error) {

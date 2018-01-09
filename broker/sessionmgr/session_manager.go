@@ -15,16 +15,14 @@ package sessionmgr
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/queue"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 
 	"gopkg.in/mgo.v2"
@@ -33,11 +31,13 @@ import (
 // sessionManager manage session and subscription and topic tree
 // sessionManager receive kafka event for broker cluster's notification
 type sessionManager struct {
-	base.ServiceBase                    // Session manager is a service that can handle asynchrous event
-	eventChan        chan *event.Event  //  Event channel for service
-	tree             topicTree          // Global topic subscription tree
-	sessions         map[string]Session // All sessions
-	mutex            sync.Mutex
+	config    config.Config
+	waitgroup sync.WaitGroup
+	quitChan  chan interface{}
+	eventChan chan *event.Event  //  Event channel for service
+	tree      topicTree          // Global topic subscription tree
+	sessions  map[string]Session // All sessions
+	mutex     sync.Mutex
 }
 
 const (
@@ -47,7 +47,7 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -63,11 +63,9 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service,
 	}
 
 	return &sessionManager{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		quitChan:  make(chan interface{}),
 		eventChan: make(chan *event.Event),
 		tree:      topicTree,
 		sessions:  make(map[string]Session),
@@ -92,12 +90,14 @@ func (p *sessionManager) Start() error {
 	event.Subscribe(event.TopicUnsubscribe, onEventCallback, p)
 	event.Subscribe(event.TopicPublish, onEventCallback, p)
 
+	p.waitgroup.Add(1)
 	go func(p *sessionManager) {
+		defer p.waitgroup.Done()
 		for {
 			select {
 			case e := <-p.eventChan:
 				p.handleEvent(e)
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -107,10 +107,10 @@ func (p *sessionManager) Start() error {
 
 // Stop
 func (p *sessionManager) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
 	close(p.eventChan)
+	close(p.quitChan)
 }
 
 func (p *sessionManager) handleEvent(e *event.Event) {

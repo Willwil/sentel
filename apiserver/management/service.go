@@ -13,7 +13,6 @@ package management
 
 import (
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -28,25 +27,22 @@ import (
 )
 
 type managementService struct {
-	service.ServiceBase
-	version string
-	config  config.Config
-	echo    *echo.Echo
+	config    config.Config
+	waitgroup sync.WaitGroup
+	version   string
+	echo      *echo.Echo
 }
 
 type ServiceFactory struct{}
 
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err := client.Initialize(c); err != nil {
 		return nil, fmt.Errorf("keystone connection failed")
 	}
 	service := &managementService{
-		ServiceBase: service.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
-		echo: echo.New(),
+		config:    c,
+		waitgroup: sync.WaitGroup{},
+		echo:      echo.New(),
 	}
 	if err := service.initialize(c); err != nil {
 		return nil, err
@@ -54,15 +50,16 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (service.Servi
 	return service, nil
 }
 
-func (p *managementService) Name() string { return "management" }
+func (p *managementService) Name() string      { return "management" }
+func (p *managementService) Initialize() error { return nil }
 
 // Start
 func (p *managementService) Start() error {
-	p.WaitGroup.Add(1)
+	p.waitgroup.Add(1)
 	go func(s *managementService) {
-		addr := p.Config.MustString("management", "listen")
+		addr := p.config.MustString("management", "listen")
 		p.echo.Start(addr)
-		p.WaitGroup.Done()
+		p.waitgroup.Done()
 	}(p)
 	return nil
 }
@@ -70,7 +67,7 @@ func (p *managementService) Start() error {
 // Stop
 func (p *managementService) Stop() {
 	p.echo.Close()
-	p.WaitGroup.Wait()
+	p.waitgroup.Wait()
 }
 
 // Initialize initialize api manager with configuration

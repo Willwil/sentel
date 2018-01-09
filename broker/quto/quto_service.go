@@ -15,16 +15,13 @@ package quto
 import (
 	"errors"
 	"fmt"
-	"os"
-	"os/signal"
 	"strconv"
 	"sync"
-	"syscall"
 	"time"
 
-	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 
 	"github.com/go-redis/redis"
@@ -38,7 +35,9 @@ const (
 )
 
 type qutoService struct {
-	base.ServiceBase
+	config      config.Config
+	waitgroup   sync.WaitGroup
+	quitChan    chan interface{}
 	eventChan   chan *event.Event
 	cachePolicy string
 	cacheMutex  sync.Mutex
@@ -53,7 +52,7 @@ const (
 type ServiceFactory struct{}
 
 // New create metadata service factory
-func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service, error) {
+func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
 	hosts := c.MustString("broker", "mongo")
 	timeout := c.MustInt("broker", "connect_timeout")
@@ -87,11 +86,9 @@ func (p ServiceFactory) New(c config.Config, quit chan os.Signal) (base.Service,
 	}
 
 	return &qutoService{
-		ServiceBase: base.ServiceBase{
-			Config:    c,
-			WaitGroup: sync.WaitGroup{},
-			Quit:      quit,
-		},
+		config:      c,
+		waitgroup:   sync.WaitGroup{},
+		quitChan:    make(chan interface{}),
 		eventChan:   make(chan *event.Event),
 		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
@@ -116,7 +113,7 @@ func (p *qutoService) Start() error {
 			select {
 			case e := <-p.eventChan:
 				p.handleQutoChanged(e)
-			case <-p.Quit:
+			case <-p.quitChan:
 				return
 			}
 		}
@@ -126,9 +123,9 @@ func (p *qutoService) Start() error {
 
 // Stop
 func (p *qutoService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
-	p.WaitGroup.Wait()
-	close(p.Quit)
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	close(p.quitChan)
 	close(p.eventChan)
 }
 
@@ -141,8 +138,8 @@ func onEventCallback(e *event.Event, ctx interface{}) {
 // handleQutoChanged load changed quto into cach
 func (p *qutoService) handleQutoChanged(e *event.Event) {
 	// check mongo db configuration
-	hosts := p.Config.MustString("broker", "mongo")
-	timeout := p.Config.MustInt("broker", "connect_timeout")
+	hosts := p.config.MustString("broker", "mongo")
+	timeout := p.config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		glog.Errorf("quto: Access backend database failed for quto event:%d", e.Common.Type)
@@ -198,8 +195,8 @@ func (p *qutoService) getQuto(id string) (uint64, error) {
 	}
 
 	// Read from database if not found in cache
-	hosts := p.Config.MustString("broker", "mongo")
-	timeout := p.Config.MustInt("broker", "connect_timeout")
+	hosts := p.config.MustString("broker", "mongo")
+	timeout := p.config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		glog.Error("quto: Access backend database failed")
