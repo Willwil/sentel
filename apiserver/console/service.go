@@ -14,9 +14,7 @@ package console
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/v1api"
@@ -57,19 +55,19 @@ func (p *consoleService) Name() string { return "console" }
 
 // Start
 func (p *consoleService) Start() error {
+	p.WaitGroup.Add(1)
 	go func(s *consoleService) {
 		addr := p.Config.MustString("console", "listen")
 		p.echo.Start(addr)
-		p.WaitGroup.Add(1)
+		p.WaitGroup.Done()
 	}(p)
 	return nil
 }
 
 // Stop
 func (p *consoleService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.echo.Close()
 	p.WaitGroup.Wait()
-	close(p.Quit)
 }
 
 // Initialize initialize api manager with configuration

@@ -41,4 +41,7 @@ var defaultConfigs = map[string]map[string]string{
 	"keystone": {
 		"hosts": "localhost:4147",
 	},
+	"swagger": {
+		"open_browswer": "false",
+	},
 }

@@ -120,7 +120,9 @@ func (p *swaggerService) Start() error {
 		docServer.Serve(listener)
 	}()
 
-	err = webbrowser.Open(visit)
+	if ui, err := p.Config.Bool("swagger", "open_browser"); err == nil && ui == true {
+		webbrowser.Open(visit)
+	}
 	log.Println("serving docs at", visit)
 	return nil
 

@@ -14,9 +14,7 @@ package management
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/keystone/client"
@@ -60,19 +58,19 @@ func (p *managementService) Name() string { return "management" }
 
 // Start
 func (p *managementService) Start() error {
+	p.WaitGroup.Add(1)
 	go func(s *managementService) {
 		addr := p.Config.MustString("management", "listen")
 		p.echo.Start(addr)
-		p.WaitGroup.Add(1)
+		p.WaitGroup.Done()
 	}(p)
 	return nil
 }
 
 // Stop
 func (p *managementService) Stop() {
-	signal.Notify(p.Quit, syscall.SIGINT, syscall.SIGQUIT)
+	p.echo.Close()
 	p.WaitGroup.Wait()
-	close(p.Quit)
 }
 
 // Initialize initialize api manager with configuration

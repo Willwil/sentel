@@ -40,6 +40,8 @@ type ServiceManager struct {
 	services         []Service                 // All service created by config.Protocols
 	quits            map[string]chan os.Signal // Notification channel for each service
 	name             string                    // Name of service manager
+	signalChan       chan os.Signal
+	waitChan         chan interface{}
 }
 
 const serviceManagerVersion = "0.1"
@@ -63,9 +65,23 @@ func NewServiceManager(name string, c config.Config) (*ServiceManager, error) {
 		services:         []Service{},
 		quits:            make(map[string]chan os.Signal),
 		name:             name,
+		signalChan:       make(chan os.Signal),
+		waitChan:         make(chan interface{}),
 	}
+	signal.Notify(mgr.signalChan, syscall.SIGINT, syscall.SIGTERM)
 	serviceManager = mgr
 	return serviceManager, nil
+}
+
+func signalHandler() {
+	mgr := GetServiceManager()
+	for {
+		select {
+		case <-mgr.signalChan:
+			mgr.stop()
+			mgr.waitChan <- "finished"
+		}
+	}
 }
 
 func (p *ServiceManager) AddService(factory ServiceFactory) *ServiceManager {
@@ -82,25 +98,27 @@ func (p *ServiceManager) RunAndWait() error {
 		if service, err := factory.New(p.Config, quit); err != nil {
 			return err
 		} else {
-			glog.Infof("Create service '%s' successfully", service.Name())
+			glog.Infof("service '%s' created", service.Name())
 			p.services = append(p.services, service)
 			p.quits[service.Name()] = quit
 		}
 	}
 
 	// Run all service
-	glog.Infof("There are %d services in '%s'", len(p.services), p.name)
+	glog.Infof("there are %d services in '%s'", len(p.services), p.name)
 	for _, service := range p.services {
-		glog.Infof("Starting service:'%s'...", service.Name())
 		if err := service.Start(); err != nil {
 			return err
 		}
+		glog.Infof("service '%s' started", service.Name())
 	}
+	go signalHandler()
+	<-p.waitChan
 	// Wait all service to terminate in main context
-	for name, quit := range p.quits {
-		<-quit
-		glog.Info("Service '%s' is terminated", name)
-	}
+	//	for name, quit := range p.quits {
+	//		<-quit
+	//		glog.Infof("Service '%s' is terminated", name)
+	//	}
 	return nil
 }
 
@@ -120,8 +138,8 @@ func (p *ServiceManager) Run() error {
 // stop
 func (p *ServiceManager) stop() error {
 	for _, service := range p.services {
-		glog.Infof("Stoping service '%s'...", service.Name())
 		service.Stop()
+		glog.Infof("service '%s' stoped", service.Name())
 	}
 	return nil
 }
