@@ -16,6 +16,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
@@ -51,4 +52,9 @@ func SetBrokerStartupInfo(info *BrokerStartupInfo) {
 	if brokerStartupInfo.Ip == "" {
 		glog.Error("Failed to get local broker address")
 	}
+}
+
+func GetService(name string) service.Service {
+	mgr := service.GetServiceManager()
+	return mgr.GetService(name)
 }

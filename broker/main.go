@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cloustone/sentel/broker/auth"
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/commands"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/broker/http"
@@ -31,6 +33,7 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
+	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -103,11 +106,12 @@ func runBrokerClient(c config.Config) {
 }
 
 func runBrokerDaemon(c config.Config) error {
+	base.SetBrokerStartupInfo(&base.BrokerStartupInfo{Id: uuid.NewV4().String()})
 	mgr, _ := service.NewServiceManager("broker", c)
 	mgr.AddService(event.ServiceFactory{})
 	mgr.AddService(queue.ServiceFactory{})
 	mgr.AddService(sessionmgr.ServiceFactory{})
-	//mgr.AddService(auth.ServiceFactory{})
+	mgr.AddService(auth.ServiceFactory{})
 	mgr.AddService(rpc.ServiceFactory{})
 	mgr.AddService(metric.ServiceFactory{})
 	mgr.AddService(metadata.ServiceFactory{})
