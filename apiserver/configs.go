@@ -42,6 +42,6 @@ var defaultConfigs = map[string]map[string]string{
 		"hosts": "localhost:4147",
 	},
 	"swagger": {
-		"open_browser": "false",
+		"open_browser": "true",
 	},
 }
