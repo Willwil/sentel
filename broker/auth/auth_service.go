@@ -126,6 +126,22 @@ func (p *authService) Stop() {
 	close(p.eventChan)
 }
 
+func (p *authService) handleEvent(e *event.Event) {
+	detail := e.Detail.(*event.AuthChangeDetail)
+	p.updateTopicFlavor(detail.ProductId, detail.TopicFlavor)
+}
+
+func (p *authService) updateTopicFlavor(productId string, flavor registry.TopicFlavor) {
+	p.flavorsMutex.Lock()
+	defer p.flavorsMutex.Unlock()
+
+	if _, found := p.flavors[productId]; !found {
+		p.flavors[productId] = []registry.TopicFlavor{flavor}
+		return
+	}
+	p.flavors[productId] = append(p.flavors[productId], flavor)
+}
+
 // CheckAcl check client's access control right
 func (p *authService) authorize(ctx Context, clientid string, topic string, access uint8) error {
 	productId := ctx.ProductId
@@ -155,10 +171,6 @@ func (p *authService) authenticate(ctx Context) error {
 		return sign(ctx)
 	}
 	return fmt.Errorf("auth: Failed to get device secret key for '%s'", ctx.DeviceName)
-}
-
-func (p *authService) handleEvent(e *event.Event) {
-
 }
 
 // getDeviceSecretKey retrieve device secret key from cache or mongo

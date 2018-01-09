@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 
 	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 const (
@@ -80,4 +81,9 @@ type TopicPublishDetail struct {
 
 type QutoChangeDetail struct {
 	QutoId string `json:"qutoId"`
+}
+
+type AuthChangeDetail struct {
+	ProductId   string               `json:"productId"`
+	TopicFlavor registry.TopicFlavor `json:"topicFlavor"`
 }
