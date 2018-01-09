@@ -37,5 +37,5 @@ func sha1mac(ctx Context) error {
 	if ctx.Password == string(result) {
 		return nil
 	}
-	return ErrorAuthDenied
+	return ErrUnauthorized
 }

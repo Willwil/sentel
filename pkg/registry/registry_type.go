@@ -31,6 +31,7 @@ type Product struct {
 	TimeCreated time.Time `bson:"TimeCreated"`
 	TimeUpdated time.Time `bson:"TimeModified"`
 	Category    string    `bson:"CategoryId" json:"category"`
+	TopicFlavor string    `bson:"TopicFlavor" json:"topicFlavor"`
 }
 
 // Device
@@ -84,4 +85,11 @@ type Rule struct {
 	Status      string          `json:"status" bson:"Status"`
 	TimeCreated time.Time       `json:"timeCreated" bson:"TimeCreated"`
 	TimeUpdated time.Time       `json:"timeUpdated" bson:"TimeUpdated"`
+}
+
+type TopicFlavor struct {
+	FlavorName string           `json:"flavorName" bson:"flavorName"`
+	Builtin    bool             `json:"bultin" bson:"builtin"`
+	TenantId   string           `json:"tenantId" bson:"tenantId"`
+	Topics     map[string]uint8 `json:"topic" bson:"topics"`
 }

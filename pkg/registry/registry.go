@@ -25,10 +25,11 @@ import (
 )
 
 const (
-	dbNameDevices  = "devices"
-	dbNameProducts = "products"
-	dbNameTenants  = "tenants"
-	dbNameRules    = "rules"
+	dbNameDevices      = "devices"
+	dbNameProducts     = "products"
+	dbNameTenants      = "tenants"
+	dbNameRules        = "rules"
+	dbNameTopicFlavors = "topicflavors"
 )
 
 const PageSize = 3
@@ -369,4 +370,69 @@ func (r *Registry) DeleteRule(productId string, ruleName string) error {
 func (r *Registry) UpdateRule(rule *Rule) error {
 	c := r.db.C(dbNameRules)
 	return c.Update(bson.M{"RuleName": rule.RuleName, "ProductId": rule.ProductId}, rule)
+}
+
+// CreateTopicFlavor create topic flavor
+func (r *Registry) CreateTopicFlavor(t *TopicFlavor) error {
+	c := r.db.C(dbNameTopicFlavors)
+	flavor := &TopicFlavor{}
+	if err := c.Find(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId}).One(&flavor); err != nil {
+		return c.Insert(t)
+	}
+	return fmt.Errorf("flavro '%s' already exist", t.FlavorName)
+}
+
+// GetBuiltinTopicFlavor retrieve system builtin topic flavor
+func (r *Registry) GetBuiltinTopicFlavor() []TopicFlavor {
+	c := r.db.C(dbNameTopicFlavors)
+	flavors := []TopicFlavor{}
+	c.Find(bson.M{"builtin": true}).All(&flavors)
+	return flavors
+}
+
+// GetTenantTopicFlavor retrive tenant's topic flavor
+func (r *Registry) GetTenantTopicFlavors(tenantId string) []TopicFlavor {
+	c := r.db.C(dbNameTopicFlavors)
+	flavors := []TopicFlavor{}
+	c.Find(bson.M{"tenantId": tenantId}).All(&flavors)
+	return flavors
+}
+
+// GetTenantTopicFlavor retrive tenant's topic flavor
+func (r *Registry) GetTenantTopicFlavor(tenantId string, flavorName string) (TopicFlavor, error) {
+	c := r.db.C(dbNameTopicFlavors)
+	flavor := TopicFlavor{}
+	if err := c.Find(bson.M{"tenantId": tenantId, "flavorName": flavorName}).One(&flavor); err != nil {
+		return flavor, err
+	}
+	return flavor, nil
+}
+
+// RemoveTopicFlavor remove a specified topic flavor from registry
+func (r *Registry) RemoveTopicFlavor(t *TopicFlavor) {
+	c := r.db.C(dbNameTopicFlavors)
+	c.Remove(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId})
+}
+
+// GetProductTopicFlavor retrieve a product's topic flavor
+func (r *Registry) GetProductTopicFlavor(productId string) []TopicFlavor {
+	flavors := []TopicFlavor{}
+	// get product
+	c := r.db.C(dbNameProducts)
+	p := Product{}
+	if err := c.Find(bson.M{"productId": productId}).One(&p); err != nil {
+		return flavors
+	}
+	c = r.db.C(dbNameTopicFlavors)
+	flavor := TopicFlavor{}
+	if err := c.Find(bson.M{"tenantId": p.ProductId, "flavorName": p.TopicFlavor}).One(&flavor); err == nil {
+		flavors = append(flavors, flavor)
+	}
+	return flavors
+}
+
+// UpdateTopicFlavor update a topic flavor
+func (r *Registry) UpdateTopicFlavor(t *TopicFlavor) error {
+	c := r.db.C(dbNameTopicFlavors)
+	return c.Update(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId}, t)
 }

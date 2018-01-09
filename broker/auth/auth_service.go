@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -35,10 +36,12 @@ type ServiceFactory struct{}
 // New create coap service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	s := &authService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		eventChan: make(chan *event.Event),
-		quitChan:  make(chan interface{}),
+		config:       c,
+		waitgroup:    sync.WaitGroup{},
+		eventChan:    make(chan *event.Event),
+		quitChan:     make(chan interface{}),
+		flavors:      make(map[string][]registry.TopicFlavor),
+		flavorsMutex: sync.Mutex{},
 	}
 	// check mongo db configuration
 	hosts, _ := c.String("broker", "mongo")
@@ -66,16 +69,36 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 
 // Authentication Service
 type authService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	redis     *redis.Client
-	eventChan chan *event.Event
-	quitChan  chan interface{}
+	config       config.Config
+	waitgroup    sync.WaitGroup
+	redis        *redis.Client
+	eventChan    chan *event.Event
+	quitChan     chan interface{}
+	flavors      map[string][]registry.TopicFlavor
+	flavorsMutex sync.Mutex
 }
 
 // Name
-func (p *authService) Name() string      { return ServiceName }
-func (p *authService) Initialize() error { return nil }
+func (p *authService) Name() string { return ServiceName }
+
+// Initialize load tenant's product list and topic flavor
+func (p *authService) Initialize() error {
+	r, err := registry.New("broker", p.config)
+	if err != nil {
+		return err
+	}
+	tenantId := base.GetTenant()
+	if products, err := r.GetProducts(tenantId); err == nil {
+		// load topic flavor for each products
+		for _, product := range products {
+			flavors := r.GetProductTopicFlavor(product.ProductId)
+			if len(flavors) > 0 {
+				p.flavors[product.ProductId] = flavors
+			}
+		}
+	}
+	return nil
+}
 
 // Start
 func (p *authService) Start() error {
@@ -104,8 +127,25 @@ func (p *authService) Stop() {
 }
 
 // CheckAcl check client's access control right
-func (p *authService) authorize(ctx Context, clientid string, topic string, access int) error {
-	return nil
+func (p *authService) authorize(ctx Context, clientid string, topic string, access uint8) error {
+	productId := ctx.ProductId
+	p.flavorsMutex.Lock()
+	// if no topic flavor exist, just return authorized
+	if _, found := p.flavors[productId]; !found {
+		p.flavorsMutex.Unlock()
+		return nil
+	}
+	flavors := p.flavors[productId]
+	p.flavorsMutex.Unlock()
+
+	for _, flavor := range flavors {
+		for t, right := range flavor.Topics {
+			if t == topic && right&access != 0 {
+				return nil
+			}
+		}
+	}
+	return ErrUnauthorized
 }
 
 // authenticate check user's name and password

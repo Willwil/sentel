@@ -381,7 +381,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		switch err {
 		case nil:
 			// Successfuly authenticated
-		case auth.ErrorAuthDenied:
+		case auth.ErrUnauthorized:
 			p.sendConnAck(0, CONNACK_REFUSED_NOT_AUTHORIZED)
 			p.disconnect(err)
 			return err

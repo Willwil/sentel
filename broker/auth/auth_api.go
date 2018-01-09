@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	ErrorAuthDenied = errors.New("authentication denied")
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 type Context struct {
@@ -51,7 +51,7 @@ func GetVersion() string {
 	return AuthServiceVersion
 }
 
-func Authorize(ctx Context, clientId string, topic string, access int) error {
+func Authorize(ctx Context, clientId string, topic string, access uint8) error {
 	auth := base.GetService(ServiceName).(*authService)
 	return auth.authorize(ctx, clientId, topic, access)
 }
