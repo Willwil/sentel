@@ -15,11 +15,14 @@ package cluster
 import (
 	"errors"
 
+	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
 // ClusterManager is wrapper cluster manager built on top of swarm and kubernetes
 type ClusterManager interface {
+	// SetDiscoveryBackend set service discovery backend
+	SetServiceDiscovery(sd.ServiceDiscovery)
 	// CreateNetwork create tenant network
 	CreateNetwork(name string) (string, error)
 	// RemoveNetwork remove tenant network

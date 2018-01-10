@@ -19,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
@@ -28,10 +29,11 @@ import (
 )
 
 type swarmCluster struct {
-	config   config.Config
-	mutex    sync.Mutex
-	services map[string]string
-	client   *client.Client
+	config           config.Config
+	mutex            sync.Mutex
+	services         map[string]string
+	client           *client.Client
+	serviceDiscovery sd.ServiceDiscovery
 }
 
 func newSwarmCluster(c config.Config) (*swarmCluster, error) {
@@ -74,6 +76,10 @@ func newSwarmCluster(c config.Config) (*swarmCluster, error) {
 		client:   cli,
 	}, nil
 
+}
+
+func (p *swarmCluster) SetServiceDiscovery(s sd.ServiceDiscovery) {
+	p.serviceDiscovery = s
 }
 
 func (p *swarmCluster) Initialize() error {
@@ -122,7 +128,6 @@ func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error)
 				Image: "sentel/broker",
 				Env:   env,
 			},
-			//TODO: how to add network setting
 			Networks: []swarm.NetworkAttachmentConfig{
 				{Target: tid},
 				{Target: "sentel_front"},
@@ -140,11 +145,34 @@ func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error)
 		},
 	}
 	options := types.ServiceCreateOptions{}
+	serviceId := ""
 	if rsp, err := p.client.ServiceCreate(context.Background(), service, options); err != nil {
 		glog.Error(err)
 		return serviceName, fmt.Errorf("swarm failed to create service '%s'", serviceName)
 	} else {
 		p.services[serviceName] = rsp.ID
+		serviceId = rsp.ID
+	}
+
+	// update service discovery
+	if p.serviceDiscovery != nil {
+		service, _, err := p.client.ServiceInspectWithRaw(context.Background(), serviceId, types.ServiceInspectOptions{})
+		if err != nil {
+			return serviceName, fmt.Errorf("swarm failed to get service backend info for '%s'", serviceName)
+		}
+		if len(service.Endpoint.Ports) == len(service.Endpoint.VirtualIPs) {
+			endpoints := []sd.ServiceEndpoint{}
+			for index, ep := range service.Endpoint.Ports {
+				port := ep.PublishedPort
+				vip := service.Endpoint.VirtualIPs[index].Addr
+				endpoints = append(endpoints, sd.ServiceEndpoint{IP: vip, Port: port})
+			}
+
+			service := sd.Service{ServiceName: serviceName, ServiceId: serviceId, Endpoints: endpoints}
+			if err := p.serviceDiscovery.RegisterService(service); err != nil {
+				return serviceName, fmt.Errorf("swarm failed to update service discovery for '%s'", serviceName)
+			}
+		}
 	}
 	return serviceName, nil
 }
@@ -153,6 +181,9 @@ func (p *swarmCluster) RemoveService(serviceName string) error {
 	if id, found := p.services[serviceName]; found {
 		if err := p.client.ServiceRemove(context.Background(), id); err != nil {
 			return fmt.Errorf("swarm stop service '%s' failed", serviceName)
+		}
+		if p.serviceDiscovery != nil {
+			p.serviceDiscovery.RemoveService(sd.Service{ServiceName: serviceName, ServiceId: id})
 		}
 	}
 	return nil

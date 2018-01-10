@@ -24,6 +24,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/iothub/cluster"
+	sdb "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -63,14 +64,13 @@ type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	sarama.Logger = logger
-	clustermgr, err := cluster.New(c)
-	if err != nil {
-		return nil, err
+	clustermgr, cerr := cluster.New(c)
+	hubdb, nerr := newHubDB(c)
+	discovery, derr := sdb.New(c, sdb.BackendZookeeper)
+	if cerr != nil || nerr != nil || derr != nil {
+		return nil, errors.New("service backend initialization failed")
 	}
-	hubdb, err := newHubDB(c)
-	if err != nil {
-		return nil, err
-	}
+	clustermgr.SetServiceDiscovery(discovery)
 	return &iothubService{
 		config:     c,
 		waitgroup:  sync.WaitGroup{},

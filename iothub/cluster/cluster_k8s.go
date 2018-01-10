@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	sdb "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
@@ -31,10 +32,11 @@ import (
 )
 
 type k8sCluster struct {
-	config    config.Config
-	mutex     sync.Mutex
-	pods      map[string]string
-	clientset *kubernetes.Clientset
+	config           config.Config
+	mutex            sync.Mutex
+	pods             map[string]string
+	clientset        *kubernetes.Clientset
+	serviceDiscovery sdb.ServiceDiscovery
 }
 
 // newClusterManager retrieve clustermanager instance connected with clustermgr
@@ -65,6 +67,9 @@ func newK8sCluster(c config.Config) (*k8sCluster, error) {
 
 func (p *k8sCluster) Initialize() error {
 	return nil
+}
+func (p *k8sCluster) SetServiceDiscovery(s sdb.ServiceDiscovery) {
+	p.serviceDiscovery = s
 }
 
 func (p *k8sCluster) CreateNetwork(name string) (string, error) {
