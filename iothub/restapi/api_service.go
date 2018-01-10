@@ -118,7 +118,6 @@ func createTenant(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 
-	hub := hub.GetIothub()
 	if err := hub.CreateTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
@@ -138,7 +137,6 @@ func removeTenant(ctx echo.Context) error {
 	}
 
 	tid := ctx.Param("tid")
-	hub := hub.GetIothub()
 	if err := hub.RemoveTenant(tid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
@@ -171,7 +169,6 @@ func createProduct(ctx echo.Context) error {
 	}
 
 	glog.Infof("iothub: add product(%s, %s, %d)", tid, pid, replicas)
-	hub := hub.GetIothub()
 	if brokers, err := hub.CreateProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
@@ -194,7 +191,6 @@ func removeProduct(ctx echo.Context) error {
 
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
-	hub := hub.GetIothub()
 	if err := hub.RemoveProduct(tid, pid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}

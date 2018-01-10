@@ -22,8 +22,6 @@ import (
 	"sync"
 	"time"
 
-	mgo "gopkg.in/mgo.v2"
-
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/iothub/cluster"
 	"github.com/cloustone/sentel/pkg/config"
@@ -39,6 +37,7 @@ type iothubService struct {
 	tenants    map[string]*tenant
 	mutex      sync.Mutex
 	consumers  []sarama.Consumer
+	hubdb      *hubDB
 }
 type tenant struct {
 	tid       string
@@ -68,14 +67,10 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	// try connect with mongo db
-	addr := c.MustString("iothub", "mongo")
-	session, err := mgo.DialWithTimeout(addr, 1*time.Second)
+	hubdb, err := newHubDB(c)
 	if err != nil {
-		return nil, fmt.Errorf("iothub connect with mongo '%s'failed: '%s'", addr, err.Error())
+		return nil, err
 	}
-	session.Close()
-
 	return &iothubService{
 		config:     c,
 		waitgroup:  sync.WaitGroup{},
@@ -83,18 +78,13 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		clustermgr: clustermgr,
 		tenants:    make(map[string]*tenant),
 		mutex:      sync.Mutex{},
+		hubdb:      hubdb,
 	}, nil
 }
 
 // Name
 func (p *iothubService) Name() string      { return SERVICE_NAME }
 func (p *iothubService) Initialize() error { return nil }
-
-// GetiothubService return iothub service instance
-func GetIothub() *iothubService {
-	mgr := service.GetServiceManager()
-	return mgr.GetService(SERVICE_NAME).(*iothubService)
-}
 
 // Start
 func (p *iothubService) Start() error {
@@ -174,10 +164,10 @@ func (p *iothubService) handleProductNotify(value []byte) error {
 	}
 	switch tf.Action {
 	case message.ObjectActionRegister:
-		_, err := p.CreateProduct(tf.TenantId, tf.ProductId, tf.Replicas)
+		_, err := p.createProduct(tf.TenantId, tf.ProductId, tf.Replicas)
 		return err
 	case message.ObjectActionDelete:
-		return p.RemoveProduct(tf.TenantId, tf.ProductId)
+		return p.removeProduct(tf.TenantId, tf.ProductId)
 	}
 	return nil
 }
@@ -191,15 +181,15 @@ func (p *iothubService) handleTenantNotify(value []byte) error {
 
 	switch tf.Action {
 	case message.ObjectActionRegister:
-		p.CreateTenant(tf.TenantId)
+		p.createTenant(tf.TenantId)
 	case message.ObjectActionDelete:
-		return p.RemoveTenant(tf.TenantId)
+		return p.removeTenant(tf.TenantId)
 	}
 	return nil
 }
 
 // addTenant add tenant to iothub
-func (p *iothubService) CreateTenant(tid string) error {
+func (p *iothubService) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -220,7 +210,7 @@ func (p *iothubService) CreateTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iothub
-func (p *iothubService) RemoveTenant(tid string) error {
+func (p *iothubService) removeTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -233,7 +223,7 @@ func (p *iothubService) RemoveTenant(tid string) error {
 	}
 	// Delete all products
 	for name, _ := range t.products {
-		if err := p.RemoveProduct(tid, name); err != nil {
+		if err := p.removeProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)
 			// TODO: trying to delete again if failure
 		}
@@ -252,7 +242,7 @@ func (p *iothubService) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iothub
-func (p *iothubService) CreateProduct(tid, pid string, replicas int32) (string, error) {
+func (p *iothubService) createProduct(tid, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
@@ -270,7 +260,7 @@ func (p *iothubService) CreateProduct(tid, pid string, replicas int32) (string, 
 }
 
 // deleteProduct delete product from iothub
-func (p *iothubService) RemoveProduct(tid string, pid string) error {
+func (p *iothubService) removeProduct(tid string, pid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if !p.isProductExist(tid, pid) {
