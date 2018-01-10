@@ -24,20 +24,21 @@ const (
 )
 
 type ServiceEndpoint struct {
-	IP   string
-	Port uint32
+	IP   string `json:"IP"`
+	Port uint32 `json:"Port"`
 }
 
 type Service struct {
-	ServiceName string
-	ServiceId   string
-	Endpoints   []ServiceEndpoint
+	ServiceName string            `json:"ServiceName"`
+	ServiceId   string            `json:"ServiceId"`
+	Endpoints   []ServiceEndpoint `json:"Endpoints"`
 }
 
 type ServiceDiscovery interface {
 	RegisterService(s Service) error
 	RemoveService(s Service)
 	UpdateService(s Service) error
+	Close()
 }
 
 func New(c config.Config, bks string) (ServiceDiscovery, error) {

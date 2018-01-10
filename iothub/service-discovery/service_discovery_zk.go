@@ -12,18 +12,51 @@
 
 package sd
 
-import "github.com/cloustone/sentel/pkg/config"
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
 
-type serviceDisZK struct{}
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/samuel/go-zookeeper/zk"
+)
+
+type serviceDisZK struct {
+	conn *zk.Conn
+}
 
 func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
-	return nil, nil
+	hosts, err := c.String("service-discovery", "hosts")
+	if err != nil {
+		return nil, errors.New("no zookeeper hosts")
+	}
+	conn, _, err := zk.Connect(strings.Split(hosts, ","), time.Second*2)
+	if err != nil {
+		return nil, fmt.Errorf("service discovery can not connect with zk:%s", hosts)
+	}
+	return &serviceDisZK{conn: conn}, nil
 }
 
 func (p *serviceDisZK) RegisterService(s Service) error {
-	return nil
+	path := fmt.Sprintf("/iotservices/%s", s.ServiceName)
+	buf, err := json.Marshal(&s)
+	if err != nil {
+		return fmt.Errorf("service '%s' data marshal failed", s.ServiceName)
+	}
+	acls := zk.WorldACL(zk.PermAll)
+	_, err = p.conn.Create(path, buf, 0, acls)
+	return err
 }
-func (p *serviceDisZK) RemoveService(s Service) {}
+
+func (p *serviceDisZK) RemoveService(s Service) {
+	path := fmt.Sprintf("/iotservices/%s", s.ServiceName)
+	p.conn.Delete(path, 0)
+
+}
 func (p *serviceDisZK) UpdateService(s Service) error {
 	return nil
 }
+
+func (p *serviceDisZK) Close() { p.conn.Close() }
