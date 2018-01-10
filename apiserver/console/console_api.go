@@ -102,10 +102,47 @@ func getProductRules(ctx echo.Context) error {
 	setAccessId(ctx)
 	return v1api.GetProductRules(ctx)
 }
-func getDeviceStatics(ctx echo.Context) error {
+
+// Device
+func createDevice(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	setAccessId(ctx)
-	return v1api.GetDeviceStatics(ctx)
+	return v1api.CreateDevice(ctx)
+}
+func removeDevice(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.RemoveDevice(ctx)
+}
+func updateDevice(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.UpdateDevice(ctx)
+}
+func getOneDevice(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.GetOneDevice(ctx)
+}
+func bulkRegisterDevices(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.BulkRegisterDevices(ctx)
+}
+func updateShadowDevice(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.UpdateShadowDevice(ctx)
+}
+func getShadowDevice(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.GetShadowDevice(ctx)
+}
+func getDevicesStatus(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.GetDevicesStatus(ctx)
 }
 
 // Rules

@@ -17,7 +17,6 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
-	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -112,16 +111,16 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.GET("/products/:productId", getProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 	g.GET("/products/:productId/rules", getProductRules)
-	g.GET("/products/:productId/devices/statics", getDeviceStatics)
+	g.GET("/products/:productId/devices/status", getDevicesStatus)
 
 	// Device
-	g.POST("/devices", v1api.RegisterDevice)
-	g.GET("/devices/:deviceId", v1api.GetOneDevice)
-	g.DELETE("/devices", v1api.DeleteDevice)
-	g.PATCH("/devices", v1api.UpdateDevice)
-	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
-	g.PATCH("/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
-	g.GET("/devices/:deviceId/shardow", v1api.GetShadowDevice)
+	g.POST("/devices", createDevice)
+	g.GET("/devices/:deviceId", getOneDevice)
+	g.DELETE("/devices", removeDevice)
+	g.PATCH("/devices", updateDevice)
+	g.POST("/devices/bulk", bulkRegisterDevices)
+	g.PATCH("/devices/:deviceId/shadow", updateShadowDevice)
+	g.GET("/devices/:deviceId/shardow", getShadowDevice)
 
 	// Rules
 	g.POST("/rules", createRule)

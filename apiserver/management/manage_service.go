@@ -102,7 +102,7 @@ func (p *managementService) initialize(c config.Config) error {
 	g.PATCH("/products/:productId", updateProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 
-	g.POST("/products/:productId/device", registerDevice)
+	g.POST("/products/:productId/device", createDevice)
 	g.POST("/prodcuts/:productId/devices/bulk", bulkApplyDevices)
 	g.GET("/products/:productId/devices/bulk/:id", bulkApplyGetStatus)
 	g.GET("/products/:productId/devices/bulk", bulkApplyGetDevices)
