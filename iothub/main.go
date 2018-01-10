@@ -17,7 +17,6 @@ import (
 	"os"
 
 	"github.com/cloustone/sentel/iothub/hub"
-	"github.com/cloustone/sentel/iothub/notify"
 	"github.com/cloustone/sentel/iothub/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -33,13 +32,9 @@ func main() {
 
 	glog.Info("Initializing iothub...")
 	config, _ := createConfig(*configFileName)
-	if err := hub.InitializeIothub(config); err != nil {
-		glog.Fatal(err)
-	}
-
 	// Create service manager according to the configuration
 	mgr, _ := service.NewServiceManager("iothub", config)
-	mgr.AddService(notify.ServiceFactory{})
+	mgr.AddService(hub.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
