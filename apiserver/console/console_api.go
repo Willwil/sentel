@@ -20,9 +20,14 @@ import (
 )
 
 func setAccessId(ctx echo.Context) {
-	user := ctx.Get("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	accessId := claims["accessId"].(string)
+	var accessId string
+	if ctx.Get("user") != nil {
+		user := ctx.Get("user").(*jwt.Token)
+		claims := user.Claims.(jwt.MapClaims)
+		accessId = claims["accessId"].(string)
+	} else {
+		accessId = "aaaaa"
+	}
 	ctx.Set("AccessId", accessId)
 }
 

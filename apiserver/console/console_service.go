@@ -107,7 +107,7 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.POST("/products", createProduct)
 	g.DELETE("/products/:productId", removeProduct)
 	g.PATCH("/products", updateProduct)
-	g.GET("/products/", getProductList)
+	g.GET("/products/all", getProductList)
 	g.GET("/products/:productId", getProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 	g.GET("/products/:productId/rules", getProductRules)

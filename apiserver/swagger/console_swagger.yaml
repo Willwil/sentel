@@ -173,6 +173,24 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Product"
+  /products/all:
+    get:
+      tags:
+      - "Product"
+      operationId: "getProductList"
+      responses:
+        200:
+          description: "response"
+          schema:
+            $ref: "#/definitions/ProductResponse"
+        401:
+          description: "The authorization token cannot be validated"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        404:
+          description: "The IoT hub instance or a device identity not exist"
+          schema:
+            $ref: "#/definitions/ApiResponse"
   /products/{productId}:
     get:
       tags:
