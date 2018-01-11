@@ -94,7 +94,7 @@ func createRule(ctx echo.Context) error {
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	// the rule should be stored to database at first
+	r.RuleAction = message.RuleActionCreate
 	executor.HandleRuleNotification(&r)
 	return ctx.JSON(http.StatusOK, &response{Success: true})
 }

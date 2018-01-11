@@ -17,7 +17,6 @@ import (
 	"os"
 
 	"github.com/cloustone/sentel/conductor/executor"
-	"github.com/cloustone/sentel/conductor/indicator"
 	"github.com/cloustone/sentel/conductor/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -35,7 +34,6 @@ func main() {
 	config, _ := createConfig(*configFile)
 	mgr, _ := service.NewServiceManager("conductor", config)
 	mgr.AddService(executor.ServiceFactory{})
-	mgr.AddService(indicator.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
@@ -44,10 +42,14 @@ func createConfig(fileName string) (config.Config, error) {
 	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-	options := map[string]map[string]string{}
-	options["conductor"] = make(map[string]string)
-	options["conductor"]["kafka"] = os.Getenv("KAFKA_HOST")
-	options["conductor"]["mongo"] = os.Getenv("MONGO_HOST")
-	config.AddConfig(options)
+	k := os.Getenv("KAFKA_HOST")
+	m := os.Getenv("MONGO_HOST")
+	if k != "" && m != "" {
+		options := map[string]map[string]string{}
+		options["conductor"] = make(map[string]string)
+		options["conductor"]["kafka"] = os.Getenv("KAFKA_HOST")
+		options["conductor"]["mongo"] = os.Getenv("MONGO_HOST")
+		config.AddConfig(options)
+	}
 	return config, nil
 }
