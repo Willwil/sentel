@@ -63,6 +63,8 @@ func New(c config.Config) (ClusterManager, error) {
 			return newK8sCluster(c)
 		case "swarm":
 			return newSwarmCluster(c)
+		case "local":
+			return newLocalCluster(c)
 		}
 	}
 	return nil, errors.New("iothub cluster manager initialize failed")
