@@ -51,7 +51,7 @@ func (p *localCluster) makePort() uint32 {
 	for i := 0; i < scope; i++ {
 		port := p.portIndex + uint32(rand.Intn(scope))
 		if _, found := p.ports[port]; !found {
-			return port
+			return p.portIndex + uint32(i)
 		}
 	}
 	return 0
