@@ -33,21 +33,6 @@ paths:
           description: "The body of the request is not valid"
           schema:
             $ref: "#/definitions/ApiResponse"
-    delete:
-      tags:
-      - "Tenant"
-      operationId: "deleteTenant"
-      parameters:
-      - in: "body"
-        name: "tenants"
-        required: false
-        schema:
-          $ref: "#/definitions/tenantAddRequest"
-      responses:
-        200:
-          description: "response"
-          schema:
-            $ref: "#/definitions/ApiResponse"
     patch:
       tags:
       - "Tenant"
@@ -63,6 +48,10 @@ paths:
           description: "response"
           schema:
             $ref: "#/definitions/tenantResponse"
+        400:
+          description: "The body of the request is not valid"
+          schema:
+            $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Tenant"
   /tenants/login:
     post:
@@ -98,19 +87,41 @@ paths:
         200:
           description: "successfully registered tenant"
       x-swagger-router-controller: "Tenant"
-  /tenants/{tenantsId}:
+  /tenants/{TenantId}:
     get:
       tags:
       - "Tenant"
       operationId: "getTenant"
       parameters:
-      - name: "tenantsId"
+      - name: "TenantId"
         in: "path"
         required: true
         type: "string"
       responses:
         200:
           description: "response"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        400:
+          description: "The body of the request is not valid"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+    delete:
+      tags:
+      - "Tenant"
+      operationId: "deleteTenant"
+      parameters:
+      - name: "TenantId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "response"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        400:
+          description: "The body of the request is not valid"
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Tenant"
@@ -130,6 +141,29 @@ paths:
           description: "response"
           schema:
             $ref: "#/definitions/ProductResponse"
+        400:
+          description: "The body of the request is not valid"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        401:
+          description: "The authorization token cannot be validated"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+    patch:
+      tags:
+      - "Product"
+      operationId: "updateProduct"
+      parameters:
+      - in: "body"
+        name: "product"
+        required: false
+        schema:
+          $ref: "#/definitions/productUpdateRequest"
+      responses:
+        200:
+          description: "response"
+          schema:
+            $ref: "#/definitions/ApiResponse"
         400:
           description: "The body of the request is not valid"
           schema:
@@ -162,7 +196,6 @@ paths:
           description: "The IoT hub instance or a device identity not exist"
           schema:
             $ref: "#/definitions/ApiResponse"
-      x-swagger-router-controller: "Product"
     delete:
       tags:
       - "Product"
@@ -181,33 +214,7 @@ paths:
           description: "The authorization token cannot be validated"
           schema:
             $ref: "#/definitions/ApiResponse"
-    patch:
-      tags:
-      - "Product"
-      operationId: "updateProduct"
-      parameters:
-      - name: "productId"
-        in: "path"
-        required: true
-        type: "string"
-      - in: "body"
-        name: "product"
-        required: false
-        schema:
-          $ref: "#/definitions/productUpdateRequest"
-      responses:
-        200:
-          description: "response"
-          schema:
-            $ref: "#/definitions/ApiResponse"
-        400:
-          description: "The body of the request is not valid"
-          schema:
-            $ref: "#/definitions/ApiResponse"
-        401:
-          description: "The authorization token cannot be validated"
-          schema:
-            $ref: "#/definitions/ApiResponse"
+      x-swagger-router-controller: "Product"
   /products/{productId}/devices:
     get:
       tags:
@@ -296,29 +303,6 @@ paths:
           description: "The authorization token cannot be validated"
           schema:
             $ref: "#/definitions/ApiResponse"
-    delete:
-      tags:
-      - "Device"
-      operationId: "removeDevice"
-      parameters:
-      - in: "body"
-        name: "device"
-        required: false
-        schema:
-          $ref: "#/definitions/Device"
-      responses:
-        200:
-          description: "response"
-          schema:
-            $ref: "#/definitions/ApiResponse"
-        400:
-          description: "The body of the request is not valid"
-          schema:
-            $ref: "#/definitions/ApiResponse"
-        401:
-          description: "The authorization token cannot be validated"
-          schema:
-            $ref: "#/definitions/ApiResponse"
     patch:
       tags:
       - "Device"
@@ -343,6 +327,61 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Device"
+  /products/{productId}/devices/{deviceId}:
+    get:
+      tags:
+      - "Device"
+      operationId: "getDevice"
+      parameters:
+      - name: "productId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "response"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        400:
+          description: "The body of the request is not valid"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        401:
+          description: "The authorization token cannot be validated"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+    delete:
+      tags:
+      - "Device"
+      operationId: "deleteDevice"
+      parameters:
+      - name: "productId"
+        in: "path"
+        required: true
+        type: "string"
+      - name: "deviceId"
+        in: "path"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "response"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        400:
+          description: "The body of the request is not valid"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+        401:
+          description: "The authorization token cannot be validated"
+          schema:
+            $ref: "#/definitions/ApiResponse"
+      x-swagger-router-controller: "Device"
+
   /devices/bulk:
     post:
       tags:
@@ -368,12 +407,16 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Device"
-  /devices/{deviceId}/shadow:
+  /products/{productId}/devices/{deviceId}/shadow:
     get:
       tags:
       - "Device"
       operationId: "getShadowDevice"
       parameters:
+      - name: "productId"
+        in: "path"
+        required: true
+        type: "string"
       - name: "deviceId"
         in: "path"
         required: true
@@ -392,15 +435,12 @@ paths:
           schema:
             $ref: "#/definitions/ApiResponse"
       x-swagger-router-controller: "Device"
+  /devices/shadow:
     patch:
       tags:
       - "Device"
       operationId: "updateShadowDevice"
       parameters:
-      - name: "deviceId"
-        in: "path"
-        required: true
-        type: "string"
       - in: "body"
         name: "device"
         required: false
@@ -419,6 +459,7 @@ paths:
           description: "The authorization token cannot be validated"
           schema:
             $ref: "#/definitions/ApiResponse"
+      x-swagger-router-controller: "Device"
   /rules:
     post:
       tags:

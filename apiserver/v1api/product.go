@@ -41,6 +41,7 @@ func CreateProduct(ctx echo.Context) error {
 	}
 
 	p := &registry.Product{
+		TenantId:    accessId,
 		ProductId:   ram.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
@@ -84,7 +85,7 @@ func RemoveProduct(ctx echo.Context) error {
 	if err := r.DeleteProduct(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	syncProduceMessage(ctx, message.TopicNameProduct,
+	asyncProduceMessage(ctx, message.TopicNameProduct,
 		&message.ProductTopic{
 			ProductId: productId,
 			Action:    message.ObjectActionDelete,
@@ -103,20 +104,18 @@ type productUpdateRequest struct {
 // updateProduct update product information in registry
 func UpdateProduct(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	productId := ctx.Param("productId")
-
-	// Authrozie
-	if err := base.Authorize(productId, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	req := productUpdateRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 
+	// Authrozie
+	if err := base.Authorize(req.ProductId, accessId, "w"); err != nil {
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
+	}
+
 	p := &registry.Product{
-		ProductId:   productId,
+		ProductId:   req.ProductId,
 		ProductName: req.ProductName,
 		TimeUpdated: time.Now(),
 		Description: req.Description,

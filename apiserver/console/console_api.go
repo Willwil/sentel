@@ -102,6 +102,11 @@ func getProductRules(ctx echo.Context) error {
 	setAccessId(ctx)
 	return v1api.GetProductRules(ctx)
 }
+func getDeviceStatics(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	setAccessId(ctx)
+	return v1api.GetDeviceStatics(ctx)
+}
 
 // Device
 func createDevice(ctx echo.Context) error {
@@ -138,11 +143,6 @@ func getShadowDevice(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	setAccessId(ctx)
 	return v1api.GetShadowDevice(ctx)
-}
-func getDevicesStatus(ctx echo.Context) error {
-	defer closeRegistry(ctx)
-	setAccessId(ctx)
-	return v1api.GetDevicesStatus(ctx)
 }
 
 // Rules

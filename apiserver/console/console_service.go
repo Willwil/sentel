@@ -99,28 +99,28 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.POST("/tenants", registerTenant)
 	g.POST("/tenants/login", loginTenant)
 	g.POST("/tenants/logout", logoutTenant)
-	g.DELETE("/tenants", deleteTenant)
+	g.DELETE("/tenants/:tenantId", deleteTenant)
 	g.GET("/tenants/:tenantId", getTenant)
 	g.PATCH("/tenants", updateTenant)
 
 	// Product
 	g.POST("/products", createProduct)
 	g.DELETE("/products/:productId", removeProduct)
-	g.PATCH("/products/:productId", updateProduct)
+	g.PATCH("/products", updateProduct)
 	g.GET("/products/", getProductList)
 	g.GET("/products/:productId", getProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 	g.GET("/products/:productId/rules", getProductRules)
-	g.GET("/products/:productId/devices/status", getDevicesStatus)
+	g.GET("/products/:productId/devices/statics", getDeviceStatics)
 
 	// Device
 	g.POST("/devices", createDevice)
-	g.GET("/devices/:deviceId", getOneDevice)
-	g.DELETE("/devices", removeDevice)
+	g.GET("/products/:productId/devices/:deviceId", getOneDevice)
+	g.DELETE("/products/:productId/devices/:deviceId", removeDevice)
 	g.PATCH("/devices", updateDevice)
 	g.POST("/devices/bulk", bulkRegisterDevices)
-	g.PATCH("/devices/:deviceId/shadow", updateShadowDevice)
-	g.GET("/devices/:deviceId/shardow", getShadowDevice)
+	g.PATCH("/devices/shadow", updateShadowDevice)
+	g.GET("/products/:productId/devices/:deviceId/shardow", getShadowDevice)
 
 	// Rules
 	g.POST("/rules", createRule)

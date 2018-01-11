@@ -93,22 +93,19 @@ func LogoutTenant(ctx echo.Context) error {
 
 // deleteTenant delete tenant
 func DeleteTenant(ctx echo.Context) error {
-	req := registerRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.TenantId == "" {
+	tenantId := ctx.Param("tenantId")
+	if tenantId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 
 	r := getRegistry(ctx)
-	if err := r.DeleteTenant(req.TenantId); err != nil {
+	if err := r.DeleteTenant(tenantId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{
-			TenantId: req.TenantId,
+			TenantId: tenantId,
 			Action:   message.ObjectActionDelete,
 		})
 
@@ -117,7 +114,10 @@ func DeleteTenant(ctx echo.Context) error {
 
 // getTenant return tenant's information
 func GetTenant(ctx echo.Context) error {
-	tenantId := ctx.Param("tenantIdd")
+	tenantId := ctx.Param("tenantId")
+	if tenantId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 	r := getRegistry(ctx)
 	if t, err := r.GetTenant(tenantId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})

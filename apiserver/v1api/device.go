@@ -55,25 +55,23 @@ func CreateDevice(ctx echo.Context) error {
 func RemoveDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	device := registry.Device{}
-	if err := ctx.Bind(&device); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if device.ProductId == "" || device.DeviceId == "" {
+	deviceId := ctx.Param("deviceId")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/devices"
+	objectName := productId + "/devices"
 	if err := base.Authorize(accessId, objectName, "w"); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r := getRegistry(ctx)
 	// Get device into registry, the created product
-	if err := r.DeleteDevice(device.ProductId, device.DeviceId); err != nil {
+	if err := r.DeleteDevice(productId, deviceId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	base.DestroyResource(device.DeviceId, accessId)
+	base.DestroyResource(deviceId, accessId)
 	return ctx.JSON(OK, apiResponse{})
 }
 
@@ -87,7 +85,7 @@ func GetOneDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
 	deviceId := ctx.Param("deviceId")
-	productId := ctx.QueryParam("productId")
+	productId := ctx.Param("productId")
 	if productId == "" || deviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
@@ -129,10 +127,6 @@ func UpdateDevice(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(OK, apiResponse{Result: &device})
-}
-
-func GetDevicesStatus(ctx echo.Context) error {
-	return nil
 }
 
 func BulkApplyDevices(ctx echo.Context) error {
