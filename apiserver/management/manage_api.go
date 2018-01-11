@@ -71,10 +71,10 @@ func getDeviceStatics(ctx echo.Context) error {
 	return v1api.GetDeviceStatics(ctx)
 }
 
-func registerDevice(ctx echo.Context) error {
+func createDevice(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	setAccessId(ctx)
-	return v1api.RegisterDevice(ctx)
+	return v1api.CreateDevice(ctx)
 }
 func bulkApplyDevices(ctx echo.Context) error {
 	defer closeRegistry(ctx)

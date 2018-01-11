@@ -24,7 +24,7 @@ import (
 )
 
 // RegisterDevice register a new device in IoT hub
-func RegisterDevice(ctx echo.Context) error {
+func CreateDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
 	device := registry.Device{}
@@ -52,7 +52,7 @@ func RegisterDevice(ctx echo.Context) error {
 }
 
 // Delete the identify of a device from the identity registry of an IoT Hub
-func DeleteDevice(ctx echo.Context) error {
+func RemoveDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
 	device := registry.Device{}
@@ -129,6 +129,10 @@ func UpdateDevice(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(OK, apiResponse{Result: &device})
+}
+
+func GetDevicesStatus(ctx echo.Context) error {
+	return nil
 }
 
 func BulkApplyDevices(ctx echo.Context) error {

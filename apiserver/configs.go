@@ -19,7 +19,7 @@ var defaultConfigs = map[string]map[string]string{
 		"version":  "v1",
 		"auth":     "none",
 		"mongo":    "localhost:27017",
-		"swagger":  "localhost:53384",
+		"swagger":  "0.0.0.0:53384",
 	},
 	"registry": {
 		"hosts":    "localhost:27017",
@@ -33,10 +33,10 @@ var defaultConfigs = map[string]map[string]string{
 		"require_certificate": "false",
 	},
 	"console": {
-		"listen": "localhost:4145",
+		"listen": "0.0.0.0:4145",
 	},
 	"management": {
-		"listen": "localhost:4146",
+		"listen": "0.0.0.0:4146",
 	},
 	"keystone": {
 		"hosts": "localhost:4147",

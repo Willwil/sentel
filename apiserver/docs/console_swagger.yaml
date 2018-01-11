@@ -276,7 +276,7 @@ paths:
     post:
       tags:
       - "Device"
-      operationId: "v1api.RegisterDevice"
+      operationId: "createDevice"
       parameters:
       - in: "body"
         name: "device"
@@ -299,7 +299,7 @@ paths:
     delete:
       tags:
       - "Device"
-      operationId: "v1api.DeleteDevice"
+      operationId: "removeDevice"
       parameters:
       - in: "body"
         name: "device"
@@ -322,7 +322,7 @@ paths:
     patch:
       tags:
       - "Device"
-      operationId: "v1api.UpdateDevice"
+      operationId: "updateDevice"
       parameters:
       - in: "body"
         name: "device"
@@ -347,7 +347,7 @@ paths:
     post:
       tags:
       - "Device"
-      operationId: "v1api.BulkRegisterDevices"
+      operationId: "bulkRegisterDevices"
       parameters:
       - in: "body"
         name: "device"
@@ -372,7 +372,7 @@ paths:
     get:
       tags:
       - "Device"
-      operationId: "v1api.GetShadowDevice"
+      operationId: "getShadowDevice"
       parameters:
       - name: "deviceId"
         in: "path"
@@ -395,7 +395,7 @@ paths:
     patch:
       tags:
       - "Device"
-      operationId: "v1api.UpdateShadowDevice"
+      operationId: "updateShadowDevice"
       parameters:
       - name: "deviceId"
         in: "path"
@@ -1012,14 +1012,14 @@ definitions:
   tenantAddRequest:
     type: "object"
     properties:
-      Name:
+      TenantId:
         type: "string"
       Password:
         type: "string"
   Tenant:
     type: "object"
     properties:
-      Name:
+      TenantId:
         type: "string"
       Password:
         type: "string"
@@ -1042,7 +1042,7 @@ definitions:
   productAddRequest:
     type: "object"
     properties:
-      Name:
+      ProductName:
         type: "string"
       Category:
         type: "string"
@@ -1051,9 +1051,9 @@ definitions:
   productUpdateRequest:
     type: "object"
     properties:
-      Id:
+      ProductId:
         type: "string"
-      Name:
+      ProductName:
         type: "string"
       Category:
         type: "string"
@@ -1062,9 +1062,11 @@ definitions:
   Product:
     type: "object"
     properties:
-      Id:
+      TenantId:
         type: "string"
-      Name:
+      ProductId:
+        type: "string"
+      ProductName:
         type: "string"
       Description:
         type: "string"
@@ -1073,8 +1075,6 @@ definitions:
       TimeModified:
         type: "string"
       Category:
-        type: "string"
-      ProductKey:
         type: "string"
   ProductResponse:
     type: "object"
