@@ -19,7 +19,6 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 
-	auth "github.com/cloustone/sentel/iothub/auth"
 	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -104,20 +103,14 @@ func (p *restapiService) Stop() {
 
 // addTenant
 type addTenantRequest struct {
-	auth.Options
+	TenantId string `json:"tenantId"`
 }
 
 func createTenant(ctx echo.Context) error {
-	// Authentication
-	req := addTenantRequest{}
+	req := &addTenantRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("addTenant failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	if err := auth.Authenticate(&req.Options); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-
 	if err := hub.CreateTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
@@ -126,18 +119,8 @@ func createTenant(ctx echo.Context) error {
 }
 
 func removeTenant(ctx echo.Context) error {
-	// Authentication
-	req := auth.Options{}
-	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("deleteProduct failed:%s", err.Error())
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-	if err := auth.Authenticate(&req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-
-	tid := ctx.Param("tid")
-	if err := hub.RemoveTenant(tid); err != nil {
+	tenantId := ctx.Param("tid")
+	if err := hub.RemoveTenant(tenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -145,8 +128,8 @@ func removeTenant(ctx echo.Context) error {
 }
 
 type addProductRequest struct {
-	auth.Options
-	Replicas int32 `json:"replicas"`
+	ProductId string `json:"productId"`
+	Replicas  int32  `json:"replicas"`
 }
 
 func createProduct(ctx echo.Context) error {
@@ -156,19 +139,14 @@ func createProduct(ctx echo.Context) error {
 		glog.Errorf("addProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	if err := auth.Authenticate(&req.Options); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
 
 	tid := ctx.Param("tid")
 	pid := req.ProductId
 	replicas := req.Replicas
-
 	if pid == "" || replicas == 0 {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid Parameter"})
 	}
 
-	glog.Infof("iothub: add product(%s, %s, %d)", tid, pid, replicas)
 	if brokers, err := hub.CreateProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
@@ -177,18 +155,6 @@ func createProduct(ctx echo.Context) error {
 }
 
 func removeProduct(ctx echo.Context) error {
-	glog.Infof("iothub: delete product(tid, %s)", ctx.Param("tid"))
-
-	// Authentication
-	req := &auth.Options{}
-	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("deleteProduct failed:%s", err.Error())
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-	if err := auth.Authenticate(req); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
-	}
-
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
 	if err := hub.RemoveProduct(tid, pid); err != nil {
