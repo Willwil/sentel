@@ -31,27 +31,16 @@ import (
 	"github.com/golang/glog"
 )
 
-type iothubService struct {
-	config     config.Config
-	waitgroup  sync.WaitGroup
-	clustermgr cluster.ClusterManager
-	tenants    map[string]*tenant
-	mutex      sync.Mutex
-	consumers  []sarama.Consumer
-	hubdb      *hubDB
-}
-type tenant struct {
-	tid       string
-	createdAt time.Time
-	products  map[string]*product
-	networkId string
-}
-
-type product struct {
-	pid         string
-	tid         string
-	createdAt   time.Time
-	serviceName string
+type hubService struct {
+	config      config.Config
+	waitgroup   sync.WaitGroup
+	clustermgr  cluster.ClusterManager
+	tenants     map[string]*tenant
+	mutex       sync.Mutex
+	consumers   []sarama.Consumer
+	hubdb       *hubDB
+	recoverChan chan interface{}
+	quitChan    chan interface{}
 }
 
 var (
@@ -71,23 +60,36 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		return nil, errors.New("service backend initialization failed")
 	}
 	clustermgr.SetServiceDiscovery(discovery)
-	return &iothubService{
-		config:     c,
-		waitgroup:  sync.WaitGroup{},
-		consumers:  []sarama.Consumer{},
-		clustermgr: clustermgr,
-		tenants:    make(map[string]*tenant),
-		mutex:      sync.Mutex{},
-		hubdb:      hubdb,
+	return &hubService{
+		config:      c,
+		waitgroup:   sync.WaitGroup{},
+		consumers:   []sarama.Consumer{},
+		clustermgr:  clustermgr,
+		tenants:     make(map[string]*tenant),
+		mutex:       sync.Mutex{},
+		hubdb:       hubdb,
+		recoverChan: make(chan interface{}),
+		quitChan:    make(chan interface{}),
 	}, nil
 }
 
 // Name
-func (p *iothubService) Name() string      { return SERVICE_NAME }
-func (p *iothubService) Initialize() error { return nil }
+func (p *hubService) Name() string { return SERVICE_NAME }
+
+// Initialize load iothub data and recovery from scratch
+func (p *hubService) Initialize() error {
+	tenants := p.hubdb.getAllTenants()
+	if len(tenants) > 0 {
+		for _, t := range tenants {
+			p.tenants[t.TenantId] = &t
+		}
+		p.recoverChan <- true
+	}
+	return nil
+}
 
 // Start
-func (p *iothubService) Start() error {
+func (p *hubService) Start() error {
 	tc, subError1 := p.subscribeTopic(message.TopicNameTenant)
 	pc, subError2 := p.subscribeTopic(message.TopicNameProduct)
 	if subError1 != nil || subError2 != nil {
@@ -95,19 +97,56 @@ func (p *iothubService) Start() error {
 	}
 	p.consumers = append(p.consumers, tc)
 	p.consumers = append(p.consumers, pc)
+	p.waitgroup.Add(1)
+	go func(p *hubService) {
+		defer p.waitgroup.Done()
+		for {
+			select {
+			case <-p.quitChan:
+			case <-p.recoverChan:
+				p.recoverStartup()
+			}
+		}
+	}(p)
 	return nil
 }
 
 // Stop
-func (p *iothubService) Stop() {
+func (p *hubService) Stop() {
+	p.quitChan <- true
 	for _, consumer := range p.consumers {
 		consumer.Close()
 	}
 	p.waitgroup.Wait()
+	close(p.quitChan)
+	close(p.recoverChan)
+}
+
+// recoverStartup load hub data and confirm service status
+func (p *hubService) recoverStartup() {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	retries := []*tenant{}
+	for tid, t := range p.tenants {
+		if t.ServiceState != cluster.ServiceStateNone {
+			if _, err := p.clustermgr.IntrospectService(tid); err != nil {
+				if _, err := p.clustermgr.CreateService(tid, t.InstanceReplicas); err != nil {
+					retries = append(retries, t)
+				}
+			}
+		}
+	}
+	// retry to recover again
+	for _, t := range retries {
+		if _, err := p.clustermgr.CreateService(t.TenantId, t.InstanceReplicas); err != nil {
+			glog.Error("service '%s' recovery failed", t.TenantId)
+		}
+	}
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *iothubService) subscribeTopic(topic string) (sarama.Consumer, error) {
+func (p *hubService) subscribeTopic(topic string) (sarama.Consumer, error) {
 	endpoint := p.config.MustString("iothub", "kafka")
 	glog.Infof("iothub get kafka service endpoint: %s", endpoint)
 
@@ -128,7 +167,7 @@ func (p *iothubService) subscribeTopic(topic string) (sarama.Consumer, error) {
 		} else {
 			p.waitgroup.Add(1)
 
-			go func(p *iothubService, pc sarama.PartitionConsumer) {
+			go func(p *hubService, pc sarama.PartitionConsumer) {
 				defer p.waitgroup.Done()
 				for msg := range pc.Messages() {
 					if err := p.handleNotification(topic, msg.Value); err != nil {
@@ -143,7 +182,7 @@ func (p *iothubService) subscribeTopic(topic string) (sarama.Consumer, error) {
 }
 
 // handleNotify handle notification from kafka
-func (p *iothubService) handleNotification(topic string, value []byte) error {
+func (p *hubService) handleNotification(topic string, value []byte) error {
 	glog.Infof("iothub receive message from topic '%s'", topic)
 	var err error
 	switch topic {
@@ -157,7 +196,7 @@ func (p *iothubService) handleNotification(topic string, value []byte) error {
 }
 
 // handleProductNotify handle notification about product from api server
-func (p *iothubService) handleProductNotify(value []byte) error {
+func (p *hubService) handleProductNotify(value []byte) error {
 	tf := message.ProductTopic{}
 	if err := json.Unmarshal(value, &tf); err != nil {
 		return err
@@ -173,7 +212,7 @@ func (p *iothubService) handleProductNotify(value []byte) error {
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (p *iothubService) handleTenantNotify(value []byte) error {
+func (p *hubService) handleTenantNotify(value []byte) error {
 	tf := message.TenantTopic{}
 	if err := json.Unmarshal(value, &tf); err != nil {
 		return err
@@ -189,20 +228,15 @@ func (p *iothubService) handleTenantNotify(value []byte) error {
 }
 
 // addTenant add tenant to iothub
-func (p *iothubService) createTenant(tid string) error {
+func (p *hubService) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
-		// Create netwrok for each tenant
-		networkId, err := p.clustermgr.CreateNetwork(tid)
-		if err != nil {
-			return err
-		}
 		p.tenants[tid] = &tenant{
-			tid:       tid,
-			createdAt: time.Now(),
-			products:  make(map[string]*product),
-			networkId: networkId,
+			TenantId:     tid,
+			CreatedAt:    time.Now(),
+			Products:     make(map[string]*product),
+			ServiceState: cluster.ServiceStateNone,
 		}
 		return nil
 	}
@@ -210,31 +244,31 @@ func (p *iothubService) createTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iothub
-func (p *iothubService) removeTenant(tid string) error {
+func (p *hubService) removeTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
 		return fmt.Errorf("tenant '%s' doesn't exist in iothub", tid)
 	}
 	t := p.tenants[tid]
-	// Remove network
-	if err := p.clustermgr.RemoveNetwork(t.networkId); err != nil {
-		return err
+	// remove service created early
+	if t.ServiceState != cluster.ServiceStateNone {
+		p.clustermgr.RemoveService(t.ServiceId)
 	}
 	// Delete all products
-	for name, _ := range t.products {
+	for name, _ := range t.Products {
 		if err := p.removeProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)
-			// TODO: trying to delete again if failure
 		}
 	}
+	// Remove service
 	delete(p.tenants, tid)
 	return nil
 }
 
-func (p *iothubService) isProductExist(tid, pid string) bool {
+func (p *hubService) isProductExist(tid, pid string) bool {
 	if t, found := p.tenants[tid]; found {
-		if _, found := t.products[pid]; found {
+		if _, found := t.Products[pid]; found {
 			return true
 		}
 	}
@@ -242,35 +276,39 @@ func (p *iothubService) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iothub
-func (p *iothubService) createProduct(tid, pid string, replicas int32) (string, error) {
+func (p *hubService) createProduct(tid, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
 		return "", fmt.Errorf("product '%s' of '%s' already exist in iothub", pid, tid)
 	}
-	serviceName, err := p.clustermgr.CreateService(tid, replicas)
-	if err != nil {
-		return "", err
-	} else {
-		t := p.tenants[tid]
-		product := &product{tid: tid, pid: pid, createdAt: time.Now(), serviceName: serviceName}
-		t.products[pid] = product
+	t := p.tenants[tid]
+	if t.ServiceState == cluster.ServiceStateNone {
+		serviceId, err := p.clustermgr.CreateService(tid, replicas)
+		if err != nil {
+			return "", err
+		}
+		t.ServiceState = cluster.ServiceStateStarted
+		t.ServiceId = serviceId
+		t.ServiceName = tid
 	}
-	return serviceName, nil
+	product := &product{TenantId: tid, ProductId: pid, CreatedAt: time.Now()}
+	t.Products[pid] = product
+	return t.ServiceId, nil
 }
 
 // deleteProduct delete product from iothub
-func (p *iothubService) removeProduct(tid string, pid string) error {
+func (p *hubService) removeProduct(tid string, pid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if !p.isProductExist(tid, pid) {
 		return fmt.Errorf("product '%s' of '%s' does not exist in iothub", pid, tid)
 	}
 	t := p.tenants[tid]
-	product := t.products[pid]
-	if err := p.clustermgr.RemoveService(product.serviceName); err != nil {
-		return err
+	delete(t.Products, pid)
+	if len(t.Products) == 0 {
+		p.clustermgr.RemoveService(t.ServiceId)
+		t.ServiceState = cluster.ServiceStateNone
 	}
-	delete(t.products, pid)
 	return nil
 }

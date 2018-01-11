@@ -13,6 +13,7 @@
 package cluster
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"path/filepath"
@@ -145,6 +146,9 @@ func (p *k8sCluster) UpdateService(serviceName string, replicas int32) error {
 		return updateErr
 	})
 	return retryErr
+}
+func (p *k8sCluster) IntrospectService(serviceId string) (ServiceSpec, error) {
+	return ServiceSpec{}, errors.New("no implemented")
 }
 
 func int32ptr(i int32) *int32 { return &i }

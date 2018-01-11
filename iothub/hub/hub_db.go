@@ -20,6 +20,23 @@ import (
 	mgo "gopkg.in/mgo.v2"
 )
 
+type tenant struct {
+	TenantId         string              `bson:"tenantId"`
+	Products         map[string]*product `bson:"products"`
+	ServiceName      string              `bson:"serviceName"`
+	ServiceId        string              `bson:"serviceId"`
+	ServiceState     string              `bson:"servcieState"`
+	InstanceReplicas int32               `bson:"instanceReplicas"`
+	NetworkId        string              `bson:"networkId"`
+	CreatedAt        time.Time           `bson:"createdAt"`
+}
+
+type product struct {
+	ProductId string    `bson:"productId"`
+	TenantId  string    `bson:"tenantId"`
+	CreatedAt time.Time `bson:"createdAt"`
+}
+
 type hubDB struct {
 	config  config.Config
 	session *mgo.Session
@@ -33,4 +50,29 @@ func newHubDB(c config.Config) (*hubDB, error) {
 		return nil, fmt.Errorf("iothub connect with mongo '%s'failed: '%s'", addr, err.Error())
 	}
 	return &hubDB{config: c, session: session}, nil
+}
+
+func (p *hubDB) getAllTenants() []tenant {
+	tenants := []tenant{}
+	return tenants
+}
+
+func (p *hubDB) createTenant(t *tenant) error {
+	return nil
+}
+
+func (p *hubDB) removeTenant(tid string) error {
+	return nil
+}
+
+func (p *hubDB) isProductExist(tid string, pid string) bool {
+	return false
+}
+
+func (p *hubDB) createProduct(pp *product) error {
+	return nil
+}
+
+func (p *hubDB) removeProduct(tid string, pid string) error {
+	return nil
 }

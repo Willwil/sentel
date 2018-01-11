@@ -192,3 +192,7 @@ func (p *swarmCluster) RemoveService(serviceName string) error {
 func (p *swarmCluster) UpdateService(serviceName string, replicas int32) error {
 	return nil
 }
+
+func (p *swarmCluster) IntrospectService(serviceId string) (ServiceSpec, error) {
+	return ServiceSpec{}, errors.New("no implemented")
+}

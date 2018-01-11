@@ -15,9 +15,9 @@ package hub
 import "github.com/cloustone/sentel/pkg/service"
 
 // GetiothubService return iothub service instance
-func getIothub() *iothubService {
+func getIothub() *hubService {
 	mgr := service.GetServiceManager()
-	return mgr.GetService(SERVICE_NAME).(*iothubService)
+	return mgr.GetService(SERVICE_NAME).(*hubService)
 }
 
 // createTenant add tenant to iothub

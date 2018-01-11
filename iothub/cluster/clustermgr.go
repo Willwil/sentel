@@ -19,6 +19,24 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
+const (
+	ServiceStateNone    = "none"
+	ServiceStateStarted = "started"
+	ServiceStateStoped  = "stoped"
+)
+
+type ServiceEndpoint struct {
+	VirtualIP string
+	Port      uint32
+}
+
+type ServiceSpec struct {
+	ServiceName  string
+	ServiceId    string
+	ServiceState string
+	Endpoints    []ServiceEndpoint
+}
+
 // ClusterManager is wrapper cluster manager built on top of swarm and kubernetes
 type ClusterManager interface {
 	// SetDiscoveryBackend set service discovery backend
@@ -30,9 +48,11 @@ type ClusterManager interface {
 	// CreateService create broker service for product
 	CreateService(tid string, replicas int32) (string, error)
 	// RemoveService remove broker service of product
-	RemoveService(serviceName string) error
+	RemoveService(serviceId string) error
 	// UpdateService updatet product' service about replicas and ...
-	UpdateService(serviceName string, replicas int32) error
+	UpdateService(serviceId string, replicas int32) error
+	// IntrospectService return service detail from cluster
+	IntrospectService(serviceId string) (ServiceSpec, error)
 }
 
 // New retrieve clustermanager instance connected with clustermgr
