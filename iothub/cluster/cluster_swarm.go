@@ -194,5 +194,22 @@ func (p *swarmCluster) UpdateService(serviceName string, replicas int32) error {
 }
 
 func (p *swarmCluster) IntrospectService(serviceId string) (ServiceSpec, error) {
-	return ServiceSpec{}, errors.New("no implemented")
+	serviceSpec := ServiceSpec{
+		ServiceId: serviceId,
+	}
+	if p.serviceDiscovery != nil {
+		service, _, err := p.client.ServiceInspectWithRaw(context.Background(), serviceId, types.ServiceInspectOptions{})
+		if err != nil {
+			return serviceSpec, fmt.Errorf("swarm failed to get service backend info for '%s'", serviceId)
+		}
+		serviceSpec.ServiceName = service.Spec.Annotations.Name
+		if len(service.Endpoint.Ports) == len(service.Endpoint.VirtualIPs) {
+			for index, ep := range service.Endpoint.Ports {
+				port := ep.PublishedPort
+				vip := service.Endpoint.VirtualIPs[index].Addr
+				serviceSpec.Endpoints = append(serviceSpec.Endpoints, ServiceEndpoint{VirtualIP: vip, Port: port})
+			}
+		}
+	}
+	return serviceSpec, nil
 }
