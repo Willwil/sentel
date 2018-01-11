@@ -24,7 +24,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/iothub/cluster"
-	sdb "github.com/cloustone/sentel/iothub/service-discovery"
+	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -55,7 +55,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	sarama.Logger = logger
 	clustermgr, cerr := cluster.New(c)
 	hubdb, nerr := newHubDB(c)
-	discovery, derr := sdb.New(c, sdb.BackendZookeeper)
+	discovery, derr := sd.New(c, sd.BackendZookeeper)
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}
@@ -238,6 +238,7 @@ func (p *hubService) createTenant(tid string) error {
 			Products:     make(map[string]*product),
 			ServiceState: cluster.ServiceStateNone,
 		}
+		p.hubdb.createTenant(p.tenants[tid])
 		return nil
 	}
 	return fmt.Errorf("tenant '%s' already existed in iothub", tid)
@@ -263,6 +264,7 @@ func (p *hubService) removeTenant(tid string) error {
 	}
 	// Remove service
 	delete(p.tenants, tid)
+	p.hubdb.removeTenant(tid)
 	return nil
 }
 
@@ -292,8 +294,9 @@ func (p *hubService) createProduct(tid, pid string, replicas int32) (string, err
 		t.ServiceId = serviceId
 		t.ServiceName = tid
 	}
-	product := &product{TenantId: tid, ProductId: pid, CreatedAt: time.Now()}
+	product := &product{ProductId: pid, CreatedAt: time.Now()}
 	t.Products[pid] = product
+	p.hubdb.createProduct(tid, pid)
 	return t.ServiceId, nil
 }
 
@@ -310,5 +313,6 @@ func (p *hubService) removeProduct(tid string, pid string) error {
 		p.clustermgr.RemoveService(t.ServiceId)
 		t.ServiceState = cluster.ServiceStateNone
 	}
+	p.hubdb.removeProduct(tid, pid)
 	return nil
 }

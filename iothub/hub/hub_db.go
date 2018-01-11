@@ -18,6 +18,7 @@ import (
 
 	"github.com/cloustone/sentel/pkg/config"
 	mgo "gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 type tenant struct {
@@ -33,7 +34,6 @@ type tenant struct {
 
 type product struct {
 	ProductId string    `bson:"productId"`
-	TenantId  string    `bson:"tenantId"`
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
@@ -41,6 +41,11 @@ type hubDB struct {
 	config  config.Config
 	session *mgo.Session
 }
+
+const (
+	dbnameIothub    = "iothub"
+	collectionAdmin = "admin"
+)
 
 func newHubDB(c config.Config) (*hubDB, error) {
 	// try connect with mongo db
@@ -54,25 +59,30 @@ func newHubDB(c config.Config) (*hubDB, error) {
 
 func (p *hubDB) getAllTenants() []tenant {
 	tenants := []tenant{}
+	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+	c.Find(bson.M{}).All(&tenants)
 	return tenants
 }
 
 func (p *hubDB) createTenant(t *tenant) error {
-	return nil
+	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+	return c.Insert(t)
 }
 
 func (p *hubDB) removeTenant(tid string) error {
-	return nil
+	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+	return c.Remove(bson.M{"tenantId": tid})
 }
 
-func (p *hubDB) isProductExist(tid string, pid string) bool {
-	return false
-}
-
-func (p *hubDB) createProduct(pp *product) error {
-	return nil
+func (p *hubDB) createProduct(tid string, pid string) error {
+	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+	pp := product{ProductId: pid, CreatedAt: time.Now()}
+	return c.Update(bson.M{"tenantId": tid},
+		bson.M{"$addToSet": bson.M{"products": pp}})
 }
 
 func (p *hubDB) removeProduct(tid string, pid string) error {
-	return nil
+	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+	return c.Update(bson.M{"tenantId": tid},
+		bson.M{"$pull": bson.M{"products": bson.M{"productId": pid}}})
 }
