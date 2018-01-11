@@ -15,15 +15,12 @@ package restapi
 import (
 	"net/http"
 	"sync"
-	"time"
-
-	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/iothub/hub"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
-	"github.com/golang/glog"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type restapiService struct {
@@ -47,16 +44,6 @@ type response struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	// check mongo db configuration
-	hosts := c.MustString("iothub", "mongo")
-	timeout := c.MustInt("api", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	session.Close()
-
-	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
@@ -64,6 +51,10 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 			return h(cc)
 		}
 	})
+	e.Use(middleware.RequestID())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
+	}))
 
 	// Tenant
 	e.POST("iothub/api/v1/tenants", createTenant)
@@ -98,6 +89,7 @@ func (p *restapiService) Start() error {
 
 // Stop
 func (p *restapiService) Stop() {
+	p.echo.Close()
 	p.waitgroup.Wait()
 }
 
@@ -136,7 +128,6 @@ func createProduct(ctx echo.Context) error {
 	// Authentication
 	req := &addProductRequest{}
 	if err := ctx.Bind(&req); err != nil {
-		glog.Errorf("addProduct failed:%s", err.Error())
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
 

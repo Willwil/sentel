@@ -7,7 +7,7 @@
 	},
 	"item": [
 		{
-			"name": "localhost:50052/iothub/v1/api/tenants",
+			"name": "Tenant Create Request",
 			"request": {
 				"auth": {
 					"type": "bearer",
@@ -28,7 +28,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\"tenantId\": \"jenson\",\n\"tenantKey\": \"zzz\",\n\"productKey\": \"ssddn\",\n\"securityMethod\":3,\n\"signMethod\":\"sha1mac\",\n\"timestamp\":\"1123\",\n\"password\":\"xxx\"\n}"
+					"raw": "{\n\"tenantId\": \"jenson\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50052/iothub/api/v1/tenants",
@@ -48,7 +48,7 @@
 			"response": []
 		},
 		{
-			"name": "localhost:50052/iothub/v1/api/tenants/zuoyl/products",
+			"name": "Product Create Request",
 			"request": {
 				"auth": {
 					"type": "bearer",
@@ -69,7 +69,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\"tenantId\": \"jenson\",\n\"tenantKey\": \"zzz\",\n\"productId\":\"p1\",\n\"productKey\": \"ssddn\",\n\"securityMethod\":3,\n\"signMethod\":\"sha1mac\",\n\"timestamp\":\"1123\",\n\"password\":\"xxx\",\n\"replicas\":2\n}"
+					"raw": "{\n\"tenantId\": \"jenson\",\n\"productId\":\"pp-xx-yy\",\n\"replicas\":2\n}"
 				},
 				"url": {
 					"raw": "localhost:50052/iothub/api/v1/tenants/zuoyl/products",
@@ -87,6 +87,72 @@
 					]
 				},
 				"description": "add tenant to iothub"
+			},
+			"response": []
+		},
+		{
+			"name": "Remove Tenant",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50052/iothub/api/v1/tenants/:tenantId",
+					"host": [
+						"localhost"
+					],
+					"port": "50052",
+					"path": [
+						"iothub",
+						"api",
+						"v1",
+						"tenants",
+						":tenantId"
+					],
+					"variable": [
+						{
+							"key": "tenantId",
+							"value": "jenson"
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "Remove Product",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "localhost:50052/iothub/api/v1/tenants/:tenantId/products/:productId",
+					"host": [
+						"localhost"
+					],
+					"port": "50052",
+					"path": [
+						"iothub",
+						"api",
+						"v1",
+						"tenants",
+						":tenantId",
+						"products",
+						":productId"
+					],
+					"variable": [
+						{
+							"key": "tenantId",
+							"value": "jenson"
+						},
+						{
+							"key": "productId",
+							"value": "pp-xx-yy"
+						}
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		}
