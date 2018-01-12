@@ -334,6 +334,13 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 }
 
 // Rule
+// GetRulesWithStatus return all rules in registry
+func (r *Registry) GetRulesWithStatus(status string) []Rule {
+	rules := []Rule{}
+	c := r.db.C(dbNameRules)
+	c.Find(bson.M{"status": status}).All(&rules)
+	return rules
+}
 
 // RegisterRule add a new rule into registry
 func (r *Registry) RegisterRule(rule *Rule) error {

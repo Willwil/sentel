@@ -17,7 +17,6 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/pkg/config"
@@ -25,18 +24,18 @@ import (
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
-	"gopkg.in/mgo.v2"
 )
 
 // executorService manage all rule engine and execute rule
 type executorService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	quitChan  chan interface{}
-	ruleChan  chan ruleContext
-	engines   map[string]*ruleEngine
-	mutex     sync.Mutex
-	consumer  sarama.Consumer
+	config       config.Config
+	waitgroup    sync.WaitGroup
+	quitChan     chan interface{}
+	ruleChan     chan ruleContext
+	engines      map[string]*ruleEngine
+	mutex        sync.Mutex
+	consumer     sarama.Consumer
+	recoveryChan chan interface{}
 }
 
 type ruleContext struct {
@@ -50,28 +49,35 @@ type ServiceFactory struct{}
 
 // New create executor service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	// try connect with mongo db
-	hosts := c.MustString("conductor", "mongo")
-	timeout := c.MustInt("conductor", "connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	session.Close()
-
 	return &executorService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		quitChan:  make(chan interface{}),
-		ruleChan:  make(chan ruleContext),
-		engines:   make(map[string]*ruleEngine),
-		mutex:     sync.Mutex{},
+		config:       c,
+		waitgroup:    sync.WaitGroup{},
+		quitChan:     make(chan interface{}),
+		ruleChan:     make(chan ruleContext),
+		engines:      make(map[string]*ruleEngine),
+		mutex:        sync.Mutex{},
+		recoveryChan: make(chan interface{}),
 	}, nil
 }
 
 // Name
-func (p *executorService) Name() string      { return SERVICE_NAME }
-func (p *executorService) Initialize() error { return nil }
+func (p *executorService) Name() string { return SERVICE_NAME }
+
+// Initialize check all rule's state and recover if rule is started
+func (p *executorService) Initialize() error {
+	// try connect with registry
+	r, err := registry.New("conductor", p.config)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	// TODO: opening registry twice and read all rules into service is not good here
+	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
+	if len(rules) > 0 {
+		p.recoveryChan <- true
+	}
+	return nil
+}
 
 // Start
 func (p *executorService) Start() error {
@@ -87,6 +93,8 @@ func (p *executorService) Start() error {
 		select {
 		case ctx := <-s.ruleChan:
 			s.handleRule(ctx)
+		case <-s.recoveryChan:
+			s.recovery()
 		case <-s.quitChan:
 			break
 		}
@@ -103,11 +111,33 @@ func (p *executorService) Stop() {
 	p.waitgroup.Wait()
 	close(p.quitChan)
 	close(p.ruleChan)
+	close(p.recoveryChan)
 
 	// stop all ruleEngine
 	for _, engine := range p.engines {
 		if engine != nil {
 			engine.stop()
+		}
+	}
+}
+
+// recovery restart rules after conductor is restarted
+func (p *executorService) recovery() {
+	r, _ := registry.New("conductor", p.config)
+	defer r.Close()
+	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
+	for _, r := range rules {
+		if r.Status == registry.RuleStatusStarted {
+			ctx := ruleContext{
+				action: message.RuleActionStart,
+				rule: &registry.Rule{
+					ProductId: r.ProductId,
+					RuleName:  r.RuleName,
+				},
+			}
+			if err := p.handleRule(ctx); err != nil {
+				glog.Errorf("product '%s', rule '%s'recovery failed", r.ProductId, r.RuleName)
+			}
 		}
 	}
 }
