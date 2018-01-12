@@ -16,9 +16,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/conductor/executor"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
 )
@@ -90,37 +90,37 @@ func (p *restapiService) Stop() {
 }
 
 func createRule(ctx echo.Context) error {
-	r := message.RuleTopic{}
+	r := engine.RuleContext{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.RuleAction = message.RuleActionCreate
-	executor.HandleRuleNotification(&r)
-	return ctx.JSON(http.StatusOK, &response{Success: true})
+	r.Action = engine.RuleCreate
+	executor.HandleRuleNotification(r)
+	return ctx.JSON(http.StatusOK, response{})
 }
 func updateRule(ctx echo.Context) error {
-	r := message.RuleTopic{}
+	r := engine.RuleContext{}
 	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.RuleAction = message.RuleActionUpdate
-	executor.HandleRuleNotification(&r)
-	return ctx.JSON(http.StatusOK, &response{Success: true})
+	r.Action = engine.RuleUpdate
+	executor.HandleRuleNotification(r)
+	return ctx.JSON(http.StatusOK, response{})
 }
 
 func removeRule(ctx echo.Context) error {
-	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionRemove}
-	executor.HandleRuleNotification(&r)
-	return ctx.JSON(http.StatusOK, &response{Success: true})
+	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleRemove}
+	executor.HandleRuleNotification(r)
+	return ctx.JSON(http.StatusOK, response{})
 }
 
 func startRule(ctx echo.Context) error {
-	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionStart}
-	executor.HandleRuleNotification(&r)
-	return ctx.JSON(http.StatusOK, &response{Success: true})
+	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleStart}
+	executor.HandleRuleNotification(r)
+	return ctx.JSON(http.StatusOK, response{})
 }
 func stopRule(ctx echo.Context) error {
-	r := message.RuleTopic{RuleName: ctx.Param("ruleName"), RuleAction: message.RuleActionStop}
-	executor.HandleRuleNotification(&r)
-	return ctx.JSON(http.StatusOK, &response{Success: true})
+	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleStop}
+	executor.HandleRuleNotification(r)
+	return ctx.JSON(http.StatusOK, response{})
 }

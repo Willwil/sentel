@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -31,16 +32,11 @@ type executorService struct {
 	config       config.Config
 	waitgroup    sync.WaitGroup
 	quitChan     chan interface{}
-	ruleChan     chan ruleContext
-	engines      map[string]*ruleEngine
+	ruleChan     chan engine.RuleContext
+	engines      map[string]*engine.RuleEngine
 	mutex        sync.Mutex
 	consumer     sarama.Consumer
 	recoveryChan chan interface{}
-}
-
-type ruleContext struct {
-	rule   *registry.Rule
-	action string
 }
 
 const SERVICE_NAME = "executor"
@@ -53,8 +49,8 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
 		quitChan:     make(chan interface{}),
-		ruleChan:     make(chan ruleContext),
-		engines:      make(map[string]*ruleEngine),
+		ruleChan:     make(chan engine.RuleContext),
+		engines:      make(map[string]*engine.RuleEngine),
 		mutex:        sync.Mutex{},
 		recoveryChan: make(chan interface{}),
 	}, nil
@@ -116,7 +112,7 @@ func (p *executorService) Stop() {
 	// stop all ruleEngine
 	for _, engine := range p.engines {
 		if engine != nil {
-			engine.stop()
+			engine.Stop()
 		}
 	}
 }
@@ -128,12 +124,10 @@ func (p *executorService) recovery() {
 	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
-			ctx := ruleContext{
-				action: message.RuleActionStart,
-				rule: &registry.Rule{
-					ProductId: r.ProductId,
-					RuleName:  r.RuleName,
-				},
+			ctx := engine.RuleContext{
+				Action:    message.RuleActionStart,
+				ProductId: r.ProductId,
+				RuleName:  r.RuleName,
 			}
 			if err := p.handleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery failed", r.ProductId, r.RuleName)
@@ -143,30 +137,29 @@ func (p *executorService) recovery() {
 }
 
 // handleRule process incomming rule
-func (p *executorService) handleRule(ctx ruleContext) error {
-	r := ctx.rule
+func (p *executorService) handleRule(ctx engine.RuleContext) error {
 	// Get engine instance according to product id
-	if _, ok := p.engines[r.ProductId]; !ok { // not found
-		engine, err := newRuleEngine(p.config, r.ProductId)
+	if _, ok := p.engines[ctx.ProductId]; !ok { // not found
+		ruleEngine, err := engine.NewRuleEngine(p.config, ctx.ProductId)
 		if err != nil {
-			glog.Errorf("Failed to create rule engint for product(%s)", r.ProductId)
+			glog.Errorf("Failed to create rule engint for product(%s)", ctx.ProductId)
 			return err
 		}
-		p.engines[r.ProductId] = engine
+		p.engines[ctx.ProductId] = ruleEngine
 	}
-	engine := p.engines[r.ProductId]
+	r := p.engines[ctx.ProductId]
 
-	switch ctx.action {
-	case message.RuleActionCreate:
-		return engine.createRule(r)
-	case message.RuleActionRemove:
-		return engine.removeRule(r)
-	case message.RuleActionUpdate:
-		return engine.updateRule(r)
-	case message.RuleActionStart:
-		return engine.startRule(r)
-	case message.RuleActionStop:
-		return engine.stopRule(r)
+	switch ctx.Action {
+	case engine.RuleCreate:
+		return r.CreateRule(ctx)
+	case engine.RuleRemove:
+		return r.RemoveRule(ctx)
+	case engine.RuleUpdate:
+		return r.UpdateRule(ctx)
+	case engine.RuleStart:
+		return r.StartRule(ctx)
+	case engine.RuleStop:
+		return r.StopRule(ctx)
 	}
 	return nil
 }
@@ -212,36 +205,32 @@ func (p *executorService) handleNotifications(topic string, value []byte) error 
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
 		return err
 	}
-	// Check action's validity
+	action := ""
 	switch r.RuleAction {
 	case message.RuleActionCreate:
+		action = engine.RuleCreate
 	case message.RuleActionRemove:
+		action = engine.RuleRemove
 	case message.RuleActionUpdate:
+		action = engine.RuleUpdate
 	case message.RuleActionStart:
+		action = engine.RuleStart
 	case message.RuleActionStop:
+		action = engine.RuleStop
 	default:
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
 	}
-	ctx := ruleContext{
-		action: r.RuleAction,
-		rule: &registry.Rule{
-			ProductId: r.ProductId,
-			RuleName:  r.RuleName,
-		},
+	ctx := engine.RuleContext{
+		Action:    action,
+		ProductId: r.ProductId,
+		RuleName:  r.RuleName,
 	}
 	p.ruleChan <- ctx
 	return nil
 }
 
-func HandleRuleNotification(r *message.RuleTopic) {
+func HandleRuleNotification(ctx engine.RuleContext) {
 	mgr := service.GetServiceManager()
 	executor := mgr.GetService(SERVICE_NAME).(*executorService)
-	ctx := ruleContext{
-		action: r.RuleAction,
-		rule: &registry.Rule{
-			ProductId: r.ProductId,
-			RuleName:  r.RuleName,
-		},
-	}
 	executor.ruleChan <- ctx
 }

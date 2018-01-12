@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package engine
 
 import (
 	"github.com/cloustone/sentel/broker/event"
