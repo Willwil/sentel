@@ -17,7 +17,7 @@ var defaultConfigs = map[string]map[string]string{
 		"loglevel": "debug",
 		"kafka":    "localhost:9092",
 		"version":  "v1",
-		"auth":     "none",
+		"auth":     "jwt",
 		"mongo":    "localhost:27017",
 		"swagger":  "0.0.0.0:53384",
 	},

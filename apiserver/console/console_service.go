@@ -83,15 +83,14 @@ func (p *consoleService) initialize(c config.Config) error {
 	})
 
 	// Initialize middleware
-	// p.echo.Use(middleware.ApiVersion(p.version))
-	p.echo.Use(middleware.RegistryWithConfig(c))
+	//Cross-Origin
+	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
+
 	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
-
-	//Cross-Origin
-	p.echo.Use(mw.CORSWithConfig(mw.DefaultCORSConfig))
+	p.echo.Use(middleware.RegistryWithConfig(c))
 
 	// Api for console
 	g := p.echo.Group("/iot/api/v1/console")
