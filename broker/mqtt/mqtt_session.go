@@ -408,11 +408,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 			}
 			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
-				event.Notify(&event.Event{
-					EventHeader: event.EventHeader{
-						Type:     event.SessionResume,
-						ClientId: clientId,
-					}})
+				event.Notify(event.SessionResume, clientId, nil)
 			}
 		}
 	}
@@ -441,12 +437,10 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	p.setSessionState(mqttStateConnected)
 	err = p.sendConnAck(uint8(conack), CONNACK_ACCEPTED)
 	sm.RegisterSession(p)
-	event.Notify(&event.Event{
-		EventHeader: event.EventHeader{
-			Type:     event.SessionCreate,
-			ClientId: p.clientId,
-		},
-		Detail: &event.SessionCreateDetail{Persistent: (cleanSession == 0)}})
+	event.Notify(event.SessionCreate, p.clientId,
+		&event.SessionCreateDetail{
+			Persistent: (cleanSession == 0),
+		})
 
 	// start keep alive timer
 	if p.keepalive > 0 {
@@ -489,18 +483,15 @@ func (p *mqttSession) disconnect(reason error) {
 		glog.Infof("mqtt session '%s' is disconnecting...", p.clientId)
 		// Publish will message if session is not normoally disconnected
 		if reason != nil && p.willMsg != nil {
-			event.Notify(&event.Event{
-				EventHeader: event.EventHeader{
-					Type: event.TopicPublish, ClientId: p.clientId,
-				},
-				Detail: &event.TopicPublishDetail{
+			event.Notify(event.TopicPublish, p.clientId,
+				&event.TopicPublishDetail{
 					Topic:   p.willMsg.Topic,
 					Payload: p.willMsg.Payload,
 					Qos:     p.willMsg.Qos,
 					Retain:  p.willMsg.Retain,
-				}})
+				})
 		}
-		event.Notify(&event.Event{EventHeader: event.EventHeader{Type: event.SessionDestroy, ClientId: p.clientId}})
+		event.Notify(event.SessionDestroy, p.clientId, nil)
 		p.setSessionState(mqttStateDisconnected)
 		if p.aliveTimer != nil {
 			p.aliveTimer.Stop()
@@ -548,12 +539,8 @@ func (p *mqttSession) handleSubscribe(packet *mqttPacket) error {
 
 		topic = p.mountpoint + topic
 		if qos != 0x80 {
-			event.Notify(&event.Event{
-				EventHeader: event.EventHeader{
-					Type:     event.TopicSubscribe,
-					ClientId: p.clientId,
-				},
-				Detail: &event.TopicSubscribeDetail{Topic: topic, Qos: qos, Retain: true}})
+			event.Notify(event.TopicSubscribe, p.clientId,
+				&event.TopicSubscribeDetail{Topic: topic, Qos: qos, Retain: true})
 		}
 		payload = append(payload, qos)
 	}
@@ -582,12 +569,7 @@ func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
 		if err := checkTopicValidity(topic); err != nil {
 			return fmt.Errorf("Invalid unsubscription string from %s, disconnecting", p.clientId)
 		}
-		event.Notify(&event.Event{
-			EventHeader: event.EventHeader{
-				Type:     event.TopicUnsubscribe,
-				ClientId: p.clientId,
-			},
-			Detail: &event.TopicUnsubscribeDetail{Topic: topic}})
+		event.Notify(event.TopicUnsubscribe, p.clientId, &event.TopicUnsubscribeDetail{Topic: topic})
 	}
 
 	return p.sendCommandWithPacketId(UNSUBACK, pid, false)
@@ -656,15 +638,9 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 
 	switch qos {
 	case 0:
-		event.Notify(&event.Event{
-			EventHeader: event.EventHeader{
-				Type:     event.TopicPublish,
-				ClientId: p.clientId,
-			},
-			Detail: &detail,
-		})
+		event.Notify(event.TopicPublish, p.clientId, &detail)
 	case 1:
-		event.Notify(&event.Event{EventHeader: event.EventHeader{Type: event.TopicPublish, ClientId: p.clientId}, Detail: &detail})
+		event.Notify(event.TopicPublish, p.clientId, &detail)
 		err = p.sendPubAck(pid)
 	case 2:
 		err = errors.New("MQTT qos 2 is not supported now")

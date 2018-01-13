@@ -24,24 +24,31 @@ import (
 type EventHandler func(e *Event, ctx interface{})
 
 // Notify publish event to event service
-func Notify(e *Event) {
-	glog.Infof("event '%s' is notified", NameOfEvent(e))
-	e.BrokerId = base.GetBrokerId()
+func Notify(event uint32, clientId string, detail interface{}) {
+	glog.Infof("event '%s' is notified", NameOfEvent(event))
+	e := Event{
+		EventHeader: EventHeader{
+			Type:     event,
+			ClientId: clientId,
+			BrokerId: base.GetBrokerId(),
+		},
+		Detail: detail,
+	}
 	service := base.GetService(ServiceName).(*eventService)
-	service.notify(e)
+	service.notify(&e)
 }
 
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 	glog.Infof("service '%s' subscribed event '%s'",
-		ctx.(service.Service).Name(), NameOfEvent(&Event{EventHeader: EventHeader{Type: event}}))
+		ctx.(service.Service).Name(), NameOfEvent(event))
 	service := base.GetService(ServiceName).(*eventService)
 	service.subscribe(event, handler, ctx)
 }
 
 // NameOfEvent return event name
-func NameOfEvent(e *Event) string {
-	switch e.Type {
+func NameOfEvent(t uint32) string {
+	switch t {
 	case SessionCreate:
 		return "SessionCreate"
 	case SessionDestroy:
@@ -65,5 +72,5 @@ func NameOfEvent(e *Event) string {
 
 // FullNameOfEvent return event information
 func FullNameOfEvent(e *Event) string {
-	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e), e.BrokerId, e.ClientId)
+	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e.Type), e.BrokerId, e.ClientId)
 }
