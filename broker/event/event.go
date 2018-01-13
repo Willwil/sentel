@@ -30,20 +30,21 @@ const (
 	AuthChange       = 8
 )
 
-type EventCommon struct {
+type EventHeader struct {
 	message.TopicBase
 	BrokerId string `json:"brokerId"` // Broker identifier where event come from
 	Type     uint32 `json:"type"`     // Event type
 	ClientId string `json:"clientId"` // Client identifier where event come from
 }
+
 type Event struct {
-	Common EventCommon
+	EventHeader
 	Detail interface{} `json:"detail"` // Event detail
 }
 
-type MqttEvent struct {
-	Common json.RawMessage `json:"common"`
-	Detail json.RawMessage `json:"detail"`
+type RawEvent struct {
+	Header  json.RawMessage `json:"header"`
+	Payload json.RawMessage `json:"payload"`
 }
 
 type SessionCreateDetail struct {

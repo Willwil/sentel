@@ -72,7 +72,7 @@ func NewRuleEngine(c config.Config, productId string) (*RuleEngine, error) {
 	}, nil
 }
 
-// start will start the rule engine, receiving topic and rule
+// Start will start the rule engine, receiving topic and rule
 func (p *RuleEngine) Start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
@@ -85,6 +85,14 @@ func (p *RuleEngine) Start() error {
 		p.started = true
 	}
 	return nil
+}
+
+// Stop will stop the engine
+func (p *RuleEngine) Stop() {
+	if p.consumer != nil {
+		p.consumer.Close()
+	}
+	p.wg.Wait()
 }
 
 // subscribeTopc subscribe topics from apiserver
@@ -113,7 +121,7 @@ func (p *RuleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 		go func(sarama.PartitionConsumer) {
 			defer p.wg.Done()
 			for msg := range pc.Messages() {
-				obj := &event.MqttEvent{}
+				obj := &event.RawEvent{}
 				if err := json.Unmarshal(msg.Value, obj); err == nil {
 					p.handleKafkaEvent(obj)
 				}
@@ -124,33 +132,25 @@ func (p *RuleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 }
 
 // handleEvent handle mqtt event from other service
-func (p *RuleEngine) handleKafkaEvent(me *event.MqttEvent) error {
+func (p *RuleEngine) handleKafkaEvent(re *event.RawEvent) error {
 	e := &event.Event{}
-	if err := json.Unmarshal(me.Common, &e.Common); err != nil {
+	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
 		return fmt.Errorf("conductor unmarshal event common failed:%s", err.Error())
 	}
-	switch e.Common.Type {
+	switch e.Type {
 	case event.SessionCreate:
 	case event.SessionDestroy:
 	case event.TopicSubscribe:
 	case event.TopicUnsubscribe:
 	case event.TopicPublish:
 		detail := event.TopicPublishDetail{}
-		if err := json.Unmarshal(me.Detail, &detail); err != nil {
+		if err := json.Unmarshal(re.Payload, &detail); err != nil {
 			return fmt.Errorf("conductor unmarshal event detail failed:%s", err.Error())
 		}
 		e.Detail = detail
 		return p.execute(e)
 	}
 	return nil
-}
-
-// stop will stop the engine
-func (p *RuleEngine) Stop() {
-	if p.consumer != nil {
-		p.consumer.Close()
-	}
-	p.wg.Wait()
 }
 
 // getRuleObject get all rule's information from backend database
@@ -163,7 +163,7 @@ func (p *RuleEngine) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 	}
 }
 
-// createRule add a rule received from apiserver to this engine
+// CreateRule add a rule received from apiserver to this engine
 func (p *RuleEngine) CreateRule(rc RuleContext) error {
 	glog.Infof("rule:%s is added", rc.RuleName)
 	obj, err := p.getRuleObject(rc)
@@ -179,7 +179,7 @@ func (p *RuleEngine) CreateRule(rc RuleContext) error {
 	return nil
 }
 
-// removeRule remove a rule from current rule engine
+// RemoveRule remove a rule from current rule engine
 func (p *RuleEngine) RemoveRule(rc RuleContext) error {
 	glog.Infof("Rule:%s is deleted", rc.RuleName)
 
@@ -193,7 +193,7 @@ func (p *RuleEngine) RemoveRule(rc RuleContext) error {
 	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
 }
 
-// updateRule update rule in engine
+// UpdateRule update rule in engine
 func (p *RuleEngine) UpdateRule(rc RuleContext) error {
 	glog.Infof("Rule:%s is updated", rc.RuleName)
 
@@ -212,7 +212,7 @@ func (p *RuleEngine) UpdateRule(rc RuleContext) error {
 	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
 }
 
-// startRule start rule in engine
+// StartRule start rule in engine
 func (p *RuleEngine) StartRule(rc RuleContext) error {
 	glog.Infof("rule:%s is started", rc.RuleName)
 
@@ -235,7 +235,7 @@ func (p *RuleEngine) StartRule(rc RuleContext) error {
 	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
 }
 
-// stopRule stop rule in engine
+// StopRule stop rule in engine
 func (p *RuleEngine) StopRule(rc RuleContext) error {
 	glog.Infof("rule:%s is stoped", rc.RuleName)
 

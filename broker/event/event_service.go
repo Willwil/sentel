@@ -116,7 +116,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 }
 
 func (p *eventService) nameOfEventBus(e *Event) string {
-	switch e.Common.Type {
+	switch e.Type {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
 		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant)
 	default:
@@ -162,9 +162,9 @@ func (p *eventService) subscribeKafkaTopic() error {
 					defer p.waitgroup.Done()
 					for msg := range pc.Messages() {
 						glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
-						obj := &MqttEvent{}
-						if err := json.Unmarshal(msg.Value, obj); err == nil {
-							p.handleKafkaEvent(obj)
+						re := &RawEvent{}
+						if err := json.Unmarshal(msg.Value, re); err == nil {
+							p.handleKafkaEvent(re)
 						}
 					}
 					glog.Errorf("event service receive message stop")
@@ -183,8 +183,8 @@ func (p *eventService) Start() error {
 			case e := <-p.eventChan:
 				// When event is received from local service, we should
 				// transeverse other service to process it at first
-				if _, found := p.subscribers[e.Common.Type]; found {
-					subscribers := p.subscribers[e.Common.Type]
+				if _, found := p.subscribers[e.Type]; found {
+					subscribers := p.subscribers[e.Type]
 					for _, subscriber := range subscribers {
 						subscriber.handler(e, subscriber.ctx)
 					}
@@ -206,10 +206,10 @@ func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
 		// 	Key:   sarama.StringEncoder("sentel-broker-kafka"),
 		// 	Value: sarama.ByteEncoder(value),
 		// }
-		se := &MqttEvent{}
-		se.Common, _ = json.Marshal(e.Common)
-		se.Detail, _ = json.Marshal(e.Detail)
-		value, _ := json.Marshal(se)
+		re := &RawEvent{}
+		re.Header, _ = json.Marshal(e.EventHeader)
+		re.Payload, _ = json.Marshal(e.Detail)
+		value, _ := json.Marshal(re)
 
 		msg := &sarama.ProducerMessage{
 			Topic: topic,
@@ -247,63 +247,62 @@ func (p *eventService) Stop() {
 	close(p.quitChan)
 }
 
-func (p *eventService) unmarshalDetail(e *Event, detail json.RawMessage) (interface{}, error) {
-	switch e.Common.Type {
+func (p *eventService) unmarshalEventPayload(e *Event, payload json.RawMessage) error {
+	switch e.Type {
 	case SessionCreate:
-		sc := &SessionCreateDetail{}
-		if err := json.Unmarshal(detail, sc); err != nil {
-			return nil, fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
+		r := SessionCreateDetail{}
+		if err := json.Unmarshal(payload, &r); err != nil {
+			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
 		}
-		return sc, nil
+		e.Detail = r
 	case SessionDestroy:
-		sd := &SessionDestroyDetail{}
-		if err := json.Unmarshal(detail, sd); err != nil {
-			return nil, fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
+		r := SessionDestroyDetail{}
+		if err := json.Unmarshal(payload, &r); err != nil {
+			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
 		}
-		return sd, nil
+		e.Detail = r
 	case TopicSubscribe:
-		ts := &TopicSubscribeDetail{}
-		if err := json.Unmarshal(detail, ts); err != nil {
-			return nil, fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
+		r := TopicSubscribeDetail{}
+		if err := json.Unmarshal(payload, &r); err != nil {
+			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
 		}
-		return ts, nil
+		e.Detail = r
 	case TopicUnsubscribe:
-		tu := &TopicUnsubscribeDetail{}
-		if err := json.Unmarshal(detail, tu); err != nil {
-			return nil, fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
+		r := TopicUnsubscribeDetail{}
+		if err := json.Unmarshal(payload, &r); err != nil {
+			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
 		}
-		return tu, nil
+		e.Detail = r
 	case TopicPublish:
-		tp := &TopicPublishDetail{}
-		if err := json.Unmarshal(detail, tp); err != nil {
-			return nil, fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
+		r := TopicPublishDetail{}
+		if err := json.Unmarshal(payload, &r); err != nil {
+			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
 		}
-		return tp, nil
+		e.Detail = r
+	default:
+		return fmt.Errorf("invalid event type '%d'", e.Type)
 	}
-
-	return nil, fmt.Errorf("event service unmarshal event detail invalid type:%d", e.Common.Type)
+	return nil
 }
 
 // handleEvent handle mqtt event from other service
-func (p *eventService) handleKafkaEvent(se *MqttEvent) {
+func (p *eventService) handleKafkaEvent(re *RawEvent) {
 	// cluster event manager only handle kafka event from other broker
 	// Iterate all subscribers to notify
 	e := &Event{}
-	if err := json.Unmarshal(se.Common, &e.Common); err != nil {
+	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
 		glog.Errorf("event service unmarshal event common failed:%s", err.Error())
 		return
 	}
 
-	if e.Common.BrokerId != base.GetBrokerId() {
-		if _, found := p.subscribers[e.Common.Type]; found {
-			subscribers := p.subscribers[e.Common.Type]
-			var detail interface{}
-			detail, err := p.unmarshalDetail(e, se.Detail)
+	if e.BrokerId != base.GetBrokerId() {
+		if _, found := p.subscribers[e.Type]; found {
+			subscribers := p.subscribers[e.Type]
+			err := p.unmarshalEventPayload(e, re.Payload)
 			if err != nil {
 				glog.Errorf(err.Error())
 				return
 			}
-			e.Detail = detail
 			for _, subscriber := range subscribers {
 				subscriber.handler(e, subscriber.ctx)
 			}

@@ -26,7 +26,7 @@ type EventHandler func(e *Event, ctx interface{})
 // Notify publish event to event service
 func Notify(e *Event) {
 	glog.Infof("event '%s' is notified", NameOfEvent(e))
-	e.Common.BrokerId = base.GetBrokerId()
+	e.BrokerId = base.GetBrokerId()
 	service := base.GetService(ServiceName).(*eventService)
 	service.notify(e)
 }
@@ -34,14 +34,14 @@ func Notify(e *Event) {
 // Subscribe subcribe event from event service
 func Subscribe(event uint32, handler EventHandler, ctx interface{}) {
 	glog.Infof("service '%s' subscribed event '%s'",
-		ctx.(service.Service).Name(), NameOfEvent(&Event{Common: EventCommon{Type: event}}))
+		ctx.(service.Service).Name(), NameOfEvent(&Event{EventHeader: EventHeader{Type: event}}))
 	service := base.GetService(ServiceName).(*eventService)
 	service.subscribe(event, handler, ctx)
 }
 
 // NameOfEvent return event name
 func NameOfEvent(e *Event) string {
-	switch e.Common.Type {
+	switch e.Type {
 	case SessionCreate:
 		return "SessionCreate"
 	case SessionDestroy:
@@ -65,5 +65,5 @@ func NameOfEvent(e *Event) string {
 
 // FullNameOfEvent return event information
 func FullNameOfEvent(e *Event) string {
-	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e), e.Common.BrokerId, e.Common.ClientId)
+	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e), e.BrokerId, e.ClientId)
 }

@@ -78,7 +78,7 @@ func (p *simpleDataProcessor) getFunctionValue(name string, e *event.Event) (int
 func (p *simpleDataProcessor) getVariableValue(name string, e *event.Event) interface{} {
 	switch name {
 	case "deviceId":
-		return e.Common.ClientId
+		return e.ClientId
 	}
 	return nil
 }
