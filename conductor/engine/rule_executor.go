@@ -15,12 +15,11 @@ package engine
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
 )
@@ -33,11 +32,10 @@ type ruleExecutor struct {
 	tenantId  string                // Tenant
 	productId string                // one product have one rule engine
 	rules     map[string]ruleWraper // all product's rule
-	consumer  sarama.Consumer       // one product have one consumer
 	config    config.Config         // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
-	wg        sync.WaitGroup        // waitgroup for consumper partions
+	listener  *message.Listener
 }
 
 type RuleContext struct {
@@ -61,14 +59,15 @@ const (
 
 // newRuleExecutor create a engine according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
+	khosts := c.MustString("conductor", "kafka")
+	listener, _ := message.NewListener(khosts, "conductorRuleExecutor")
 	return &ruleExecutor{
 		productId: productId,
 		config:    c,
-		consumer:  nil,
 		rules:     make(map[string]ruleWraper),
 		mutex:     sync.Mutex{},
-		wg:        sync.WaitGroup{},
 		started:   false,
+		listener:  listener,
 	}, nil
 }
 
@@ -78,64 +77,31 @@ func (p *ruleExecutor) Start() error {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
 	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
-	if consumer, err := p.subscribeTopic(topic); err != nil {
+	if err := p.listener.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
-	} else {
-		p.consumer = consumer
-		p.started = true
 	}
+	p.listener.Start()
+	p.started = true
 	return nil
 }
 
 // Stop will stop the engine
 func (p *ruleExecutor) Stop() {
-	if p.consumer != nil {
-		p.consumer.Close()
-	}
-	p.wg.Wait()
+	p.listener.Close()
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *ruleExecutor) subscribeTopic(topic string) (sarama.Consumer, error) {
-	config := sarama.NewConfig()
-	config.ClientID = "sentel_conductor_engine_" + p.productId
-	khosts, _ := p.config.String("conductor", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("conductor failed to connect with kafka:%s", khosts)
-	}
-	partitionList, err := consumer.Partitions(topic)
-	if err != nil {
-		consumer.Close()
-		return nil, fmt.Errorf("Failed to get list of partions:%s", err.Error())
+// messageHandlerFunc handle mqtt event from other service
+func (p *ruleExecutor) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
+	re := event.RawEvent{}
+	if err := json.Unmarshal(value, &re); err != nil {
+		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
+		return
 	}
 
-	for partition := range partitionList {
-		pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			consumer.Close()
-			return nil, fmt.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-		}
-		p.wg.Add(1)
-
-		go func(sarama.PartitionConsumer) {
-			defer p.wg.Done()
-			for msg := range pc.Messages() {
-				obj := &event.RawEvent{}
-				if err := json.Unmarshal(msg.Value, obj); err == nil {
-					p.handleKafkaEvent(obj)
-				}
-			}
-		}(pc)
-	}
-	return consumer, nil
-}
-
-// handleEvent handle mqtt event from other service
-func (p *ruleExecutor) handleKafkaEvent(re *event.RawEvent) error {
 	e := &event.Event{}
 	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
-		return fmt.Errorf("conductor unmarshal event common failed:%s", err.Error())
+		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
+		return
 	}
 	switch e.Type {
 	case event.SessionCreate:
@@ -145,12 +111,11 @@ func (p *ruleExecutor) handleKafkaEvent(re *event.RawEvent) error {
 	case event.TopicPublish:
 		detail := event.TopicPublishDetail{}
 		if err := json.Unmarshal(re.Payload, &detail); err != nil {
-			return fmt.Errorf("conductor unmarshal event detail failed:%s", err.Error())
+			glog.Errorf("conductor unmarshal event detail failed:%s", err.Error())
 		}
 		e.Detail = detail
-		return p.execute(e)
+		p.execute(e)
 	}
-	return nil
 }
 
 // getRuleObject get all rule's information from backend database
