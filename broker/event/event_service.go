@@ -13,15 +13,15 @@ package event
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
@@ -40,8 +40,8 @@ type eventService struct {
 	config      config.Config
 	waitgroup   sync.WaitGroup
 	brokerId    string
-	consumers   map[string]sarama.Consumer // kafka client endpoint
-	producer    sarama.SyncProducer
+	consumer    message.Consumer
+	producer    message.Producer
 	eventChan   chan *Event                    // Event notify channel
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
@@ -61,52 +61,19 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
-
-	var consumers = make(map[string]sarama.Consumer)
-	var producer sarama.SyncProducer
-	sarama.Logger = logger
-	if khosts := c.MustString("broker", "kafka"); khosts != "" {
-		config := sarama.NewConfig()
-		config.ClientID = base.GetBrokerId() + "_MQTT"
-		// config.Consumer.MaxWaitTime = time.Duration(5 * time.Second)
-		// config.Consumer.Offsets.CommitInterval = 1 * time.Second
-		// config.Consumer.Offsets.Initial = sarama.OffsetNewest
-		cm, err := sarama.NewConsumer(strings.Split(khosts, ","), config)
-		if err != nil {
-			return nil, fmt.Errorf("event service failed to connect with kafka server(MQTT) '%s'", khosts)
-		}
-		consumers[fmt.Sprintf(fmtOfMqttEventBus, tenant)] = cm
-
-		config = sarama.NewConfig()
-		config.ClientID = base.GetBrokerId() + "_Broker"
-		cb, err := sarama.NewConsumer(strings.Split(khosts, ","), config)
-		if err != nil {
-			return nil, fmt.Errorf("event service failed to connect with kafka server(Broker) '%s'", khosts)
-		}
-		consumers[fmt.Sprintf(fmtOfBrokerEventBus, tenant)] = cb
-		glog.Infof("event service connected with kafka '%s' with broker id '%s'", khosts, base.GetBrokerId())
-
-		config = sarama.NewConfig()
-		config.ClientID = base.GetBrokerId()
-		config.Producer.RequiredAcks = sarama.WaitForLocal
-		config.Producer.Compression = sarama.CompressionSnappy
-		config.Producer.Partitioner = sarama.NewRandomPartitioner
-		config.Producer.Return.Successes = true
-		// config.Producer.Retry.Max = 10
-		// config.Producer.Timeout = 5 * time.Second
-
-		pc, err := sarama.NewSyncProducer(strings.Split(khosts, ","), config)
-		if err != nil {
-			return nil, fmt.Errorf("event service failed to create kafka producer:%s", err.Error())
-		}
-
-		producer = pc
+	khosts, err := c.String("broker", "kafka")
+	if err != nil || khosts != "" {
+		return nil, errors.New("message server is not rightly configed")
 	}
-
+	consumer, err1 := message.NewConsumer(khosts, base.GetBrokerId())
+	producer, err2 := message.NewProducer(khosts, base.GetBrokerId(), true)
+	if err1 != nil || err2 != nil {
+		return nil, errors.New("message client endpoint failed")
+	}
 	return &eventService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
-		consumers:   consumers,
+		consumer:    consumer,
 		producer:    producer,
 		eventChan:   make(chan *Event),
 		subscribers: make(map[uint32][]subscriberContext),
@@ -125,58 +92,47 @@ func (p *eventService) nameOfEventBus(e *Event) string {
 }
 
 // initialize
-func (p *eventService) Initialize() error {
-	// if p.producer != nil {
-	// 	go func(pc sarama.AsyncProducer) {
-	// 		for err := range pc.Errors() {
-	// 			glog.Errorf("event service failed to send message: %s", err)
-	// 		}
-	// 		glog.Errorf("event service send stop")
-	// 	}(p.producer)
-	// }
-
-	// subscribe topic from kmafka
-	if len(p.consumers) > 0 {
-		return p.subscribeKafkaTopic()
-	}
-	return nil
-}
+func (p *eventService) Initialize() error { return nil }
 
 func (p *eventService) Name() string { return ServiceName }
 func (p *eventService) bootstrap() error {
 	return nil
 }
 
-// subscribeKafkaTopc subscribe topics from apiserver
-func (p *eventService) subscribeKafkaTopic() error {
-	for topic, consumer := range p.consumers {
-		if partitionList, err := consumer.Partitions(topic); err == nil {
-			for partition := range partitionList {
-				pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
+// messageHandlerFunc handle mqtt event from other service
+func (p *eventService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
+	re := &RawEvent{}
+	if err := json.Unmarshal(value, re); err == nil {
+		e := &Event{}
+		if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
+			glog.Errorf("event service unmarshal event common failed:%s", err.Error())
+			return
+		}
+		// cluster event manager only handle kafka event from other broker
+		// Iterate all subscribers to notify
+		if e.BrokerId != base.GetBrokerId() {
+			if _, found := p.subscribers[e.Type]; found {
+				subscribers := p.subscribers[e.Type]
+				err := p.unmarshalEventPayload(e, re.Payload)
 				if err != nil {
-					return fmt.Errorf("event service subscribe kafka topic '%s' failed:%s", topic, err.Error())
+					glog.Errorf(err.Error())
+					return
 				}
-				p.waitgroup.Add(1)
-
-				go func(p *eventService, pc sarama.PartitionConsumer) {
-					defer p.waitgroup.Done()
-					for msg := range pc.Messages() {
-						glog.Infof("event service receive message: Key='%s', Value:%s", msg.Key, msg.Value)
-						re := &RawEvent{}
-						if err := json.Unmarshal(msg.Value, re); err == nil {
-							p.handleKafkaEvent(re)
-						}
-					}
-					glog.Errorf("event service receive message stop")
-				}(p, pc)
+				for _, subscriber := range subscribers {
+					subscriber.handler(e, subscriber.ctx)
+				}
 			}
 		}
 	}
-	return nil
 }
 
 // Start
 func (p *eventService) Start() error {
+	err1 := p.consumer.Subscribe(fmt.Sprintf(fmtOfMqttEventBus, p.tenant), p.messageHandlerFunc, nil)
+	err2 := p.consumer.Subscribe(fmt.Sprintf(fmtOfBrokerEventBus, p.tenant), p.messageHandlerFunc, nil)
+	if err1 != nil || err2 != nil {
+		return errors.New("subscribe topic failed")
+	}
 	go func(p *eventService) {
 		for {
 			select {
@@ -190,7 +146,7 @@ func (p *eventService) Start() error {
 					}
 				}
 				// notify kafka for broker synchronization
-				p.publishKafkaMsg(p.nameOfEventBus(e), e)
+				p.publishMsg(p.nameOfEventBus(e), e)
 			case <-p.quitChan:
 				return
 			}
@@ -199,50 +155,24 @@ func (p *eventService) Start() error {
 	return nil
 }
 
-func (p *eventService) publishKafkaMsg(topic string, e *Event) error {
-	if p.producer != nil {
-		// p.producer.Input() <- &sarama.ProducerMessage{
-		// 	Topic: topic,
-		// 	Key:   sarama.StringEncoder("sentel-broker-kafka"),
-		// 	Value: sarama.ByteEncoder(value),
-		// }
-		re := &RawEvent{}
-		re.Header, _ = json.Marshal(e.EventHeader)
-		re.Payload, _ = json.Marshal(e.Detail)
-		value, _ := json.Marshal(re)
-
-		msg := &sarama.ProducerMessage{
-			Topic: topic,
-			Key:   sarama.StringEncoder("sentel-broker-kafka"),
-			Value: sarama.ByteEncoder(value),
-		}
-
-		_, _, err := p.producer.SendMessage(msg)
-		if err != nil {
-			glog.Errorf("Failed to store your data:, %s", err)
-		}
-		// else {
-		// 	// The tuple (topic, partition, offset) can be used as a unique identifier
-		// 	// for a message in a Kafka cluster.
-		// 	 glog.Infof("Your data is stored with unique identifier important/%d/%d", partition, offset)
-		// }
-		// glog.Infof("event service notify event '%s' to kafka", topic)
+func (p *eventService) publishMsg(topic string, e *Event) error {
+	re := &RawEvent{}
+	re.Header, _ = json.Marshal(e.EventHeader)
+	re.Payload, _ = json.Marshal(e.Detail)
+	err := p.producer.SendMessage("iot-broker", topic, &re)
+	if err != nil {
+		glog.Errorf("Failed to store your data:, %s", err)
+		return err
 	}
-
 	return nil
 }
 
 // Stop
 func (p *eventService) Stop() {
 	p.quitChan <- true
-	for _, v := range p.consumers {
-		v.Close()
-	}
-
-	if p.producer != nil {
-		p.producer.Close()
-	}
 	p.waitgroup.Wait()
+	p.producer.Close()
+	p.consumer.Close()
 	close(p.eventChan)
 	close(p.quitChan)
 }
@@ -283,31 +213,6 @@ func (p *eventService) unmarshalEventPayload(e *Event, payload json.RawMessage) 
 		return fmt.Errorf("invalid event type '%d'", e.Type)
 	}
 	return nil
-}
-
-// handleEvent handle mqtt event from other service
-func (p *eventService) handleKafkaEvent(re *RawEvent) {
-	// cluster event manager only handle kafka event from other broker
-	// Iterate all subscribers to notify
-	e := &Event{}
-	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
-		glog.Errorf("event service unmarshal event common failed:%s", err.Error())
-		return
-	}
-
-	if e.BrokerId != base.GetBrokerId() {
-		if _, found := p.subscribers[e.Type]; found {
-			subscribers := p.subscribers[e.Type]
-			err := p.unmarshalEventPayload(e, re.Payload)
-			if err != nil {
-				glog.Errorf(err.Error())
-				return
-			}
-			for _, subscriber := range subscribers {
-				subscriber.handler(e, subscriber.ctx)
-			}
-		}
-	}
 }
 
 // publish publish event to event service

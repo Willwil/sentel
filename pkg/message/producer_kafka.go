@@ -35,8 +35,9 @@ func newKafkaProducer(khosts string, clientId string, sync bool) (Producer, erro
 		sync:     sync,
 	}
 	config := sarama.NewConfig()
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 10
+	config.Producer.RequiredAcks = sarama.WaitForLocal
+	config.Producer.Compression = sarama.CompressionSnappy
+	config.Producer.Partitioner = sarama.NewRandomPartitioner
 	config.Producer.Return.Successes = true
 
 	if sync {
