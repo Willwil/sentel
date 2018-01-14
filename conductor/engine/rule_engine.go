@@ -38,7 +38,7 @@ type ruleEngine struct {
 	recoveryChan chan interface{}
 }
 
-const SERVICE_NAME = "executor"
+const SERVICE_NAME = "engine"
 
 type ServiceFactory struct{}
 
@@ -81,17 +81,18 @@ func (p *ruleEngine) Start() error {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
 	}
 	p.consumer = consumer
-	// start rule channel
 	p.waitgroup.Add(1)
 	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
-		select {
-		case ctx := <-s.ruleChan:
-			s.handleRule(ctx)
-		case <-s.recoveryChan:
-			s.recovery()
-		case <-s.quitChan:
-			break
+		for {
+			select {
+			case ctx := <-s.ruleChan:
+				s.handleRule(ctx)
+			case <-s.recoveryChan:
+				s.recovery()
+			case <-s.quitChan:
+				return
+			}
 		}
 	}(p)
 	return nil
@@ -137,7 +138,7 @@ func (p *ruleEngine) recovery() {
 
 // handleRule process incomming rule
 func (p *ruleEngine) handleRule(ctx RuleContext) error {
-	// Get engine instance according to product id
+	// get executor instance according to product id
 	if _, ok := p.executors[ctx.ProductId]; !ok { // not found
 		executor, err := newRuleExecutor(p.config, ctx.ProductId)
 		if err != nil {
@@ -186,13 +187,13 @@ func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 		}
 		p.waitgroup.Add(1)
 
-		go func(sarama.PartitionConsumer) {
+		go func(p *ruleEngine, pc sarama.PartitionConsumer) {
 			defer p.waitgroup.Done()
 			for msg := range pc.Messages() {
 				glog.Infof("donductor recevied topic '%s': '%s'", string(msg.Topic), msg.Value)
 				p.handleNotifications(string(msg.Topic), msg.Value)
 			}
-		}(pc)
+		}(p, pc)
 	}
 	return consumer, nil
 }

@@ -77,8 +77,9 @@ func signalHandler() {
 	for {
 		select {
 		case <-mgr.signalChan:
+			glog.Info("received terminate signal...")
 			mgr.stop()
-			mgr.waitChan <- "finished"
+			mgr.waitChan <- true
 		}
 	}
 }
@@ -123,7 +124,7 @@ func (p *ServiceManager) RunAndWait() error {
 // Run launch all serices
 func (p *ServiceManager) Run() error {
 	// Run all service
-	glog.Infof("There are %d services in '%s'", len(p.services), p.name)
+	glog.Infof("there are %d services in '%s'", len(p.services), p.name)
 	for _, service := range p.services {
 		glog.Infof("Starting service '%s'...", service.Name())
 		if err := service.Start(); err != nil {
@@ -135,7 +136,9 @@ func (p *ServiceManager) Run() error {
 
 // stop
 func (p *ServiceManager) stop() error {
+	glog.Infof("service manager is terminating all service...")
 	for _, service := range p.services {
+		glog.Infof("terminating service '%s'", service.Name())
 		service.Stop()
 		glog.Infof("service '%s' stoped", service.Name())
 	}
