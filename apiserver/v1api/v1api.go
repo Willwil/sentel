@@ -55,12 +55,12 @@ func syncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) er
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
 	key := "iot"
-	return message.SyncProduceMessage(hosts, key, topic, value)
+	return message.PostMessage(hosts, key, topic, value)
 }
 
 func asyncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
 	key := "iot"
-	return message.AsyncProduceMessage(hosts, key, topic, value)
+	return message.PostMessage(hosts, key, topic, value)
 }

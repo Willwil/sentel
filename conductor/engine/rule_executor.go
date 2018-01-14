@@ -35,7 +35,7 @@ type ruleExecutor struct {
 	config    config.Config         // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
-	consumer  *message.Consumer
+	consumer  message.Consumer
 }
 
 type RuleContext struct {

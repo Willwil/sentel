@@ -19,9 +19,7 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-type MessageHandlerFunc func(topic string, msg []byte, ctx interface{})
-
-type Consumer struct {
+type kafkaConsumer struct {
 	khosts      string                 // kafka server list
 	subscribers map[string]*subscriber // kafka client endpoint
 	mutex       sync.Mutex
@@ -39,8 +37,8 @@ type subscriber struct {
 	pconsumers []sarama.PartitionConsumer
 }
 
-func NewConsumer(khosts string, clientId string) (*Consumer, error) {
-	return &Consumer{
+func newKafkaConsumer(khosts string, clientId string) (Consumer, error) {
+	return &kafkaConsumer{
 		khosts:      khosts,
 		clientId:    clientId,
 		subscribers: make(map[string]*subscriber),
@@ -48,16 +46,16 @@ func NewConsumer(khosts string, clientId string) (*Consumer, error) {
 	}, nil
 }
 
-func (p *Consumer) Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error {
+func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error {
 	if _, found := p.subscribers[topic]; found {
 		return fmt.Errorf("topic '%s' already subcribed", topic)
 	}
 	clientId := fmt.Sprintf("%s_%d", p.clientId, len(p.subscribers))
 	config := sarama.NewConfig()
 	config.ClientID = clientId
-	// config.Consumer.MaxWaitTime = time.Duration(5 * time.Second)
-	// config.Consumer.Offsets.CommitInterval = 1 * time.Second
-	// config.Consumer.Offsets.Initial = sarama.OffsetNewest
+	// config.kafkaConsumer.MaxWaitTime = time.Duration(5 * time.Second)
+	// config.kafkaConsumer.Offsets.CommitInterval = 1 * time.Second
+	// config.kafkaConsumer.Offsets.Initial = sarama.OffsetNewest
 	consumer, err := sarama.NewConsumer(strings.Split(p.khosts, ","), config)
 	if err != nil {
 		return fmt.Errorf("message listener failed to connect with kafka server '%s'", p.khosts)
@@ -75,7 +73,7 @@ func (p *Consumer) Subscribe(topic string, handler MessageHandlerFunc, ctx inter
 	return nil
 }
 
-func (p *Consumer) Start() error {
+func (p *kafkaConsumer) Start() error {
 	for topic, sub := range p.subscribers {
 		consumer := sub.consumer
 		if partitionList, err := consumer.Partitions(topic); err == nil {
@@ -105,7 +103,7 @@ func (p *Consumer) Start() error {
 	return nil
 }
 
-func (p *Consumer) Close() {
+func (p *kafkaConsumer) Close() {
 	for _, sub := range p.subscribers {
 		sub.quitChan <- true
 		for _, pc := range sub.pconsumers {

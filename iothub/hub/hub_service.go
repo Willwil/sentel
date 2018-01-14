@@ -35,7 +35,7 @@ type hubService struct {
 	clustermgr  cluster.ClusterManager
 	tenants     map[string]*tenant
 	mutex       sync.Mutex
-	consumer    *message.Consumer
+	consumer    message.Consumer
 	hubdb       *hubDB
 	recoverChan chan interface{}
 	quitChan    chan interface{}

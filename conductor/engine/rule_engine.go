@@ -33,7 +33,7 @@ type ruleEngine struct {
 	ruleChan     chan RuleContext
 	executors    map[string]*ruleExecutor
 	mutex        sync.Mutex
-	consumer     *message.Consumer
+	consumer     message.Consumer
 	recoveryChan chan interface{}
 }
 
