@@ -18,11 +18,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/iothub/cluster"
 	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
@@ -37,7 +35,7 @@ type hubService struct {
 	clustermgr  cluster.ClusterManager
 	tenants     map[string]*tenant
 	mutex       sync.Mutex
-	consumers   []sarama.Consumer
+	listener    *message.Listener
 	hubdb       *hubDB
 	recoverChan chan interface{}
 	quitChan    chan interface{}
@@ -52,24 +50,29 @@ const SERVICE_NAME = "iothub"
 type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
-	sarama.Logger = logger
 	clustermgr, cerr := cluster.New(c)
 	hubdb, nerr := newHubDB(c)
 	discovery, derr := sd.New(c, sd.BackendZookeeper)
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}
+	// initialize message listener
+	khosts, err := c.String("iothub", "kafka")
+	if err != nil || khosts == "" {
+		return nil, errors.New("message service is not rightly configed")
+	}
+	listener, _ := message.NewListener(khosts, "iothub")
 	clustermgr.SetServiceDiscovery(discovery)
 	return &hubService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
-		consumers:   []sarama.Consumer{},
 		clustermgr:  clustermgr,
 		tenants:     make(map[string]*tenant),
 		mutex:       sync.Mutex{},
 		hubdb:       hubdb,
 		recoverChan: make(chan interface{}),
 		quitChan:    make(chan interface{}),
+		listener:    listener,
 	}, nil
 }
 
@@ -90,13 +93,15 @@ func (p *hubService) Initialize() error {
 
 // Start
 func (p *hubService) Start() error {
-	tc, subError1 := p.subscribeTopic(message.TopicNameTenant)
-	pc, subError2 := p.subscribeTopic(message.TopicNameProduct)
-	if subError1 != nil || subError2 != nil {
-		return errors.New("iothub failed to subsribe tenant and product topic from kafka")
+	// subscribe topic and start message listener
+	err1 := p.listener.Subscribe(message.TopicNameTenant, p.messageHandlerFunc, nil)
+	err2 := p.listener.Subscribe(message.TopicNameProduct, p.messageHandlerFunc, nil)
+	if err1 != nil || err2 != nil {
+		return errors.New("iothub failed to subsribe topic from message server")
 	}
-	p.consumers = append(p.consumers, tc)
-	p.consumers = append(p.consumers, pc)
+	if err := p.listener.Start(); err != nil {
+		return err
+	}
 	p.waitgroup.Add(1)
 	go func(p *hubService) {
 		defer p.waitgroup.Done()
@@ -114,10 +119,8 @@ func (p *hubService) Start() error {
 // Stop
 func (p *hubService) Stop() {
 	p.quitChan <- true
-	for _, consumer := range p.consumers {
-		consumer.Close()
-	}
 	p.waitgroup.Wait()
+	p.listener.Close()
 	close(p.quitChan)
 	close(p.recoverChan)
 }
@@ -145,44 +148,7 @@ func (p *hubService) recoverStartup() {
 	}
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *hubService) subscribeTopic(topic string) (sarama.Consumer, error) {
-	endpoint := p.config.MustString("iothub", "kafka")
-	glog.Infof("iothub get kafka service endpoint: %s", endpoint)
-
-	config := sarama.NewConfig()
-	config.ClientID = "iothub-notify-" + topic
-	consumer, err := sarama.NewConsumer(strings.Split(endpoint, ","), config)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", endpoint)
-	}
-
-	partitionList, err := consumer.Partitions(topic)
-	if err != nil {
-		return nil, err
-	}
-	for partition := range partitionList {
-		if pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest); err != nil {
-			return nil, fmt.Errorf("iothub subscribe kafka topic '%s' failed:%s", topic, err.Error())
-		} else {
-			p.waitgroup.Add(1)
-
-			go func(p *hubService, pc sarama.PartitionConsumer) {
-				defer p.waitgroup.Done()
-				for msg := range pc.Messages() {
-					if err := p.handleNotification(topic, msg.Value); err != nil {
-						glog.Errorf("iothub failed to handle topic '%s': '%s'", topic, err.Error())
-					}
-				}
-				glog.Info("iothub message receiver stop")
-			}(p, pc)
-		}
-	}
-	return consumer, nil
-}
-
-// handleNotify handle notification from kafka
-func (p *hubService) handleNotification(topic string, value []byte) error {
+func (p *hubService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
 	glog.Infof("iothub receive message from topic '%s'", topic)
 	var err error
 	switch topic {
@@ -192,7 +158,9 @@ func (p *hubService) handleNotification(topic string, value []byte) error {
 		err = p.handleProductNotify(value)
 	default:
 	}
-	return err
+	if err != nil {
+		glog.Error(err)
+	}
 }
 
 // handleProductNotify handle notification about product from api server
