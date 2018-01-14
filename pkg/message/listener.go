@@ -105,7 +105,7 @@ func (p *Listener) Start() error {
 	return nil
 }
 
-func (p *Listener) Stop() {
+func (p *Listener) Close() {
 	for _, sub := range p.subscribers {
 		sub.quitChan <- true
 		for _, pc := range sub.pconsumers {

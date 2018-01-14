@@ -14,11 +14,10 @@ package engine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 	"sync"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -34,7 +33,7 @@ type ruleEngine struct {
 	ruleChan     chan RuleContext
 	executors    map[string]*ruleExecutor
 	mutex        sync.Mutex
-	consumer     sarama.Consumer
+	listener     *message.Listener
 	recoveryChan chan interface{}
 }
 
@@ -44,6 +43,11 @@ type ServiceFactory struct{}
 
 // New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	kafka, err := c.String("conductor", "kafka")
+	if err != nil || kafka == "" {
+		return nil, errors.New("message service is not rightly configed")
+	}
+	listener, _ := message.NewListener(kafka, "conductor")
 	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
@@ -51,6 +55,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		ruleChan:     make(chan RuleContext),
 		executors:    make(map[string]*ruleExecutor),
 		mutex:        sync.Mutex{},
+		listener:     listener,
 		recoveryChan: make(chan interface{}),
 	}, nil
 }
@@ -76,11 +81,10 @@ func (p *ruleEngine) Initialize() error {
 
 // Start
 func (p *ruleEngine) Start() error {
-	consumer, err := p.subscribeTopic(message.TopicNameRule)
-	if err != nil {
+	if err := p.listener.Subscribe(message.TopicNameRule, p.messageHandlerFunc, nil); err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
 	}
-	p.consumer = consumer
+	p.listener.Start()
 	p.waitgroup.Add(1)
 	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
@@ -101,13 +105,11 @@ func (p *ruleEngine) Start() error {
 // Stop
 func (p *ruleEngine) Stop() {
 	p.quitChan <- true
-	if p.consumer != nil {
-		p.consumer.Close()
-	}
 	p.waitgroup.Wait()
 	close(p.quitChan)
 	close(p.ruleChan)
 	close(p.recoveryChan)
+	p.listener.Close()
 
 	// stop all ruleEngine
 	for _, executor := range p.executors {
@@ -164,46 +166,11 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	return nil
 }
 
-// subscribeTopc subscribe topics from apiserver
-func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
-	config := sarama.NewConfig()
-	config.ClientID = "sentel_conductor_indicator"
-	khosts, _ := p.config.String("conductor", "kafka")
-	consumer, err := sarama.NewConsumer(strings.Split(khosts, ","), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Connecting with kafka:%s failed", khosts)
-	}
-	partitionList, err := consumer.Partitions(topic)
-	if err != nil {
-		consumer.Close()
-		return nil, fmt.Errorf("Failed to get list of partions:%s", err.Error())
-	}
-
-	for partition := range partitionList {
-		pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-		if err != nil {
-			consumer.Close()
-			return nil, fmt.Errorf("Failed  to start consumer for partion %d:%s", partition, err)
-		}
-		p.waitgroup.Add(1)
-
-		go func(p *ruleEngine, pc sarama.PartitionConsumer) {
-			defer p.waitgroup.Done()
-			for msg := range pc.Messages() {
-				glog.Infof("donductor recevied topic '%s': '%s'", string(msg.Topic), msg.Value)
-				p.handleNotifications(string(msg.Topic), msg.Value)
-			}
-		}(p, pc)
-	}
-	return consumer, nil
-}
-
-// handleNotifications handle notification from kafka
-func (p *ruleEngine) handleNotifications(topic string, value []byte) error {
+func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
 	r := message.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
-		return err
+		return
 	}
 	action := ""
 	switch r.RuleAction {
@@ -218,15 +185,15 @@ func (p *ruleEngine) handleNotifications(topic string, value []byte) error {
 	case message.RuleActionStop:
 		action = RuleActionStop
 	default:
-		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
+		glog.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
+		return
 	}
-	ctx := RuleContext{
+	rc := RuleContext{
 		Action:    action,
 		ProductId: r.ProductId,
 		RuleName:  r.RuleName,
 	}
-	p.ruleChan <- ctx
-	return nil
+	p.ruleChan <- rc
 }
 
 func HandleRuleNotification(ctx RuleContext) {
