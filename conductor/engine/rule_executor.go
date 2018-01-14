@@ -35,7 +35,7 @@ type ruleExecutor struct {
 	config    config.Config         // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
-	listener  *message.Listener
+	consumer  *message.Consumer
 }
 
 type RuleContext struct {
@@ -60,14 +60,14 @@ const (
 // newRuleExecutor create a engine according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 	khosts := c.MustString("conductor", "kafka")
-	listener, _ := message.NewListener(khosts, "conductorRuleExecutor")
+	consumer, _ := message.NewConsumer(khosts, "conductorRuleExecutor")
 	return &ruleExecutor{
 		productId: productId,
 		config:    c,
 		rules:     make(map[string]ruleWraper),
 		mutex:     sync.Mutex{},
 		started:   false,
-		listener:  listener,
+		consumer:  consumer,
 	}, nil
 }
 
@@ -77,17 +77,17 @@ func (p *ruleExecutor) Start() error {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
 	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
-	if err := p.listener.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
+	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
 	}
-	p.listener.Start()
+	p.consumer.Start()
 	p.started = true
 	return nil
 }
 
 // Stop will stop the engine
 func (p *ruleExecutor) Stop() {
-	p.listener.Close()
+	p.consumer.Close()
 }
 
 // messageHandlerFunc handle mqtt event from other service

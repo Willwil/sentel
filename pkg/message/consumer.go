@@ -21,7 +21,7 @@ import (
 
 type MessageHandlerFunc func(topic string, msg []byte, ctx interface{})
 
-type Listener struct {
+type Consumer struct {
 	khosts      string                 // kafka server list
 	subscribers map[string]*subscriber // kafka client endpoint
 	mutex       sync.Mutex
@@ -39,8 +39,8 @@ type subscriber struct {
 	pconsumers []sarama.PartitionConsumer
 }
 
-func NewListener(khosts string, clientId string) (*Listener, error) {
-	return &Listener{
+func NewConsumer(khosts string, clientId string) (*Consumer, error) {
+	return &Consumer{
 		khosts:      khosts,
 		clientId:    clientId,
 		subscribers: make(map[string]*subscriber),
@@ -48,7 +48,7 @@ func NewListener(khosts string, clientId string) (*Listener, error) {
 	}, nil
 }
 
-func (p *Listener) Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error {
+func (p *Consumer) Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error {
 	if _, found := p.subscribers[topic]; found {
 		return fmt.Errorf("topic '%s' already subcribed", topic)
 	}
@@ -75,7 +75,7 @@ func (p *Listener) Subscribe(topic string, handler MessageHandlerFunc, ctx inter
 	return nil
 }
 
-func (p *Listener) Start() error {
+func (p *Consumer) Start() error {
 	for topic, sub := range p.subscribers {
 		consumer := sub.consumer
 		if partitionList, err := consumer.Partitions(topic); err == nil {
@@ -105,7 +105,7 @@ func (p *Listener) Start() error {
 	return nil
 }
 
-func (p *Listener) Close() {
+func (p *Consumer) Close() {
 	for _, sub := range p.subscribers {
 		sub.quitChan <- true
 		for _, pc := range sub.pconsumers {

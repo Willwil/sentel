@@ -13,6 +13,7 @@ package message
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -20,16 +21,21 @@ import (
 	"github.com/golang/glog"
 )
 
-func SyncProduceMessage(hosts string, key string, topic string, value sarama.Encoder) error {
+func SyncProduceMessage(hosts string, key string, topic string, value interface{}) error {
+	if _, ok := value.(sarama.Encoder); !ok {
+		return errors.New("invalid parameter")
+	}
+
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10
 	config.Producer.Return.Successes = true
 
+	v, _ := json.Marshal(value)
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Key:   sarama.StringEncoder(key),
-		Value: value,
+		Value: sarama.ByteEncoder(v),
 	}
 
 	producer, err := sarama.NewSyncProducer(strings.Split(hosts, ","), config)
@@ -45,7 +51,10 @@ func SyncProduceMessage(hosts string, key string, topic string, value sarama.Enc
 	return err
 }
 
-func AsyncProduceMessage(hosts string, key string, topic string, value sarama.Encoder) error {
+func AsyncProduceMessage(hosts string, key string, topic string, value interface{}) error {
+	if _, ok := value.(sarama.Encoder); !ok {
+		return errors.New("invalid parameter")
+	}
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10

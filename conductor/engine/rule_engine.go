@@ -33,7 +33,7 @@ type ruleEngine struct {
 	ruleChan     chan RuleContext
 	executors    map[string]*ruleExecutor
 	mutex        sync.Mutex
-	listener     *message.Listener
+	consumer     *message.Consumer
 	recoveryChan chan interface{}
 }
 
@@ -47,7 +47,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil || kafka == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}
-	listener, _ := message.NewListener(kafka, "conductor")
+	consumer, _ := message.NewConsumer(kafka, "conductor")
 	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
@@ -55,7 +55,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		ruleChan:     make(chan RuleContext),
 		executors:    make(map[string]*ruleExecutor),
 		mutex:        sync.Mutex{},
-		listener:     listener,
+		consumer:     consumer,
 		recoveryChan: make(chan interface{}),
 	}, nil
 }
@@ -81,10 +81,10 @@ func (p *ruleEngine) Initialize() error {
 
 // Start
 func (p *ruleEngine) Start() error {
-	if err := p.listener.Subscribe(message.TopicNameRule, p.messageHandlerFunc, nil); err != nil {
+	if err := p.consumer.Subscribe(message.TopicNameRule, p.messageHandlerFunc, nil); err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
 	}
-	p.listener.Start()
+	p.consumer.Start()
 	p.waitgroup.Add(1)
 	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
@@ -109,7 +109,7 @@ func (p *ruleEngine) Stop() {
 	close(p.quitChan)
 	close(p.ruleChan)
 	close(p.recoveryChan)
-	p.listener.Close()
+	p.consumer.Close()
 
 	// stop all ruleEngine
 	for _, executor := range p.executors {

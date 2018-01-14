@@ -35,7 +35,7 @@ type hubService struct {
 	clustermgr  cluster.ClusterManager
 	tenants     map[string]*tenant
 	mutex       sync.Mutex
-	listener    *message.Listener
+	consumer    *message.Consumer
 	hubdb       *hubDB
 	recoverChan chan interface{}
 	quitChan    chan interface{}
@@ -56,12 +56,12 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}
-	// initialize message listener
+	// initialize message consumer
 	khosts, err := c.String("iothub", "kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}
-	listener, _ := message.NewListener(khosts, "iothub")
+	consumer, _ := message.NewConsumer(khosts, "iothub")
 	clustermgr.SetServiceDiscovery(discovery)
 	return &hubService{
 		config:      c,
@@ -72,7 +72,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		hubdb:       hubdb,
 		recoverChan: make(chan interface{}),
 		quitChan:    make(chan interface{}),
-		listener:    listener,
+		consumer:    consumer,
 	}, nil
 }
 
@@ -93,13 +93,13 @@ func (p *hubService) Initialize() error {
 
 // Start
 func (p *hubService) Start() error {
-	// subscribe topic and start message listener
-	err1 := p.listener.Subscribe(message.TopicNameTenant, p.messageHandlerFunc, nil)
-	err2 := p.listener.Subscribe(message.TopicNameProduct, p.messageHandlerFunc, nil)
+	// subscribe topic and start message consumer
+	err1 := p.consumer.Subscribe(message.TopicNameTenant, p.messageHandlerFunc, nil)
+	err2 := p.consumer.Subscribe(message.TopicNameProduct, p.messageHandlerFunc, nil)
 	if err1 != nil || err2 != nil {
 		return errors.New("iothub failed to subsribe topic from message server")
 	}
-	if err := p.listener.Start(); err != nil {
+	if err := p.consumer.Start(); err != nil {
 		return err
 	}
 	p.waitgroup.Add(1)
@@ -120,7 +120,7 @@ func (p *hubService) Start() error {
 func (p *hubService) Stop() {
 	p.quitChan <- true
 	p.waitgroup.Wait()
-	p.listener.Close()
+	p.consumer.Close()
 	close(p.quitChan)
 	close(p.recoverChan)
 }
