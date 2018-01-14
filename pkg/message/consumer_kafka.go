@@ -17,6 +17,7 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/golang/glog"
 )
 
 type kafkaConsumer struct {
@@ -31,7 +32,6 @@ type subscriber struct {
 	waitgroup  sync.WaitGroup
 	handler    MessageHandlerFunc
 	ctx        interface{}
-	quitChan   chan interface{}
 	consumer   sarama.Consumer
 	clientId   string
 	pconsumers []sarama.PartitionConsumer
@@ -65,7 +65,6 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 		waitgroup:  sync.WaitGroup{},
 		handler:    handler,
 		ctx:        ctx,
-		quitChan:   make(chan interface{}),
 		consumer:   consumer,
 		clientId:   clientId,
 		pconsumers: []sarama.PartitionConsumer{},
@@ -88,7 +87,8 @@ func (p *kafkaConsumer) Start() error {
 					defer s.waitgroup.Done()
 					for {
 						select {
-						case <-s.quitChan:
+						case err := <-pc.Errors():
+							glog.Error(err)
 							return
 						case msg := <-pc.Messages():
 							if s.handler != nil {
@@ -105,7 +105,6 @@ func (p *kafkaConsumer) Start() error {
 
 func (p *kafkaConsumer) Close() {
 	for _, sub := range p.subscribers {
-		sub.quitChan <- true
 		for _, pc := range sub.pconsumers {
 			pc.Close()
 		}

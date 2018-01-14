@@ -94,7 +94,7 @@ func (p *mqttService) Start() error {
 
 // Stop
 func (p *mqttService) Stop() {
-	p.waitgroup.Wait()
+	// p.waitgroup.Wait() //TODO
 	close(p.quitChan)
 }
 

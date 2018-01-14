@@ -43,14 +43,14 @@ func newKafkaProducer(khosts string, clientId string, sync bool) (Producer, erro
 	if sync {
 		producer, err := sarama.NewSyncProducer(strings.Split(khosts, ","), config)
 		if err != nil {
-			glog.Errorf("Failed to produce message:%s", err.Error())
+			glog.Error(err)
 			return nil, err
 		}
 		p.syncProducer = producer
 	} else {
 		producer, err := sarama.NewAsyncProducer(strings.Split(khosts, ","), config)
 		if err != nil {
-			glog.Errorf("Failed to produce message:%s", err.Error())
+			glog.Error(err)
 			return nil, err
 		}
 		p.asyncProducer = producer

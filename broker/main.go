@@ -68,8 +68,12 @@ func createConfig(fileName string, daemon bool) (config.Config, error) {
 	if daemon {
 		options := map[string]map[string]string{}
 		options["broker"] = map[string]string{}
-		options["broker"]["kafka"] = os.Getenv("KAFKA_HOST")
-		options["broker"]["mongo"] = os.Getenv("MONGO_HOST")
+		k := os.Getenv("KAFKA_HOST")
+		v := os.Getenv("MONGO_HOST")
+		if k != "" && v != "" {
+			options["broker"]["kafka"] = os.Getenv("KAFKA_HOST")
+			options["broker"]["mongo"] = os.Getenv("MONGO_HOST")
+		}
 		options["mqtt"] = map[string]string{}
 
 		// tenant and product must be set

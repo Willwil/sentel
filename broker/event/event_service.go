@@ -62,7 +62,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("broker", "tenant")
 	khosts, err := c.String("broker", "kafka")
-	if err != nil || khosts != "" {
+	if err != nil || khosts == "" {
 		return nil, errors.New("message server is not rightly configed")
 	}
 	consumer, err1 := message.NewConsumer(khosts, base.GetBrokerId())
@@ -133,7 +133,9 @@ func (p *eventService) Start() error {
 	if err1 != nil || err2 != nil {
 		return errors.New("subscribe topic failed")
 	}
+	p.waitgroup.Add(1)
 	go func(p *eventService) {
+		defer p.waitgroup.Done()
 		for {
 			select {
 			case e := <-p.eventChan:
