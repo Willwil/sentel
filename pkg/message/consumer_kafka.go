@@ -35,6 +35,7 @@ type subscriber struct {
 	consumer   sarama.Consumer
 	clientId   string
 	pconsumers []sarama.PartitionConsumer
+	quitChan   chan interface{}
 }
 
 func newKafkaConsumer(khosts string, clientId string) (Consumer, error) {
@@ -68,6 +69,7 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 		consumer:   consumer,
 		clientId:   clientId,
 		pconsumers: []sarama.PartitionConsumer{},
+		quitChan:   make(chan interface{}),
 	}
 	return nil
 }
@@ -87,6 +89,8 @@ func (p *kafkaConsumer) Start() error {
 					defer s.waitgroup.Done()
 					for {
 						select {
+						case <-s.quitChan:
+							return
 						case err := <-pc.Errors():
 							glog.Error(err)
 							return
@@ -105,6 +109,7 @@ func (p *kafkaConsumer) Start() error {
 
 func (p *kafkaConsumer) Close() {
 	for _, sub := range p.subscribers {
+		sub.quitChan <- true
 		for _, pc := range sub.pconsumers {
 			pc.Close()
 		}

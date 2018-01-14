@@ -25,9 +25,9 @@ import (
 )
 
 var RootCmd = &cobra.Command{
-	Use:   "sentel-ctl",
-	Short: "sentel-ctl is tool to dianose sentel server",
-	Long:  `sentel-ctl can diagnose sentel servier status`,
+	Use:   "sentel",
+	Short: "sentel is tool to dianose sentel server",
+	Long:  `sentel can diagnose sentel servier status`,
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }

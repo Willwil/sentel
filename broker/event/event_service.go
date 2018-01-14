@@ -133,6 +133,9 @@ func (p *eventService) Start() error {
 	if err1 != nil || err2 != nil {
 		return errors.New("subscribe topic failed")
 	}
+	if err := p.consumer.Start(); err != nil {
+		return err
+	}
 	p.waitgroup.Add(1)
 	go func(p *eventService) {
 		defer p.waitgroup.Done()
