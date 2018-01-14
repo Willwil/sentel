@@ -29,7 +29,7 @@ import (
 const fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
 
 // ruleEngine manage product's rules, add, start and stop rule
-type RuleEngine struct {
+type ruleExecutor struct {
 	tenantId  string                // Tenant
 	productId string                // one product have one rule engine
 	rules     map[string]ruleWraper // all product's rule
@@ -47,21 +47,21 @@ type RuleContext struct {
 }
 
 const (
-	RuleCreate = "create"
-	RuleRemove = "remove"
-	RuleUpdate = "update"
-	RuleStart  = "start"
-	RuleStop   = "stop"
+	RuleActionCreate = "create"
+	RuleActionRemove = "remove"
+	RuleActionUpdate = "update"
+	RuleActionStart  = "start"
+	RuleActionStop   = "stop"
 )
 const (
-	RuleStatusIdle    = "idle"
-	RuleStatusStarted = "started"
-	RuleStatusStoped  = "stoped"
+	ruleStatusIdle    = "idle"
+	ruleStatusStarted = "started"
+	ruleStatusStoped  = "stoped"
 )
 
-// newRuleEngine create a engine according to product id and configuration
-func NewRuleEngine(c config.Config, productId string) (*RuleEngine, error) {
-	return &RuleEngine{
+// newRuleExecutor create a engine according to product id and configuration
+func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
+	return &ruleExecutor{
 		productId: productId,
 		config:    c,
 		consumer:  nil,
@@ -73,7 +73,7 @@ func NewRuleEngine(c config.Config, productId string) (*RuleEngine, error) {
 }
 
 // Start will start the rule engine, receiving topic and rule
-func (p *RuleEngine) Start() error {
+func (p *ruleExecutor) Start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
@@ -88,7 +88,7 @@ func (p *RuleEngine) Start() error {
 }
 
 // Stop will stop the engine
-func (p *RuleEngine) Stop() {
+func (p *ruleExecutor) Stop() {
 	if p.consumer != nil {
 		p.consumer.Close()
 	}
@@ -96,7 +96,7 @@ func (p *RuleEngine) Stop() {
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *RuleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
+func (p *ruleExecutor) subscribeTopic(topic string) (sarama.Consumer, error) {
 	config := sarama.NewConfig()
 	config.ClientID = "sentel_conductor_engine_" + p.productId
 	khosts, _ := p.config.String("conductor", "kafka")
@@ -132,7 +132,7 @@ func (p *RuleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 }
 
 // handleEvent handle mqtt event from other service
-func (p *RuleEngine) handleKafkaEvent(re *event.RawEvent) error {
+func (p *ruleExecutor) handleKafkaEvent(re *event.RawEvent) error {
 	e := &event.Event{}
 	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
 		return fmt.Errorf("conductor unmarshal event common failed:%s", err.Error())
@@ -154,7 +154,7 @@ func (p *RuleEngine) handleKafkaEvent(re *event.RawEvent) error {
 }
 
 // getRuleObject get all rule's information from backend database
-func (p *RuleEngine) getRuleObject(rc RuleContext) (*registry.Rule, error) {
+func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 	if r, err := registry.New("conductor", p.config); err == nil {
 		defer r.Close()
 		return r.GetRule(rc.RuleName, rc.ProductId)
@@ -164,7 +164,7 @@ func (p *RuleEngine) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 }
 
 // CreateRule add a rule received from apiserver to this engine
-func (p *RuleEngine) CreateRule(rc RuleContext) error {
+func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 	glog.Infof("rule:%s is added", rc.RuleName)
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
@@ -180,7 +180,7 @@ func (p *RuleEngine) CreateRule(rc RuleContext) error {
 }
 
 // RemoveRule remove a rule from current rule engine
-func (p *RuleEngine) RemoveRule(rc RuleContext) error {
+func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
 	glog.Infof("Rule:%s is deleted", rc.RuleName)
 
 	// Get rule detail
@@ -194,7 +194,7 @@ func (p *RuleEngine) RemoveRule(rc RuleContext) error {
 }
 
 // UpdateRule update rule in engine
-func (p *RuleEngine) UpdateRule(rc RuleContext) error {
+func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 	glog.Infof("Rule:%s is updated", rc.RuleName)
 
 	obj, err := p.getRuleObject(rc)
@@ -213,7 +213,7 @@ func (p *RuleEngine) UpdateRule(rc RuleContext) error {
 }
 
 // StartRule start rule in engine
-func (p *RuleEngine) StartRule(rc RuleContext) error {
+func (p *ruleExecutor) StartRule(rc RuleContext) error {
 	glog.Infof("rule:%s is started", rc.RuleName)
 
 	// Check wether the rule engine is started
@@ -229,14 +229,14 @@ func (p *RuleEngine) StartRule(rc RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
-		p.rules[rc.RuleName].rule.Status = RuleStatusStarted
+		p.rules[rc.RuleName].rule.Status = ruleStatusStarted
 		return nil
 	}
 	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
 }
 
 // StopRule stop rule in engine
-func (p *RuleEngine) StopRule(rc RuleContext) error {
+func (p *ruleExecutor) StopRule(rc RuleContext) error {
 	glog.Infof("rule:%s is stoped", rc.RuleName)
 
 	p.mutex.Lock()
@@ -244,11 +244,11 @@ func (p *RuleEngine) StopRule(rc RuleContext) error {
 	if _, ok := p.rules[rc.RuleName]; !ok { // not found
 		return fmt.Errorf("Invalid rule:%s", rc.RuleName)
 	}
-	p.rules[rc.RuleName].rule.Status = RuleStatusStoped
+	p.rules[rc.RuleName].rule.Status = ruleStatusStoped
 	// Stop current engine if all rules are stoped
 	for _, w := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
-		if w.rule.Status != RuleStatusStoped {
+		if w.rule.Status != ruleStatusStoped {
 			return nil
 		}
 	}
@@ -258,9 +258,9 @@ func (p *RuleEngine) StopRule(rc RuleContext) error {
 
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
-func (p *RuleEngine) execute(e *event.Event) error {
+func (p *ruleExecutor) execute(e *event.Event) error {
 	for _, w := range p.rules {
-		if w.rule.Status == RuleStatusStarted {
+		if w.rule.Status == ruleStatusStarted {
 			if err := w.execute(p.config, e); err != nil {
 				glog.Infof("conductor execute rule '%s' failed, reason: '%s'", w.rule.RuleName, err.Error())
 			}

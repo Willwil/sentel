@@ -16,7 +16,7 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/conductor/executor"
+	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/conductor/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -33,7 +33,7 @@ func main() {
 
 	config, _ := createConfig(*configFile)
 	mgr, _ := service.NewServiceManager("conductor", config)
-	mgr.AddService(executor.ServiceFactory{})
+	mgr.AddService(engine.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }

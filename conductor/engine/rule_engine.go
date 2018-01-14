@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package executor
+package engine
 
 import (
 	"encoding/json"
@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/Shopify/sarama"
-	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -27,13 +26,13 @@ import (
 	"github.com/golang/glog"
 )
 
-// executorService manage all rule engine and execute rule
-type executorService struct {
+// ruleEngine manage all rule engine and execute rule
+type ruleEngine struct {
 	config       config.Config
 	waitgroup    sync.WaitGroup
 	quitChan     chan interface{}
-	ruleChan     chan engine.RuleContext
-	engines      map[string]*engine.RuleEngine
+	ruleChan     chan RuleContext
+	executors    map[string]*ruleExecutor
 	mutex        sync.Mutex
 	consumer     sarama.Consumer
 	recoveryChan chan interface{}
@@ -43,24 +42,24 @@ const SERVICE_NAME = "executor"
 
 type ServiceFactory struct{}
 
-// New create executor service factory
+// New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	return &executorService{
+	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
 		quitChan:     make(chan interface{}),
-		ruleChan:     make(chan engine.RuleContext),
-		engines:      make(map[string]*engine.RuleEngine),
+		ruleChan:     make(chan RuleContext),
+		executors:    make(map[string]*ruleExecutor),
 		mutex:        sync.Mutex{},
 		recoveryChan: make(chan interface{}),
 	}, nil
 }
 
 // Name
-func (p *executorService) Name() string { return SERVICE_NAME }
+func (p *ruleEngine) Name() string { return SERVICE_NAME }
 
 // Initialize check all rule's state and recover if rule is started
-func (p *executorService) Initialize() error {
+func (p *ruleEngine) Initialize() error {
 	// try connect with registry
 	r, err := registry.New("conductor", p.config)
 	if err != nil {
@@ -76,7 +75,7 @@ func (p *executorService) Initialize() error {
 }
 
 // Start
-func (p *executorService) Start() error {
+func (p *ruleEngine) Start() error {
 	consumer, err := p.subscribeTopic(message.TopicNameRule)
 	if err != nil {
 		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
@@ -84,7 +83,7 @@ func (p *executorService) Start() error {
 	p.consumer = consumer
 	// start rule channel
 	p.waitgroup.Add(1)
-	go func(s *executorService) {
+	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
 		select {
 		case ctx := <-s.ruleChan:
@@ -99,7 +98,7 @@ func (p *executorService) Start() error {
 }
 
 // Stop
-func (p *executorService) Stop() {
+func (p *ruleEngine) Stop() {
 	p.quitChan <- true
 	if p.consumer != nil {
 		p.consumer.Close()
@@ -110,21 +109,21 @@ func (p *executorService) Stop() {
 	close(p.recoveryChan)
 
 	// stop all ruleEngine
-	for _, engine := range p.engines {
-		if engine != nil {
-			engine.Stop()
+	for _, executor := range p.executors {
+		if executor != nil {
+			executor.Stop()
 		}
 	}
 }
 
 // recovery restart rules after conductor is restarted
-func (p *executorService) recovery() {
+func (p *ruleEngine) recovery() {
 	r, _ := registry.New("conductor", p.config)
 	defer r.Close()
 	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
-			ctx := engine.RuleContext{
+			ctx := RuleContext{
 				Action:    message.RuleActionStart,
 				ProductId: r.ProductId,
 				RuleName:  r.RuleName,
@@ -137,35 +136,35 @@ func (p *executorService) recovery() {
 }
 
 // handleRule process incomming rule
-func (p *executorService) handleRule(ctx engine.RuleContext) error {
+func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	// Get engine instance according to product id
-	if _, ok := p.engines[ctx.ProductId]; !ok { // not found
-		ruleEngine, err := engine.NewRuleEngine(p.config, ctx.ProductId)
+	if _, ok := p.executors[ctx.ProductId]; !ok { // not found
+		executor, err := newRuleExecutor(p.config, ctx.ProductId)
 		if err != nil {
 			glog.Errorf("Failed to create rule engint for product(%s)", ctx.ProductId)
 			return err
 		}
-		p.engines[ctx.ProductId] = ruleEngine
+		p.executors[ctx.ProductId] = executor
 	}
-	r := p.engines[ctx.ProductId]
+	exe := p.executors[ctx.ProductId]
 
 	switch ctx.Action {
-	case engine.RuleCreate:
-		return r.CreateRule(ctx)
-	case engine.RuleRemove:
-		return r.RemoveRule(ctx)
-	case engine.RuleUpdate:
-		return r.UpdateRule(ctx)
-	case engine.RuleStart:
-		return r.StartRule(ctx)
-	case engine.RuleStop:
-		return r.StopRule(ctx)
+	case RuleActionCreate:
+		return exe.CreateRule(ctx)
+	case RuleActionRemove:
+		return exe.RemoveRule(ctx)
+	case RuleActionUpdate:
+		return exe.UpdateRule(ctx)
+	case RuleActionStart:
+		return exe.StartRule(ctx)
+	case RuleActionStop:
+		return exe.StopRule(ctx)
 	}
 	return nil
 }
 
 // subscribeTopc subscribe topics from apiserver
-func (p *executorService) subscribeTopic(topic string) (sarama.Consumer, error) {
+func (p *ruleEngine) subscribeTopic(topic string) (sarama.Consumer, error) {
 	config := sarama.NewConfig()
 	config.ClientID = "sentel_conductor_indicator"
 	khosts, _ := p.config.String("conductor", "kafka")
@@ -199,7 +198,7 @@ func (p *executorService) subscribeTopic(topic string) (sarama.Consumer, error) 
 }
 
 // handleNotifications handle notification from kafka
-func (p *executorService) handleNotifications(topic string, value []byte) error {
+func (p *ruleEngine) handleNotifications(topic string, value []byte) error {
 	r := message.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
 		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
@@ -208,19 +207,19 @@ func (p *executorService) handleNotifications(topic string, value []byte) error 
 	action := ""
 	switch r.RuleAction {
 	case message.RuleActionCreate:
-		action = engine.RuleCreate
+		action = RuleActionCreate
 	case message.RuleActionRemove:
-		action = engine.RuleRemove
+		action = RuleActionRemove
 	case message.RuleActionUpdate:
-		action = engine.RuleUpdate
+		action = RuleActionUpdate
 	case message.RuleActionStart:
-		action = engine.RuleStart
+		action = RuleActionStart
 	case message.RuleActionStop:
-		action = engine.RuleStop
+		action = RuleActionStop
 	default:
 		return fmt.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
 	}
-	ctx := engine.RuleContext{
+	ctx := RuleContext{
 		Action:    action,
 		ProductId: r.ProductId,
 		RuleName:  r.RuleName,
@@ -229,8 +228,8 @@ func (p *executorService) handleNotifications(topic string, value []byte) error 
 	return nil
 }
 
-func HandleRuleNotification(ctx engine.RuleContext) {
+func HandleRuleNotification(ctx RuleContext) {
 	mgr := service.GetServiceManager()
-	executor := mgr.GetService(SERVICE_NAME).(*executorService)
-	executor.ruleChan <- ctx
+	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
+	s.ruleChan <- ctx
 }
