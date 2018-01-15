@@ -39,7 +39,7 @@ type ruleExecutor struct {
 }
 
 type RuleContext struct {
-	Action    string `json:"action"`
+	Action    string
 	ProductId string `json:"productId"`
 	RuleName  string `json:"ruleName"`
 }

@@ -1,14 +1,16 @@
 {
 	"info": {
 		"name": "sentel-conductor",
-		"_postman_id": "b839ff6c-a376-8e84-16ac-349da16c99ae",
-		"description": "",
+		"_postman_id": "ec86cd24-2bc3-6392-9734-029bb5297e05",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
 			"name": "Create Rule Request",
 			"request": {
+				"auth": {
+					"type": "noauth"
+				},
 				"method": "POST",
 				"header": [
 					{
@@ -18,7 +20,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"DataFormat\": \"application/json\",\n\t\"Description\": \"sample rule for product\",\n\t\"ProductId\": \"product1\",\n\t\"DataProcess\": {\n\t\t\"Keyword\": \"device\",\n\t\t\"Topic\":\" hello\",\n\t\t\"Condition\": \"\",\n\t\t\"Sql\":\"\"\n\t},\n\t\"DataTarget\": {\n\t\t\"Type\": \"topic\",\n\t\t\"Topic\":\" hello\"\n\t},\n\t\"RuleAction\":\"create\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules",
@@ -42,9 +44,12 @@
 			"request": {
 				"method": "DELETE",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules/rule1",
+					"raw": "localhost:50060/conductor/api/v1/rules",
 					"host": [
 						"localhost"
 					],
@@ -53,8 +58,7 @@
 						"conductor",
 						"api",
 						"v1",
-						"rules",
-						"rule1"
+						"rules"
 					]
 				},
 				"description": "remove a rule from conductor"
@@ -66,9 +70,12 @@
 			"request": {
 				"method": "PUT",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules/rule1?action=start",
+					"raw": "localhost:50060/conductor/api/v1/rules?action=start",
 					"host": [
 						"localhost"
 					],
@@ -77,8 +84,7 @@
 						"conductor",
 						"api",
 						"v1",
-						"rules",
-						"rule1"
+						"rules"
 					],
 					"query": [
 						{
@@ -97,9 +103,12 @@
 			"request": {
 				"method": "PUT",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules/rule1?action=stop",
+					"raw": "localhost:50060/conductor/api/v1/rules?action=stop",
 					"host": [
 						"localhost"
 					],
@@ -108,8 +117,7 @@
 						"conductor",
 						"api",
 						"v1",
-						"rules",
-						"rule1"
+						"rules"
 					],
 					"query": [
 						{
@@ -128,9 +136,12 @@
 			"request": {
 				"method": "PATCH",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules/rule1",
+					"raw": "localhost:50060/conductor/api/v1/rules",
 					"host": [
 						"localhost"
 					],
@@ -139,8 +150,7 @@
 						"conductor",
 						"api",
 						"v1",
-						"rules",
-						"rule1"
+						"rules"
 					]
 				},
 				"description": "update rule for specified product"

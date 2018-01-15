@@ -39,6 +39,8 @@ type response struct {
 	Result  interface{} `json:"result"`
 }
 
+const SERVICE_NAME = "restapi"
+
 // restapiServiceFactory
 type ServiceFactory struct{}
 
@@ -54,10 +56,10 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 
 	// Rule
 	e.POST("conductor/api/v1/rules", createRule)
-	e.DELETE("conductor/api/v1/rules/:ruleName", removeRule)
-	e.PUT("conductor/api/v1/rules/:ruleName?action=start", startRule)
-	e.PUT("conductor/api/v1/rules/:ruleName?action=stop", stopRule)
-	e.PATCH("conductor/api/v1/rules/:ruleName", updateRule)
+	e.DELETE("conductor/api/v1/rules", removeRule)
+	e.PUT("conductor/api/v1/rules?action=start", startRule)
+	e.PUT("conductor/api/v1/rules?action=stop", stopRule)
+	e.PATCH("conductor/api/v1/rules", updateRule)
 
 	return &restapiService{
 		config:    c,
@@ -68,7 +70,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 }
 
 // Name
-func (p *restapiService) Name() string      { return "restapi" }
+func (p *restapiService) Name() string      { return SERVICE_NAME }
 func (p *restapiService) Initialize() error { return nil }
 
 // Start
@@ -108,18 +110,30 @@ func updateRule(ctx echo.Context) error {
 }
 
 func removeRule(ctx echo.Context) error {
-	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleActionRemove}
+	r := engine.RuleContext{}
+	if err := ctx.Bind(&r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+	r.Action = engine.RuleActionRemove
 	engine.HandleRuleNotification(r)
 	return ctx.JSON(http.StatusOK, response{})
 }
 
 func startRule(ctx echo.Context) error {
-	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleActionStart}
+	r := engine.RuleContext{}
+	if err := ctx.Bind(&r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+	r.Action = engine.RuleActionStart
 	engine.HandleRuleNotification(r)
 	return ctx.JSON(http.StatusOK, response{})
 }
 func stopRule(ctx echo.Context) error {
-	r := engine.RuleContext{RuleName: ctx.Param("ruleName"), Action: engine.RuleActionStop}
+	r := engine.RuleContext{}
+	if err := ctx.Bind(&r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+	r.Action = engine.RuleActionStop
 	engine.HandleRuleNotification(r)
 	return ctx.JSON(http.StatusOK, response{})
 }
