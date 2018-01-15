@@ -14,7 +14,6 @@ package collector
 
 import (
 	"context"
-	"sync"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -25,9 +24,8 @@ import (
 )
 
 type collectorService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	consumer  message.Consumer
+	config   config.Config
+	consumer message.Consumer
 }
 
 const SERVICE_NAME = "meter"
@@ -50,9 +48,8 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	khosts := c.MustString("meter", "kafka")
 	consumer, _ := message.NewConsumer(khosts, "meter")
 	return &collectorService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		consumer:  consumer,
+		config:   c,
+		consumer: consumer,
 	}, nil
 
 }
@@ -70,14 +67,13 @@ func (p *collectorService) Start() error {
 	p.consumer.Subscribe(TopicNamePublish, p.messageHandlerFunc, nil)
 	p.consumer.Subscribe(TopicNameMetric, p.messageHandlerFunc, nil)
 	p.consumer.Subscribe(TopicNameStats, p.messageHandlerFunc, nil)
+	p.consumer.Start()
 	return nil
 }
 
 // Stop
 func (p *collectorService) Stop() {
 	p.consumer.Close()
-	p.waitgroup.Wait()
-
 }
 
 // handleNotifications handle notification from kafka
