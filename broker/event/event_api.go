@@ -13,6 +13,7 @@
 package event
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/base"
@@ -73,4 +74,53 @@ func NameOfEvent(t uint32) string {
 // FullNameOfEvent return event information
 func FullNameOfEvent(e *Event) string {
 	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e.Type), e.BrokerId, e.ClientId)
+}
+
+// FromRawEvent unmarshal event from raw event
+func FromRawEvent(value []byte) (*Event, error) {
+	re := RawEvent{}
+	if err := json.Unmarshal(value, &re); err != nil {
+		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
+		return nil, err
+	}
+	e := &Event{}
+	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
+		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
+		return nil, err
+	}
+	switch e.Type {
+	case SessionCreate:
+		r := SessionCreateDetail{}
+		if err := json.Unmarshal(re.Payload, &r); err != nil {
+			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
+		}
+		e.Detail = r
+	case SessionDestroy:
+		r := SessionDestroyDetail{}
+		if err := json.Unmarshal(re.Payload, &r); err != nil {
+			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
+		}
+		e.Detail = r
+	case TopicSubscribe:
+		r := TopicSubscribeDetail{}
+		if err := json.Unmarshal(re.Payload, &r); err != nil {
+			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
+		}
+		e.Detail = r
+	case TopicUnsubscribe:
+		r := TopicUnsubscribeDetail{}
+		if err := json.Unmarshal(re.Payload, &r); err != nil {
+			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
+		}
+		e.Detail = r
+	case TopicPublish:
+		r := TopicPublishDetail{}
+		if err := json.Unmarshal(re.Payload, &r); err != nil {
+			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
+		}
+		e.Detail = r
+	default:
+		return nil, fmt.Errorf("invalid event type '%d'", e.Type)
+	}
+	return e, nil
 }

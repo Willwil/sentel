@@ -93,31 +93,17 @@ func (p *eventService) nameOfEventBus(e *Event) string {
 
 // initialize
 func (p *eventService) Initialize() error { return nil }
-
-func (p *eventService) Name() string { return ServiceName }
-func (p *eventService) bootstrap() error {
-	return nil
-}
+func (p *eventService) Name() string      { return ServiceName }
+func (p *eventService) bootstrap() error  { return nil }
 
 // messageHandlerFunc handle mqtt event from other service
 func (p *eventService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	re := &RawEvent{}
-	if err := json.Unmarshal(value, re); err == nil {
-		e := &Event{}
-		if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
-			glog.Errorf("event service unmarshal event common failed:%s", err.Error())
-			return
-		}
+	if e, err := FromRawEvent(value); err == nil && e != nil {
 		// cluster event manager only handle kafka event from other broker
 		// Iterate all subscribers to notify
 		if e.BrokerId != base.GetBrokerId() {
 			if _, found := p.subscribers[e.Type]; found {
 				subscribers := p.subscribers[e.Type]
-				err := p.unmarshalEventPayload(e, re.Payload)
-				if err != nil {
-					glog.Errorf(err.Error())
-					return
-				}
 				for _, subscriber := range subscribers {
 					subscriber.handler(e, subscriber.ctx)
 				}

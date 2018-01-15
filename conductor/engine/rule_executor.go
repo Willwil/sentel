@@ -13,7 +13,6 @@
 package engine
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -29,13 +28,16 @@ const fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleExecutor struct {
+	config    config.Config         // configuration
 	tenantId  string                // Tenant
 	productId string                // one product have one rule engine
 	rules     map[string]ruleWraper // all product's rule
-	config    config.Config         // configuration
 	mutex     sync.Mutex            // mutex to protext rules list
 	started   bool                  // indicate wether engined is started
 	consumer  message.Consumer
+	dataChan  chan *event.Event
+	quitChan  chan interface{}
+	waitgroup sync.WaitGroup
 }
 
 type RuleContext struct {
@@ -68,6 +70,9 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
+		dataChan:  make(chan *event.Event),
+		quitChan:  make(chan interface{}),
+		waitgroup: sync.WaitGroup{},
 	}, nil
 }
 
@@ -76,6 +81,19 @@ func (p *ruleExecutor) Start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
+	p.waitgroup.Add(1)
+	go func(p *ruleExecutor) {
+		defer p.waitgroup.Done()
+		for {
+			select {
+			case <-p.quitChan:
+				return
+			case e := <-p.dataChan:
+				p.execute(e)
+			}
+		}
+	}(p)
+
 	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
 	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
@@ -88,33 +106,18 @@ func (p *ruleExecutor) Start() error {
 // Stop will stop the engine
 func (p *ruleExecutor) Stop() {
 	p.consumer.Close()
+	p.quitChan <- true
+	p.waitgroup.Wait()
+	p.started = true
 }
 
 // messageHandlerFunc handle mqtt event from other service
 func (p *ruleExecutor) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	re := event.RawEvent{}
-	if err := json.Unmarshal(value, &re); err != nil {
-		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
-		return
-	}
-
-	e := &event.Event{}
-	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
-		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
-		return
-	}
-	switch e.Type {
-	case event.SessionCreate:
-	case event.SessionDestroy:
-	case event.TopicSubscribe:
-	case event.TopicUnsubscribe:
-	case event.TopicPublish:
-		detail := event.TopicPublishDetail{}
-		if err := json.Unmarshal(re.Payload, &detail); err != nil {
-			glog.Errorf("conductor unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = detail
-		p.execute(e)
+	t, err := event.FromRawEvent(value)
+	if err == nil && t != nil && t.Type == event.TopicPublish {
+		p.dataChan <- t
+		// we can call p.execute(t) here, but in consider of avoiding to block message receiver
+		// we use datachannel
 	}
 }
 
@@ -130,7 +133,7 @@ func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 
 // CreateRule add a rule received from apiserver to this engine
 func (p *ruleExecutor) CreateRule(rc RuleContext) error {
-	glog.Infof("rule:%s is added", rc.RuleName)
+	glog.Infof("rule '%s' is added", rc.RuleName)
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
 		return err
@@ -138,7 +141,7 @@ func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
-		return fmt.Errorf("rule:%s already exist", rc.RuleName)
+		return fmt.Errorf("rule '%s' already exist", rc.RuleName)
 	}
 	p.rules[rc.RuleName] = ruleWraper{rule: obj}
 	return nil
@@ -146,7 +149,7 @@ func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 
 // RemoveRule remove a rule from current rule engine
 func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
-	glog.Infof("Rule:%s is deleted", rc.RuleName)
+	glog.Infof("rule '%s' is deleted", rc.RuleName)
 
 	// Get rule detail
 	p.mutex.Lock()
@@ -155,12 +158,12 @@ func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
 		delete(p.rules, rc.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
 }
 
 // UpdateRule update rule in engine
 func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
-	glog.Infof("Rule:%s is updated", rc.RuleName)
+	glog.Infof("rule '%s' is updated", rc.RuleName)
 
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
@@ -174,17 +177,17 @@ func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 		p.rules[rc.RuleName] = ruleWraper{rule: obj}
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
 }
 
 // StartRule start rule in engine
 func (p *ruleExecutor) StartRule(rc RuleContext) error {
-	glog.Infof("rule:%s is started", rc.RuleName)
+	glog.Infof("rule '%s' is started", rc.RuleName)
 
 	// Check wether the rule engine is started
 	if p.started == false {
 		if err := p.Start(); err != nil {
-			glog.Errorf(" conductor start rule '%s' failed:'%v'", rc.RuleName, err)
+			glog.Errorf("start rule '%s' failed,'%s'", rc.RuleName, err.Error())
 			return err
 		}
 		p.started = true
@@ -197,17 +200,17 @@ func (p *ruleExecutor) StartRule(rc RuleContext) error {
 		p.rules[rc.RuleName].rule.Status = ruleStatusStarted
 		return nil
 	}
-	return fmt.Errorf("rule:%s doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
 }
 
 // StopRule stop rule in engine
 func (p *ruleExecutor) StopRule(rc RuleContext) error {
-	glog.Infof("rule:%s is stoped", rc.RuleName)
+	glog.Infof("rule '%s' is stoped", rc.RuleName)
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; !ok { // not found
-		return fmt.Errorf("Invalid rule:%s", rc.RuleName)
+		return fmt.Errorf("invalid rule '%s'", rc.RuleName)
 	}
 	p.rules[rc.RuleName].rule.Status = ruleStatusStoped
 	// Stop current engine if all rules are stoped
@@ -217,6 +220,7 @@ func (p *ruleExecutor) StopRule(rc RuleContext) error {
 			return nil
 		}
 	}
+	// stop executor if all rules are stoped
 	p.Stop()
 	return nil
 }
@@ -224,10 +228,13 @@ func (p *ruleExecutor) StopRule(rc RuleContext) error {
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
 func (p *ruleExecutor) execute(e *event.Event) error {
-	for _, w := range p.rules {
+	p.mutex.Lock()
+	rules := p.rules
+	p.mutex.Unlock()
+	for _, w := range rules {
 		if w.rule.Status == ruleStatusStarted {
 			if err := w.execute(p.config, e); err != nil {
-				glog.Infof("conductor execute rule '%s' failed, reason: '%s'", w.rule.RuleName, err.Error())
+				glog.Infof("rule '%s' execution failed,'%s'", w.rule.RuleName, err.Error())
 			}
 		}
 	}
