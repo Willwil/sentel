@@ -108,6 +108,7 @@ func (p *hubService) Start() error {
 		for {
 			select {
 			case <-p.quitChan:
+				return
 			case <-p.recoverChan:
 				p.recoverStartup()
 			}
