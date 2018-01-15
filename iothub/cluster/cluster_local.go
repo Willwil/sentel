@@ -76,7 +76,7 @@ func (p *localCluster) CreateService(tid string, replicas int32) (string, error)
 		fmt.Sprintf("-l localhost:%d", port))
 	spec := ServiceSpec{
 		ServiceName:  tid,
-		ServiceId:    fmt.Sprintf("%s", len(p.services)+1),
+		ServiceId:    fmt.Sprintf("%d", len(p.services)+1),
 		ServiceState: ServiceStateStarted,
 		Endpoints:    []ServiceEndpoint{{VirtualIP: "127.0.0.1", Port: uint32(port)}},
 	}

@@ -24,25 +24,25 @@ type Tenant struct {
 
 // Product
 type Product struct {
-	TenantId    string    `bson:"TenantId" json:"tenantId"`
-	ProductId   string    `bson:"ProductId" json:"productId"`
-	ProductName string    `bson:"ProductName" json:"productName"`
-	Description string    `bson:"Description" json:"description"`
+	TenantId    string    `bson:"TenantId" json:"TenantId"`
+	ProductId   string    `bson:"ProductId" json:"ProductId"`
+	ProductName string    `bson:"ProductName" json:"ProductName"`
+	Description string    `bson:"Description" json:"Description"`
 	TimeCreated time.Time `bson:"TimeCreated"`
 	TimeUpdated time.Time `bson:"TimeModified"`
-	Category    string    `bson:"CategoryId" json:"category"`
-	TopicFlavor string    `bson:"TopicFlavor" json:"topicFlavor"`
+	Category    string    `bson:"CategoryId" json:"Category"`
+	TopicFlavor string    `bson:"TopicFlavor" json:"TopicFlavor"`
 }
 
 // Device
 type Device struct {
-	ProductId    string    `bson:"ProductKey" json:"productKey"`
-	DeviceId     string    `bson:"DeviceId" json:"deviceId"`
-	DeviceName   string    `bson:"DeviceName" json:"deviceName"`
+	ProductId    string    `bson:"ProductId" json:"ProductId"`
+	DeviceId     string    `bson:"DeviceId" json:"DeviceId"`
+	DeviceName   string    `bson:"DeviceName" json:"DeviceName"`
 	DeviceStatus string    `bson:"DeviceStatus"`
-	DeviceSecret string    `bson:"DeviceSecret" json:"deviceSecret"`
-	TimeCreated  time.Time `bson:"TimeCreated" json:"timeCreated"`
-	TimeUpdated  time.Time `bson:"TimeUpdated" json:"timeUpdated"`
+	DeviceSecret string    `bson:"DeviceSecret" json:"DeviceSecret"`
+	TimeCreated  time.Time `bson:"TimeCreated" json:"TimeCreated"`
+	TimeUpdated  time.Time `bson:"TimeUpdated" json:"TimeUpdated"`
 }
 
 // Rule
@@ -56,9 +56,9 @@ const (
 )
 
 type RuleDataProcess struct { // select keyword from /productid/topic with condition
-	Topic     string   `json:"topic" bson:"topic"`
-	Condition string   `json:"condition" bson:"condiction"`
-	Fields    []string `json:"fields" bson:"fields"`
+	Topic     string   `json:"topic" bson:"Topic"`
+	Condition string   `json:"condition" bson:"Condiction"`
+	Fields    []string `json:"fields" bson:"Fields"`
 }
 type RuleDataTarget struct {
 	Type         DataTargetType `json:"type"`     // Transfer type
@@ -76,7 +76,7 @@ const (
 )
 
 type Rule struct {
-	ProductId   string          `json:"productKey" bson:"ProductKey"`
+	ProductId   string          `json:"productId" bson:"ProductId"`
 	RuleName    string          `json:"ruleName" bson:"RuleName"`
 	DataFormat  string          `json:"format" bson:"Format"`
 	Description string          `json:"desc" bson:"Desc"`
@@ -88,8 +88,8 @@ type Rule struct {
 }
 
 type TopicFlavor struct {
-	FlavorName string           `json:"flavorName" bson:"flavorName"`
-	Builtin    bool             `json:"bultin" bson:"builtin"`
-	TenantId   string           `json:"tenantId" bson:"tenantId"`
-	Topics     map[string]uint8 `json:"topic" bson:"topics"`
+	FlavorName string           `json:"flavorName" bson:"FlavorName"`
+	Builtin    bool             `json:"bultin" bson:"Builtin"`
+	TenantId   string           `json:"tenantId" bson:"TenantId"`
+	Topics     map[string]uint8 `json:"topic" bson:"Topics"`
 }

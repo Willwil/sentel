@@ -306,8 +306,8 @@ func (r *Registry) BulkRegisterDevices(devices []Device) error {
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 	c := r.db.C(dbNameDevices)
-	if err := c.Find(bson.M{"ProductId": productId, "deviceId": deviceId}); err == nil {
-		return c.Remove(bson.M{"ProductId": productId, "deviceId": deviceId})
+	if err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}); err == nil {
+		return c.Remove(bson.M{"ProductId": productId, "DeviceId": deviceId})
 	}
 	return fmt.Errorf("invalid operataion")
 }
@@ -338,7 +338,7 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 func (r *Registry) GetRulesWithStatus(status string) []Rule {
 	rules := []Rule{}
 	c := r.db.C(dbNameRules)
-	c.Find(bson.M{"status": status}).All(&rules)
+	c.Find(bson.M{"Status": status}).All(&rules)
 	return rules
 }
 
@@ -393,7 +393,7 @@ func (r *Registry) CreateTopicFlavor(t *TopicFlavor) error {
 func (r *Registry) GetBuiltinTopicFlavors() []TopicFlavor {
 	c := r.db.C(dbNameTopicFlavors)
 	flavors := []TopicFlavor{}
-	c.Find(bson.M{"builtin": true}).All(&flavors)
+	c.Find(bson.M{"Builtin": true}).All(&flavors)
 	return flavors
 }
 
@@ -401,7 +401,7 @@ func (r *Registry) GetBuiltinTopicFlavors() []TopicFlavor {
 func (r *Registry) GetTenantTopicFlavors(tenantId string) []TopicFlavor {
 	c := r.db.C(dbNameTopicFlavors)
 	flavors := []TopicFlavor{}
-	c.Find(bson.M{"tenantId": tenantId}).All(&flavors)
+	c.Find(bson.M{"TenantId": tenantId}).All(&flavors)
 	return flavors
 }
 
@@ -409,7 +409,7 @@ func (r *Registry) GetTenantTopicFlavors(tenantId string) []TopicFlavor {
 func (r *Registry) GetTenantTopicFlavor(tenantId string, flavorName string) (TopicFlavor, error) {
 	c := r.db.C(dbNameTopicFlavors)
 	flavor := TopicFlavor{}
-	if err := c.Find(bson.M{"tenantId": tenantId, "flavorName": flavorName}).One(&flavor); err != nil {
+	if err := c.Find(bson.M{"TenantId": tenantId, "FlavorName": flavorName}).One(&flavor); err != nil {
 		return flavor, err
 	}
 	return flavor, nil
@@ -418,21 +418,20 @@ func (r *Registry) GetTenantTopicFlavor(tenantId string, flavorName string) (Top
 // RemoveTopicFlavor remove a specified topic flavor from registry
 func (r *Registry) RemoveTopicFlavor(t *TopicFlavor) error {
 	c := r.db.C(dbNameTopicFlavors)
-	return c.Remove(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId})
+	return c.Remove(bson.M{"FlavorName": t.FlavorName, "Builtin": t.Builtin, "TenantId": t.TenantId})
 }
 
 // GetProductTopicFlavor retrieve a product's topic flavor
 func (r *Registry) GetProductTopicFlavors(productId string) []TopicFlavor {
 	flavors := []TopicFlavor{}
-	// get product
 	c := r.db.C(dbNameProducts)
 	p := Product{}
-	if err := c.Find(bson.M{"productId": productId}).One(&p); err != nil {
+	if err := c.Find(bson.M{"ProductId": productId}).One(&p); err != nil {
 		return flavors
 	}
 	c = r.db.C(dbNameTopicFlavors)
 	flavor := TopicFlavor{}
-	if err := c.Find(bson.M{"tenantId": p.ProductId, "flavorName": p.TopicFlavor}).One(&flavor); err == nil {
+	if err := c.Find(bson.M{"TenantId": p.ProductId, "FlavorName": p.TopicFlavor}).One(&flavor); err == nil {
 		flavors = append(flavors, flavor)
 	}
 	return flavors
@@ -441,5 +440,5 @@ func (r *Registry) GetProductTopicFlavors(productId string) []TopicFlavor {
 // UpdateTopicFlavor update a topic flavor
 func (r *Registry) UpdateTopicFlavor(t *TopicFlavor) error {
 	c := r.db.C(dbNameTopicFlavors)
-	return c.Update(bson.M{"flavorName": t.FlavorName, "builtin": t.Builtin, "tenantId": t.TenantId}, t)
+	return c.Update(bson.M{"FlavorName": t.FlavorName, "Builtin": t.Builtin, "TenantId": t.TenantId}, t)
 }

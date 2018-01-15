@@ -143,7 +143,7 @@ func (p *hubService) recoverStartup() {
 	// retry to recover again
 	for _, t := range retries {
 		if _, err := p.clustermgr.CreateService(t.TenantId, t.InstanceReplicas); err != nil {
-			glog.Error("service '%s' recovery failed", t.TenantId)
+			glog.Errorf("service '%s' recovery failed", t.TenantId)
 		}
 	}
 }
