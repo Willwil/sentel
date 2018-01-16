@@ -367,8 +367,8 @@ func (r *Registry) GetProductRuleNames(productId string) ([]string, error) {
 	return rules, err
 }
 
-// DeleteRule delete a rule from registry
-func (r *Registry) DeleteRule(productId string, ruleName string) error {
+// RemoveRule delete a rule from registry
+func (r *Registry) RemoveRule(productId string, ruleName string) error {
 	c := r.db.C(dbNameRules)
 	return c.Remove(bson.M{"RuleName": ruleName, "ProductId": productId})
 }

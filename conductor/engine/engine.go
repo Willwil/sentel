@@ -82,7 +82,7 @@ func (p *ruleEngine) Initialize() error {
 // Start
 func (p *ruleEngine) Start() error {
 	if err := p.consumer.Subscribe(message.TopicNameRule, p.messageHandlerFunc, nil); err != nil {
-		return fmt.Errorf("conductor failed to subscribe kafka event : %s", err.Error())
+		return fmt.Errorf("subscribe message failed : %s", err.Error())
 	}
 	p.consumer.Start()
 	p.waitgroup.Add(1)

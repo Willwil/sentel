@@ -23,36 +23,39 @@ import (
 )
 
 type ETL struct {
-	config      config.Config
-	extractor   extractor.Extractor
-	transformer transformer.Transformer
-	loader      loader.Loader
+	config       config.Config
+	extractor    extractor.Extractor
+	transformers []transformer.Transformer
+	loader       loader.Loader
 }
 
 func New(c config.Config) (*ETL, error) {
 	extractor, _ := extractor.New(c)
-	transformer, _ := transformer.New(c)
+	transformers := transformer.New(c)
 	loader, _ := loader.New(c)
-	if extractor == nil || transformer == nil || loader == nil {
+	if extractor == nil || len(transformers) == 0 || loader == nil {
 		return nil, errors.New("etl initialization failed")
 	}
 	return &ETL{
-		config:      c,
-		extractor:   extractor,
-		transformer: transformer,
-		loader:      loader,
+		config:       c,
+		extractor:    extractor,
+		transformers: transformers,
+		loader:       loader,
 	}, nil
 }
 
 func (p *ETL) Run(r data.Reader, ctx interface{}) error {
 	if data, err := p.extractor.Extract(r, ctx); err != nil {
-		if data, err := p.transformer.Transform(data, ctx); err != nil {
-			if err := p.loader.Load(data, ctx); err != nil {
+		for _, trans := range p.transformers {
+			result, err := trans.Transform(data, ctx)
+			if err != nil {
 				return err
 			}
+			data = result
+		}
+		if err := p.loader.Load(data, ctx); err != nil {
 			return err
 		}
-		return err
 	}
 	return nil
 }

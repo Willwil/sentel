@@ -25,4 +25,9 @@ var defaultConfigs = map[string]map[string]string{
 	"indicator": {
 		"listen": "localhost:50059",
 	},
+	"etl": {
+		"extractor":   "event",
+		"transformer": "no",
+		"loader":      "topic",
+	},
 }

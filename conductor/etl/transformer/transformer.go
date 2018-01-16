@@ -12,14 +12,31 @@
 
 package transformer
 
-import "github.com/cloustone/sentel/pkg/config"
+import (
+	"strings"
+
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/golang/glog"
+)
 
 type Transformer interface {
 	Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error)
 }
 
-func New(c config.Config) (Transformer, error) {
-	return &noTransformer{}, nil
+func New(c config.Config) []Transformer {
+	transformers := []Transformer{}
+	if names, err := c.String("transformers", ","); err == nil {
+		for _, name := range strings.Split(names, ",") {
+			switch name {
+			case "no":
+				transformers = append(transformers, &noTransformer{})
+			default:
+				glog.Errorf("unknow transformer '%s'", name)
+				break
+			}
+		}
+	}
+	return transformers
 }
 
 type noTransformer struct{}

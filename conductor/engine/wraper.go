@@ -27,7 +27,16 @@ type ruleWraper struct {
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
-	etl, err := etl.New(c)
+	// extraction configuration at first
+	config := config.New()
+	options := make(map[string]string)
+	options["extractor"] = "event"
+	options["transformer"] = "no"
+	options["loader"] = string(r.DataTarget.Type)
+	options["mongo"] = c.MustString("conductor", "mongo")
+	options["kafka"] = c.MustString("conductor", "kafka")
+	config.AddConfigSection("etl", options)
+	etl, err := etl.New(config)
 	if err != nil {
 		return nil, err
 	}

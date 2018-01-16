@@ -70,7 +70,7 @@ func RemoveRule(ctx echo.Context) error {
 	}
 
 	r := getRegistry(ctx)
-	if err := r.DeleteRule(rule.ProductId, rule.RuleName); err != nil {
+	if err := r.RemoveRule(rule.ProductId, rule.RuleName); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka

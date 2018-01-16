@@ -25,6 +25,7 @@ import (
 
 var (
 	configFile = flag.String("c", "/etc/sentel/conductor.conf", "config file")
+	testMode   = flag.Bool("t", false, "test mode")
 )
 
 func main() {
@@ -32,6 +33,10 @@ func main() {
 	glog.Info("conductor is starting...")
 
 	config, _ := createConfig(*configFile)
+	if *testMode == true {
+		initializeTestData(config)
+		defer removeTestData(config)
+	}
 	mgr, _ := service.NewServiceManager("conductor", config)
 	mgr.AddService(engine.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
