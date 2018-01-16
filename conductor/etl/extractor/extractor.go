@@ -21,6 +21,7 @@ import (
 
 type Extractor interface {
 	Extract(r data.Reader, ctx interface{}) (map[string]interface{}, error)
+	Close()
 }
 
 func New(c config.Config) (Extractor, error) {

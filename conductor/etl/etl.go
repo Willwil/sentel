@@ -59,3 +59,11 @@ func (p *ETL) Run(r data.Reader, ctx interface{}) error {
 	}
 	return nil
 }
+
+func (p *ETL) Close() {
+	p.extractor.Close()
+	for _, trans := range p.transformers {
+		trans.Close()
+	}
+	p.loader.Close()
+}

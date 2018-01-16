@@ -21,6 +21,7 @@ import (
 
 type Transformer interface {
 	Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error)
+	Close()
 }
 
 func New(c config.Config) []Transformer {
@@ -44,3 +45,4 @@ type noTransformer struct{}
 func (p *noTransformer) Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error) {
 	return data, nil
 }
+func (p *noTransformer) Close() {}
