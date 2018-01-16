@@ -13,7 +13,6 @@
 package cluster
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -39,37 +38,37 @@ type swarmCluster struct {
 
 func newSwarmCluster(c config.Config) (*swarmCluster, error) {
 	// Get requried images
-	images := make(map[string]bool)
-	if v, err := c.String("iothub", "docker-images"); err != nil || v == "" {
-		return nil, errors.New("invalid configuration for docker-images in iothub.conf")
-	} else {
-		names := strings.Split(v, ",")
-		if len(names) == 0 {
-			return nil, errors.New("no docker-images are specified in iothub.conf")
-		}
-		for _, v := range names {
-			name := strings.TrimSpace(v)
-			images[name] = false
-		}
-	}
-	// Conenct with swarm
+	// images := make(map[string]bool)
+	// if v, err := c.String("iothub", "docker-images"); err != nil || v == "" {
+	// 	return nil, errors.New("invalid configuration for docker-images in iothub.conf")
+	// } else {
+	// 	names := strings.Split(v, ",")
+	// 	if len(names) == 0 {
+	// 		return nil, errors.New("no docker-images are specified in iothub.conf")
+	// 	}
+	// 	for _, v := range names {
+	// 		name := strings.TrimSpace(v)
+	// 		images[name] = false
+	// 	}
+	// }
+	// Connect with swarm
 	cli, err := client.NewEnvClient()
 	if err != nil || cli == nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
 	}
-	/*
-		for imageName, _ := range images {
-			filters := filters.NewArgs()
-			filters.Add("reference", imageName)
-			options := types.ImageListOptions{
-				Filters: filters,
-			}
-			if _, err := cli.ImageList(context.Background(), options); err != nil {
-				return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
-			}
-			glog.Infof("swarm found docker image '%s' in docker host", imageName)
-		}
-	*/
+
+	// for imageName, _ := range images {
+	// 	filters := filters.NewArgs()
+	// 	filters.Add("reference", imageName)
+	// 	options := types.ImageListOptions{
+	// 		Filters: filters,
+	// 	}
+	// 	if _, err := cli.ImageList(context.Background(), options); err != nil {
+	// 		return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
+	// 	}
+	// 	glog.Infof("swarm found docker image '%s' in docker host", imageName)
+	// }
+
 	return &swarmCluster{
 		config:   c,
 		mutex:    sync.Mutex{},
@@ -161,18 +160,35 @@ func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error)
 		if err != nil {
 			return serviceName, fmt.Errorf("swarm failed to get service backend info for '%s'", serviceName)
 		}
-		if len(service.Endpoint.Ports) == len(service.Endpoint.VirtualIPs) {
-			// endpoints := []ds.ServiceEndpoint{}
-			// for index, ep := range service.Endpoint.Ports {
-			// 	port := ep.PublishedPort
-			// 	vip := service.Endpoint.VirtualIPs[index].Addr
-			// 	endpoints = append(endpoints, sd.ServiceEndpoint{IP: vip, Port: port})
-			// }
 
-			service := ds.Service{Name: serviceName, ID: serviceID}
-			if err := p.serviceDiscovery.RegisterService(service); err != nil {
-				return serviceName, fmt.Errorf("swarm failed to update service discovery for '%s'", serviceName)
+		if len(service.Spec.TaskTemplate.Networks) != 1 {
+			return serviceName, fmt.Errorf("inspect service network failed")
+		}
+		networkID := service.Spec.TaskTemplate.Networks[0].Target
+
+		ip := ""
+		for _, vip := range service.Endpoint.VirtualIPs {
+			if vip.NetworkID == networkID {
+				ip = strings.Split(vip.Addr, "/")[0]
+				break
 			}
+		}
+		if ip == "" {
+			return serviceName, fmt.Errorf("inspect service virtual ip failed")
+		}
+
+		if len(service.Endpoint.Ports) != 1 {
+			return serviceName, fmt.Errorf("inspect service port failed")
+		}
+
+		dockerService := ds.Service{
+			Name: serviceName,
+			ID:   serviceID,
+			IP:   ip,
+			Port: service.Endpoint.Ports[0].PublishedPort,
+		}
+		if err := p.serviceDiscovery.RegisterService(dockerService); err != nil {
+			return serviceName, fmt.Errorf("swarm failed to update service discovery for '%s'", serviceName)
 		}
 	}
 	return serviceName, nil

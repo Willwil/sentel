@@ -227,7 +227,7 @@ func (p *hubService) removeTenant(tid string) error {
 		p.clustermgr.RemoveService(t.ServiceId)
 	}
 	// Delete all products
-	for name, _ := range t.Products {
+	for name := range t.Products {
 		if err := p.removeProduct(tid, name); err != nil {
 			glog.Errorf("iothub remove tenant '%s' product '%s' failed", tid, name)
 		}
