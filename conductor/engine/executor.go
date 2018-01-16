@@ -156,13 +156,11 @@ func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 
 // RemoveRule remove a rule from current rule engine
 func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
-	glog.Infof("rule '%s' is deleted", rc.RuleName)
-
-	// Get rule detail
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
 		delete(p.rules, rc.RuleName)
+		glog.Infof("rule '%s' is removed", rc.RuleName)
 		return nil
 	}
 	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
@@ -170,10 +168,9 @@ func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
 
 // UpdateRule update rule in engine
 func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
-	glog.Infof("rule '%s' is updated", rc.RuleName)
-
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
+		glog.Infof("rule '%s' no exist", rc.RuleName)
 		return err
 	}
 
@@ -183,6 +180,7 @@ func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 		rw := p.rules[rc.RuleName]
 		rw.rule = obj
 		p.rules[rc.RuleName] = rw
+		glog.Infof("rule '%s' is updated", rc.RuleName)
 		return nil
 	}
 	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
@@ -190,8 +188,6 @@ func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 
 // StartRule start rule in engine
 func (p *ruleExecutor) StartRule(rc RuleContext) error {
-	glog.Infof("rule '%s' is started", rc.RuleName)
-
 	// Check wether the rule engine is started
 	if p.started == false {
 		if err := p.Start(); err != nil {
@@ -206,6 +202,7 @@ func (p *ruleExecutor) StartRule(rc RuleContext) error {
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
 		p.rules[rc.RuleName].rule.Status = ruleStatusStarted
+		glog.Infof("rule '%s' is started", rc.RuleName)
 		return nil
 	}
 	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
@@ -213,7 +210,6 @@ func (p *ruleExecutor) StartRule(rc RuleContext) error {
 
 // StopRule stop rule in engine
 func (p *ruleExecutor) StopRule(rc RuleContext) error {
-	glog.Infof("rule '%s' is stoped", rc.RuleName)
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -225,10 +221,12 @@ func (p *ruleExecutor) StopRule(rc RuleContext) error {
 	for _, w := range p.rules {
 		// If one of rule is not stoped, don't stop current engine
 		if w.rule.Status != ruleStatusStoped {
+			glog.Infof("rule '%s' is stoped", rc.RuleName)
 			return nil
 		}
 	}
 	// stop executor if all rules are stoped
+	glog.Infof("rule executor '%s' is stoped", rc.RuleName)
 	p.Stop()
 	return nil
 }
