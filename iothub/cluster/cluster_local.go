@@ -21,6 +21,7 @@ import (
 
 	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/docker-service"
 )
 
 type localCluster struct {
@@ -83,54 +84,55 @@ func (p *localCluster) CreateService(tid string, replicas int32) (string, error)
 	if err := cmd.Start(); err != nil {
 		return "", err
 	}
-	serviceId := spec.ServiceId
-	p.services[serviceId] = cmd
-	p.ports[port] = serviceId
-	p.serviceSpecs[serviceId] = spec
-	p.ctxs[serviceId] = ctx
+	serviceID := spec.ServiceId
+	p.services[serviceID] = cmd
+	p.ports[port] = serviceID
+	p.serviceSpecs[serviceID] = spec
+	p.ctxs[serviceID] = ctx
 
 	if p.serviceDiscovery != nil {
-		service := sd.Service{
-			ServiceName: tid,
-			ServiceId:   serviceId,
-			Endpoints:   []sd.ServiceEndpoint{{IP: "127.0.0.1", Port: port}},
+		service := ds.Service{
+			Name: tid,
+			ID:   serviceID,
+			IP:   "127.0.0.1",
+			Port: port,
 		}
 		p.serviceDiscovery.RegisterService(service)
 	}
-	return serviceId, nil
+	return serviceID, nil
 }
 
-func (p *localCluster) RemoveService(serviceId string) error {
+func (p *localCluster) RemoveService(serviceID string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, found := p.services[serviceId]; !found {
-		return fmt.Errorf("service '%s' not found", serviceId)
+	if _, found := p.services[serviceID]; !found {
+		return fmt.Errorf("service '%s' not found", serviceID)
 	}
-	ctx := p.ctxs[serviceId]
+	ctx := p.ctxs[serviceID]
 	ctx.Done()
-	delete(p.services, serviceId)
-	delete(p.ctxs, serviceId)
-	delete(p.serviceSpecs, serviceId)
-	spec := p.serviceSpecs[serviceId]
+	delete(p.services, serviceID)
+	delete(p.ctxs, serviceID)
+	delete(p.serviceSpecs, serviceID)
+	spec := p.serviceSpecs[serviceID]
 	delete(p.ports, spec.Endpoints[0].Port)
 	if p.serviceDiscovery != nil {
-		p.serviceDiscovery.RemoveService(sd.Service{ServiceId: serviceId})
+		p.serviceDiscovery.RemoveService(ds.Service{ID: serviceID})
 	}
 	return nil
 }
 
-func (p *localCluster) UpdateService(serviceId string, replicas int32) error {
+func (p *localCluster) UpdateService(serviceID string, replicas int32) error {
 	return nil
 }
 
-func (p *localCluster) IntrospectService(serviceId string) (ServiceSpec, error) {
+func (p *localCluster) IntrospectService(serviceID string) (ServiceSpec, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	serviceSpec := ServiceSpec{
-		ServiceId: serviceId,
+		ServiceId: serviceID,
 	}
-	if _, found := p.serviceSpecs[serviceId]; !found {
-		return serviceSpec, fmt.Errorf("no service '%s'", serviceId)
+	if _, found := p.serviceSpecs[serviceID]; !found {
+		return serviceSpec, fmt.Errorf("no service '%s'", serviceID)
 	}
-	return p.serviceSpecs[serviceId], nil
+	return p.serviceSpecs[serviceID], nil
 }

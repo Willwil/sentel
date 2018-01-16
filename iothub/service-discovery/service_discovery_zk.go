@@ -20,6 +20,8 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/docker-service"
+
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -39,23 +41,23 @@ func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
 	return &serviceDisZK{conn: conn}, nil
 }
 
-func (p *serviceDisZK) RegisterService(s Service) error {
-	path := fmt.Sprintf("/iotservices/%s", s.ServiceName)
+func (p *serviceDisZK) RegisterService(s ds.Service) error {
+	path := fmt.Sprintf("/iotservices/%s", s.Name)
 	buf, err := json.Marshal(&s)
 	if err != nil {
-		return fmt.Errorf("service '%s' data marshal failed", s.ServiceName)
+		return fmt.Errorf("service '%s' data marshal failed", s.Name)
 	}
 	acls := zk.WorldACL(zk.PermAll)
 	_, err = p.conn.Create(path, buf, 0, acls)
 	return err
 }
 
-func (p *serviceDisZK) RemoveService(s Service) {
-	path := fmt.Sprintf("/iotservices/%s", s.ServiceName)
+func (p *serviceDisZK) RemoveService(s ds.Service) {
+	path := fmt.Sprintf("/iotservices/%s", s.Name)
 	p.conn.Delete(path, 0)
 
 }
-func (p *serviceDisZK) UpdateService(s Service) error {
+func (p *serviceDisZK) UpdateService(s ds.Service) error {
 	return nil
 }
 
