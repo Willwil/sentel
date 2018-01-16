@@ -21,18 +21,28 @@ import (
 )
 
 type ruleWraper struct {
-	rule *registry.Rule
+	rule     *registry.Rule
+	etl      *etl.ETL
+	curEvent *event.Event
+}
+
+func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
+	etl, err := etl.New(c)
+	if err != nil {
+		return nil, err
+	}
+	return &ruleWraper{etl: etl, rule: r}, nil
+
 }
 
 func (p *ruleWraper) Read() (interface{}, error) {
-	return p.rule, nil
+	return p.curEvent, nil
 }
 
-func (p *ruleWraper) execute(c config.Config, e *event.Event) error {
+func (p *ruleWraper) executeETL(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	if etl, err := etl.New(c); err != nil {
-		return err
-	} else {
-		return etl.Run(p, p.rule)
-	}
+	p.curEvent = e
+	err := p.etl.Run(p, p.rule)
+	p.curEvent = nil
+	return err
 }
