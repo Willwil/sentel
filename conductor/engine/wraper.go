@@ -21,9 +21,10 @@ import (
 )
 
 type ruleWraper struct {
-	rule     *registry.Rule
-	etl      *etl.ETL
-	curEvent *event.Event
+	rule *registry.Rule
+	etl  *etl.ETL
+	// curEvent *event.Event
+	datach chan *event.Event
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
@@ -35,23 +36,37 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	options["loader"] = string(r.DataTarget.Type)
 	options["mongo"] = c.MustString("conductor", "mongo")
 	options["message_server"] = c.MustString("conductor", "kafka")
+	if r.DataTarget.Type == registry.DataTargetTypeTopic {
+		options["topic"] = r.DataTarget.Topic
+	}
 	config.AddConfigSection("etl", options)
 	etl, err := etl.New(config)
 	if err != nil {
 		return nil, err
 	}
-	return &ruleWraper{etl: etl, rule: r}, nil
+	return &ruleWraper{
+		etl:    etl,
+		rule:   r,
+		datach: make(chan *event.Event),
+	}, nil
 
 }
 
 func (p *ruleWraper) Read() (interface{}, error) {
-	return p.curEvent, nil
+	//return p.curEvent, nil
+	return <-p.datach, nil
 }
 
 func (p *ruleWraper) executeETL(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	p.curEvent = e
+	//p.curEvent = e
+	p.datach <- e
 	err := p.etl.Run(p, p.rule)
-	p.curEvent = nil
+	//p.curEvent = nil
 	return err
+}
+
+func (p *ruleWraper) close() {
+	p.etl.Close()
+	close(p.datach)
 }

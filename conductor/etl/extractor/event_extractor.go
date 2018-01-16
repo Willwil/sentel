@@ -99,3 +99,5 @@ func (p *eventExtractor) getVariableValue(name string, e *event.Event) interface
 	}
 	return nil
 }
+
+func (p *eventExtractor) Close() {}

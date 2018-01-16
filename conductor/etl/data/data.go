@@ -17,5 +17,5 @@ type Reader interface {
 }
 
 type Writer interface {
-	Write() error
+	Write(v interface{}) error
 }

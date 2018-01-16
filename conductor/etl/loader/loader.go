@@ -21,6 +21,7 @@ import (
 type Loader interface {
 	Name() string
 	Load(data map[string]interface{}, ctx interface{}) error
+	Close()
 }
 
 func New(c config.Config) (Loader, error) {

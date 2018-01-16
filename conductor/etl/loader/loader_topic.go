@@ -13,63 +13,38 @@
 package loader
 
 import (
-	"encoding/json"
-	"strings"
-	"time"
+	"errors"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/registry"
-	"github.com/golang/glog"
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 type topicLoader struct {
-	config config.Config
-	rule   *registry.Rule
+	config   config.Config
+	producer message.Producer
 }
 
 func newTopicLoader(c config.Config) (Loader, error) {
-	return &topicLoader{config: c}, nil
+	hosts, err := c.String("etl", "message_server")
+	if err != nil || hosts == "" {
+		return nil, errors.New("invalid message server setting")
+	}
+	producer, err := message.NewProducer(hosts, "", true)
+	if err != nil {
+		return nil, err
+	}
+	return &topicLoader{config: c, producer: producer}, nil
 }
 
 func (p *topicLoader) Name() string { return "topic" }
+func (p *topicLoader) Close() {
+	p.producer.Close()
+}
 
 func (p *topicLoader) Load(data map[string]interface{}, ctx interface{}) error {
-	config := sarama.NewConfig()
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	config.Producer.Retry.Max = 10
-	config.Producer.Return.Successes = true
-	config.Producer.Timeout = 5 * time.Second
-
-	v, _ := json.Marshal(data)
-	msg := &sarama.ProducerMessage{
-		Topic: p.rule.DataTarget.Topic,
-		Key:   sarama.StringEncoder("conductor"),
-		Value: sarama.ByteEncoder(v), //value,
+	topic, err := p.config.String("etl", "topic")
+	if err != nil || topic == "" {
+		return errors.New("invalid topic")
 	}
-
-	kafka := p.config.MustString("conductor", "kafka")
-	producer, err := sarama.NewAsyncProducer(strings.Split(kafka, ","), config)
-	if err != nil {
-		glog.Errorf("Failed to produce message:%s", err.Error())
-		return err
-	}
-	defer producer.Close()
-
-	go func(p sarama.AsyncProducer) {
-		errors := p.Errors()
-		success := p.Successes()
-		for {
-			select {
-			case err := <-errors:
-				if err != nil {
-					glog.Error(err)
-				}
-			case <-success:
-			}
-		}
-	}(producer)
-
-	producer.Input() <- msg
-	return err
+	return p.producer.SendMessage("", topic, data)
 }
