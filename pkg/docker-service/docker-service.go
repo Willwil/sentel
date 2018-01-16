@@ -9,8 +9,8 @@ const (
 
 // Service broker service define
 type Service struct {
-	ServiceName string `json:"ServiceName"`
-	ServiceID   string `json:"ServiceId"`
-	IP          string `json:"IP"`
-	Port        uint32 `json:"Port"`
+	Name string `json:"Name"`
+	ID   string `json:"ID"`
+	IP   string `json:"IP"`
+	Port uint32 `json:"Port"`
 }
