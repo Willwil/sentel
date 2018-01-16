@@ -10,24 +10,25 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
+package extractor
 
 import (
+	"fmt"
+
+	"github.com/cloustone/sentel/conductor/etl/data"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/registry"
 )
 
-type outerdbEndpoint struct {
-	config config.Config
-	rule   *registry.Rule
+type Extractor interface {
+	Extract(r data.Reader, ctx interface{}) (map[string]interface{}, error)
 }
 
-func newOuterdbEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
-	return &outerdbEndpoint{config: c, rule: r}, nil
-}
-
-func (p *outerdbEndpoint) Name() string { return "outerdb" }
-
-func (p *outerdbEndpoint) Write(data map[string]interface{}) error {
-	return nil
+func New(c config.Config) (Extractor, error) {
+	w := c.MustString("etl", "extractor")
+	switch w {
+	case "event":
+		return &eventExtractor{config: c}, nil
+	default:
+		return nil, fmt.Errorf("invalid extractor '%s'", w)
+	}
 }

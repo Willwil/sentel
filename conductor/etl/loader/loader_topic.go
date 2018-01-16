@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
+package loader
 
 import (
 	"encoding/json"
@@ -23,18 +23,18 @@ import (
 	"github.com/golang/glog"
 )
 
-type topicEndpoint struct {
+type topicLoader struct {
 	config config.Config
 	rule   *registry.Rule
 }
 
-func newTopicEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
-	return &topicEndpoint{config: c, rule: r}, nil
+func newTopicLoader(c config.Config) (Loader, error) {
+	return &topicLoader{config: c}, nil
 }
 
-func (p *topicEndpoint) Name() string { return "topic" }
+func (p *topicLoader) Name() string { return "topic" }
 
-func (p *topicEndpoint) Write(data map[string]interface{}) error {
+func (p *topicLoader) Load(data map[string]interface{}, ctx interface{}) error {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 10

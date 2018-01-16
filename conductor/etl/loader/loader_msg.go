@@ -10,26 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
-
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/registry"
-)
-
-type innerdbEndpoint struct {
-	config config.Config
-	rule   *registry.Rule
-}
-
-func newInnerdbEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
-	return &innerdbEndpoint{config: c, rule: r}, nil
-}
-
-func (p *innerdbEndpoint) Name() string { return "innerdb" }
-
-func (p *innerdbEndpoint) Write(data map[string]interface{}) error {
-	return errors.New("not implemented")
-}
+package loader

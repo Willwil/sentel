@@ -10,26 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
-
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/registry"
-)
-
-type msgEndpoint struct {
-	config config.Config
-	rule   *registry.Rule
-}
-
-func newMsgEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
-	return &msgEndpoint{config: c, rule: r}, nil
-}
-
-func (p *msgEndpoint) Name() string { return "msg" }
-
-func (p *msgEndpoint) Write(data map[string]interface{}) error {
-	return errors.New("not implemented")
-}
+package loader

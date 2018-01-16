@@ -143,7 +143,11 @@ func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 	if _, ok := p.rules[rc.RuleName]; ok {
 		return fmt.Errorf("rule '%s' already exist", rc.RuleName)
 	}
-	p.rules[rc.RuleName] = ruleWraper{rule: obj}
+	rw, err := newRuleWraper(p.config, obj)
+	if err != nil {
+		return fmt.Errorf("create etl for rule '%s' failed", rc.RuleName)
+	}
+	p.rules[rc.RuleName] = *rw
 	return nil
 }
 
@@ -158,7 +162,7 @@ func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
 		delete(p.rules, rc.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
 }
 
 // UpdateRule update rule in engine
@@ -170,14 +174,15 @@ func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 		return err
 	}
 
-	// Get rule detail
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
-		p.rules[rc.RuleName] = ruleWraper{rule: obj}
+		rw := p.rules[rc.RuleName]
+		rw.rule = obj
+		p.rules[rc.RuleName] = rw
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
 }
 
 // StartRule start rule in engine
@@ -233,7 +238,7 @@ func (p *ruleExecutor) execute(e *event.Event) error {
 	p.mutex.Unlock()
 	for _, w := range rules {
 		if w.rule.Status == ruleStatusStarted {
-			if err := w.execute(p.config, e); err != nil {
+			if err := w.executeETL(e); err != nil {
 				glog.Infof("rule '%s' execution failed,'%s'", w.rule.RuleName, err.Error())
 			}
 		}

@@ -10,30 +10,25 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
+package loader
 
 import (
 	"fmt"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/registry"
 )
 
-type DataEndpoint interface {
+type Loader interface {
 	Name() string
-	Write(data map[string]interface{}) error
+	Load(data map[string]interface{}, ctx interface{}) error
 }
 
-func NewEndpoint(c config.Config, r *registry.Rule) (DataEndpoint, error) {
-	switch r.DataTarget.Type {
-	case registry.DataTargetTypeTopic:
-		return newTopicEndpoint(c, r)
-	case registry.DataTargetTypeOuterDatabase:
-		return newOuterdbEndpoint(c, r)
-	case registry.DataTargetTypeInnerDatabase:
-		return newInnerdbEndpoint(c, r)
-	case registry.DataTargetTypeMessageService:
-		return newMsgEndpoint(c, r)
+func New(c config.Config) (Loader, error) {
+	w := c.MustString("etl", "loader")
+	switch w {
+	case "topic":
+		return newTopicLoader(c)
+	default:
+		return nil, fmt.Errorf("invalid loader '%s'", w)
 	}
-	return nil, fmt.Errorf("data target '%s' is not implemented", r.DataTarget.Type)
 }

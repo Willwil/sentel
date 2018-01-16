@@ -10,24 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package main
-
-var defaultConfigs = map[string]map[string]string{
-	"conductor": {
-		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
-		"mongo":           "localhost:27017",
-		"connect_timeout": "5",
-	},
-	"restapi": {
-		"listen": "localhost:50060",
-	},
-	"indicator": {
-		"listen": "localhost:50059",
-	},
-	"etl": {
-		"extractor":   "event",
-		"transformer": "no",
-		"loader":      "topic",
-	},
-}
+package loader
