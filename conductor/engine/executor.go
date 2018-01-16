@@ -71,8 +71,8 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
-		dataChan:  make(chan *event.Event),
-		quitChan:  make(chan interface{}),
+		dataChan:  make(chan *event.Event, 1),
+		quitChan:  make(chan interface{}, 1),
 		waitgroup: sync.WaitGroup{},
 	}, nil
 }
@@ -107,7 +107,7 @@ func (p *ruleExecutor) Start() error {
 // Stop will stop the engine
 func (p *ruleExecutor) Stop() {
 	p.consumer.Close()
-	//p.quitChan <- true
+	p.quitChan <- true
 	p.waitgroup.Wait()
 	p.started = true
 }

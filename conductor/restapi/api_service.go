@@ -28,11 +28,6 @@ type restapiService struct {
 	echo      *echo.Echo
 }
 
-type apiContext struct {
-	echo.Context
-	config config.Config
-}
-
 type response struct {
 	Message string      `json:"message"`
 	Result  interface{} `json:"result"`
@@ -46,18 +41,12 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
-	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(e echo.Context) error {
-			cc := &apiContext{Context: e, config: c}
-			return h(cc)
-		}
-	})
 
 	// Rule
 	e.POST("conductor/api/v1/rules", createRule)
 	e.DELETE("conductor/api/v1/rules", removeRule)
-	e.PUT("conductor/api/v1/rules?action=start", startRule)
-	e.PUT("conductor/api/v1/rules?action=stop", stopRule)
+	e.PATCH("conductor/api/v1/rules?action=start", startRule)
+	e.PATCH("conductor/api/v1/rules?action=stop", stopRule)
 	e.PATCH("conductor/api/v1/rules", updateRule)
 
 	return &restapiService{

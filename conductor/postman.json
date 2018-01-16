@@ -20,7 +20,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules",
@@ -43,10 +43,15 @@
 			"name": "Remove Rule Request",
 			"request": {
 				"method": "DELETE",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules",
@@ -69,10 +74,15 @@
 			"name": "Start Rule Request",
 			"request": {
 				"method": "PUT",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules?action=start",
@@ -102,10 +112,15 @@
 			"name": "Stop Rule Request",
 			"request": {
 				"method": "PUT",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules?action=stop",
@@ -135,10 +150,15 @@
 			"name": "Update Rule Request",
 			"request": {
 				"method": "PATCH",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rul1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules",
