@@ -41,7 +41,7 @@ type ruleExecutor struct {
 }
 
 type RuleContext struct {
-	Action    string
+	Action    string `json:"action"`
 	ProductId string `json:"productId"`
 	RuleName  string `json:"ruleName"`
 	Resp      chan error

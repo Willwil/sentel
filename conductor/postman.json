@@ -82,7 +82,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\",\n\t\"Action\":\"start\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules?action=start",
@@ -120,7 +120,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\"\n}"
+					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\",\n\t\"Action\":\"stop\"\n}"
 				},
 				"url": {
 					"raw": "localhost:50060/conductor/api/v1/rules?action=stop",

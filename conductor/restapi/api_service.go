@@ -45,8 +45,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Rule
 	e.POST("conductor/api/v1/rules", createRule)
 	e.DELETE("conductor/api/v1/rules", removeRule)
-	e.PATCH("conductor/api/v1/rules?action=start", startRule)
-	e.PATCH("conductor/api/v1/rules?action=stop", stopRule)
+	e.PUT("conductor/api/v1/rules", controlRule)
 	e.PATCH("conductor/api/v1/rules", updateRule)
 
 	return &restapiService{
@@ -122,10 +121,9 @@ func removeRule(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, response{})
 }
 
-func startRule(ctx echo.Context) error {
+func controlRule(ctx echo.Context) error {
 	r := engine.RuleContext{
-		Action: engine.RuleActionStart,
-		Resp:   make(chan error),
+		Resp: make(chan error),
 	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
@@ -133,20 +131,5 @@ func startRule(ctx echo.Context) error {
 	if err := engine.HandleRuleNotification(r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-
-	return ctx.JSON(http.StatusOK, response{})
-}
-func stopRule(ctx echo.Context) error {
-	r := engine.RuleContext{
-		Action: engine.RuleActionStop,
-		Resp:   make(chan error),
-	}
-	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
-	if err := engine.HandleRuleNotification(r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
-
 	return ctx.JSON(http.StatusOK, response{})
 }
