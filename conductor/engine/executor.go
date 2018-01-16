@@ -44,6 +44,7 @@ type RuleContext struct {
 	Action    string
 	ProductId string `json:"productId"`
 	RuleName  string `json:"ruleName"`
+	Resp      chan error
 }
 
 const (
@@ -106,7 +107,7 @@ func (p *ruleExecutor) Start() error {
 // Stop will stop the engine
 func (p *ruleExecutor) Stop() {
 	p.consumer.Close()
-	p.quitChan <- true
+	//p.quitChan <- true
 	p.waitgroup.Wait()
 	p.started = true
 }
@@ -125,7 +126,7 @@ func (p *ruleExecutor) messageHandlerFunc(topic string, value []byte, ctx interf
 func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 	if r, err := registry.New("conductor", p.config); err == nil {
 		defer r.Close()
-		return r.GetRule(rc.RuleName, rc.ProductId)
+		return r.GetRule(rc.ProductId, rc.RuleName)
 	} else {
 		return nil, err
 	}
@@ -133,21 +134,23 @@ func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 
 // CreateRule add a rule received from apiserver to this engine
 func (p *ruleExecutor) CreateRule(rc RuleContext) error {
-	glog.Infof("rule '%s' is added", rc.RuleName)
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	if _, ok := p.rules[rc.RuleName]; ok {
+		return fmt.Errorf("rule '%s' already exist", rc.RuleName)
+	}
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
 		return err
 	}
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if _, ok := p.rules[rc.RuleName]; ok {
-		return fmt.Errorf("rule '%s' already exist", rc.RuleName)
-	}
+
 	rw, err := newRuleWraper(p.config, obj)
 	if err != nil {
 		return fmt.Errorf("create etl for rule '%s' failed", rc.RuleName)
 	}
 	p.rules[rc.RuleName] = *rw
+	glog.Infof("rule '%s' is added", rc.RuleName)
 	return nil
 }
 

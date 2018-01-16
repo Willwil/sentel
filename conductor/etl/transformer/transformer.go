@@ -25,7 +25,7 @@ type Transformer interface {
 
 func New(c config.Config) []Transformer {
 	transformers := []Transformer{}
-	if names, err := c.String("transformers", ","); err == nil {
+	if names, err := c.String("etl", "transformers"); err == nil {
 		for _, name := range strings.Split(names, ",") {
 			switch name {
 			case "no":

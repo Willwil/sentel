@@ -34,7 +34,6 @@ type apiContext struct {
 }
 
 type response struct {
-	Success bool        `json:"success"`
 	Message string      `json:"message"`
 	Result  interface{} `json:"result"`
 }
@@ -91,49 +90,74 @@ func (p *restapiService) Stop() {
 }
 
 func createRule(ctx echo.Context) error {
-	r := engine.RuleContext{}
+	r := engine.RuleContext{
+		Action: engine.RuleActionCreate,
+		Resp:   make(chan error),
+	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.Action = engine.RuleActionCreate
-	engine.HandleRuleNotification(r)
+	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
 	return ctx.JSON(http.StatusOK, response{})
 }
+
 func updateRule(ctx echo.Context) error {
-	r := engine.RuleContext{}
+	r := engine.RuleContext{
+		Action: engine.RuleActionUpdate,
+		Resp:   make(chan error),
+	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.Action = engine.RuleActionUpdate
-	engine.HandleRuleNotification(r)
+	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+
 	return ctx.JSON(http.StatusOK, response{})
 }
 
 func removeRule(ctx echo.Context) error {
-	r := engine.RuleContext{}
+	r := engine.RuleContext{
+		Action: engine.RuleActionRemove,
+		Resp:   make(chan error),
+	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.Action = engine.RuleActionRemove
-	engine.HandleRuleNotification(r)
+	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+
 	return ctx.JSON(http.StatusOK, response{})
 }
 
 func startRule(ctx echo.Context) error {
-	r := engine.RuleContext{}
+	r := engine.RuleContext{
+		Action: engine.RuleActionStart,
+		Resp:   make(chan error),
+	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.Action = engine.RuleActionStart
-	engine.HandleRuleNotification(r)
+	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+
 	return ctx.JSON(http.StatusOK, response{})
 }
 func stopRule(ctx echo.Context) error {
-	r := engine.RuleContext{}
+	r := engine.RuleContext{
+		Action: engine.RuleActionStop,
+		Resp:   make(chan error),
+	}
 	if err := ctx.Bind(&r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-	r.Action = engine.RuleActionStop
-	engine.HandleRuleNotification(r)
+	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+
 	return ctx.JSON(http.StatusOK, response{})
 }

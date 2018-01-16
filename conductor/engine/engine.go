@@ -91,7 +91,10 @@ func (p *ruleEngine) Start() error {
 		for {
 			select {
 			case ctx := <-s.ruleChan:
-				s.handleRule(ctx)
+				err := s.handleRule(ctx)
+				if ctx.Resp != nil {
+					ctx.Resp <- err
+				}
 			case <-s.recoveryChan:
 				s.recovery()
 			case <-s.quitChan:
@@ -196,8 +199,9 @@ func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interfac
 	p.ruleChan <- rc
 }
 
-func HandleRuleNotification(ctx RuleContext) {
+func HandleRuleNotification(ctx RuleContext) error {
 	mgr := service.GetServiceManager()
 	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
 	s.ruleChan <- ctx
+	return <-ctx.Resp
 }

@@ -31,10 +31,10 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	config := config.New()
 	options := make(map[string]string)
 	options["extractor"] = "event"
-	options["transformer"] = "no"
+	options["transformers"] = "no"
 	options["loader"] = string(r.DataTarget.Type)
 	options["mongo"] = c.MustString("conductor", "mongo")
-	options["kafka"] = c.MustString("conductor", "kafka")
+	options["message_server"] = c.MustString("conductor", "kafka")
 	config.AddConfigSection("etl", options)
 	etl, err := etl.New(config)
 	if err != nil {
