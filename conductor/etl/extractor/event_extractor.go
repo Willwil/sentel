@@ -10,48 +10,65 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package data
+package extractor
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/conductor/etl/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/elgs/jsonql"
 )
 
-type DataProcessor interface {
-	Execute(e *event.Event) (map[string]interface{}, error)
-}
-
-func NewProcessor(c config.Config, r *registry.Rule) (DataProcessor, error) {
-	return &simpleDataProcessor{config: c, rule: r}, nil
-}
-
-type simpleDataProcessor struct {
+type eventExtractor struct {
 	config config.Config
-	rule   *registry.Rule
 }
 
-func (p *simpleDataProcessor) Execute(e *event.Event) (map[string]interface{}, error) {
+func newEventExtractor(c config.Config) (Extractor, error) {
+	return &eventExtractor{
+		config: c,
+	}, nil
+}
+
+func (p *eventExtractor) isValid(data interface{}, ctx interface{}) error {
+	if data == nil || ctx == nil {
+		return errors.New("invalid parameter")
+	}
+	if _, ok := data.(*event.Event); !ok {
+		return errors.New("invalid parameter")
+	}
+	if _, ok := ctx.(*registry.Rule); !ok {
+		return errors.New("invalid data context")
+	}
+	return nil
+}
+
+func (p *eventExtractor) Extract(r data.Reader, ctx interface{}) (map[string]interface{}, error) {
+	data, err := r.Read()
+	if err != nil || p.isValid(data, ctx) != nil {
+		return nil, errors.New("invalid parameter")
+	}
+	e := data.(*event.Event)
+	rule := ctx.(*registry.Rule)
 	detail := e.Detail.(*event.TopicPublishDetail)
-	if detail.Topic == p.rule.DataProcess.Topic {
+	if detail.Topic == rule.DataProcess.Topic {
 		// topic's data must be json format
 		parser, err := jsonql.NewStringQuery(string(detail.Payload))
 		if err != nil {
 			return nil, fmt.Errorf("data format is invalid '%s'", err.Error())
 		}
 		// parse condiction and get result
-		n, err := parser.Query(p.rule.DataProcess.Condition)
+		n, err := parser.Query(rule.DataProcess.Condition)
 		if err != nil {
 			return nil, fmt.Errorf("data query failed '%s'", err.Error())
 		}
 		switch n.(type) {
 		case map[string]interface{}:
 			results := n.(map[string]interface{})
-			fields := p.rule.DataProcess.Fields
+			fields := rule.DataProcess.Fields
 			data := make(map[string]interface{})
 			for _, field := range fields {
 				if _, found := results[field]; found { // message field
@@ -71,11 +88,11 @@ func (p *simpleDataProcessor) Execute(e *event.Event) (map[string]interface{}, e
 	return nil, errors.New("data format is invalid to query")
 }
 
-func (p *simpleDataProcessor) getFunctionValue(name string, e *event.Event) (interface{}, error) {
+func (p *eventExtractor) getFunctionValue(name string, e *event.Event) (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (p *simpleDataProcessor) getVariableValue(name string, e *event.Event) interface{} {
+func (p *eventExtractor) getVariableValue(name string, e *event.Event) interface{} {
 	switch name {
 	case "deviceId":
 		return e.ClientId
