@@ -16,34 +16,21 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/docker-service"
 )
 
-const (
-	BackendZookeeper = "zookeeper"
-	BackendEtcd      = "etcd"
-)
-
-type ServiceEndpoint struct {
-	IP   string `json:"IP"`
-	Port uint32 `json:"Port"`
-}
-
-type Service struct {
-	ServiceName string            `json:"ServiceName"`
-	ServiceId   string            `json:"ServiceId"`
-	Endpoints   []ServiceEndpoint `json:"Endpoints"`
-}
-
+// ServiceDiscovery service discovery
 type ServiceDiscovery interface {
-	RegisterService(s Service) error
-	RemoveService(s Service)
-	UpdateService(s Service) error
+	RegisterService(s ds.Service) error
+	RemoveService(s ds.Service)
+	UpdateService(s ds.Service) error
 	Close()
 }
 
+// New create service discovery
 func New(c config.Config, bks string) (ServiceDiscovery, error) {
 	switch bks {
-	case BackendZookeeper:
+	case ds.BackendZookeeper:
 		return newServiceDiscoveryZK(c)
 	default:
 		return nil, errors.New("no valid service discovery backend")
