@@ -13,6 +13,8 @@
 package extractor
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/conductor/etl/data"
 	"github.com/cloustone/sentel/pkg/config"
 )
@@ -22,5 +24,11 @@ type Extractor interface {
 }
 
 func New(c config.Config) (Extractor, error) {
-	return &eventExtractor{config: c}, nil
+	w := c.MustString("etl", "extractor")
+	switch w {
+	case "event":
+		return &eventExtractor{config: c}, nil
+	default:
+		return nil, fmt.Errorf("invalid extractor '%s'", w)
+	}
 }

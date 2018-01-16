@@ -12,7 +12,11 @@
 
 package loader
 
-import "github.com/cloustone/sentel/pkg/config"
+import (
+	"fmt"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type Loader interface {
 	Name() string
@@ -20,5 +24,11 @@ type Loader interface {
 }
 
 func New(c config.Config) (Loader, error) {
-	return newTopicLoader(c)
+	w := c.MustString("etl", "loader")
+	switch w {
+	case "topic":
+		return newTopicLoader(c)
+	default:
+		return nil, fmt.Errorf("invalid loader '%s'", w)
+	}
 }

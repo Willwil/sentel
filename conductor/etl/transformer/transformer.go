@@ -31,7 +31,7 @@ func New(c config.Config) []Transformer {
 			case "no":
 				transformers = append(transformers, &noTransformer{})
 			default:
-				glog.Errorf("unknow transformer '%s'", name)
+				glog.Errorf("invalid transformer '%s'", name)
 				break
 			}
 		}
