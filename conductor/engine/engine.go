@@ -117,7 +117,7 @@ func (p *ruleEngine) Stop() {
 	// stop all ruleEngine
 	for _, executor := range p.executors {
 		if executor != nil {
-			executor.Stop()
+			executor.stop()
 		}
 	}
 }
@@ -143,36 +143,52 @@ func (p *ruleEngine) recovery() {
 
 // handleRule process incomming rule
 func (p *ruleEngine) handleRule(ctx RuleContext) error {
-	// get executor instance according to product id
-	if _, ok := p.executors[ctx.ProductId]; !ok { // not found
-		executor, err := newRuleExecutor(p.config, ctx.ProductId)
-		if err != nil {
-			glog.Errorf("Failed to create rule engint for product(%s)", ctx.ProductId)
-			return err
-		}
-		p.executors[ctx.ProductId] = executor
-	}
-	exe := p.executors[ctx.ProductId]
-
+	productId := ctx.ProductId
 	switch ctx.Action {
 	case RuleActionCreate:
-		return exe.CreateRule(ctx)
+		if _, found := p.executors[productId]; !found {
+			if executor, err := newRuleExecutor(p.config, productId); err != nil {
+				return err
+			} else {
+				p.executors[productId] = executor
+			}
+		}
+		return p.executors[productId].createRule(ctx)
+
 	case RuleActionRemove:
-		return exe.RemoveRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			if err := executor.removeRule(ctx); err != nil {
+				return err
+			} else {
+				if len(executor.rules) == 0 {
+					executor.stop()
+					delete(p.executors, productId)
+					return nil
+				}
+			}
+		}
 	case RuleActionUpdate:
-		return exe.UpdateRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			return executor.updateRule(ctx)
+		}
+
 	case RuleActionStart:
-		return exe.StartRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			return executor.startRule(ctx)
+		}
+
 	case RuleActionStop:
-		return exe.StopRule(ctx)
+		if executor, found := p.executors[productId]; !found {
+			return executor.stopRule(ctx)
+		}
 	}
-	return nil
+	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
 func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
 	r := message.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
-		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
+		glog.Errorf("invalid rule topic body, '%s'", err)
 		return
 	}
 	action := ""
@@ -188,7 +204,7 @@ func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interfac
 	case message.RuleActionStop:
 		action = RuleActionStop
 	default:
-		glog.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
+		glog.Errorf("invalid rule action '%s' for product '%s'", r.RuleAction, r.ProductId)
 		return
 	}
 	rc := RuleContext{

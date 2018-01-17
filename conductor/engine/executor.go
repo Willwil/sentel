@@ -78,7 +78,7 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 }
 
 // Start will start the rule engine, receiving topic and rule
-func (p *ruleExecutor) Start() error {
+func (p *ruleExecutor) start() error {
 	if p.started {
 		return fmt.Errorf("rule engine(%s) is already started", p.productId)
 	}
@@ -105,7 +105,7 @@ func (p *ruleExecutor) Start() error {
 }
 
 // Stop will stop the engine
-func (p *ruleExecutor) Stop() {
+func (p *ruleExecutor) stop() {
 	p.consumer.Close()
 	p.quitChan <- true
 	p.waitgroup.Wait()
@@ -133,7 +133,7 @@ func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 }
 
 // CreateRule add a rule received from apiserver to this engine
-func (p *ruleExecutor) CreateRule(rc RuleContext) error {
+func (p *ruleExecutor) createRule(rc RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -155,7 +155,7 @@ func (p *ruleExecutor) CreateRule(rc RuleContext) error {
 }
 
 // RemoveRule remove a rule from current rule engine
-func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
+func (p *ruleExecutor) removeRule(rc RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, ok := p.rules[rc.RuleName]; ok {
@@ -167,7 +167,7 @@ func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
 }
 
 // UpdateRule update rule in engine
-func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
+func (p *ruleExecutor) updateRule(rc RuleContext) error {
 	obj, err := p.getRuleObject(rc)
 	if err != nil {
 		glog.Infof("rule '%s' no exist", rc.RuleName)
@@ -187,10 +187,10 @@ func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
 }
 
 // StartRule start rule in engine
-func (p *ruleExecutor) StartRule(rc RuleContext) error {
+func (p *ruleExecutor) startRule(rc RuleContext) error {
 	// Check wether the rule engine is started
 	if p.started == false {
-		if err := p.Start(); err != nil {
+		if err := p.start(); err != nil {
 			glog.Errorf("start rule '%s' failed,'%s'", rc.RuleName, err.Error())
 			return err
 		}
@@ -209,7 +209,7 @@ func (p *ruleExecutor) StartRule(rc RuleContext) error {
 }
 
 // StopRule stop rule in engine
-func (p *ruleExecutor) StopRule(rc RuleContext) error {
+func (p *ruleExecutor) stopRule(rc RuleContext) error {
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -227,7 +227,7 @@ func (p *ruleExecutor) StopRule(rc RuleContext) error {
 	}
 	// stop executor if all rules are stoped
 	glog.Infof("rule executor '%s' is stoped", rc.RuleName)
-	p.Stop()
+	p.stop()
 	return nil
 }
 
