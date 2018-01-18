@@ -24,16 +24,16 @@ import (
 )
 
 // one product has one scpecific topic name
-const fmtOfBrokerEventBus = "broker-%s-%s-event-broker"
+const fmtOfBrfounderEventBus = "brfounder-%s-%s-event-brfounder"
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleExecutor struct {
-	config    config.Config         // configuration
-	tenantId  string                // Tenant
-	productId string                // one product have one rule engine
-	rules     map[string]ruleWraper // all product's rule
-	mutex     sync.Mutex            // mutex to protext rules list
-	started   bool                  // indicate wether engined is started
+	config    config.Config          // configuration
+	tenantId  string                 // Tenant
+	productId string                 // one product have one rule engine
+	rules     map[string]*ruleWraper // all product's rule
+	mutex     sync.Mutex             // mutex to protext rules list
+	started   bool                   // indicate wether engined is started
 	consumer  message.Consumer
 	dataChan  chan *event.Event
 	quitChan  chan interface{}
@@ -67,7 +67,7 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 	return &ruleExecutor{
 		productId: productId,
 		config:    c,
-		rules:     make(map[string]ruleWraper),
+		rules:     make(map[string]*ruleWraper),
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
@@ -77,10 +77,10 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 	}, nil
 }
 
-// Start will start the rule engine, receiving topic and rule
-func (p *ruleExecutor) Start() error {
+// start will start the rule engine, receiving topic and rule
+func (p *ruleExecutor) start() error {
 	if p.started {
-		return fmt.Errorf("rule engine(%s) is already started", p.productId)
+		return fmt.Errorf("rule executor '%s' already started", p.productId)
 	}
 	p.waitgroup.Add(1)
 	go func(p *ruleExecutor) {
@@ -95,7 +95,7 @@ func (p *ruleExecutor) Start() error {
 		}
 	}(p)
 
-	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
+	topic := fmt.Sprintf(fmtOfBrfounderEventBus, p.tenantId, p.productId)
 	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
 	}
@@ -104,8 +104,8 @@ func (p *ruleExecutor) Start() error {
 	return nil
 }
 
-// Stop will stop the engine
-func (p *ruleExecutor) Stop() {
+// stop will stop the engine
+func (p *ruleExecutor) stop() {
 	p.consumer.Close()
 	p.quitChan <- true
 	p.waitgroup.Wait()
@@ -132,103 +132,82 @@ func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 	}
 }
 
-// CreateRule add a rule received from apiserver to this engine
-func (p *ruleExecutor) CreateRule(rc RuleContext) error {
+// createRule add a rule received from apiserver to this engine
+func (p *ruleExecutor) createRule(r RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if _, ok := p.rules[rc.RuleName]; ok {
-		return fmt.Errorf("rule '%s' already exist", rc.RuleName)
+	if _, found := p.rules[r.RuleName]; !found {
+		if obj, err := p.getRuleObject(r); err == nil {
+			if w, err := newRuleWraper(p.config, obj); err == nil {
+				p.rules[r.RuleName] = w
+				glog.Infof("rule '%s' is added", r.RuleName)
+				return nil
+			}
+			return fmt.Errorf("ETL for rule '%s' failure", r.RuleName)
+		}
+		return fmt.Errorf("rule '%s' metadata fetch failure", r.RuleName)
 	}
-	obj, err := p.getRuleObject(rc)
-	if err != nil {
-		return err
-	}
-
-	rw, err := newRuleWraper(p.config, obj)
-	if err != nil {
-		return fmt.Errorf("create etl for rule '%s' failed", rc.RuleName)
-	}
-	p.rules[rc.RuleName] = *rw
-	glog.Infof("rule '%s' is added", rc.RuleName)
-	return nil
+	return fmt.Errorf("rule '%s' already exist", r.RuleName)
 }
 
-// RemoveRule remove a rule from current rule engine
-func (p *ruleExecutor) RemoveRule(rc RuleContext) error {
+// removeRule remove a rule from current rule engine
+func (p *ruleExecutor) removeRule(r RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[rc.RuleName]; ok {
-		delete(p.rules, rc.RuleName)
-		glog.Infof("rule '%s' is removed", rc.RuleName)
+	if _, found := p.rules[r.RuleName]; found {
+		delete(p.rules, r.RuleName)
+		glog.Infof("rule '%s' is removed", r.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' no exist", r.RuleName)
 }
 
-// UpdateRule update rule in engine
-func (p *ruleExecutor) UpdateRule(rc RuleContext) error {
-	obj, err := p.getRuleObject(rc)
-	if err != nil {
-		glog.Infof("rule '%s' no exist", rc.RuleName)
-		return err
+// updateRule update rule in engine
+func (p *ruleExecutor) updateRule(r RuleContext) error {
+	if obj, err := p.getRuleObject(r); err == nil {
+		p.mutex.Lock()
+		defer p.mutex.Unlock()
+		if w, found := p.rules[r.RuleName]; found {
+			w.rule = obj
+			p.rules[r.RuleName] = w
+			glog.Infof("rule '%s' is updated", r.RuleName)
+			return nil
+		}
 	}
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if _, ok := p.rules[rc.RuleName]; ok {
-		rw := p.rules[rc.RuleName]
-		rw.rule = obj
-		p.rules[rc.RuleName] = rw
-		glog.Infof("rule '%s' is updated", rc.RuleName)
-		return nil
-	}
-	return fmt.Errorf("rule '%s' no exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' no exist", r.RuleName)
 }
 
-// StartRule start rule in engine
-func (p *ruleExecutor) StartRule(rc RuleContext) error {
-	// Check wether the rule engine is started
+// startRule start rule in engine
+func (p *ruleExecutor) startRule(r RuleContext) error {
+	// Check wether the rule executor is started
 	if p.started == false {
-		if err := p.Start(); err != nil {
-			glog.Errorf("start rule '%s' failed,'%s'", rc.RuleName, err.Error())
+		if err := p.start(); err != nil {
+			glog.Errorf("start rule '%s' failed,'%s'", r.RuleName, err.Error())
 			return err
 		}
 		p.started = true
 	}
 
-	// Start the rule
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[rc.RuleName]; ok {
-		p.rules[rc.RuleName].rule.Status = ruleStatusStarted
-		glog.Infof("rule '%s' is started", rc.RuleName)
+	if w, found := p.rules[r.RuleName]; found {
+		w.rule.Status = ruleStatusStarted
+		glog.Infof("rule '%s' is started", r.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", rc.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
 }
 
-// StopRule stop rule in engine
-func (p *ruleExecutor) StopRule(rc RuleContext) error {
-
+// stopRule stop rule in engine
+func (p *ruleExecutor) stopRule(r RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.rules[rc.RuleName]; !ok { // not found
-		return fmt.Errorf("invalid rule '%s'", rc.RuleName)
+	if w, found := p.rules[r.RuleName]; !found { // not found
+		w.rule.Status = ruleStatusStoped
+		return nil
 	}
-	p.rules[rc.RuleName].rule.Status = ruleStatusStoped
-	// Stop current engine if all rules are stoped
-	for _, w := range p.rules {
-		// If one of rule is not stoped, don't stop current engine
-		if w.rule.Status != ruleStatusStoped {
-			glog.Infof("rule '%s' is stoped", rc.RuleName)
-			return nil
-		}
-	}
-	// stop executor if all rules are stoped
-	glog.Infof("rule executor '%s' is stoped", rc.RuleName)
-	p.Stop()
-	return nil
+	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
 }
 
 // execute rule to process published topic

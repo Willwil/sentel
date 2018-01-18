@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -27,17 +28,19 @@ import (
 
 // ruleEngine manage all rule engine and execute rule
 type ruleEngine struct {
-	config       config.Config
-	waitgroup    sync.WaitGroup
-	quitChan     chan interface{}
-	ruleChan     chan RuleContext
-	executors    map[string]*ruleExecutor
-	mutex        sync.Mutex
-	consumer     message.Consumer
-	recoveryChan chan interface{}
+	config       config.Config            // global configuration
+	waitgroup    sync.WaitGroup           // waitigroup for goroutine exit
+	quitChan     chan interface{}         // exit channel
+	ruleChan     chan RuleContext         // rule channel to receive rule notification
+	executors    map[string]*ruleExecutor // all product's executors
+	mutex        sync.Mutex               // mutex
+	consumer     message.Consumer         // message consumer for rule creation...
+	recoveryChan chan interface{}         // recover channle that load started rule at the startup timeing
+	cleanTimer   *time.Timer              // cleantimer that scan all executors in duration time and clean empty executors
 }
 
 const SERVICE_NAME = "engine"
+const CLEAN_DURATION = time.Minute * 30
 
 type ServiceFactory struct{}
 
@@ -86,6 +89,8 @@ func (p *ruleEngine) Start() error {
 	}
 	p.consumer.Start()
 	p.waitgroup.Add(1)
+	p.cleanTimer = time.NewTimer(CLEAN_DURATION)
+
 	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
 		for {
@@ -99,6 +104,9 @@ func (p *ruleEngine) Start() error {
 				s.recovery()
 			case <-s.quitChan:
 				return
+			case <-s.cleanTimer.C:
+				p.cleanExecutors()
+				s.cleanTimer.Reset(CLEAN_DURATION)
 			}
 		}
 	}(p)
@@ -107,6 +115,9 @@ func (p *ruleEngine) Start() error {
 
 // Stop
 func (p *ruleEngine) Stop() {
+	if p.cleanTimer != nil {
+		p.cleanTimer.Stop()
+	}
 	p.quitChan <- true
 	p.waitgroup.Wait()
 	close(p.quitChan)
@@ -117,7 +128,7 @@ func (p *ruleEngine) Stop() {
 	// stop all ruleEngine
 	for _, executor := range p.executors {
 		if executor != nil {
-			executor.Stop()
+			executor.stop()
 		}
 	}
 }
@@ -141,38 +152,58 @@ func (p *ruleEngine) recovery() {
 	}
 }
 
+// cleanExecutors scan all executors and stop the executor if
+// there are no rules to be started for this executor
+func (p *ruleEngine) cleanExecutors() {
+	for productId, executor := range p.executors {
+		if len(executor.rules) == 0 {
+			executor.stop()
+			delete(p.executors, productId)
+			glog.Infof("executor '%s' deleted", productId)
+		}
+	}
+}
+
 // handleRule process incomming rule
 func (p *ruleEngine) handleRule(ctx RuleContext) error {
-	// get executor instance according to product id
-	if _, ok := p.executors[ctx.ProductId]; !ok { // not found
-		executor, err := newRuleExecutor(p.config, ctx.ProductId)
-		if err != nil {
-			glog.Errorf("Failed to create rule engint for product(%s)", ctx.ProductId)
-			return err
-		}
-		p.executors[ctx.ProductId] = executor
-	}
-	exe := p.executors[ctx.ProductId]
-
+	productId := ctx.ProductId
 	switch ctx.Action {
 	case RuleActionCreate:
-		return exe.CreateRule(ctx)
+		if _, found := p.executors[productId]; !found {
+			if executor, err := newRuleExecutor(p.config, productId); err != nil {
+				return err
+			} else {
+				p.executors[productId] = executor
+			}
+		}
+		return p.executors[productId].createRule(ctx)
+
 	case RuleActionRemove:
-		return exe.RemoveRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			return executor.removeRule(ctx)
+		}
 	case RuleActionUpdate:
-		return exe.UpdateRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			return executor.updateRule(ctx)
+		}
+
 	case RuleActionStart:
-		return exe.StartRule(ctx)
+		if executor, found := p.executors[productId]; found {
+			return executor.startRule(ctx)
+		}
+
 	case RuleActionStop:
-		return exe.StopRule(ctx)
+		if executor, found := p.executors[productId]; !found {
+			return executor.stopRule(ctx)
+		}
 	}
-	return nil
+	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
 func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
 	r := message.RuleTopic{}
 	if err := json.Unmarshal(value, &r); err != nil {
-		glog.Errorf("conductor failed to resolve topic from kafka: '%s'", err)
+		glog.Errorf("invalid rule topic body, '%s'", err)
 		return
 	}
 	action := ""
@@ -188,7 +219,7 @@ func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interfac
 	case message.RuleActionStop:
 		action = RuleActionStop
 	default:
-		glog.Errorf("Invalid rule action(%s) for product(%s)", r.RuleAction, r.ProductId)
+		glog.Errorf("invalid rule action '%s' for product '%s'", r.RuleAction, r.ProductId)
 		return
 	}
 	rc := RuleContext{
