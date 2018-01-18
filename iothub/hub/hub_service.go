@@ -132,11 +132,16 @@ func (p *hubService) recoverStartup() {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	network, err := p.config.String("iothub", "network")
+	if err != nil {
+		network = ""
+	}
+
 	retries := []*tenant{}
 	for tid, t := range p.tenants {
 		if t.ServiceState != cluster.ServiceStateNone {
 			if _, err := p.clustermgr.IntrospectService(tid); err != nil {
-				if _, err := p.clustermgr.CreateService(tid, t.InstanceReplicas); err != nil {
+				if _, err := p.clustermgr.CreateService(tid, network, t.InstanceReplicas); err != nil {
 					retries = append(retries, t)
 				}
 			}
@@ -144,7 +149,7 @@ func (p *hubService) recoverStartup() {
 	}
 	// retry to recover again
 	for _, t := range retries {
-		if _, err := p.clustermgr.CreateService(t.TenantId, t.InstanceReplicas); err != nil {
+		if _, err := p.clustermgr.CreateService(t.TenantId, network, t.InstanceReplicas); err != nil {
 			glog.Errorf("service '%s' recovery failed", t.TenantId)
 		}
 	}
@@ -256,7 +261,11 @@ func (p *hubService) createProduct(tid, pid string, replicas int32) (string, err
 	}
 	t := p.tenants[tid]
 	if t.ServiceState == cluster.ServiceStateNone {
-		serviceId, err := p.clustermgr.CreateService(tid, replicas)
+		network, err := p.config.String("iothub", "network")
+		if err != nil {
+			network = ""
+		}
+		serviceId, err := p.clustermgr.CreateService(tid, network, replicas)
 		if err != nil {
 			return "", err
 		}
