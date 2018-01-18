@@ -136,6 +136,7 @@ func (p *hubService) recoverStartup() {
 	if err != nil {
 		network = ""
 	}
+	p.clustermgr.CreateNetwork(network)
 
 	retries := []*tenant{}
 	for tid, t := range p.tenants {
