@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -27,17 +28,19 @@ import (
 
 // ruleEngine manage all rule engine and execute rule
 type ruleEngine struct {
-	config       config.Config
-	waitgroup    sync.WaitGroup
-	quitChan     chan interface{}
-	ruleChan     chan RuleContext
-	executors    map[string]*ruleExecutor
-	mutex        sync.Mutex
-	consumer     message.Consumer
-	recoveryChan chan interface{}
+	config       config.Config            // global configuration
+	waitgroup    sync.WaitGroup           // waitigroup for goroutine exit
+	quitChan     chan interface{}         // exit channel
+	ruleChan     chan RuleContext         // rule channel to receive rule notification
+	executors    map[string]*ruleExecutor // all product's executors
+	mutex        sync.Mutex               // mutex
+	consumer     message.Consumer         // message consumer for rule creation...
+	recoveryChan chan interface{}         // recover channle that load started rule at the startup timeing
+	cleanTimer   *time.Timer              // cleantimer that scan all executors in duration time and clean empty executors
 }
 
 const SERVICE_NAME = "engine"
+const CLEAN_DURATION = time.Minute * 30
 
 type ServiceFactory struct{}
 
@@ -86,6 +89,8 @@ func (p *ruleEngine) Start() error {
 	}
 	p.consumer.Start()
 	p.waitgroup.Add(1)
+	p.cleanTimer = time.NewTimer(CLEAN_DURATION)
+
 	go func(s *ruleEngine) {
 		defer s.waitgroup.Done()
 		for {
@@ -99,6 +104,9 @@ func (p *ruleEngine) Start() error {
 				s.recovery()
 			case <-s.quitChan:
 				return
+			case <-s.cleanTimer.C:
+				p.cleanExecutors()
+				s.cleanTimer.Reset(CLEAN_DURATION)
 			}
 		}
 	}(p)
@@ -107,6 +115,9 @@ func (p *ruleEngine) Start() error {
 
 // Stop
 func (p *ruleEngine) Stop() {
+	if p.cleanTimer != nil {
+		p.cleanTimer.Stop()
+	}
 	p.quitChan <- true
 	p.waitgroup.Wait()
 	close(p.quitChan)
@@ -141,6 +152,18 @@ func (p *ruleEngine) recovery() {
 	}
 }
 
+// cleanExecutors scan all executors and stop the executor if
+// there are no rules to be started for this executor
+func (p *ruleEngine) cleanExecutors() {
+	for productId, executor := range p.executors {
+		if len(executor.rules) == 0 {
+			executor.stop()
+			delete(p.executors, productId)
+			glog.Infof("executor '%s' deleted", productId)
+		}
+	}
+}
+
 // handleRule process incomming rule
 func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	productId := ctx.ProductId
@@ -157,15 +180,7 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 
 	case RuleActionRemove:
 		if executor, found := p.executors[productId]; found {
-			if err := executor.removeRule(ctx); err != nil {
-				return err
-			} else {
-				if len(executor.rules) == 0 {
-					executor.stop()
-					delete(p.executors, productId)
-					return nil
-				}
-			}
+			return executor.removeRule(ctx)
 		}
 	case RuleActionUpdate:
 		if executor, found := p.executors[productId]; found {
