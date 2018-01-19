@@ -13,8 +13,12 @@
 package engine
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/etl"
+	"github.com/cloustone/sentel/conductor/ETL"
+	"github.com/cloustone/sentel/conductor/extractor"
+	"github.com/cloustone/sentel/conductor/loader"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
@@ -22,7 +26,7 @@ import (
 
 type ruleWraper struct {
 	rule *registry.Rule
-	etl  *etl.ETL
+	etl  ETL.ETL
 	// curEvent *event.Event
 	datach chan *event.Event
 }
@@ -31,19 +35,22 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	// extraction configuration at first
 	config := config.New()
 	options := make(map[string]string)
-	options["extractor"] = "event"
-	options["transformers"] = "no"
-	options["loader"] = string(r.DataTarget.Type)
 	options["mongo"] = c.MustString("conductor", "mongo")
 	options["message_server"] = c.MustString("conductor", "kafka")
 	if r.DataTarget.Type == registry.DataTargetTypeTopic {
 		options["topic"] = r.DataTarget.Topic
 	}
 	config.AddConfigSection("etl", options)
-	etl, err := etl.New(config)
-	if err != nil {
-		return nil, err
+
+	// build ETL
+	etl := ETL.New(config)
+	extractor, _ := extractor.New(config, "event")
+	loader, _ := loader.New(config, string(r.DataTarget.Type))
+	if extractor == nil || loader == nil {
+		return nil, errors.New("etl initialization failed")
 	}
+	etl.AddExtractor(extractor).AddLoader(loader)
+
 	return &ruleWraper{
 		etl:    etl,
 		rule:   r,

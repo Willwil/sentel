@@ -10,60 +10,78 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package etl
+package ETL
 
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/conductor/etl/data"
-	"github.com/cloustone/sentel/conductor/etl/extractor"
-	"github.com/cloustone/sentel/conductor/etl/loader"
-	"github.com/cloustone/sentel/conductor/etl/transformer"
+	"github.com/cloustone/sentel/conductor/data"
+	"github.com/cloustone/sentel/conductor/extractor"
+	"github.com/cloustone/sentel/conductor/loader"
+	"github.com/cloustone/sentel/conductor/transformer"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/golang/glog"
 )
 
-type ETL struct {
+type ETL interface {
+	AddExtractor(extractor.Extractor) ETL
+	AddTransformer(transformer.Transformer) ETL
+	AddLoader(loader.Loader)
+	Run(r data.Reader, ctx interface{}) error
+	Close()
+}
+
+type etl struct {
 	config       config.Config
 	extractor    extractor.Extractor
 	transformers []transformer.Transformer
 	loader       loader.Loader
 }
 
-func New(c config.Config) (*ETL, error) {
-	extractor, _ := extractor.New(c)
-	transformers := transformer.New(c)
-	loader, _ := loader.New(c)
-	if extractor == nil || len(transformers) == 0 || loader == nil {
-		return nil, errors.New("etl initialization failed")
-	}
-	return &ETL{
+func New(c config.Config) ETL {
+	return &etl{
 		config:       c,
-		extractor:    extractor,
-		transformers: transformers,
-		loader:       loader,
-	}, nil
-}
-
-func (p *ETL) Run(r data.Reader, ctx interface{}) error {
-	if data, err := p.extractor.Extract(r, ctx); err != nil {
-		for _, trans := range p.transformers {
-			result, err := trans.Transform(data, ctx)
-			if err != nil {
-				return err
-			}
-			data = result
-		}
-		if err := p.loader.Load(data, ctx); err != nil {
-			return err
-		}
+		transformers: []transformer.Transformer{},
 	}
-	return nil
 }
 
-func (p *ETL) Close() {
+func (p *etl) AddExtractor(t extractor.Extractor) ETL {
+	if p.extractor != nil {
+		glog.Error("extractor already exist")
+	}
+	p.extractor = t
+	return p
+}
+
+func (p *etl) AddTransformer(t transformer.Transformer) ETL {
+	p.transformers = append(p.transformers, t)
+	return p
+}
+func (p *etl) AddLoader(t loader.Loader) {
+	if p.loader != nil {
+		glog.Error("loader already exist")
+	}
+	p.loader = t
+}
+
+func (p *etl) Run(r data.Reader, ctx interface{}) error {
+	data, _ := p.extractor.Extract(r, ctx)
+	// transfom data
+	for _, transformer := range p.transformers {
+		data, _ = transformer.Transform(data, ctx)
+	}
+	if p.loader == nil {
+		return errors.New("loader is nill")
+	}
+	return p.loader.Load(data, ctx)
+}
+
+func (p *etl) Close() {
 	p.extractor.Close()
 	for _, trans := range p.transformers {
 		trans.Close()
 	}
-	p.loader.Close()
+	if p.loader != nil {
+		p.loader.Close()
+	}
 }

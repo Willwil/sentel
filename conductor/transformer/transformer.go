@@ -12,32 +12,19 @@
 
 package transformer
 
-import (
-	"strings"
-
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/golang/glog"
-)
+import "github.com/cloustone/sentel/pkg/config"
 
 type Transformer interface {
 	Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error)
 	Close()
 }
 
-func New(c config.Config) []Transformer {
-	transformers := []Transformer{}
-	if names, err := c.String("etl", "transformers"); err == nil {
-		for _, name := range strings.Split(names, ",") {
-			switch name {
-			case "no":
-				transformers = append(transformers, &noTransformer{})
-			default:
-				glog.Errorf("invalid transformer '%s'", name)
-				break
-			}
-		}
+func New(c config.Config, name string) Transformer {
+	switch name {
+	default:
+		return &noTransformer{}
 	}
-	return transformers
+	return nil
 }
 
 type noTransformer struct{}

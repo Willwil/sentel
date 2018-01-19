@@ -17,7 +17,7 @@ import (
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/etl/data"
+	"github.com/cloustone/sentel/conductor/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/elgs/jsonql"

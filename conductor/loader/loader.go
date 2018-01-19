@@ -24,12 +24,11 @@ type Loader interface {
 	Close()
 }
 
-func New(c config.Config) (Loader, error) {
-	w := c.MustString("etl", "loader")
-	switch w {
+func New(c config.Config, name string) (Loader, error) {
+	switch name {
 	case "topic":
 		return newTopicLoader(c)
 	default:
-		return nil, fmt.Errorf("invalid loader '%s'", w)
+		return nil, fmt.Errorf("invalid loader '%s'", name)
 	}
 }
