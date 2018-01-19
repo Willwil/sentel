@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package ETL
+package pipeline
 
 import (
 	"errors"
@@ -23,29 +23,29 @@ import (
 	"github.com/golang/glog"
 )
 
-type ETL interface {
-	AddExtractor(extractor.Extractor) ETL
-	AddTransformer(transformer.Transformer) ETL
+type Pipeline interface {
+	AddExtractor(extractor.Extractor) Pipeline
+	AddTransformer(transformer.Transformer) Pipeline
 	AddLoader(loader.Loader)
-	Run(r data.Reader, ctx interface{}) error
+	Push(r data.Reader, ctx interface{}) error
 	Close()
 }
 
-type etl struct {
+func New(c config.Config) Pipeline {
+	return &defaultPipeline{
+		config:       c,
+		transformers: []transformer.Transformer{},
+	}
+}
+
+type defaultPipeline struct {
 	config       config.Config
 	extractor    extractor.Extractor
 	transformers []transformer.Transformer
 	loader       loader.Loader
 }
 
-func New(c config.Config) ETL {
-	return &etl{
-		config:       c,
-		transformers: []transformer.Transformer{},
-	}
-}
-
-func (p *etl) AddExtractor(t extractor.Extractor) ETL {
+func (p *defaultPipeline) AddExtractor(t extractor.Extractor) Pipeline {
 	if p.extractor != nil {
 		glog.Error("extractor already exist")
 	}
@@ -53,18 +53,18 @@ func (p *etl) AddExtractor(t extractor.Extractor) ETL {
 	return p
 }
 
-func (p *etl) AddTransformer(t transformer.Transformer) ETL {
+func (p *defaultPipeline) AddTransformer(t transformer.Transformer) Pipeline {
 	p.transformers = append(p.transformers, t)
 	return p
 }
-func (p *etl) AddLoader(t loader.Loader) {
+func (p *defaultPipeline) AddLoader(t loader.Loader) {
 	if p.loader != nil {
 		glog.Error("loader already exist")
 	}
 	p.loader = t
 }
 
-func (p *etl) Run(r data.Reader, ctx interface{}) error {
+func (p *defaultPipeline) Push(r data.Reader, ctx interface{}) error {
 	data, _ := p.extractor.Extract(r, ctx)
 	// transfom data
 	for _, transformer := range p.transformers {
@@ -76,7 +76,7 @@ func (p *etl) Run(r data.Reader, ctx interface{}) error {
 	return p.loader.Load(data, ctx)
 }
 
-func (p *etl) Close() {
+func (p *defaultPipeline) Close() {
 	p.extractor.Close()
 	for _, trans := range p.transformers {
 		trans.Close()

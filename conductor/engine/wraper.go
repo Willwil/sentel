@@ -16,17 +16,17 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/ETL"
 	"github.com/cloustone/sentel/conductor/extractor"
 	"github.com/cloustone/sentel/conductor/loader"
+	"github.com/cloustone/sentel/conductor/pipeline"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
 )
 
 type ruleWraper struct {
-	rule *registry.Rule
-	etl  ETL.ETL
+	rule   *registry.Rule
+	ppline pipeline.Pipeline
 	// curEvent *event.Event
 	datach chan *event.Event
 }
@@ -43,16 +43,16 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	config.AddConfigSection("etl", options)
 
 	// build ETL
-	etl := ETL.New(config)
+	ppline := pipeline.New(config)
 	extractor, _ := extractor.New(config, "event")
 	loader, _ := loader.New(config, string(r.DataTarget.Type))
 	if extractor == nil || loader == nil {
-		return nil, errors.New("etl initialization failed")
+		return nil, errors.New("pipeline initialization failed")
 	}
-	etl.AddExtractor(extractor).AddLoader(loader)
+	ppline.AddExtractor(extractor).AddLoader(loader)
 
 	return &ruleWraper{
-		etl:    etl,
+		ppline: ppline,
 		rule:   r,
 		datach: make(chan *event.Event),
 	}, nil
@@ -68,12 +68,12 @@ func (p *ruleWraper) executeETL(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	//p.curEvent = e
 	p.datach <- e
-	err := p.etl.Run(p, p.rule)
+	err := p.ppline.Push(p, p.rule)
 	//p.curEvent = nil
 	return err
 }
 
 func (p *ruleWraper) close() {
-	p.etl.Close()
+	p.ppline.Close()
 	close(p.datach)
 }
