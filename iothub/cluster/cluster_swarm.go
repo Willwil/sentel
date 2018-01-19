@@ -108,7 +108,7 @@ func (p *swarmCluster) RemoveNetwork(name string) error {
 	return p.client.NetworkRemove(context.Background(), name)
 }
 
-func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error) {
+func (p *swarmCluster) CreateService(tid string, network string, replicas int32) (string, error) {
 	serviceName := fmt.Sprintf("tenant_%s", tid)
 	env := []string{
 		"KAFKA_HOST=kafka:9092",
@@ -129,8 +129,7 @@ func (p *swarmCluster) CreateService(tid string, replicas int32) (string, error)
 				Env:   env,
 			},
 			Networks: []swarm.NetworkAttachmentConfig{
-				{Target: tid},
-				{Target: "sentel_front"},
+				{Target: network},
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition:   swarm.RestartPolicyConditionOnFailure,

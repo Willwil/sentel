@@ -63,7 +63,7 @@ func (p *localCluster) Initialize() error                         { return nil }
 func (p *localCluster) CreateNetwork(name string) (string, error) { return "", nil }
 func (p *localCluster) RemoveNetwork(name string) error           { return nil }
 
-func (p *localCluster) CreateService(tid string, replicas int32) (string, error) {
+func (p *localCluster) CreateService(tid string, network string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	// Now only support one service instance in local cluster mode

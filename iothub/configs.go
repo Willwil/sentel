@@ -18,6 +18,7 @@ var defaultConfigs = map[string]map[string]string{
 		"kafka":         "localhost:9092",
 		"cluster":       "swarm",
 		"docker-images": "mongo,kafka,zookeeper, redis, sentel/broker",
+		"network":       "sentel-front",
 	},
 	"api": {
 		"listen":          ":50052",
