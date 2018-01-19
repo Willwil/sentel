@@ -24,7 +24,6 @@ func New(c config.Config, name string) Transformer {
 	default:
 		return &noTransformer{}
 	}
-	return nil
 }
 
 type noTransformer struct{}

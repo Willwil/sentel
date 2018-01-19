@@ -218,7 +218,7 @@ func (p *ruleExecutor) execute(e *event.Event) error {
 	p.mutex.Unlock()
 	for _, w := range rules {
 		if w.rule.Status == ruleStatusStarted {
-			if err := w.executeETL(e); err != nil {
+			if err := w.handle(e); err != nil {
 				glog.Infof("rule '%s' execution failed,'%s'", w.rule.RuleName, err.Error())
 			}
 		}

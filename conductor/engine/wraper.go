@@ -32,7 +32,18 @@ type ruleWraper struct {
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
-	// extraction configuration at first
+	ppline, err := buildPipeline(c, r)
+	if err != nil {
+		return nil, err
+	}
+	return &ruleWraper{
+		ppline: ppline,
+		rule:   r,
+		datach: make(chan *event.Event),
+	}, nil
+}
+
+func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error) {
 	config := config.New()
 	options := make(map[string]string)
 	options["mongo"] = c.MustString("conductor", "mongo")
@@ -42,7 +53,6 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	}
 	config.AddConfigSection("etl", options)
 
-	// build ETL
 	ppline := pipeline.New(config)
 	extractor, _ := extractor.New(config, "event")
 	loader, _ := loader.New(config, string(r.DataTarget.Type))
@@ -50,13 +60,7 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 		return nil, errors.New("pipeline initialization failed")
 	}
 	ppline.AddExtractor(extractor).AddLoader(loader)
-
-	return &ruleWraper{
-		ppline: ppline,
-		rule:   r,
-		datach: make(chan *event.Event),
-	}, nil
-
+	return ppline, nil
 }
 
 func (p *ruleWraper) Read() (interface{}, error) {
@@ -64,7 +68,7 @@ func (p *ruleWraper) Read() (interface{}, error) {
 	return <-p.datach, nil
 }
 
-func (p *ruleWraper) executeETL(e *event.Event) error {
+func (p *ruleWraper) handle(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	//p.curEvent = e
 	p.datach <- e
