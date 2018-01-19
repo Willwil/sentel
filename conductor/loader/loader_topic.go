@@ -15,6 +15,7 @@ package loader
 import (
 	"errors"
 
+	"github.com/cloustone/sentel/conductor/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
@@ -41,7 +42,7 @@ func (p *topicLoader) Close() {
 	p.producer.Close()
 }
 
-func (p *topicLoader) Load(data map[string]interface{}, ctx interface{}) error {
+func (p *topicLoader) Load(data map[string]interface{}, ctx data.Context) error {
 	topic, err := p.config.String("etl", "topic")
 	if err != nil || topic == "" {
 		return errors.New("invalid topic")

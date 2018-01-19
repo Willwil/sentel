@@ -33,42 +33,42 @@ func newEventExtractor(c config.Config) (Extractor, error) {
 	}, nil
 }
 
-func (p *eventExtractor) isValid(data interface{}, ctx interface{}) error {
-	if data == nil || ctx == nil {
+func (p *eventExtractor) isValid(data interface{}, ctx data.Context) error {
+	if data == nil {
 		return errors.New("invalid parameter")
 	}
 	if _, ok := data.(*event.Event); !ok {
 		return errors.New("invalid parameter")
 	}
-	if _, ok := ctx.(*registry.Rule); !ok {
+	if _, err := ctx.Get("rule"); err != nil {
 		return errors.New("invalid data context")
 	}
 	return nil
 }
 
-func (p *eventExtractor) Extract(r data.Reader, ctx interface{}) (map[string]interface{}, error) {
-	data, err := r.Read()
-	if err != nil || p.isValid(data, ctx) != nil {
+func (p *eventExtractor) Extract(data interface{}, ctx data.Context) (map[string]interface{}, error) {
+	if p.isValid(data, ctx) != nil {
 		return nil, errors.New("invalid parameter")
 	}
 	e := data.(*event.Event)
-	rule := ctx.(*registry.Rule)
+	rule, _ := ctx.Get("rule")
+	r := rule.(*registry.Rule)
 	detail := e.Detail.(*event.TopicPublishDetail)
-	if detail.Topic == rule.DataProcess.Topic {
+	if detail.Topic == r.DataProcess.Topic {
 		// topic's data must be json format
 		parser, err := jsonql.NewStringQuery(string(detail.Payload))
 		if err != nil {
 			return nil, fmt.Errorf("data format is invalid '%s'", err.Error())
 		}
 		// parse condiction and get result
-		n, err := parser.Query(rule.DataProcess.Condition)
+		n, err := parser.Query(r.DataProcess.Condition)
 		if err != nil {
 			return nil, fmt.Errorf("data query failed '%s'", err.Error())
 		}
 		switch n.(type) {
 		case map[string]interface{}:
 			results := n.(map[string]interface{})
-			fields := rule.DataProcess.Fields
+			fields := r.DataProcess.Fields
 			data := make(map[string]interface{})
 			for _, field := range fields {
 				if _, found := results[field]; found { // message field

@@ -15,12 +15,13 @@ package loader
 import (
 	"fmt"
 
+	"github.com/cloustone/sentel/conductor/data"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
 type Loader interface {
 	Name() string
-	Load(data map[string]interface{}, ctx interface{}) error
+	Load(data map[string]interface{}, ctx data.Context) error
 	Close()
 }
 

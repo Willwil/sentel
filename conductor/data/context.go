@@ -10,25 +10,27 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package extractor
+package data
 
-import (
-	"fmt"
+import "fmt"
 
-	"github.com/cloustone/sentel/conductor/data"
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type Extractor interface {
-	Extract(data interface{}, ctx data.Context) (map[string]interface{}, error)
-	Close()
+type Context struct {
+	items map[string]interface{}
 }
 
-func New(c config.Config, name string) (Extractor, error) {
-	switch name {
-	case "event":
-		return &eventExtractor{config: c}, nil
-	default:
-		return nil, fmt.Errorf("invalid extractor '%s'", name)
+func NewContext() Context {
+	return Context{
+		items: make(map[string]interface{}),
 	}
+}
+
+func (p *Context) Set(k string, v interface{}) {
+	p.items[k] = v
+}
+
+func (p *Context) Get(k string) (interface{}, error) {
+	if _, found := p.items[k]; !found {
+		return nil, fmt.Errorf("'%s' not found", k)
+	}
+	return p.items[k], nil
 }

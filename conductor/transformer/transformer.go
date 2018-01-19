@@ -12,10 +12,13 @@
 
 package transformer
 
-import "github.com/cloustone/sentel/pkg/config"
+import (
+	"github.com/cloustone/sentel/conductor/data"
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type Transformer interface {
-	Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error)
+	Transform(data map[string]interface{}, ctx data.Context) (map[string]interface{}, error)
 	Close()
 }
 
@@ -28,7 +31,7 @@ func New(c config.Config, name string) Transformer {
 
 type noTransformer struct{}
 
-func (p *noTransformer) Transform(data map[string]interface{}, ctx interface{}) (map[string]interface{}, error) {
+func (p *noTransformer) Transform(data map[string]interface{}, ctx data.Context) (map[string]interface{}, error) {
 	return data, nil
 }
 func (p *noTransformer) Close() {}

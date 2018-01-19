@@ -16,6 +16,7 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/conductor/data"
 	"github.com/cloustone/sentel/conductor/extractor"
 	"github.com/cloustone/sentel/conductor/loader"
 	"github.com/cloustone/sentel/conductor/pipeline"
@@ -27,8 +28,6 @@ import (
 type ruleWraper struct {
 	rule   *registry.Rule
 	ppline pipeline.Pipeline
-	// curEvent *event.Event
-	datach chan *event.Event
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
@@ -39,7 +38,6 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	return &ruleWraper{
 		ppline: ppline,
 		rule:   r,
-		datach: make(chan *event.Event),
 	}, nil
 }
 
@@ -63,21 +61,13 @@ func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error)
 	return ppline, nil
 }
 
-func (p *ruleWraper) Read() (interface{}, error) {
-	//return p.curEvent, nil
-	return <-p.datach, nil
-}
-
 func (p *ruleWraper) handle(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	//p.curEvent = e
-	p.datach <- e
-	err := p.ppline.Push(p, p.rule)
-	//p.curEvent = nil
-	return err
+	ctx := data.NewContext()
+	ctx.Set("rule", p.rule)
+	return p.ppline.PushData(e, ctx)
 }
 
 func (p *ruleWraper) close() {
 	p.ppline.Close()
-	close(p.datach)
 }

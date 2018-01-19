@@ -27,7 +27,8 @@ type Pipeline interface {
 	AddExtractor(extractor.Extractor) Pipeline
 	AddTransformer(transformer.Transformer) Pipeline
 	AddLoader(loader.Loader)
-	Push(r data.Reader, ctx interface{}) error
+	PushData(data interface{}, ctx data.Context) error
+	PushReader(r data.Reader, ctx data.Context) error
 	Close()
 }
 
@@ -64,16 +65,23 @@ func (p *defaultPipeline) AddLoader(t loader.Loader) {
 	p.loader = t
 }
 
-func (p *defaultPipeline) Push(r data.Reader, ctx interface{}) error {
-	data, _ := p.extractor.Extract(r, ctx)
+func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
+	value, _ := p.extractor.Extract(data, ctx)
 	// transfom data
 	for _, transformer := range p.transformers {
-		data, _ = transformer.Transform(data, ctx)
+		value, _ = transformer.Transform(value, ctx)
 	}
 	if p.loader == nil {
 		return errors.New("loader is nill")
 	}
-	return p.loader.Load(data, ctx)
+	return p.loader.Load(value, ctx)
+}
+
+func (p *defaultPipeline) PushReader(r data.Reader, ctx data.Context) error {
+	if data, err := r.Read(); err == nil {
+		return p.PushData(data, ctx)
+	}
+	return errors.New("read data error")
 }
 
 func (p *defaultPipeline) Close() {
