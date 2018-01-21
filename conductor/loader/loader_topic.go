@@ -43,8 +43,8 @@ func (p *topicLoader) Close() {
 }
 
 func (p *topicLoader) Load(data map[string]interface{}, ctx data.Context) error {
-	topic, err := ctx.Get("topic")
-	if err != nil || topic == nil {
+	topic := ctx.Get("topic")
+	if topic == nil {
 		return errors.New("invalid topic")
 	}
 	if _, ok := topic.(string); !ok {

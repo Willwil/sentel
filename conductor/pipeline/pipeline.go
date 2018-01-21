@@ -58,6 +58,7 @@ func (p *defaultPipeline) AddTransformer(t transformer.Transformer) Pipeline {
 	p.transformers = append(p.transformers, t)
 	return p
 }
+
 func (p *defaultPipeline) AddLoader(t loader.Loader) {
 	if p.loader != nil {
 		glog.Error("loader already exist")
@@ -66,14 +67,23 @@ func (p *defaultPipeline) AddLoader(t loader.Loader) {
 }
 
 func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
-	value, _ := p.extractor.Extract(data, ctx)
+	if p.extractor == nil || p.loader == nil {
+		return errors.New("extractor or loader is nil")
+	}
+	// extract data
+	value, err := p.extractor.Extract(data, ctx)
+	if err != nil {
+		return err
+	}
 	// transfom data
 	for _, transformer := range p.transformers {
-		value, _ = transformer.Transform(value, ctx)
+		if v, err := transformer.Transform(value, ctx); err != nil {
+			return err
+		} else {
+			value = v
+		}
 	}
-	if p.loader == nil {
-		return errors.New("loader is nill")
-	}
+	// load data
 	return p.loader.Load(value, ctx)
 }
 
@@ -89,7 +99,5 @@ func (p *defaultPipeline) Close() {
 	for _, trans := range p.transformers {
 		trans.Close()
 	}
-	if p.loader != nil {
-		p.loader.Close()
-	}
+	p.loader.Close()
 }

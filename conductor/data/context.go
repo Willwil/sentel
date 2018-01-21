@@ -12,8 +12,6 @@
 
 package data
 
-import "fmt"
-
 type Context struct {
 	items map[string]interface{}
 }
@@ -28,9 +26,9 @@ func (p *Context) Set(k string, v interface{}) {
 	p.items[k] = v
 }
 
-func (p *Context) Get(k string) (interface{}, error) {
-	if _, found := p.items[k]; !found {
-		return nil, fmt.Errorf("'%s' not found", k)
+func (p *Context) Get(k string) interface{} {
+	if v, found := p.items[k]; found {
+		return v
 	}
-	return p.items[k], nil
+	return nil
 }
