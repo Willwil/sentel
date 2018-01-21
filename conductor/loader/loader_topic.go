@@ -43,9 +43,12 @@ func (p *topicLoader) Close() {
 }
 
 func (p *topicLoader) Load(data map[string]interface{}, ctx data.Context) error {
-	topic, err := p.config.String("etl", "topic")
-	if err != nil || topic == "" {
+	topic, err := ctx.Get("topic")
+	if err != nil || topic == nil {
 		return errors.New("invalid topic")
 	}
-	return p.producer.SendMessage("", topic, data)
+	if _, ok := topic.(string); !ok {
+		return errors.New("invalid topic")
+	}
+	return p.producer.SendMessage("", topic.(string), data)
 }
