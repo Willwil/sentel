@@ -13,7 +13,7 @@
 package data
 
 type Reader interface {
-	Read() (interface{}, error)
+	Data() chan interface{}
 }
 
 type Writer interface {

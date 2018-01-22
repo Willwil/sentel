@@ -27,8 +27,8 @@ type Pipeline interface {
 	AddExtractor(extractor.Extractor) Pipeline
 	AddTransformer(transformer.Transformer) Pipeline
 	AddLoader(loader.Loader)
+	Start(r data.Reader, ctx data.Context) error
 	PushData(data interface{}, ctx data.Context) error
-	PushReader(r data.Reader, ctx data.Context) error
 	Close()
 }
 
@@ -36,6 +36,7 @@ func New(c config.Config) Pipeline {
 	return &defaultPipeline{
 		config:       c,
 		transformers: []transformer.Transformer{},
+		quitch:       make(chan interface{}),
 	}
 }
 
@@ -44,6 +45,9 @@ type defaultPipeline struct {
 	extractor    extractor.Extractor
 	transformers []transformer.Transformer
 	loader       loader.Loader
+	reader       data.Reader
+	ctx          data.Context
+	quitch       chan interface{}
 }
 
 func (p *defaultPipeline) AddExtractor(t extractor.Extractor) Pipeline {
@@ -64,6 +68,27 @@ func (p *defaultPipeline) AddLoader(t loader.Loader) {
 		glog.Error("loader already exist")
 	}
 	p.loader = t
+}
+
+func (p *defaultPipeline) Start(r data.Reader, ctx data.Context) error {
+	if p.extractor == nil || p.loader == nil {
+		return errors.New("extractor or loader is nil")
+	}
+	p.reader = r
+	p.ctx = ctx
+	if r != nil {
+		go func(p *defaultPipeline) {
+			for {
+				select {
+				case data := <-p.reader.Data():
+					p.PushData(data, p.ctx)
+				case <-p.quitch:
+					return
+				}
+			}
+		}(p)
+	}
+	return nil
 }
 
 func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
@@ -87,14 +112,8 @@ func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
 	return p.loader.Load(value, ctx)
 }
 
-func (p *defaultPipeline) PushReader(r data.Reader, ctx data.Context) error {
-	if data, err := r.Read(); err == nil {
-		return p.PushData(data, ctx)
-	}
-	return errors.New("read data error")
-}
-
 func (p *defaultPipeline) Close() {
+	p.quitch <- true
 	p.extractor.Close()
 	for _, trans := range p.transformers {
 		trans.Close()

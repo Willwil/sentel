@@ -25,9 +25,12 @@ import (
 	"github.com/golang/glog"
 )
 
+const usingreader = true
+
 type ruleWraper struct {
 	rule   *registry.Rule
 	ppline pipeline.Pipeline
+	datach chan interface{}
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
@@ -35,10 +38,16 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ruleWraper{
+	p := &ruleWraper{
 		ppline: ppline,
 		rule:   r,
-	}, nil
+		datach: make(chan interface{}, 1),
+	}
+	if usingreader {
+		ctx := data.NewContext()
+		ctx.Set("rule", r)
+	}
+	return p, nil
 }
 
 func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error) {
@@ -63,9 +72,18 @@ func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error)
 
 func (p *ruleWraper) handle(e *event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
-	ctx := data.NewContext()
-	ctx.Set("rule", p.rule)
-	return p.ppline.PushData(e, ctx)
+	if usingreader {
+		p.datach <- e
+		return nil
+	} else {
+		ctx := data.NewContext()
+		ctx.Set("rule", p.rule)
+		return p.ppline.PushData(e, ctx)
+	}
+}
+
+func (p *ruleWraper) Data() chan interface{} {
+	return p.datach
 }
 
 func (p *ruleWraper) close() {
