@@ -28,8 +28,8 @@ import (
 
 const (
 	ServiceName         = "event"
-	fmtOfMqttEventBus   = "broker-%s-event-mqtt"
-	fmtOfBrokerEventBus = "broker-%s-event-broker"
+	fmtOfMqttEventBus   = "iot-%s-event-mqtt"
+	fmtOfBrokerEventBus = "iot-%s-event-broker"
 )
 
 var (

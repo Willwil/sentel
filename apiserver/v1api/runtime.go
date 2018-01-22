@@ -16,6 +16,14 @@ import "github.com/labstack/echo"
 
 // Http Runtime Api
 
+type deviceMessage struct {
+	ProductId string `json:"productId"`
+	DeviceId  string `json:"deviceId"`
+	Payload   []byte `json:"payload"`
+	Qos       uint8  `json:"qos"`
+	Retain    bool   `json:"retain"`
+}
+
 // Send a could-to-device message
 func SendMessageToDevice(ctx echo.Context) error {
 	return nil

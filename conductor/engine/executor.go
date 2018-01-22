@@ -24,7 +24,7 @@ import (
 )
 
 // one product has one scpecific topic name
-const fmtOfBrfounderEventBus = "brfounder-%s-%s-event-brfounder"
+const fmtOfBrokerEventBus = "iot-%s-%s-event-broker"
 
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleExecutor struct {
@@ -95,7 +95,7 @@ func (p *ruleExecutor) start() error {
 		}
 	}(p)
 
-	topic := fmt.Sprintf(fmtOfBrfounderEventBus, p.tenantId, p.productId)
+	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
 	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
 	}
