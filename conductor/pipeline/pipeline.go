@@ -113,10 +113,13 @@ func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
 }
 
 func (p *defaultPipeline) Close() {
-	p.quitch <- true
+	if p.reader != nil {
+		p.quitch <- true
+	}
 	p.extractor.Close()
 	for _, trans := range p.transformers {
 		trans.Close()
 	}
 	p.loader.Close()
+	close(p.quitch)
 }

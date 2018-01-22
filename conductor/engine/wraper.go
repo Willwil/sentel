@@ -25,7 +25,7 @@ import (
 	"github.com/golang/glog"
 )
 
-const usingreader = true
+const usingreader = false
 
 type ruleWraper struct {
 	rule   *registry.Rule
@@ -46,6 +46,7 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	if usingreader {
 		ctx := data.NewContext()
 		ctx.Set("rule", r)
+		ppline.Start(p, ctx)
 	}
 	return p, nil
 }

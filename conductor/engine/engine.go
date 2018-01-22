@@ -193,7 +193,7 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 		}
 
 	case RuleActionStop:
-		if executor, found := p.executors[productId]; !found {
+		if executor, found := p.executors[productId]; found {
 			return executor.stopRule(ctx)
 		}
 	}
