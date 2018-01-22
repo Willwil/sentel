@@ -96,20 +96,20 @@ func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
 		return errors.New("extractor or loader is nil")
 	}
 	// extract data
-	value, err := p.extractor.Extract(data, ctx)
+	value, err := p.extractor.Extract(data, &ctx)
 	if err != nil {
 		return err
 	}
 	// transfom data
 	for _, transformer := range p.transformers {
-		if v, err := transformer.Transform(value, ctx); err != nil {
+		if v, err := transformer.Transform(value, &ctx); err != nil {
 			return err
 		} else {
 			value = v
 		}
 	}
 	// load data
-	return p.loader.Load(value, ctx)
+	return p.loader.Load(value, &ctx)
 }
 
 func (p *defaultPipeline) Close() {

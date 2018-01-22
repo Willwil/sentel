@@ -1,7 +1,8 @@
 {
 	"info": {
 		"name": "sentel-conductor",
-		"_postman_id": "ec86cd24-2bc3-6392-9734-029bb5297e05",
+		"_postman_id": "5d1fbf6a-7c8f-ed55-61fb-bbda4ad70b29",
+		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -85,7 +86,7 @@
 					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\",\n\t\"Action\":\"start\"\n}"
 				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules?action=start",
+					"raw": "localhost:50060/conductor/api/v1/rules",
 					"host": [
 						"localhost"
 					],
@@ -95,13 +96,6 @@
 						"api",
 						"v1",
 						"rules"
-					],
-					"query": [
-						{
-							"key": "action",
-							"value": "start",
-							"equals": true
-						}
 					]
 				},
 				"description": "Start rule for product "
@@ -123,7 +117,7 @@
 					"raw": "{\n\t\"RuleName\": \"rule1\",\n\t\"ProductId\": \"product1\",\n\t\"Action\":\"stop\"\n}"
 				},
 				"url": {
-					"raw": "localhost:50060/conductor/api/v1/rules?action=stop",
+					"raw": "localhost:50060/conductor/api/v1/rules",
 					"host": [
 						"localhost"
 					],
@@ -133,13 +127,6 @@
 						"api",
 						"v1",
 						"rules"
-					],
-					"query": [
-						{
-							"key": "action",
-							"value": "stop",
-							"equals": true
-						}
 					]
 				},
 				"description": "stop rule for specified product"
@@ -174,6 +161,37 @@
 					]
 				},
 				"description": "update rule for specified product"
+			},
+			"response": []
+		},
+		{
+			"name": "Publish Topic",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"topic\":\"hello\",\n\t\"clientid\":\"clientid1\",\n\t\"productId\": \"product1\",\n\t\"payload\":{\n\t\t\"field1\":\"value1\",\n\t\t\"filed2\": 2\n\t}\n}"
+				},
+				"url": {
+					"raw": "localhost:50060/conductor/api/v1/topic",
+					"host": [
+						"localhost"
+					],
+					"port": "50060",
+					"path": [
+						"conductor",
+						"api",
+						"v1",
+						"topic"
+					]
+				},
+				"description": ""
 			},
 			"response": []
 		}

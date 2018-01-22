@@ -21,7 +21,7 @@ import (
 
 type Loader interface {
 	Name() string
-	Load(data map[string]interface{}, ctx data.Context) error
+	Load(data map[string]interface{}, ctx *data.Context) error
 	Close()
 }
 

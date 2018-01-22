@@ -57,7 +57,7 @@ const (
 
 type RuleDataProcess struct { // select keyword from /productid/topic with condition
 	Topic     string   `json:"topic" bson:"Topic"`
-	Condition string   `json:"condition" bson:"Condiction"`
+	Condition string   `json:"condition" bson:"Condition"`
 	Fields    []string `json:"fields" bson:"Fields"`
 }
 type RuleDataTarget struct {

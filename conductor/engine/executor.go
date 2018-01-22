@@ -109,7 +109,7 @@ func (p *ruleExecutor) stop() {
 	p.consumer.Close()
 	p.quitChan <- true
 	p.waitgroup.Wait()
-	p.started = true
+	p.started = false
 }
 
 // messageHandlerFunc handle mqtt event from other service
@@ -144,7 +144,7 @@ func (p *ruleExecutor) createRule(r RuleContext) error {
 				glog.Infof("rule '%s' is added", r.RuleName)
 				return nil
 			}
-			return fmt.Errorf("ETL for rule '%s' failure", r.RuleName)
+			return fmt.Errorf("rule wrappr '%s' failure", r.RuleName)
 		}
 		return fmt.Errorf("rule '%s' metadata fetch failure", r.RuleName)
 	}

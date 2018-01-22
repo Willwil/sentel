@@ -13,9 +13,11 @@
 package restapi
 
 import (
+	"encoding/json"
 	"net/http"
 	"sync"
 
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -47,6 +49,9 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	e.DELETE("conductor/api/v1/rules", removeRule)
 	e.PUT("conductor/api/v1/rules", controlRule)
 	e.PATCH("conductor/api/v1/rules", updateRule)
+
+	// Data
+	e.POST("conductor/api/v1/topic", publishTopic)
 
 	return &restapiService{
 		config:    c,
@@ -129,6 +134,44 @@ func controlRule(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
 	if err := engine.HandleRuleNotification(r); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+	return ctx.JSON(http.StatusOK, response{})
+}
+
+type topicData struct {
+	ClientId  string                 `json:"clientId"`
+	ProductId string                 `json:"productId"`
+	Topic     string                 `json:"topic"`
+	Payload   map[string]interface{} `json:"payload"`
+}
+
+// Just for test
+func publishTopic(ctx echo.Context) error {
+	t := topicData{}
+	if err := ctx.Bind(&t); err != nil {
+		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
+	}
+	if t.ProductId == "" || t.Topic == "" {
+		return ctx.JSON(http.StatusBadRequest, response{Message: "invalid parameter"})
+	}
+	payload, _ := json.Marshal(t.Payload)
+	e := event.Event{
+		EventHeader: event.EventHeader{
+			Type:     event.TopicPublish,
+			ClientId: t.ClientId,
+		},
+		Detail: &event.TopicPublishDetail{
+			Topic:   t.Topic,
+			Payload: payload,
+		},
+	}
+
+	re := &event.RawEvent{}
+	re.Header, _ = json.Marshal(e.EventHeader)
+	re.Payload, _ = json.Marshal(e.Detail)
+	value, _ := json.Marshal(re)
+	if err := engine.HandleTopicNotification(t.ProductId, t.Topic, value); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, response{})

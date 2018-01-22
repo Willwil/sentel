@@ -20,7 +20,7 @@ import (
 )
 
 type Extractor interface {
-	Extract(data interface{}, ctx data.Context) (map[string]interface{}, error)
+	Extract(data interface{}, ctx *data.Context) (map[string]interface{}, error)
 	Close()
 }
 

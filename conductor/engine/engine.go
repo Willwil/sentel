@@ -141,13 +141,18 @@ func (p *ruleEngine) recovery() {
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
 			ctx := RuleContext{
-				Action:    message.RuleActionStart,
+				Action:    message.RuleActionCreate,
 				ProductId: r.ProductId,
 				RuleName:  r.RuleName,
 			}
 			if err := p.handleRule(ctx); err != nil {
-				glog.Errorf("product '%s', rule '%s'recovery failed", r.ProductId, r.RuleName)
+				glog.Errorf("product '%s', rule '%s'recovery create failed", r.ProductId, r.RuleName)
 			}
+			ctx.Action = message.RuleActionStart
+			if err := p.handleRule(ctx); err != nil {
+				glog.Errorf("product '%s', rule '%s'recovery start failed", r.ProductId, r.RuleName)
+			}
+
 		}
 	}
 }
@@ -173,6 +178,9 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 			if executor, err := newRuleExecutor(p.config, productId); err != nil {
 				return err
 			} else {
+				if err := executor.start(); err != nil {
+					return err
+				}
 				p.executors[productId] = executor
 			}
 		}
@@ -235,4 +243,16 @@ func HandleRuleNotification(ctx RuleContext) error {
 	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
 	s.ruleChan <- ctx
 	return <-ctx.Resp
+}
+
+func HandleTopicNotification(productId string, topic string, value []byte) error {
+	mgr := service.GetServiceManager()
+	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	if executor, found := s.executors[productId]; found {
+		executor.messageHandlerFunc(topic, value, nil)
+		return nil
+	}
+	return fmt.Errorf("invalid product '%s'", productId)
 }

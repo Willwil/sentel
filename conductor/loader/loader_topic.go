@@ -13,8 +13,10 @@
 package loader
 
 import (
+	"encoding/json"
 	"errors"
 
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -42,13 +44,17 @@ func (p *topicLoader) Close() {
 	p.producer.Close()
 }
 
-func (p *topicLoader) Load(data map[string]interface{}, ctx data.Context) error {
-	topic := ctx.Get("topic")
-	if topic == nil {
+func (p *topicLoader) Load(data map[string]interface{}, ctx *data.Context) error {
+	topic, ok1 := ctx.Get("topic").(string)
+	e, ok2 := ctx.Get("event").(*event.Event)
+	if !ok1 || !ok2 || topic == "" || e == nil {
 		return errors.New("invalid topic")
 	}
-	if _, ok := topic.(string); !ok {
-		return errors.New("invalid topic")
+	if buf, err := json.Marshal(data); err != nil {
+		return err
+	} else {
+		detail := e.Detail.(event.TopicPublishDetail)
+		detail.Payload = buf
 	}
-	return p.producer.SendMessage("", topic.(string), data)
+	return p.producer.SendMessage("", topic, e)
 }
