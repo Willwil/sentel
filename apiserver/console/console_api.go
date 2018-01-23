@@ -13,6 +13,7 @@
 package console
 
 import (
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/registry"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -23,10 +24,8 @@ func setAccessId(ctx echo.Context) {
 	var accessId string
 	if ctx.Get("user") != nil {
 		user := ctx.Get("user").(*jwt.Token)
-		claims := user.Claims.(jwt.MapClaims)
-		accessId = claims["accessId"].(string)
-	} else {
-		accessId = "aaaaa"
+		claims := user.Claims.(*base.JwtApiClaims)
+		accessId = claims.AccessId
 	}
 	ctx.Set("AccessId", accessId)
 }

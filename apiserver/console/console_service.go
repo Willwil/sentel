@@ -93,10 +93,11 @@ func (p *consoleService) initialize(c config.Config) error {
 	p.echo.Use(middleware.RegistryWithConfig(c))
 
 	// Api for console
+	p.echo.POST("/iot/api/v1/console/tenants", registerTenant)
+	p.echo.POST("/iot/api/v1/console/tenants/login", loginTenant)
+
 	g := p.echo.Group("/iot/api/v1/console")
 	p.setAuth(c, g)
-	g.POST("/tenants", registerTenant)
-	g.POST("/tenants/login", loginTenant)
 	g.POST("/tenants/logout", logoutTenant)
 	g.DELETE("/tenants/:tenantId", deleteTenant)
 	g.GET("/tenants/:tenantId", getTenant)

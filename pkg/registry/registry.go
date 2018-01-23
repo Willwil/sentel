@@ -167,7 +167,7 @@ func (r *Registry) RegisterTenant(t *Tenant) error {
 	if err := c.Find(bson.M{"TenantId": t.TenantId}).One(nil); err == nil {
 		return fmt.Errorf("Tenant %s already exist", t.TenantId)
 	}
-	return c.Insert(t, nil)
+	return c.Insert(t)
 }
 
 func (r *Registry) DeleteTenant(id string) error {
