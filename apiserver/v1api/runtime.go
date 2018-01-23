@@ -12,13 +12,22 @@
 
 package v1api
 
-import "github.com/labstack/echo"
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/pkg/message"
+	"github.com/labstack/echo"
+)
 
 // Http Runtime Api
 
 type deviceMessage struct {
 	ProductId string `json:"productId"`
 	DeviceId  string `json:"deviceId"`
+	Topic     string `json:"topic"`
 	Payload   []byte `json:"payload"`
 	Qos       uint8  `json:"qos"`
 	Retain    bool   `json:"retain"`
@@ -26,7 +35,43 @@ type deviceMessage struct {
 
 // Send a could-to-device message
 func SendMessageToDevice(ctx echo.Context) error {
-	return nil
+	accessId := getAccessId(ctx)
+	req := deviceMessage{}
+
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" || req.DeviceId == "" || req.Topic == "" || len(req.Payload) == 0 {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	// Authorize
+	if err := base.Authorize(req.DeviceId+"/messages", accessId, "w"); err != nil {
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
+	}
+	c := ctx.(*base.ApiContext)
+	khosts, err := c.Config.String("apiserver", "kafka")
+	if err != nil || khosts == "" {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	// Make topic message
+	e := event.Event{EventHeader: event.EventHeader{Type: event.TopicPublish}}
+	e.Detail = event.TopicPublishDetail{
+		Topic:   req.Topic,
+		Payload: req.Payload,
+		Qos:     req.Qos,
+		Retain:  req.Retain,
+	}
+	re := event.RawEvent{}
+	re.Header, _ = json.Marshal(e.EventHeader)
+	re.Payload, _ = json.Marshal(e.Detail)
+	value, _ := json.Marshal(re)
+	topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
+
+	if err := message.PostMessage(khosts, "apiserver", topic, value); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+
+	return ctx.JSON(OK, apiResponse{})
 }
 
 func BroadcastProductMessage(ctx echo.Context) error {
