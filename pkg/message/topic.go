@@ -19,13 +19,11 @@ const (
 )
 
 const (
-	ActionRegister   = "register"
-	ActionUnregister = "unregister"
-	ActionRetrieve   = "retrieve"
-	ActionDelete     = "delete"
-	ActionUpdate     = "update"
-	ActionStart      = "start"
-	ActionStop       = "stop"
+	ActionCreate = "register"
+	ActionRemove = "unregister"
+	ActionUpdate = "update"
+	ActionStart  = "start"
+	ActionStop   = "stop"
 )
 
 // Tenantopic
@@ -50,17 +48,8 @@ type DeviceTopic struct {
 	ProductId    string `json:"productId"`
 }
 
-// RuleTopic declaration
-const (
-	RuleActionCreate = "create"
-	RuleActionRemove = "remove"
-	RuleActionUpdate = "update"
-	RuleActionStart  = "start"
-	RuleActionStop   = "stop"
-)
-
 type RuleTopic struct {
-	RuleName   string `json:"ruleName"`
-	ProductId  string `json:"productId"`
-	RuleAction string `json:"action"`
+	RuleName  string `json:"ruleName"`
+	ProductId string `json:"productId"`
+	Action    string `json:"action"`
 }

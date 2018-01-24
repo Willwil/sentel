@@ -46,9 +46,9 @@ func CreateRule(ctx echo.Context) error {
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameRule,
 		&message.RuleTopic{
-			ProductId:  rule.ProductId,
-			RuleName:   rule.RuleName,
-			RuleAction: message.RuleActionCreate,
+			ProductId: rule.ProductId,
+			RuleName:  rule.RuleName,
+			Action:    message.ActionCreate,
 		})
 	return ctx.JSON(OK, apiResponse{Result: &rule})
 }
@@ -76,9 +76,9 @@ func RemoveRule(ctx echo.Context) error {
 	// Notify kafka
 	asyncProduceMessage(ctx, message.TopicNameRule,
 		&message.RuleTopic{
-			RuleName:   rule.RuleName,
-			ProductId:  rule.ProductId,
-			RuleAction: message.RuleActionRemove,
+			RuleName:  rule.RuleName,
+			ProductId: rule.ProductId,
+			Action:    message.ActionRemove,
 		})
 	return ctx.JSON(OK, apiResponse{})
 }
@@ -106,9 +106,9 @@ func UpdateRule(ctx echo.Context) error {
 	asyncProduceMessage(ctx,
 		message.TopicNameRule,
 		&message.RuleTopic{
-			RuleName:   rule.RuleName,
-			ProductId:  rule.ProductId,
-			RuleAction: message.RuleActionUpdate,
+			RuleName:  rule.RuleName,
+			ProductId: rule.ProductId,
+			Action:    message.ActionUpdate,
 		})
 	return ctx.JSON(OK, apiResponse{Result: rule})
 }
@@ -131,9 +131,9 @@ func StartRule(ctx echo.Context) error {
 	asyncProduceMessage(ctx,
 		message.TopicNameRule,
 		&message.RuleTopic{
-			RuleName:   rule.RuleName,
-			ProductId:  rule.ProductId,
-			RuleAction: message.RuleActionStart,
+			RuleName:  rule.RuleName,
+			ProductId: rule.ProductId,
+			Action:    message.ActionStart,
 		})
 	return ctx.JSON(OK, apiResponse{})
 }
@@ -154,9 +154,9 @@ func StopRule(ctx echo.Context) error {
 	}
 	asyncProduceMessage(ctx, message.TopicNameRule,
 		&message.RuleTopic{
-			RuleName:   rule.RuleName,
-			ProductId:  rule.ProductId,
-			RuleAction: message.RuleActionStop,
+			RuleName:  rule.RuleName,
+			ProductId: rule.ProductId,
+			Action:    message.ActionStop,
 		})
 	return ctx.JSON(OK, apiResponse{})
 }

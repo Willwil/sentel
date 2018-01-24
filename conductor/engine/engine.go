@@ -141,14 +141,14 @@ func (p *ruleEngine) recovery() {
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
 			ctx := RuleContext{
-				Action:    message.RuleActionCreate,
+				Action:    message.ActionCreate,
 				ProductId: r.ProductId,
 				RuleName:  r.RuleName,
 			}
 			if err := p.handleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery create failed", r.ProductId, r.RuleName)
 			}
-			ctx.Action = message.RuleActionStart
+			ctx.Action = message.ActionStart
 			if err := p.handleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery start failed", r.ProductId, r.RuleName)
 			}
@@ -215,19 +215,19 @@ func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interfac
 		return
 	}
 	action := ""
-	switch r.RuleAction {
-	case message.RuleActionCreate:
+	switch r.Action {
+	case message.ActionCreate:
 		action = RuleActionCreate
-	case message.RuleActionRemove:
+	case message.ActionRemove:
 		action = RuleActionRemove
-	case message.RuleActionUpdate:
+	case message.ActionUpdate:
 		action = RuleActionUpdate
-	case message.RuleActionStart:
+	case message.ActionStart:
 		action = RuleActionStart
-	case message.RuleActionStop:
+	case message.ActionStop:
 		action = RuleActionStop
 	default:
-		glog.Errorf("invalid rule action '%s' for product '%s'", r.RuleAction, r.ProductId)
+		glog.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
 		return
 	}
 	rc := RuleContext{

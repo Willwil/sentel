@@ -178,10 +178,10 @@ func (p *hubService) handleProductNotify(value []byte) error {
 		return err
 	}
 	switch tf.Action {
-	case message.ActionRegister:
+	case message.ActionCreate:
 		_, err := p.createProduct(tf.TenantId, tf.ProductId, tf.Replicas)
 		return err
-	case message.ActionDelete:
+	case message.ActionRemove:
 		return p.removeProduct(tf.TenantId, tf.ProductId)
 	}
 	return nil
@@ -195,9 +195,9 @@ func (p *hubService) handleTenantNotify(value []byte) error {
 	}
 
 	switch tf.Action {
-	case message.ActionRegister:
+	case message.ActionCreate:
 		p.createTenant(tf.TenantId)
-	case message.ActionDelete:
+	case message.ActionRemove:
 		return p.removeTenant(tf.TenantId)
 	}
 	return nil
