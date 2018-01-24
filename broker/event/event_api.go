@@ -22,21 +22,14 @@ import (
 )
 
 // EventHandler event handler
-type EventHandler func(e *Event, ctx interface{})
+type EventHandler func(e Event, ctx interface{})
 
 // Notify publish event to event service
-func Notify(event uint32, clientId string, detail interface{}) {
-	glog.Infof("event '%s' is notified", NameOfEvent(event))
-	e := Event{
-		EventHeader: EventHeader{
-			Type:     event,
-			ClientId: clientId,
-			BrokerId: base.GetBrokerId(),
-		},
-		Detail: detail,
-	}
+func Notify(e Event) {
+	glog.Infof("event '%s' is notified", NameOfEvent(e.GetType()))
+	e.SetBrokerId(base.GetBrokerId())
 	service := base.GetService(ServiceName).(*eventService)
-	service.notify(&e)
+	service.notify(e)
 }
 
 // Subscribe subcribe event from event service
@@ -72,55 +65,57 @@ func NameOfEvent(t uint32) string {
 }
 
 // FullNameOfEvent return event information
-func FullNameOfEvent(e *Event) string {
-	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e.Type), e.BrokerId, e.ClientId)
+func FullNameOfEvent(e Event) string {
+	return fmt.Sprintf("Event:%s, broker:%s, clientid:%s", NameOfEvent(e.GetType()), e.GetBrokerId(), e.GetClientId())
 }
 
-// FromRawEvent unmarshal event from raw event
-func FromRawEvent(value []byte) (*Event, error) {
-	re := RawEvent{}
+type CodecOption struct {
+	Format string
+}
+
+// Decode unmarshal event from raw buffer using rawEvent
+func Decode(value []byte, opt *CodecOption) (Event, error) {
+	re := rawEvent{}
 	if err := json.Unmarshal(value, &re); err != nil {
 		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
 		return nil, err
 	}
-	e := &Event{}
-	if err := json.Unmarshal(re.Header, &e.EventHeader); err != nil {
-		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
-		return nil, err
-	}
-	switch e.Type {
+	switch re.Type {
 	case SessionCreate:
-		r := SessionCreateDetail{}
-		if err := json.Unmarshal(re.Payload, &r); err != nil {
-			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
-		}
-		e.Detail = r
+		e := &SessionCreateEvent{}
+		err := json.Unmarshal(re.Payload, e)
+		return e, err
 	case SessionDestroy:
-		r := SessionDestroyDetail{}
-		if err := json.Unmarshal(re.Payload, &r); err != nil {
-			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
-		}
-		e.Detail = r
+		e := &SessionDestroyEvent{}
+		err := json.Unmarshal(re.Payload, e)
+		return e, err
 	case TopicSubscribe:
-		r := TopicSubscribeDetail{}
-		if err := json.Unmarshal(re.Payload, &r); err != nil {
-			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
-		}
-		e.Detail = r
+		e := &TopicSubscribeEvent{}
+		err := json.Unmarshal(re.Payload, e)
+		return e, err
 	case TopicUnsubscribe:
-		r := TopicUnsubscribeDetail{}
-		if err := json.Unmarshal(re.Payload, &r); err != nil {
-			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
-		}
-		e.Detail = r
+		e := &TopicUnsubscribeEvent{}
+		err := json.Unmarshal(re.Payload, e)
+		return e, err
 	case TopicPublish:
-		r := TopicPublishDetail{}
-		if err := json.Unmarshal(re.Payload, &r); err != nil {
-			return nil, fmt.Errorf("event unmarshal failed, %s", err.Error())
-		}
-		e.Detail = r
+		e := &TopicPublishEvent{}
+		err := json.Unmarshal(re.Payload, e)
+		return e, err
 	default:
-		return nil, fmt.Errorf("invalid event type '%d'", e.Type)
+		return nil, fmt.Errorf("invalid event type '%d'", re.Type)
 	}
-	return e, nil
+}
+
+// Encode serialize event using rawEvent
+func Encode(e Event, opt *CodecOption) ([]byte, error) {
+	re := rawEvent{
+		Type: e.GetType(),
+	}
+	if buf, err := json.Marshal(e); err != nil {
+		return nil, err
+	} else {
+		// Only support json format now
+		re.Payload = buf
+		return json.Marshal(re)
+	}
 }

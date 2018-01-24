@@ -35,7 +35,7 @@ type ruleExecutor struct {
 	mutex     sync.Mutex             // mutex to protext rules list
 	started   bool                   // indicate wether engined is started
 	consumer  message.Consumer
-	dataChan  chan *event.Event
+	dataChan  chan event.Event
 	quitChan  chan interface{}
 	waitgroup sync.WaitGroup
 }
@@ -71,7 +71,7 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
-		dataChan:  make(chan *event.Event, 1),
+		dataChan:  make(chan event.Event, 1),
 		quitChan:  make(chan interface{}, 1),
 		waitgroup: sync.WaitGroup{},
 	}, nil
@@ -114,8 +114,8 @@ func (p *ruleExecutor) stop() {
 
 // messageHandlerFunc handle mqtt event from other service
 func (p *ruleExecutor) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	t, err := event.FromRawEvent(value)
-	if err == nil && t != nil && t.Type == event.TopicPublish {
+	t, err := event.Decode(value, nil)
+	if err == nil && t != nil && t.GetType() == event.TopicPublish {
 		p.dataChan <- t
 		// we can call p.execute(t) here, but in consider of avoiding to block message receiver
 		// we use datachannel
@@ -212,7 +212,7 @@ func (p *ruleExecutor) stopRule(r RuleContext) error {
 
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
-func (p *ruleExecutor) execute(e *event.Event) error {
+func (p *ruleExecutor) execute(e event.Event) error {
 	p.mutex.Lock()
 	rules := p.rules
 	p.mutex.Unlock()

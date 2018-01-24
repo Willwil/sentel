@@ -12,12 +12,7 @@
 
 package event
 
-import (
-	"encoding/json"
-
-	"github.com/cloustone/sentel/pkg/message"
-	"github.com/cloustone/sentel/pkg/registry"
-)
+import "encoding/json"
 
 const (
 	SessionCreate    = 1
@@ -30,61 +25,18 @@ const (
 	AuthChange       = 8
 )
 
-type EventHeader struct {
-	message.TopicBase
-	BrokerId string `json:"brokerId"` // Broker identifier where event come from
-	Type     uint32 `json:"type"`     // Event type
-	ClientId string `json:"clientId"` // Client identifier where event come from
+type Event interface {
+	SetBrokerId(brokerId string)
+	SetType(eventType uint32)
+	SetClientId(clientId string)
+	GetBrokerId() string
+	GetType() uint32
+	GetClientId() string
+	//Serialize(*CodecOption) ([]byte, error)
 }
 
-type Event struct {
-	EventHeader
-	Detail interface{} `json:"detail"` // Event detail
-}
-
-type RawEvent struct {
-	Header  json.RawMessage `json:"header"`
+// RawEvent is event pubished to message server
+type rawEvent struct {
+	Type    uint32          `json:"type"` // Event type
 	Payload json.RawMessage `json:"payload"`
-}
-
-type SessionCreateDetail struct {
-	Persistent bool `json:"persistent"` // Whether the session is persistent
-	Retain     bool `json:"retain"`
-}
-
-type SessionDestroyDetail struct {
-	Persistent bool `json:"persistent"` // Whether the session is persistent
-	Retain     bool `json:"retain"`
-}
-
-type TopicSubscribeDetail struct {
-	Persistent bool   `json:"persistent"` // Whether the session is persistent
-	Topic      string `json:"topic"`      // Topic
-	Qos        uint8  `json:"qos"`
-	Data       []byte `json:"data"` // Topic data
-	Retain     bool   `json:"retain"`
-}
-type TopicUnsubscribeDetail struct {
-	Persistent bool   `json:"persistent"` // Whether the session is persistent
-	Topic      string `json:"topic"`      // Topic
-	Data       []byte `json:"data"`       // Topic data
-}
-
-type TopicPublishDetail struct {
-	Id        uint16 `json:"id"`
-	Topic     string `json:"topic"` // Topic
-	Payload   []byte `json:"data"`  // Topic data
-	Qos       uint8  `json:"qos"`
-	Direction uint8  `json:"direction"`
-	Retain    bool   `json:"retain"`
-	Dup       bool   `json:"dup"`
-}
-
-type QutoChangeDetail struct {
-	QutoId string `json:"qutoId"`
-}
-
-type AuthChangeDetail struct {
-	ProductId   string               `json:"productId"`
-	TopicFlavor registry.TopicFlavor `json:"topicFlavor"`
 }

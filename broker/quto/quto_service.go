@@ -38,7 +38,7 @@ type qutoService struct {
 	config      config.Config
 	waitgroup   sync.WaitGroup
 	quitChan    chan interface{}
-	eventChan   chan *event.Event
+	eventChan   chan event.Event
 	cachePolicy string
 	cacheMutex  sync.Mutex
 	cacheMap    map[string]uint64
@@ -89,7 +89,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		quitChan:    make(chan interface{}),
-		eventChan:   make(chan *event.Event),
+		eventChan:   make(chan event.Event),
 		cachePolicy: policy,
 		cacheMutex:  sync.Mutex{},
 		cacheMap:    make(map[string]uint64),
@@ -130,19 +130,20 @@ func (p *qutoService) Stop() {
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
+func onEventCallback(e event.Event, ctx interface{}) {
 	service := ctx.(*qutoService)
 	service.eventChan <- e
 }
 
 // handleQutoChanged load changed quto into cach
-func (p *qutoService) handleQutoChanged(e *event.Event) {
+func (p *qutoService) handleQutoChanged(e event.Event) {
+	t := e.(*event.QutoChangeEvent)
 	// check mongo db configuration
 	hosts := p.config.MustString("broker", "mongo")
 	timeout := p.config.MustInt("broker", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
-		glog.Errorf("quto: Access backend database failed for quto event:%d", e.Type)
+		glog.Errorf("quto: Access backend database failed for quto event:%d", t.Type)
 		return
 	}
 	defer session.Close()
@@ -150,9 +151,8 @@ func (p *qutoService) handleQutoChanged(e *event.Event) {
 
 	// Load quto object
 	quto := Quto{}
-	detail := e.Detail.(*event.QutoChangeDetail)
-	if err := c.Find(bson.M{"qutoId": detail.QutoId}).One(&quto); err != nil {
-		glog.Errorf("quto: Failed to get qutotation '%s'", detail.QutoId)
+	if err := c.Find(bson.M{"qutoId": t.QutoId}).One(&quto); err != nil {
+		glog.Errorf("quto: Failed to get qutotation '%s'", t.QutoId)
 		return
 	}
 	// Update cach according to cach policy

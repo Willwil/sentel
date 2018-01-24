@@ -156,21 +156,14 @@ func publishTopic(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, response{Message: "invalid parameter"})
 	}
 	payload, _ := json.Marshal(t.Payload)
-	e := event.Event{
-		EventHeader: event.EventHeader{
-			Type:     event.TopicPublish,
-			ClientId: t.ClientId,
-		},
-		Detail: &event.TopicPublishDetail{
-			Topic:   t.Topic,
-			Payload: payload,
-		},
+	e := event.TopicPublishEvent{
+		Type:     event.TopicPublish,
+		ClientId: t.ClientId,
+		Topic:    t.Topic,
+		Payload:  payload,
 	}
 
-	re := &event.RawEvent{}
-	re.Header, _ = json.Marshal(e.EventHeader)
-	re.Payload, _ = json.Marshal(e.Detail)
-	value, _ := json.Marshal(re)
+	value, _ := event.Encode(&e, nil)
 	if err := engine.HandleTopicNotification(t.ProductId, t.Topic, value); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}

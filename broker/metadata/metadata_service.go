@@ -32,7 +32,7 @@ type metadataService struct {
 	config    config.Config
 	waitgroup sync.WaitGroup
 	quitChan  chan interface{}
-	eventChan chan *event.Event
+	eventChan chan event.Event
 }
 
 const (
@@ -59,7 +59,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		config:    c,
 		waitgroup: sync.WaitGroup{},
 		quitChan:  make(chan interface{}),
-		eventChan: make(chan *event.Event),
+		eventChan: make(chan event.Event),
 	}, nil
 
 }
@@ -102,8 +102,8 @@ func (p *metadataService) Stop() {
 	close(p.eventChan)
 }
 
-func (p *metadataService) handleEvent(e *event.Event) {
-	switch e.Type {
+func (p *metadataService) handleEvent(e event.Event) {
+	switch e.GetType() {
 	case event.SessionCreate:
 		p.onSessionCreated(e)
 	case event.SessionDestroy:
@@ -116,25 +116,25 @@ func (p *metadataService) handleEvent(e *event.Event) {
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
+func onEventCallback(e event.Event, ctx interface{}) {
 	service := ctx.(*metadataService)
 	service.eventChan <- e
 }
 
 // onEventSessionCreated called when EventSessionCreated event received
-func (p *metadataService) onSessionCreated(e *event.Event) {
+func (p *metadataService) onSessionCreated(e event.Event) {
 }
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
-func (p *metadataService) onSessionDestroyed(e *event.Event) {
+func (p *metadataService) onSessionDestroyed(e event.Event) {
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
-func (p *metadataService) onTopicSubscribe(e *event.Event) {
+func (p *metadataService) onTopicSubscribe(e event.Event) {
 }
 
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
-func (p *metadataService) onTopicUnsubscribe(e *event.Event) {
+func (p *metadataService) onTopicUnsubscribe(e event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status

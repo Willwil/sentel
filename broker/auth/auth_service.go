@@ -38,7 +38,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	s := &authService{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
-		eventChan:    make(chan *event.Event),
+		eventChan:    make(chan event.Event),
 		quitChan:     make(chan interface{}),
 		flavors:      make(map[string][]registry.TopicFlavor),
 		flavorsMutex: sync.Mutex{},
@@ -72,7 +72,7 @@ type authService struct {
 	config       config.Config
 	waitgroup    sync.WaitGroup
 	redis        *redis.Client
-	eventChan    chan *event.Event
+	eventChan    chan event.Event
 	quitChan     chan interface{}
 	flavors      map[string][]registry.TopicFlavor
 	flavorsMutex sync.Mutex
@@ -126,9 +126,9 @@ func (p *authService) Stop() {
 	close(p.eventChan)
 }
 
-func (p *authService) handleEvent(e *event.Event) {
-	detail := e.Detail.(*event.AuthChangeDetail)
-	p.updateTopicFlavor(detail.ProductId, detail.TopicFlavor)
+func (p *authService) handleEvent(e event.Event) {
+	t := e.(*event.AuthChangeEvent)
+	p.updateTopicFlavor(t.ProductId, t.TopicFlavor)
 }
 
 func (p *authService) updateTopicFlavor(productId string, flavor registry.TopicFlavor) {
@@ -200,7 +200,7 @@ func (p *authService) getDeviceSecretKey(ctx Context) (string, error) {
 }
 
 // onEventCallback will be called when notificaiton come from event service
-func onEventCallback(e *event.Event, ctx interface{}) {
+func onEventCallback(e event.Event, ctx interface{}) {
 	service := ctx.(*authService)
 	service.eventChan <- e
 }

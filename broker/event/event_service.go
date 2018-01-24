@@ -12,7 +12,6 @@
 package event
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -42,7 +41,7 @@ type eventService struct {
 	brokerId    string
 	consumer    message.Consumer
 	producer    message.Producer
-	eventChan   chan *Event                    // Event notify channel
+	eventChan   chan Event                     // Event notify channel
 	subscribers map[uint32][]subscriberContext // All subscriber's contex
 	mutex       sync.Mutex                     // Mutex to lock subscribers
 	tenant      string
@@ -75,15 +74,15 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		waitgroup:   sync.WaitGroup{},
 		consumer:    consumer,
 		producer:    producer,
-		eventChan:   make(chan *Event),
+		eventChan:   make(chan Event),
 		subscribers: make(map[uint32][]subscriberContext),
 		tenant:      tenant,
 		quitChan:    make(chan interface{}),
 	}, nil
 }
 
-func (p *eventService) nameOfEventBus(e *Event) string {
-	switch e.Type {
+func (p *eventService) nameOfEventBus(e Event) string {
+	switch e.GetType() {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
 		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant)
 	default:
@@ -98,12 +97,13 @@ func (p *eventService) bootstrap() error  { return nil }
 
 // messageHandlerFunc handle mqtt event from other service
 func (p *eventService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	if e, err := FromRawEvent(value); err == nil && e != nil {
+	if e, err := Decode(value, nil); err == nil && e != nil {
 		// cluster event manager only handle kafka event from other broker
 		// Iterate all subscribers to notify
-		if e.BrokerId != base.GetBrokerId() {
-			if _, found := p.subscribers[e.Type]; found {
-				subscribers := p.subscribers[e.Type]
+		etype := e.GetType()
+		if e.GetBrokerId() != base.GetBrokerId() {
+			if _, found := p.subscribers[etype]; found {
+				subscribers := p.subscribers[etype]
 				for _, subscriber := range subscribers {
 					subscriber.handler(e, subscriber.ctx)
 				}
@@ -130,8 +130,8 @@ func (p *eventService) Start() error {
 			case e := <-p.eventChan:
 				// When event is received from local service, we should
 				// transeverse other service to process it at first
-				if _, found := p.subscribers[e.Type]; found {
-					subscribers := p.subscribers[e.Type]
+				if _, found := p.subscribers[e.GetType()]; found {
+					subscribers := p.subscribers[e.GetType()]
 					for _, subscriber := range subscribers {
 						subscriber.handler(e, subscriber.ctx)
 					}
@@ -146,12 +146,9 @@ func (p *eventService) Start() error {
 	return nil
 }
 
-func (p *eventService) publishMsg(topic string, e *Event) error {
-	re := &RawEvent{}
-	re.Header, _ = json.Marshal(e.EventHeader)
-	re.Payload, _ = json.Marshal(e.Detail)
-	err := p.producer.SendMessage("iot-broker", topic, &re)
-	if err != nil {
+func (p *eventService) publishMsg(topic string, e Event) error {
+	msg, _ := Encode(e, nil)
+	if err := p.producer.SendMessage("iot-broker", topic, &msg); err != nil {
 		glog.Errorf("Failed to store your data:, %s", err)
 		return err
 	}
@@ -168,46 +165,8 @@ func (p *eventService) Stop() {
 	close(p.quitChan)
 }
 
-func (p *eventService) unmarshalEventPayload(e *Event, payload json.RawMessage) error {
-	switch e.Type {
-	case SessionCreate:
-		r := SessionCreateDetail{}
-		if err := json.Unmarshal(payload, &r); err != nil {
-			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = r
-	case SessionDestroy:
-		r := SessionDestroyDetail{}
-		if err := json.Unmarshal(payload, &r); err != nil {
-			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = r
-	case TopicSubscribe:
-		r := TopicSubscribeDetail{}
-		if err := json.Unmarshal(payload, &r); err != nil {
-			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = r
-	case TopicUnsubscribe:
-		r := TopicUnsubscribeDetail{}
-		if err := json.Unmarshal(payload, &r); err != nil {
-			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = r
-	case TopicPublish:
-		r := TopicPublishDetail{}
-		if err := json.Unmarshal(payload, &r); err != nil {
-			return fmt.Errorf("event service unmarshal event detail failed:%s", err.Error())
-		}
-		e.Detail = r
-	default:
-		return fmt.Errorf("invalid event type '%d'", e.Type)
-	}
-	return nil
-}
-
 // publish publish event to event service
-func (p *eventService) notify(e *Event) {
+func (p *eventService) notify(e Event) {
 	p.eventChan <- e
 }
 

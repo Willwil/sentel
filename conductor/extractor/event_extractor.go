@@ -53,20 +53,19 @@ func (p *eventExtractor) Extract(data interface{}, ctx *data.Context) (map[strin
 	if p.isValid(data, ctx) != nil {
 		return nil, errors.New("invalid parameter")
 	}
-	e := data.(*event.Event)
+	e := data.(*event.TopicPublishEvent)
 	r := ctx.Get("rule").(*registry.Rule)
-	detail := e.Detail.(event.TopicPublishDetail)
-	if detail.Topic == r.DataProcess.Topic {
-		ctx.Set("topic", detail.Topic)
+	if e.Topic == r.DataProcess.Topic {
+		ctx.Set("topic", e.Topic)
 		ctx.Set("event", e)
 		if r.DataProcess.Condition == "" {
 			// return data if no process condition is specified
 			result := make(map[string]interface{})
-			err := json.Unmarshal(detail.Payload, &result)
+			err := json.Unmarshal(e.Payload, &result)
 			return result, err
 		} else {
 			// topic's data must be json format
-			parser, err := jsonql.NewStringQuery(string(detail.Payload))
+			parser, err := jsonql.NewStringQuery(string(e.Payload))
 			if err != nil {
 				return nil, fmt.Errorf("data format is invalid '%s'", err.Error())
 			}
@@ -99,11 +98,11 @@ func (p *eventExtractor) Extract(data interface{}, ctx *data.Context) (map[strin
 	return nil, errors.New("data format is invalid to query")
 }
 
-func (p *eventExtractor) getFunctionValue(name string, e *event.Event) (interface{}, error) {
+func (p *eventExtractor) getFunctionValue(name string, e *event.TopicPublishEvent) (interface{}, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (p *eventExtractor) getVariableValue(name string, e *event.Event) interface{} {
+func (p *eventExtractor) getVariableValue(name string, e *event.TopicPublishEvent) interface{} {
 	switch name {
 	case "deviceId":
 		return e.ClientId

@@ -71,7 +71,7 @@ func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error)
 	return ppline, nil
 }
 
-func (p *ruleWraper) handle(e *event.Event) error {
+func (p *ruleWraper) handle(e event.Event) error {
 	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	if usingreader {
 		p.datach <- e

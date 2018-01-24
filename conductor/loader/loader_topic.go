@@ -46,15 +46,15 @@ func (p *topicLoader) Close() {
 
 func (p *topicLoader) Load(data map[string]interface{}, ctx *data.Context) error {
 	topic, ok1 := ctx.Get("topic").(string)
-	e, ok2 := ctx.Get("event").(*event.Event)
+	e, ok2 := ctx.Get("event").(*event.TopicPublishEvent)
 	if !ok1 || !ok2 || topic == "" || e == nil {
 		return errors.New("invalid topic")
 	}
 	if buf, err := json.Marshal(data); err != nil {
 		return err
 	} else {
-		detail := e.Detail.(event.TopicPublishDetail)
-		detail.Payload = buf
+		e.Payload = buf
+		buf, _ := event.Encode(e, nil)
+		return p.producer.SendMessage("", topic, buf)
 	}
-	return p.producer.SendMessage("", topic, e)
 }
