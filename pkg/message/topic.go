@@ -11,8 +11,6 @@
 //  under the License.
 package message
 
-import "encoding/json"
-
 const (
 	TopicNameTenant  = "sentel-iot-tenant"
 	TopicNameProduct = "sentel-iot-product"
@@ -30,38 +28,14 @@ const (
 	ObjectActionStop       = "stop"
 )
 
-type TopicBase struct {
-	Action  string `json:"action"`
-	encoded []byte
-	err     error
-}
-
-func (p *TopicBase) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *TopicBase) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *TopicBase) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
-}
-
 // Tenantopic
 type TenantTopic struct {
-	TopicBase
 	TenantId string `json:"productId"`
 	Action   string `json:"action"`
 }
 
 // ProductTopic
 type ProductTopic struct {
-	TopicBase
 	ProductId string `json:"productId"`
 	Action    string `json:"action"`
 	TenantId  string `json:"tenantId"`
@@ -70,7 +44,6 @@ type ProductTopic struct {
 
 // DeviceTopic
 type DeviceTopic struct {
-	TopicBase
 	DeviceId     string `json:"deviceId"`
 	DeviceSecret string `json:"deviceKey"`
 	Action       string `json:"action"`
@@ -87,7 +60,6 @@ const (
 )
 
 type RuleTopic struct {
-	TopicBase
 	RuleName   string `json:"ruleName"`
 	ProductId  string `json:"productId"`
 	RuleAction string `json:"action"`

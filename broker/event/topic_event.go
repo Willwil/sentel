@@ -12,11 +12,8 @@
 
 package event
 
-import "github.com/cloustone/sentel/pkg/message"
-
 // TopicSubscribeEvent
 type TopicSubscribeEvent struct {
-	message.TopicBase
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
@@ -45,7 +42,6 @@ func (p *TopicSubscribeEvent) Serialize() ([]byte, error) { return nil, nil }
 
 // TopicUnsubscribeEvent
 type TopicUnsubscribeEvent struct {
-	message.TopicBase
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
@@ -72,7 +68,6 @@ func (p *TopicUnsubscribeEvent) Serialize() ([]byte, error) { return nil, nil }
 
 // TopicPublishEvent
 type TopicPublishEvent struct {
-	message.TopicBase
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
