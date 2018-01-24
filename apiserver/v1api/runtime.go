@@ -13,7 +13,11 @@
 package v1api
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/broker/event"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/labstack/echo"
 )
 
@@ -48,25 +52,19 @@ func SendMessageToDevice(ctx echo.Context) error {
 	if err != nil || khosts == "" {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	/*
-		// Make topic message
-		e := event.TopicPublishEvent{
-			Type:    event.TopicPublish,
-			Topic:   req.Topic,
-			Payload: req.Payload,
-			Qos:     req.Qos,
-			Retain:  req.Retain,
-		}
-		re := event.RawEvent{}
-		re.Header, _ = json.Marshal(e.EventHeader)
-		re.Payload, _ = json.Marshal(e.Detail)
-		value, _ := json.Marshal(re)
-		topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
-
-		if err := message.PostMessage(khosts, "apiserver", topic, value); err != nil {
-			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
-		}
-	*/
+	// Make topic message
+	e := event.TopicPublishEvent{
+		Type:    event.TopicPublish,
+		Topic:   req.Topic,
+		Payload: req.Payload,
+		Qos:     req.Qos,
+		Retain:  req.Retain,
+	}
+	topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
+	value, _ := event.Encode(&e, nil)
+	if err := message.PostMessage(khosts, "apiserver", topic, value); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
 	return ctx.JSON(OK, apiResponse{})
 }
 
