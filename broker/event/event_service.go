@@ -148,7 +148,7 @@ func (p *eventService) Start() error {
 
 func (p *eventService) publishMsg(topic string, e Event) error {
 	msg, _ := Encode(e, nil)
-	if err := p.producer.SendMessage("iot-broker", topic, &msg); err != nil {
+	if err := p.producer.SendMessage(topic, msg); err != nil {
 		glog.Errorf("Failed to store your data:, %s", err)
 		return err
 	}

@@ -12,7 +12,6 @@
 package message
 
 import (
-	"encoding/json"
 	"errors"
 	"strings"
 
@@ -58,15 +57,10 @@ func newKafkaProducer(khosts string, clientId string, sync bool) (Producer, erro
 	return p, nil
 }
 
-func (p *kafkaProducer) SendMessage(key string, topic string, value interface{}) error {
-	if _, ok := value.(sarama.Encoder); !ok {
-		return errors.New("invalid parameter")
-	}
-	v, _ := json.Marshal(value)
+func (p *kafkaProducer) SendMessage(topic string, value []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder(key),
-		Value: sarama.ByteEncoder(v),
+		Value: sarama.ByteEncoder(value),
 	}
 
 	if p.sync && p.syncProducer != nil {

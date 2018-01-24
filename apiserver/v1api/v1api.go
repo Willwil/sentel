@@ -12,9 +12,9 @@
 package v1api
 
 import (
+	"encoding/json"
 	"net/http"
 
-	"github.com/Shopify/sarama"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -51,16 +51,22 @@ func getRegistry(ctx echo.Context) *registry.Registry {
 	return ctx.Get("registry").(*registry.Registry)
 }
 
-func syncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
+func syncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	key := "iot"
-	return message.PostMessage(hosts, key, topic, value)
+	buf, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return message.PostMessage(hosts, topic, buf)
 }
 
-func asyncProduceMessage(ctx echo.Context, topic string, value sarama.Encoder) error {
+func asyncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	key := "iot"
-	return message.PostMessage(hosts, key, topic, value)
+	buf, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	return message.PostMessage(hosts, topic, buf)
 }

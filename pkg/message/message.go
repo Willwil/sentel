@@ -24,7 +24,7 @@ func NewConsumer(khosts string, clientId string) (Consumer, error) {
 }
 
 type Producer interface {
-	SendMessage(key string, topic string, value interface{}) error
+	SendMessage(topic string, val []byte) error
 	Close()
 }
 
@@ -32,20 +32,20 @@ func NewProducer(khosts string, clientId string, sync bool) (Producer, error) {
 	return newKafkaProducer(khosts, clientId, sync)
 }
 
-func PostMessage(khosts string, key string, topic string, value interface{}) error {
+func PostMessage(khosts string, topic string, value []byte) error {
 	if producer, err := NewProducer(khosts, "", false); err != nil {
 		return err
 	} else {
 		defer producer.Close()
-		return producer.SendMessage(key, topic, value)
+		return producer.SendMessage(topic, value)
 	}
 }
 
-func SendMessage(khosts string, key string, topic string, value interface{}) error {
+func SendMessage(khosts string, topic string, value []byte) error {
 	if producer, err := NewProducer(khosts, "", true); err != nil {
 		return err
 	} else {
 		defer producer.Close()
-		return producer.SendMessage(key, topic, value)
+		return producer.SendMessage(topic, value)
 	}
 }

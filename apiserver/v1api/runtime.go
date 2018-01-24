@@ -62,7 +62,7 @@ func SendMessageToDevice(ctx echo.Context) error {
 	}
 	topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
 	value, _ := event.Encode(&e, nil)
-	if err := message.PostMessage(khosts, "apiserver", topic, value); err != nil {
+	if err := message.PostMessage(khosts, topic, value); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(OK, apiResponse{})
