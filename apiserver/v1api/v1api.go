@@ -12,7 +12,6 @@
 package v1api
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -30,7 +29,7 @@ const (
 )
 
 type apiResponse struct {
-	RequestId string      `json:"requestID"`
+	RequestId string      `json:"requestId"`
 	Message   string      `json:"message"`
 	Result    interface{} `json:"result"`
 }
@@ -50,17 +49,17 @@ func getRegistry(ctx echo.Context) *registry.Registry {
 func syncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	buf, err := json.Marshal(value)
+	buf, err := message.Encode(value, message.JsonCodec)
 	if err != nil {
 		return err
 	}
-	return message.PostMessage(hosts, topic, buf)
+	return message.SendMessage(hosts, topic, buf)
 }
 
 func asyncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	buf, err := json.Marshal(value)
+	buf, err := message.Encode(value, message.JsonCodec)
 	if err != nil {
 		return err
 	}

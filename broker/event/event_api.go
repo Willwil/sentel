@@ -73,8 +73,12 @@ type CodecOption struct {
 	Format string
 }
 
+var (
+	JsonCodec = CodecOption{Format: "json"}
+)
+
 // Decode unmarshal event from raw buffer using rawEvent
-func Decode(value []byte, opt *CodecOption) (Event, error) {
+func Decode(value []byte, opt CodecOption) (Event, error) {
 	re := rawEvent{}
 	if err := json.Unmarshal(value, &re); err != nil {
 		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
