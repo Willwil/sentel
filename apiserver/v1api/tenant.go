@@ -88,7 +88,7 @@ func LoginTenant(ctx echo.Context) error {
 }
 
 func LogoutTenant(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(OK, apiResponse{})
 }
 
 // deleteTenant delete tenant

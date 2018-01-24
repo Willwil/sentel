@@ -21,13 +21,9 @@ import (
 )
 
 func setAccessId(ctx echo.Context) {
-	var accessId string
-	if ctx.Get("user") != nil {
-		user := ctx.Get("user").(*jwt.Token)
-		claims := user.Claims.(*base.JwtApiClaims)
-		accessId = claims.AccessId
-	}
-	ctx.Set("AccessId", accessId)
+	user := ctx.Get("user").(*jwt.Token)
+	claims := user.Claims.(*base.JwtApiClaims)
+	ctx.Set("AccessId", claims.AccessId)
 }
 
 func closeRegistry(ctx echo.Context) {
