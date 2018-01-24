@@ -36,14 +36,10 @@ type apiResponse struct {
 }
 
 func getAccessId(ctx echo.Context) string {
-	if ctx.Get("AccessId") == nil {
-		return "aaaaa"
-	}
 	return ctx.Get("AccessId").(string)
 }
 
 func getConfig(ctx echo.Context) config.Config {
-	//return ctx.(*base.ApiContext).Config
 	return ctx.Get("config").(config.Config)
 }
 
