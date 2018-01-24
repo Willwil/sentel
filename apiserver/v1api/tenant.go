@@ -49,7 +49,7 @@ func RegisterTenant(ctx echo.Context) error {
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{
 			TenantId: req.TenantId,
-			Action:   message.ObjectActionRegister,
+			Action:   message.ActionRegister,
 		})
 
 	return ctx.JSON(OK, apiResponse{Result: &t})
@@ -106,7 +106,7 @@ func DeleteTenant(ctx echo.Context) error {
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{
 			TenantId: tenantId,
-			Action:   message.ObjectActionDelete,
+			Action:   message.ActionDelete,
 		})
 
 	return ctx.JSON(OK, apiResponse{})
@@ -140,7 +140,7 @@ func UpdateTenant(ctx echo.Context) error {
 	asyncProduceMessage(ctx, message.TopicNameTenant,
 		&message.TenantTopic{
 			TenantId: t.TenantId,
-			Action:   message.ObjectActionUpdate,
+			Action:   message.ActionUpdate,
 		})
 
 	return ctx.JSON(OK, apiResponse{Result: &t})

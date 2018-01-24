@@ -19,13 +19,13 @@ const (
 )
 
 const (
-	ObjectActionRegister   = "register"
-	ObjectActionUnregister = "unregister"
-	ObjectActionRetrieve   = "retrieve"
-	ObjectActionDelete     = "delete"
-	ObjectActionUpdate     = "update"
-	ObjectActionStart      = "start"
-	ObjectActionStop       = "stop"
+	ActionRegister   = "register"
+	ActionUnregister = "unregister"
+	ActionRetrieve   = "retrieve"
+	ActionDelete     = "delete"
+	ActionUpdate     = "update"
+	ActionStart      = "start"
+	ActionStop       = "stop"
 )
 
 // Tenantopic

@@ -66,7 +66,7 @@ func CreateProduct(ctx echo.Context) error {
 		message.TopicNameProduct,
 		&message.ProductTopic{
 			ProductId: p.ProductId,
-			Action:    message.ObjectActionRegister,
+			Action:    message.ActionRegister,
 		})
 	return ctx.JSON(OK, apiResponse{Result: &p})
 }
@@ -88,7 +88,7 @@ func RemoveProduct(ctx echo.Context) error {
 	asyncProduceMessage(ctx, message.TopicNameProduct,
 		&message.ProductTopic{
 			ProductId: productId,
-			Action:    message.ObjectActionDelete,
+			Action:    message.ActionDelete,
 		})
 
 	return ctx.JSON(OK, apiResponse{})
@@ -130,7 +130,7 @@ func UpdateProduct(ctx echo.Context) error {
 	asyncProduceMessage(ctx, message.TopicNameProduct,
 		&message.ProductTopic{
 			ProductId: p.ProductId,
-			Action:    message.ObjectActionUpdate,
+			Action:    message.ActionUpdate,
 		})
 
 	return ctx.JSON(OK, apiResponse{})
