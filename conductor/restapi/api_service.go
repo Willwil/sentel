@@ -20,6 +20,7 @@ import (
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
 )
@@ -163,8 +164,12 @@ func publishTopic(ctx echo.Context) error {
 		Payload:  payload,
 	}
 
-	value, _ := event.Encode(&e, nil)
-	if err := engine.HandleTopicNotification(t.ProductId, t.Topic, value); err != nil {
+	value, _ := event.Encode(&e, event.JSONCodec)
+	msg := &message.Broker{
+		EventType: event.TopicPublish,
+		Payload:   value,
+	}
+	if err := engine.HandleTopicNotification(t.ProductId, msg); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, response{})

@@ -14,9 +14,11 @@ package event
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/base"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
@@ -74,17 +76,16 @@ type CodecOption struct {
 }
 
 var (
-	JsonCodec = CodecOption{Format: "json"}
+	JSONCodec = CodecOption{Format: "json"}
 )
 
 // Decode unmarshal event from raw buffer using rawEvent
-func Decode(value []byte, opt CodecOption) (Event, error) {
-	re := rawEvent{}
-	if err := json.Unmarshal(value, &re); err != nil {
-		glog.Errorf("conductor unmarshal event common failed:%s", err.Error())
-		return nil, err
+func Decode(msg message.Message, opt CodecOption) (Event, error) {
+	re, ok := msg.(*message.Broker)
+	if !ok || re == nil {
+		return nil, errors.New("invalid broker event")
 	}
-	switch re.Type {
+	switch re.EventType {
 	case SessionCreate:
 		e := &SessionCreateEvent{}
 		err := json.Unmarshal(re.Payload, e)
@@ -106,12 +107,12 @@ func Decode(value []byte, opt CodecOption) (Event, error) {
 		err := json.Unmarshal(re.Payload, e)
 		return e, err
 	default:
-		return nil, fmt.Errorf("invalid event type '%d'", re.Type)
+		return nil, fmt.Errorf("invalid event type '%d'", re.EventType)
 	}
 }
 
 // Encode serialize event using rawEvent
-func Encode(e Event, opt *CodecOption) ([]byte, error) {
+func Encode(e Event, opt CodecOption) ([]byte, error) {
 	re := rawEvent{
 		Type: e.GetType(),
 	}

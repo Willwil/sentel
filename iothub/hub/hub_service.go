@@ -13,7 +13,6 @@
 package hub
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -156,14 +155,16 @@ func (p *hubService) recoverStartup() {
 	}
 }
 
-func (p *hubService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	glog.Infof("iothub receive message from topic '%s'", topic)
+func (p *hubService) messageHandlerFunc(msg message.Message, ctx interface{}) {
 	var err error
+	topic := msg.Topic()
+	glog.Infof("iothub receive message from topic '%s'", topic)
+
 	switch topic {
 	case message.TopicNameTenant:
-		err = p.handleTenantNotify(value)
+		err = p.handleTenantNotify(msg)
 	case message.TopicNameProduct:
-		err = p.handleProductNotify(value)
+		err = p.handleProductNotify(msg)
 	default:
 	}
 	if err != nil {
@@ -172,10 +173,10 @@ func (p *hubService) messageHandlerFunc(topic string, value []byte, ctx interfac
 }
 
 // handleProductNotify handle notification about product from api server
-func (p *hubService) handleProductNotify(value []byte) error {
-	tf := message.ProductTopic{}
-	if err := json.Unmarshal(value, &tf); err != nil {
-		return err
+func (p *hubService) handleProductNotify(msg message.Message) error {
+	tf, ok := msg.(*message.Product)
+	if !ok || tf == nil {
+		return errors.New("invalid product notification")
 	}
 	switch tf.Action {
 	case message.ActionCreate:
@@ -188,10 +189,10 @@ func (p *hubService) handleProductNotify(value []byte) error {
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (p *hubService) handleTenantNotify(value []byte) error {
-	tf := message.TenantTopic{}
-	if err := json.Unmarshal(value, &tf); err != nil {
-		return err
+func (p *hubService) handleTenantNotify(msg message.Message) error {
+	tf, ok := msg.(*message.Tenant)
+	if !ok || tf == nil {
+		return errors.New("invalid product notification")
 	}
 
 	switch tf.Action {

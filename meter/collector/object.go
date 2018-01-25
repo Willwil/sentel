@@ -16,6 +16,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 const (
@@ -63,23 +65,20 @@ type topicObject interface {
 	handleTopic(s *collectorService, ctx context.Context) error
 }
 
-var _topicObjects map[string]topicObject = make(map[string]topicObject)
+var topicObjects map[string]topicObject = make(map[string]topicObject)
 
 func registerTopicObject(t topicObject) {
-	if _, ok := _topicObjects[t.name()]; !ok {
-		_topicObjects[t.name()] = t
+	if _, ok := topicObjects[t.name()]; !ok {
+		topicObjects[t.name()] = t
 	}
 }
 
-func handleTopicObject(s *collectorService, ctx context.Context, topic string, value []byte) error {
-	if obj, ok := _topicObjects[topic]; !ok || obj == nil {
+func handleTopicObject(s *collectorService, ctx context.Context, msg message.Message) error {
+	topic := msg.Topic()
+	if obj, ok := topicObjects[topic]; !ok || obj == nil {
 		return fmt.Errorf("No valid handler for topic:%s", topic)
 	}
 
-	obj := _topicObjects[topic].clone()
-	if err := json.Unmarshal(value, &obj); err != nil {
-		return err
-	}
-
+	obj := topicObjects[topic].clone()
 	return obj.handleTopic(s, ctx)
 }

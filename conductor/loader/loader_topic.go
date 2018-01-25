@@ -54,7 +54,11 @@ func (p *topicLoader) Load(data map[string]interface{}, ctx *data.Context) error
 		return err
 	} else {
 		e.Payload = buf
-		buf, _ := event.Encode(e, nil)
-		return p.producer.SendMessage(topic, buf)
+		buf, _ := event.Encode(e, event.JSONCodec)
+		msg := message.Broker{
+			EventType: e.GetType(),
+			Payload:   buf,
+		}
+		return p.producer.SendMessage(&msg)
 	}
 }

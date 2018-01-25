@@ -11,29 +11,14 @@
 //  under the License.
 package message
 
-const (
-	TopicNameTenant  = "sentel-iot-tenant"
-	TopicNameProduct = "sentel-iot-product"
-	TopicNameDevice  = "sentel-iot-device"
-	TopicNameRule    = "sentel-iot-rule"
-)
+type MessageHandlerFunc func(msg Message, ctx interface{})
 
-type Message interface {
-	Topic() string
-	SetTopic(name string)
-	Serialize(opt SerializeOption) ([]byte, error)
-	Deserialize(buf []byte, opt SerializeOption) error
+type Consumer interface {
+	Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error
+	Start() error
+	Close()
 }
 
-func New(name string) Message {
-	switch name {
-	case TopicNameTenant:
-		return &Tenant{}
-	case TopicNameProduct:
-		return &Product{}
-	case TopicNameRule:
-		return &Rule{}
-	default:
-		return &Broker{}
-	}
+func NewConsumer(khosts string, clientId string) (Consumer, error) {
+	return newKafkaConsumer(khosts, clientId)
 }

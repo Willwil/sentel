@@ -96,7 +96,12 @@ func (p *kafkaConsumer) Start() error {
 							return
 						case msg := <-pc.Messages():
 							if s.handler != nil {
-								s.handler(s.topic, msg.Value, s.ctx)
+								t := New(topic)
+								if err := t.Deserialize(msg.Value, JSONSerialization); err == nil {
+									s.handler(t, s.ctx)
+								} else {
+									glog.Error(err)
+								}
 							}
 						}
 					}

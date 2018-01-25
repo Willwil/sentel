@@ -46,10 +46,11 @@ func RegisterTenant(ctx echo.Context) error {
 	// notify keystone to register the object
 	base.CreateAccount(req.TenantId)
 	// Notify kafka
-	asyncProduceMessage(ctx, message.TopicNameTenant,
-		&message.TenantTopic{
-			TenantId: req.TenantId,
-			Action:   message.ActionCreate,
+	asyncProduceMessage(ctx,
+		&message.Tenant{
+			TopicName: message.TopicNameTenant,
+			TenantId:  req.TenantId,
+			Action:    message.ActionCreate,
 		})
 
 	return ctx.JSON(OK, apiResponse{Result: &t})
@@ -103,10 +104,11 @@ func DeleteTenant(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, message.TopicNameTenant,
-		&message.TenantTopic{
-			TenantId: tenantId,
-			Action:   message.ActionRemove,
+	asyncProduceMessage(ctx,
+		&message.Tenant{
+			TopicName: message.TopicNameTenant,
+			TenantId:  tenantId,
+			Action:    message.ActionRemove,
 		})
 
 	return ctx.JSON(OK, apiResponse{})
@@ -137,10 +139,11 @@ func UpdateTenant(ctx echo.Context) error {
 	if err := r.UpdateTenant(t.TenantId, &t); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	asyncProduceMessage(ctx, message.TopicNameTenant,
-		&message.TenantTopic{
-			TenantId: t.TenantId,
-			Action:   message.ActionUpdate,
+	asyncProduceMessage(ctx,
+		&message.Tenant{
+			TopicName: message.TopicNameTenant,
+			TenantId:  t.TenantId,
+			Action:    message.ActionUpdate,
 		})
 
 	return ctx.JSON(OK, apiResponse{Result: &t})

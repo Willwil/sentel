@@ -63,8 +63,8 @@ func CreateProduct(ctx echo.Context) error {
 	})
 	// Notify kafka
 	asyncProduceMessage(ctx,
-		message.TopicNameProduct,
-		&message.ProductTopic{
+		&message.Product{
+			TopicName: message.TopicNameProduct,
 			ProductId: p.ProductId,
 			Action:    message.ActionCreate,
 		})
@@ -85,8 +85,9 @@ func RemoveProduct(ctx echo.Context) error {
 	if err := r.DeleteProduct(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	asyncProduceMessage(ctx, message.TopicNameProduct,
-		&message.ProductTopic{
+	asyncProduceMessage(ctx,
+		&message.Product{
+			TopicName: message.TopicNameProduct,
 			ProductId: productId,
 			Action:    message.ActionRemove,
 		})
@@ -127,8 +128,9 @@ func UpdateProduct(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, message.TopicNameProduct,
-		&message.ProductTopic{
+	asyncProduceMessage(ctx,
+		&message.Product{
+			TopicName: message.TopicNameProduct,
 			ProductId: p.ProductId,
 			Action:    message.ActionUpdate,
 		})

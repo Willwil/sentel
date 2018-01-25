@@ -77,8 +77,8 @@ func (p *collectorService) Stop() {
 }
 
 // handleNotifications handle notification from kafka
-func (p *collectorService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	if err := handleTopicObject(p, context.Background(), topic, value); err != nil {
+func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) {
+	if err := handleTopicObject(p, context.Background(), msg); err != nil {
 		glog.Error(err)
 	}
 }

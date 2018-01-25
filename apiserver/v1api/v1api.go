@@ -46,22 +46,14 @@ func getRegistry(ctx echo.Context) *registry.Registry {
 	return ctx.Get("registry").(*registry.Registry)
 }
 
-func syncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
+func syncProduceMessage(ctx echo.Context, msg message.Message) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	buf, err := message.Encode(value, message.JsonCodec)
-	if err != nil {
-		return err
-	}
-	return message.SendMessage(hosts, topic, buf)
+	return message.SendMessage(hosts, msg)
 }
 
-func asyncProduceMessage(ctx echo.Context, topic string, value interface{}) error {
+func asyncProduceMessage(ctx echo.Context, msg message.Message) error {
 	c := getConfig(ctx)
 	hosts := c.MustString("apiserver", "kafka")
-	buf, err := message.Encode(value, message.JsonCodec)
-	if err != nil {
-		return err
-	}
-	return message.PostMessage(hosts, topic, buf)
+	return message.PostMessage(hosts, msg)
 }

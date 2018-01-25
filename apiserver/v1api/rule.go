@@ -44,8 +44,9 @@ func CreateRule(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, message.TopicNameRule,
-		&message.RuleTopic{
+	asyncProduceMessage(ctx,
+		&message.Rule{
+			TopicName: message.TopicNameRule,
 			ProductId: rule.ProductId,
 			RuleName:  rule.RuleName,
 			Action:    message.ActionCreate,
@@ -74,8 +75,9 @@ func RemoveRule(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
-	asyncProduceMessage(ctx, message.TopicNameRule,
-		&message.RuleTopic{
+	asyncProduceMessage(ctx,
+		&message.Rule{
+			TopicName: message.TopicNameRule,
 			RuleName:  rule.RuleName,
 			ProductId: rule.ProductId,
 			Action:    message.ActionRemove,
@@ -104,8 +106,8 @@ func UpdateRule(ctx echo.Context) error {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx,
-		message.TopicNameRule,
-		&message.RuleTopic{
+		&message.Rule{
+			TopicName: message.TopicNameRule,
 			RuleName:  rule.RuleName,
 			ProductId: rule.ProductId,
 			Action:    message.ActionUpdate,
@@ -129,8 +131,8 @@ func StartRule(ctx echo.Context) error {
 	}
 
 	asyncProduceMessage(ctx,
-		message.TopicNameRule,
-		&message.RuleTopic{
+		&message.Rule{
+			TopicName: message.TopicNameRule,
 			RuleName:  rule.RuleName,
 			ProductId: rule.ProductId,
 			Action:    message.ActionStart,
@@ -152,8 +154,9 @@ func StopRule(ctx echo.Context) error {
 	if err := base.Authorize(objname, accessId, "w"); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
-	asyncProduceMessage(ctx, message.TopicNameRule,
-		&message.RuleTopic{
+	asyncProduceMessage(ctx,
+		&message.Rule{
+			TopicName: message.TopicNameRule,
 			RuleName:  rule.RuleName,
 			ProductId: rule.ProductId,
 			Action:    message.ActionStop,

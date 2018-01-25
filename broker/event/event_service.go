@@ -96,8 +96,8 @@ func (p *eventService) Name() string      { return ServiceName }
 func (p *eventService) bootstrap() error  { return nil }
 
 // messageHandlerFunc handle mqtt event from other service
-func (p *eventService) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	if e, err := Decode(value, JsonCodec); err == nil && e != nil {
+func (p *eventService) messageHandlerFunc(msg message.Message, ctx interface{}) {
+	if e, err := Decode(msg, JSONCodec); err == nil && e != nil {
 		// cluster event manager only handle kafka event from other broker
 		// Iterate all subscribers to notify
 		etype := e.GetType()
@@ -147,8 +147,9 @@ func (p *eventService) Start() error {
 }
 
 func (p *eventService) publishMsg(topic string, e Event) error {
-	msg, _ := Encode(e, nil)
-	if err := p.producer.SendMessage(topic, msg); err != nil {
+	value, _ := Encode(e, JSONCodec)
+	msg := &message.Broker{TopicName: topic, Payload: value}
+	if err := p.producer.SendMessage(msg); err != nil {
 		glog.Errorf("Failed to store your data:, %s", err)
 		return err
 	}

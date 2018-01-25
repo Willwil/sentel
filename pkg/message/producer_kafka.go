@@ -57,7 +57,12 @@ func newKafkaProducer(khosts string, clientId string, sync bool) (Producer, erro
 	return p, nil
 }
 
-func (p *kafkaProducer) SendMessage(topic string, value []byte) error {
+func (p *kafkaProducer) SendMessage(t Message) error {
+	value, err := t.Serialize(JSONSerialization)
+	if err != nil {
+		return err
+	}
+	topic := t.Topic()
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.ByteEncoder(value),

@@ -17,17 +17,17 @@ import (
 )
 
 var (
-	JsonCodec = CodecOption{Format: "json"}
+	JSONSerialization = SerializeOption{Format: "json"}
 )
 
-type CodecOption struct {
+type SerializeOption struct {
 	Format string
 }
 
-func Encode(val interface{}, opt CodecOption) ([]byte, error) {
+func Serialize(msg Message, opt SerializeOption) ([]byte, error) {
 	switch opt {
-	case JsonCodec:
-		return json.Marshal(val)
+	case JSONSerialization:
+		return json.Marshal(msg)
 	default:
 		return nil, errors.New("invalid message codec")
 	}

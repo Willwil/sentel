@@ -13,7 +13,6 @@
 package engine
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -208,12 +207,12 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
-func (p *ruleEngine) messageHandlerFunc(topic string, value []byte, ctx interface{}) {
-	r := message.RuleTopic{}
-	if err := json.Unmarshal(value, &r); err != nil {
-		glog.Errorf("invalid rule topic body, '%s'", err)
+func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
+	r, ok := msg.(*message.Rule)
+	if !ok || r == nil {
 		return
 	}
+
 	action := ""
 	switch r.Action {
 	case message.ActionCreate:
@@ -245,13 +244,13 @@ func HandleRuleNotification(ctx RuleContext) error {
 	return <-ctx.Resp
 }
 
-func HandleTopicNotification(productId string, topic string, value []byte) error {
+func HandleTopicNotification(productId string, msg message.Message) error {
 	mgr := service.GetServiceManager()
 	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	if executor, found := s.executors[productId]; found {
-		executor.messageHandlerFunc(topic, value, nil)
+		executor.messageHandlerFunc(msg, nil)
 		return nil
 	}
 	return fmt.Errorf("invalid product '%s'", productId)
