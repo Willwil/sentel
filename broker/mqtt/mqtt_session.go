@@ -312,6 +312,9 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		return fmt.Errorf("Invalid Will Qos in CONNECT from %s", p.clientId)
 	}
 	willRetain := (cflags & 0x20) == 0x20
+	if will == 0 && (willQos != 0 || !willRetain) {
+		return fmt.Errorf("Invalid Will Qos or Will Retain in CONNECT from %s", p.clientId)
+	}
 
 	// Keepalive and client identifier
 	keepalive, err := packet.readUint16()
@@ -321,14 +324,14 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	p.keepalive = keepalive
 
 	// Deal with client identifier
-	clientId, err := packet.readString()
-	if err != nil || clientId == "" {
+	rawClientID, err := packet.readString()
+	if err != nil || rawClientID == "" {
 		p.sendConnAck(0, CONNACK_REFUSED_IDENTIFIER_REJECTED)
 		return errors.New("Invalid mqtt packet with client id")
 	}
 
 	// Deal with will message
-	var willMsg *base.Message = nil
+	var willMsg *base.Message
 	if will > 0 {
 		topic, err := packet.readString()
 		if err != nil || topic == "" {
@@ -366,14 +369,16 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Get user name and password and parse mqtt client request options to authentication
 	if cflags&0x40 == 0 || cflags&0x80 == 0 {
+		p.sendConnAck(0, CONNACK_REFUSED_BAD_USERNAME_PASSWORD)
 		return mqttErrorInvalidProtocol
 	}
 	username, usrErr := packet.readString()
 	password, pwdErr := packet.readString()
 	if usrErr != nil || pwdErr != nil {
+		p.sendConnAck(0, CONNACK_REFUSED_BAD_USERNAME_PASSWORD)
 		return mqttErrorInvalidProtocol
 	}
-	p.authctx, err = p.parseRequestOptions(clientId, username, password)
+	p.authctx, err = p.parseRequestOptions(rawClientID, username, password)
 	if err != nil {
 		return err
 	}
@@ -395,24 +400,21 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
-	p.info.CleanSession = cleanSession
 	if cleanSession == 0 {
-		if found, _ := sm.FindSession(p.clientId); found != nil {
+		if ss, _ := sm.FindSession(p.clientId); ss != nil {
 			// Found old session
-			if !found.IsValid() {
-				glog.Errorf("Invalid session(%s) in store", found.Id())
+			if !ss.IsValid() {
+				glog.Errorf("Invalid session(%s) in store", ss.Id())
 			}
-			info := found.Info()
 			if p.protocol == mqttProtocol311 {
-				if cleanSession == 0 {
-					conack |= 0x01
-				}
+				conack |= 0x01
 			}
-			if p.cleanSession == 0 && info.CleanSession == 0 {
+			if ss.IsPersistent() {
 				// Resume last session and notify other mqtt node to release resource
 				event.Notify(&event.SessionResumeEvent{
 					ClientId: p.clientId})
 			}
+			sm.RemoveSession(p.clientId)
 		}
 	}
 	// Remove any queued messages that are no longer allowd through ACL
@@ -421,7 +423,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		metadata.DeleteMessageWithValidator(
 			p.clientId,
 			func(msg *base.Message) bool {
-				err := auth.Authorize(p.authctx, clientId, msg.Topic, auth.AclRead)
+				err := auth.Authorize(p.authctx, rawClientID, msg.Topic, auth.AclRead)
 				return err != nil
 			})
 		metadata.AddMessage(p.clientId, willMsg)
@@ -429,7 +431,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	p.willMsg = willMsg
 	p.cleanSession = cleanSession
 
-	// Create queue for this sesion and otify event service that new session created
+	// Create queue for this sesion and notify event service that new session created
 	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0), p); err != nil {
 		glog.Error(err)
 		return err
