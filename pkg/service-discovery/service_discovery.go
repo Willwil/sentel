@@ -42,7 +42,7 @@ type ServiceDiscovery interface {
 }
 
 type Option struct {
-	Backend      string // Dtcd or zookeeper
+	Backend      string // Etcd or zookeeper
 	Hosts        string // Server hosts
 	ServicesPath string // Services path
 }
