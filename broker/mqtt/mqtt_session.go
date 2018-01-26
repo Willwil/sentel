@@ -59,6 +59,7 @@ type mqttSession struct {
 	bytesReceived  int64            // Byte recivied
 	authNeed       bool             // Indicate wether authentication is needed
 	metrics        metric.Metric    // Metrics
+	info           sm.SessionInfo   // Session Info
 }
 
 // newMqttSession create new session  for each client connection
@@ -255,7 +256,7 @@ func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
 
 func (p *mqttSession) Id() string            { return p.clientId }
 func (p *mqttSession) BrokerId() string      { return base.GetBrokerId() }
-func (p *mqttSession) Info() *sm.SessionInfo { return nil }
+func (p *mqttSession) Info() *sm.SessionInfo { return &p.info }
 func (p *mqttSession) IsValid() bool         { return true }
 func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
 
@@ -394,8 +395,9 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
+	p.info.CleanSession = cleanSession
 	if cleanSession == 0 {
-		if found, _ := sm.FindSession(clientId); found != nil {
+		if found, _ := sm.FindSession(p.clientId); found != nil {
 			// Found old session
 			if !found.IsValid() {
 				glog.Errorf("Invalid session(%s) in store", found.Id())
@@ -409,7 +411,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 			if p.cleanSession == 0 && info.CleanSession == 0 {
 				// Resume last session and notify other mqtt node to release resource
 				event.Notify(&event.SessionResumeEvent{
-					ClientId: clientId})
+					ClientId: p.clientId})
 			}
 		}
 	}
@@ -417,12 +419,12 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	// Assuming a possible change of username
 	if willMsg != nil {
 		metadata.DeleteMessageWithValidator(
-			clientId,
+			p.clientId,
 			func(msg *base.Message) bool {
 				err := auth.Authorize(p.authctx, clientId, msg.Topic, auth.AclRead)
 				return err != nil
 			})
-		metadata.AddMessage(clientId, willMsg)
+		metadata.AddMessage(p.clientId, willMsg)
 	}
 	p.willMsg = willMsg
 	p.cleanSession = cleanSession
