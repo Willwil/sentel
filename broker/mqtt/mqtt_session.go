@@ -312,7 +312,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		return fmt.Errorf("Invalid Will Qos in CONNECT from %s", p.clientId)
 	}
 	willRetain := (cflags & 0x20) == 0x20
-	if will == 0 && (willQos != 0 || !willRetain) {
+	if will == 0 && (willQos != 0 || willRetain) {
 		return fmt.Errorf("Invalid Will Qos or Will Retain in CONNECT from %s", p.clientId)
 	}
 
