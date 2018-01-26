@@ -24,7 +24,7 @@ type persistentQueue struct {
 	plugin   queuePlugin   // backend queue plugin
 }
 
-func newPersistentQueue(clientId string, c config.Config, o Observer) (Queue, error) {
+func newPersistentQueue(clientId string, c config.Config) (Queue, error) {
 	plugin, err := newPlugin(clientId, c)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func newPersistentQueue(clientId string, c config.Config, o Observer) (Queue, er
 		config:   c,
 		clientId: clientId,
 		plugin:   plugin,
-		observer: o,
+		observer: nil,
 	}
 	return q, nil
 }

@@ -36,7 +36,7 @@ func (p *virtualSession) Info() *SessionInfo { return &SessionInfo{} }
 func (p *virtualSession) BrokerId() string { return p.brokerId }
 
 func newVirtualSession(brokerId, clientId string, persistent bool) (Session, error) {
-	q, err := queue.NewQueue(clientId, persistent, nil)
+	q, err := queue.NewQueue(clientId, persistent)
 	if err != nil {
 		return nil, err
 	}

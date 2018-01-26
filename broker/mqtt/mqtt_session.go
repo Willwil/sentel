@@ -432,11 +432,12 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 	p.cleanSession = cleanSession
 
 	// Create queue for this sesion and notify event service that new session created
-	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0), p); err != nil {
+	if q, err := queue.NewQueue(p.clientId, (cleanSession == 0)); err != nil {
 		glog.Error(err)
 		return err
 	} else {
 		p.queue = q
+		p.queue.RegisterObserver(p)
 	}
 	// Change session state and reply client
 	p.setSessionState(mqttStateConnected)

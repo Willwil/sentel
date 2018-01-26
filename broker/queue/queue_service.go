@@ -70,7 +70,7 @@ func (p *queueService) Start() error {
 func (p *queueService) Stop() {}
 
 // newQueue allocate queue from queue service
-func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, error) {
+func (p *queueService) newQueue(id string, persistent bool) (Queue, error) {
 	p.mutex.Lock()
 	p.mutex.Unlock()
 
@@ -83,6 +83,7 @@ func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, 
 		if q.IsPersistent() && !persistent {
 			p.destroyQueue(id)
 		} else {
+			// FIXME
 			return nil, fmt.Errorf("broker: queue for '%s' already exist", id)
 		}
 	}
@@ -90,9 +91,9 @@ func (p *queueService) newQueue(id string, persistent bool, o Observer) (Queue, 
 	var q Queue
 	var err error
 	if persistent {
-		q, err = newPersistentQueue(id, p.config, o)
+		q, err = newPersistentQueue(id, p.config)
 	} else {
-		q, err = newTransientQueue(id, p.config, o)
+		q, err = newTransientQueue(id, p.config)
 	}
 	if err != nil {
 		return nil, err
