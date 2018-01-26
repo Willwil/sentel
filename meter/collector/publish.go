@@ -12,25 +12,26 @@
 
 package collector
 
-import "context"
+import (
+	"context"
+
+	"github.com/cloustone/sentel/pkg/message"
+)
 
 // Publish
 type Publish struct {
-	topicBase
-	ClientId  string `json:"clientId"`
-	Topic     string `json:"topic"`
-	ProductId string `json:"product"`
+	TopicName       string
+	ClientId        string `json:"clientId"`
+	SubscribedTopic string `json:"topic"`
+	ProductId       string `json:"product"`
 }
 
-func (p *Publish) name() string { return TopicNamePublish }
-func (p *Publish) clone() topicObject {
-	return &Publish{
-		topicBase: p.topicBase,
-		ClientId:  p.ClientId,
-		Topic:     p.Topic,
-		ProductId: p.ProductId,
-	}
+func (p *Publish) Topic() string        { return TopicNamePublish }
+func (p *Publish) SetTopic(name string) {}
+func (p *Publish) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Publish) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Publish) handleTopic(service *collectorService, ctx context.Context) error {
 	return nil

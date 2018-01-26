@@ -15,12 +15,14 @@ package collector
 import (
 	"context"
 
+	"github.com/cloustone/sentel/pkg/message"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Client
 type Client struct {
-	topicBase
+	TopicName       string
 	ClientId        string `json:"clientId"`
 	UserName        string `json:"userName"`
 	IpAddress       string `json:"ipAddress"`
@@ -31,20 +33,12 @@ type Client struct {
 	ConnectedAt     string `json:"connectedAt"`
 }
 
-func (p *Client) name() string { return TopicNameClient }
-func (p *Client) clone() topicObject {
-	return &Client{
-		topicBase:       p.topicBase,
-		ClientId:        p.ClientId,
-		UserName:        p.UserName,
-		IpAddress:       p.IpAddress,
-		Port:            p.Port,
-		CleanSession:    p.CleanSession,
-		ProtocolVersion: p.ProtocolVersion,
-		Keepalive:       p.Keepalive,
-		ConnectedAt:     p.ConnectedAt,
-	}
+func (p *Client) Topic() string        { return TopicNameClient }
+func (p *Client) SetTopic(name string) {}
+func (p *Client) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Client) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Client) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

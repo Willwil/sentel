@@ -16,12 +16,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/cloustone/sentel/pkg/message"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Metric
 type Metric struct {
-	topicBase
+	TopicName  string
 	Action     string            `json:"action"`
 	NodeName   string            `json:"nodeName"`
 	Service    string            `json:"service"`
@@ -29,16 +31,12 @@ type Metric struct {
 	UpdateTime time.Time         `json:"updateTime"`
 }
 
-func (p *Metric) name() string { return TopicNameStats }
-func (p *Metric) clone() topicObject {
-	return &Metric{
-		topicBase:  p.topicBase,
-		NodeName:   p.NodeName,
-		Service:    p.Service,
-		Values:     p.Values,
-		UpdateTime: p.UpdateTime,
-	}
+func (p *Metric) Topic() string        { return TopicNameMetric }
+func (p *Metric) SetTopic(name string) {}
+func (p *Metric) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Metric) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Metric) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

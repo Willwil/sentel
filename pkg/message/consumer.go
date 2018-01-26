@@ -13,10 +13,15 @@ package message
 
 type MessageHandlerFunc func(msg Message, ctx interface{})
 
+type MessageFactory interface {
+	CreateMessage(topic string) Message
+}
+
 type Consumer interface {
 	Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error
 	Start() error
 	Close()
+	SetMessageFactory(factory MessageFactory)
 }
 
 func NewConsumer(khosts string, clientId string) (Consumer, error) {

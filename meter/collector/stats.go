@@ -16,12 +16,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/cloustone/sentel/pkg/message"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Stat
 type Stats struct {
-	topicBase
+	TopicName  string
 	NodeName   string            `json:"nodeName"`
 	Service    string            `json:"service"`
 	Action     string            `json:"action"`
@@ -29,17 +31,12 @@ type Stats struct {
 	Values     map[string]uint64 `json:"values"`
 }
 
-func (p *Stats) name() string { return TopicNameStats }
-func (p *Stats) clone() topicObject {
-	return &Stats{
-		topicBase:  p.topicBase,
-		NodeName:   p.NodeName,
-		Service:    p.Service,
-		Action:     p.Action,
-		UpdateTime: p.UpdateTime,
-		Values:     p.Values,
-	}
+func (p *Stats) Topic() string        { return TopicNameStats }
+func (p *Stats) SetTopic(name string) {}
+func (p *Stats) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Stats) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Stats) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

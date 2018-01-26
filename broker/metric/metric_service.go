@@ -115,11 +115,12 @@ func (p *metricService) reportMetric() {
 	services := strings.Split(val, ",")
 	for _, service := range services {
 		metrics := GetMetric(service)
-		collector.AsyncReport(p.config, collector.TopicNameMetric,
+		collector.AsyncReport(p.config,
 			&collector.Metric{
-				NodeName: p.name,
-				Service:  service,
-				Values:   metrics,
+				TopicName: collector.TopicNameMetric,
+				NodeName:  p.name,
+				Service:   service,
+				Values:    metrics,
 			})
 	}
 }
@@ -127,8 +128,9 @@ func (p *metricService) reportMetric() {
 // reportKeepalive report node information to cluster manager
 func (p *metricService) reportKeepalive() {
 	info := base.GetBrokerStartupInfo()
-	collector.AsyncReport(p.config, collector.TopicNameNode,
+	collector.AsyncReport(p.config,
 		&collector.Node{
+			TopicName:  collector.TopicNameNode,
 			NodeId:     info.Id,
 			NodeIp:     info.Ip,
 			CreatedAt:  info.CreatedAt,

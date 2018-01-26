@@ -15,12 +15,14 @@ package collector
 import (
 	"context"
 
+	"github.com/cloustone/sentel/pkg/message"
+
 	"gopkg.in/mgo.v2/bson"
 )
 
 // Session
 type Session struct {
-	topicBase
+	TopicName          string
 	Action             string `json:"action"`
 	ClientId           string `json:"clientId"`
 	CleanSession       bool   `json:"cleanSession"`
@@ -34,23 +36,12 @@ type Session struct {
 	CreatedAt          string `json:"createdAt"`
 }
 
-func (p *Session) name() string { return TopicNameSubscription }
-func (p *Session) clone() topicObject {
-	return &Session{
-		topicBase:          p.topicBase,
-		Action:             p.Action,
-		ClientId:           p.ClientId,
-		CleanSession:       p.CleanSession,
-		MessageMaxInflight: p.MessageMaxInflight,
-		MessageInflight:    p.MessageInflight,
-		MessageInQueue:     p.MessageInQueue,
-		MessageDropped:     p.MessageDropped,
-		AwaitingRel:        p.AwaitingRel,
-		AwaitingComp:       p.AwaitingComp,
-		AwaitingAck:        p.AwaitingAck,
-		CreatedAt:          p.CreatedAt,
-	}
+func (p *Session) Topic() string        { return TopicNameSession }
+func (p *Session) SetTopic(name string) {}
+func (p *Session) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Session) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Session) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

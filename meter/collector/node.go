@@ -15,11 +15,13 @@ package collector
 import (
 	"context"
 	"time"
+
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Node
 type Node struct {
-	topicBase
+	TopicName  string
 	NodeId     string    `json:"nodeId"`
 	NodeIp     string    `json:"nodeIp"`
 	Version    string    `json:"version"`
@@ -29,19 +31,12 @@ type Node struct {
 	Action     string    `json:"action"`
 }
 
-func (p *Node) name() string { return TopicNameNode }
-func (p *Node) clone() topicObject {
-	return &Node{
-		topicBase:  p.topicBase,
-		NodeId:     p.NodeId,
-		NodeIp:     p.NodeIp,
-		Version:    p.Version,
-		CreatedAt:  p.CreatedAt,
-		UpdatedAt:  p.UpdatedAt,
-		NodeStatus: p.NodeStatus,
-		Action:     p.Action,
-	}
+func (p *Node) Topic() string        { return TopicNameNode }
+func (p *Node) SetTopic(name string) {}
+func (p *Node) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Node) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Node) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

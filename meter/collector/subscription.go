@@ -15,29 +15,26 @@ package collector
 import (
 	"context"
 	"time"
+
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Subscription
 type Subscription struct {
-	topicBase
-	ClientId  string    `json:"clientId"`
-	Topic     string    `json:"topic"`
-	Qos       int       `json:"qos"`
-	CreatedAt time.Time `json:"createdAt"`
-	Action    string    `json:"action"`
+	TopicName       string
+	ClientId        string    `json:"clientId"`
+	SubscribedTopic string    `json:"topic"`
+	Qos             int       `json:"qos"`
+	CreatedAt       time.Time `json:"createdAt"`
+	Action          string    `json:"action"`
 }
 
-func (p *Subscription) name() string { return TopicNameSubscription }
-func (p *Subscription) clone() topicObject {
-	return &Subscription{
-		topicBase: p.topicBase,
-		ClientId:  p.ClientId,
-		Topic:     p.Topic,
-		Qos:       p.Qos,
-		CreatedAt: p.CreatedAt,
-		Action:    p.Action,
-	}
+func (p *Subscription) Topic() string        { return TopicNameSubscription }
+func (p *Subscription) SetTopic(name string) {}
+func (p *Subscription) Serialize(opt message.SerializeOption) ([]byte, error) {
+	return message.Serialize(p, opt)
 }
+func (p *Subscription) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *Subscription) handleTopic(service *collectorService, ctx context.Context) error {
 	db, err := service.getDatabase()

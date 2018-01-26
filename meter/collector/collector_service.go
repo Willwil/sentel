@@ -13,13 +13,11 @@
 package collector
 
 import (
-	"context"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
-	"github.com/golang/glog"
 	"gopkg.in/mgo.v2"
 )
 
@@ -58,6 +56,28 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 func (p *collectorService) Name() string      { return SERVICE_NAME }
 func (p *collectorService) Initialize() error { return nil }
 
+// MessageFactory interface implementation
+func (p *collectorService) CreateMessage(topic string) message.Message {
+	switch topic {
+	case TopicNameNode:
+		return &Node{TopicName: topic}
+	case TopicNameClient:
+		return &Client{TopicName: topic}
+	case TopicNameSession:
+		return &Session{TopicName: topic}
+	case TopicNameSubscription:
+		return &Subscription{TopicName: topic}
+	case TopicNamePublish:
+		return &Publish{TopicName: topic}
+	case TopicNameMetric:
+		return &Metric{TopicName: topic}
+	case TopicNameStats:
+		return &Stats{TopicName: topic}
+	default:
+		return nil
+	}
+}
+
 // Start
 func (p *collectorService) Start() error {
 	p.consumer.Subscribe(TopicNameNode, p.messageHandlerFunc, nil)
@@ -67,6 +87,7 @@ func (p *collectorService) Start() error {
 	p.consumer.Subscribe(TopicNamePublish, p.messageHandlerFunc, nil)
 	p.consumer.Subscribe(TopicNameMetric, p.messageHandlerFunc, nil)
 	p.consumer.Subscribe(TopicNameStats, p.messageHandlerFunc, nil)
+	p.consumer.SetMessageFactory(p)
 	p.consumer.Start()
 	return nil
 }
@@ -78,8 +99,8 @@ func (p *collectorService) Stop() {
 
 // handleNotifications handle notification from kafka
 func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) {
-	if err := handleTopicObject(p, context.Background(), msg); err != nil {
-		glog.Error(err)
+	if handler, ok := msg.(topicHandler); ok {
+		handler.handleTopic(p, nil)
 	}
 }
 

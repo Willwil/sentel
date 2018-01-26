@@ -14,10 +14,10 @@ package collector
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
+	"github.com/golang/glog"
 )
 
 const (
@@ -38,47 +38,24 @@ const (
 	ObjectActionUpdate     = "update"
 )
 
-type topicBase struct {
-	encoded []byte
-	err     error
-}
-
-func (p *topicBase) ensureEncoded() {
-	if p.encoded == nil && p.err == nil {
-		p.encoded, p.err = json.Marshal(p)
-	}
-}
-
-func (p *topicBase) Length() int {
-	p.ensureEncoded()
-	return len(p.encoded)
-}
-
-func (p *topicBase) Encode() ([]byte, error) {
-	p.ensureEncoded()
-	return p.encoded, p.err
-}
-
-type topicObject interface {
-	name() string
-	clone() topicObject // Not realy clone, just construct a new object
+type topicHandler interface {
 	handleTopic(s *collectorService, ctx context.Context) error
 }
 
-var topicObjects map[string]topicObject = make(map[string]topicObject)
-
-func registerTopicObject(t topicObject) {
-	if _, ok := topicObjects[t.name()]; !ok {
-		topicObjects[t.name()] = t
+func SyncReport(c config.Config, msg message.Message) error {
+	hosts := "localhost:9092"
+	if h, err := c.String("kafka", "hosts"); err != nil {
+		glog.Warningf("kafka is not configured, using localhost:9092")
+	} else {
+		hosts = h
 	}
+	return message.PostMessage(hosts, msg)
 }
 
-func handleTopicObject(s *collectorService, ctx context.Context, msg message.Message) error {
-	topic := msg.Topic()
-	if obj, ok := topicObjects[topic]; !ok || obj == nil {
-		return fmt.Errorf("No valid handler for topic:%s", topic)
+func AsyncReport(c config.Config, msg message.Message) error {
+	hosts, err := c.String("kafka", "hosts")
+	if err != nil {
+		return err
 	}
-
-	obj := topicObjects[topic].clone()
-	return obj.handleTopic(s, ctx)
+	return message.PostMessage(hosts, msg)
 }

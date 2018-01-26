@@ -25,6 +25,7 @@ type kafkaConsumer struct {
 	subscribers map[string]*subscriber // kafka client endpoint
 	mutex       sync.Mutex
 	clientId    string
+	msgFactory  MessageFactory
 }
 
 type subscriber struct {
@@ -46,6 +47,8 @@ func newKafkaConsumer(khosts string, clientId string) (Consumer, error) {
 		mutex:       sync.Mutex{},
 	}, nil
 }
+
+func (p *kafkaConsumer) SetMessageFactory(factory MessageFactory) { p.msgFactory = factory }
 
 func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx interface{}) error {
 	if _, found := p.subscribers[topic]; found {
@@ -96,11 +99,19 @@ func (p *kafkaConsumer) Start() error {
 							return
 						case msg := <-pc.Messages():
 							if s.handler != nil {
-								t := New(topic)
-								if err := t.Deserialize(msg.Value, JSONSerialization); err == nil {
+								// if message factory is provided, using it
+								// directly
+								var t Message
+								if p.msgFactory != nil {
+									t = p.msgFactory.CreateMessage(topic)
+								} else {
+									// using default message factory
+									t = New(topic)
+								}
+								if t != nil && t.Deserialize(msg.Value, JSONSerialization) == nil {
 									s.handler(t, s.ctx)
 								} else {
-									glog.Error(err)
+									glog.Errorf("topic '%s' handle failure", topic)
 								}
 							}
 						}
