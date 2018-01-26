@@ -59,7 +59,7 @@ func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error)
 	if r.DataTarget.Type == registry.DataTargetTypeTopic {
 		options["topic"] = r.DataTarget.Topic
 	}
-	config.AddConfigSection("etl", options)
+	config.AddConfigSection("pipeline", options)
 
 	ppline := pipeline.New(config)
 	extractor, _ := extractor.New(config, "event")
@@ -83,10 +83,5 @@ func (p *ruleWraper) handle(e event.Event) error {
 	}
 }
 
-func (p *ruleWraper) Data() chan interface{} {
-	return p.datach
-}
-
-func (p *ruleWraper) close() {
-	p.ppline.Close()
-}
+func (p *ruleWraper) Data() chan interface{} { return p.datach }
+func (p *ruleWraper) close()                 { p.ppline.Close() }

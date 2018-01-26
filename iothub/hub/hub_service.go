@@ -21,11 +21,10 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/iothub/cluster"
-	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/docker-service"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
+	sd "github.com/cloustone/sentel/pkg/service-discovery"
 	"github.com/golang/glog"
 )
 
@@ -52,7 +51,7 @@ type ServiceFactory struct{}
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	clustermgr, cerr := cluster.New(c)
 	hubdb, nerr := newHubDB(c)
-	discovery, derr := sd.New(c, ds.BackendZookeeper)
+	discovery, derr := sd.New(c, sd.BackendZookeeper)
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}

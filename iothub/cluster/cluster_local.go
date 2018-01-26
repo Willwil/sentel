@@ -19,9 +19,8 @@ import (
 	"os/exec"
 	"sync"
 
-	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/docker-service"
+	sd "github.com/cloustone/sentel/pkg/service-discovery"
 )
 
 type localCluster struct {
@@ -91,7 +90,7 @@ func (p *localCluster) CreateService(tid string, network string, replicas int32)
 	p.ctxs[serviceID] = ctx
 
 	if p.serviceDiscovery != nil {
-		service := ds.Service{
+		service := sd.Service{
 			Name: tid,
 			ID:   serviceID,
 			IP:   "127.0.0.1",
@@ -116,7 +115,7 @@ func (p *localCluster) RemoveService(serviceID string) error {
 	spec := p.serviceSpecs[serviceID]
 	delete(p.ports, spec.Endpoints[0].Port)
 	if p.serviceDiscovery != nil {
-		p.serviceDiscovery.RemoveService(ds.Service{ID: serviceID})
+		p.serviceDiscovery.RemoveService(sd.Service{ID: serviceID})
 	}
 	return nil
 }

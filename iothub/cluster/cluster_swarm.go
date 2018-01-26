@@ -18,9 +18,8 @@ import (
 	"sync"
 	"time"
 
-	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/docker-service"
+	sd "github.com/cloustone/sentel/pkg/service-discovery"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/client"
@@ -180,7 +179,7 @@ func (p *swarmCluster) CreateService(tid string, network string, replicas int32)
 			return serviceName, fmt.Errorf("inspect service port failed")
 		}
 
-		dockerService := ds.Service{
+		dockerService := sd.Service{
 			Name: serviceName,
 			ID:   serviceID,
 			IP:   ip,
@@ -199,7 +198,7 @@ func (p *swarmCluster) RemoveService(serviceName string) error {
 			return fmt.Errorf("swarm stop service '%s' failed", serviceName)
 		}
 		if p.serviceDiscovery != nil {
-			p.serviceDiscovery.RemoveService(ds.Service{Name: serviceName, ID: id})
+			p.serviceDiscovery.RemoveService(sd.Service{Name: serviceName, ID: id})
 		}
 	}
 	return nil

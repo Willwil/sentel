@@ -28,7 +28,7 @@ type topicLoader struct {
 }
 
 func newTopicLoader(c config.Config) (Loader, error) {
-	hosts, err := c.String("etl", "message_server")
+	hosts, err := c.String("pipeline", "message_server")
 	if err != nil || hosts == "" {
 		return nil, errors.New("invalid message server setting")
 	}

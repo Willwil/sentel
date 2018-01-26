@@ -15,8 +15,8 @@ package cluster
 import (
 	"errors"
 
-	sd "github.com/cloustone/sentel/iothub/service-discovery"
 	"github.com/cloustone/sentel/pkg/config"
+	sd "github.com/cloustone/sentel/pkg/service-discovery"
 )
 
 const (
