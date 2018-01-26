@@ -25,8 +25,8 @@ type Message interface {
 	Deserialize(buf []byte, opt SerializeOption) error
 }
 
-func New(name string) Message {
-	switch name {
+func New(topicName string) Message {
+	switch topicName {
 	case TopicNameTenant:
 		return &Tenant{}
 	case TopicNameProduct:
@@ -34,6 +34,6 @@ func New(name string) Message {
 	case TopicNameRule:
 		return &Rule{}
 	default:
-		return &Broker{}
+		return &Broker{TopicName: topicName}
 	}
 }

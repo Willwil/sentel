@@ -26,14 +26,8 @@ type Tenant struct {
 	Action    string `json:"action"`
 }
 
-func (p *Tenant) Topic() string {
-	if p.TopicName == "" {
-		return TopicNameTenant
-	} else {
-		return p.TopicName
-	}
-}
-func (p *Tenant) SetTopic(name string)                              { p.TopicName = name }
+func (p *Tenant) Topic() string                                     { return TopicNameTenant }
+func (p *Tenant) SetTopic(name string)                              {}
 func (p *Tenant) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
 func (p *Tenant) Deserialize(buf []byte, opt SerializeOption) error { return nil }
 
@@ -46,14 +40,8 @@ type Product struct {
 	Replicas  int32  `json:"replicas"`
 }
 
-func (p *Product) Topic() string {
-	if p.TopicName == "" {
-		return TopicNameProduct
-	} else {
-		return p.TopicName
-	}
-}
-func (p *Product) SetTopic(name string)                              { p.TopicName = name }
+func (p *Product) Topic() string                                     { return TopicNameProduct }
+func (p *Product) SetTopic(name string)                              {}
 func (p *Product) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
 func (p *Product) Deserialize(buf []byte, opt SerializeOption) error { return nil }
 
@@ -65,14 +53,8 @@ type Rule struct {
 	Action    string `json:"action"`
 }
 
-func (p *Rule) Topic() string {
-	if p.TopicName == "" {
-		return TopicNameRule
-	} else {
-		return p.TopicName
-	}
-}
-func (p *Rule) SetTopic(name string)                              { p.TopicName = name }
+func (p *Rule) Topic() string                                     { return TopicNameRule }
+func (p *Rule) SetTopic(name string)                              {}
 func (p *Rule) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
 func (p *Rule) Deserialize(buf []byte, opt SerializeOption) error { return nil }
 
@@ -83,13 +65,7 @@ type Broker struct {
 	Payload   []byte `json:"payload"`
 }
 
-func (p *Broker) Topic() string {
-	if p.TopicName == "" {
-		return TopicNameRule
-	} else {
-		return p.TopicName
-	}
-}
+func (p *Broker) Topic() string                                     { return p.TopicName }
 func (p *Broker) SetTopic(name string)                              { p.TopicName = name }
 func (p *Broker) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
 func (p *Broker) Deserialize(buf []byte, opt SerializeOption) error { return nil }
