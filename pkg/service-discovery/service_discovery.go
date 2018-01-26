@@ -12,11 +12,7 @@
 
 package sd
 
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "errors"
 
 const (
 	// BackendZookeeper zookeeper
@@ -45,11 +41,17 @@ type ServiceDiscovery interface {
 	Close()
 }
 
+type Option struct {
+	Backend      string // Dtcd or zookeeper
+	Hosts        string // Server hosts
+	ServicesPath string // Services path
+}
+
 // New create service discovery
-func New(c config.Config, bks string) (ServiceDiscovery, error) {
-	switch bks {
+func New(opt Option) (ServiceDiscovery, error) {
+	switch opt.Backend {
 	case BackendZookeeper:
-		return newServiceDiscoveryZK(c)
+		return newServiceDiscoveryZK(opt)
 	default:
 		return nil, errors.New("no valid service discovery backend")
 	}

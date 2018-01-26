@@ -14,45 +14,39 @@ package sd
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
 	"github.com/samuel/go-zookeeper/zk"
 )
 
 type serviceDisZK struct {
-	config    config.Config
+	option    Option
 	conn      *zk.Conn
 	waitgroup sync.WaitGroup
 	quitChan  chan interface{}
 	handler   WatcherHandlerFunc
 }
 
-func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
-	hosts, err := c.String("service-discovery", "hosts")
+func newServiceDiscoveryZK(opt Option) (ServiceDiscovery, error) {
+	conn, _, err := zk.Connect(strings.Split(opt.Hosts, ","), time.Second*2)
 	if err != nil {
-		return nil, errors.New("no zookeeper hosts")
-	}
-	conn, _, err := zk.Connect(strings.Split(hosts, ","), time.Second*2)
-	if err != nil {
-		return nil, fmt.Errorf("service discovery can not connect with zk:%s", hosts)
+		return nil, fmt.Errorf("service discovery can not connect with zk:%s", opt.Hosts)
 	}
 	return &serviceDisZK{
-		config:    c,
+		option:    opt,
 		waitgroup: sync.WaitGroup{},
-		quitChan:  make(chan interface{}),
+		quitChan:  make(chan interface{}, 1),
 		conn:      conn,
 	}, nil
 }
 
 func (p *serviceDisZK) RegisterService(s Service) error {
-	path := fmt.Sprintf("/iotservices/%s", s.Name)
+	path := fmt.Sprintf("%s/%s", p.option.ServicesPath, s.Name)
 	buf, err := json.Marshal(&s)
 	if err != nil {
 		return fmt.Errorf("service '%s' data marshal failed", s.Name)
@@ -63,7 +57,7 @@ func (p *serviceDisZK) RegisterService(s Service) error {
 }
 
 func (p *serviceDisZK) RemoveService(s Service) {
-	path := fmt.Sprintf("/iotservices/%s", s.Name)
+	path := fmt.Sprintf("%s/%s", p.option.ServicesPath, s.Name)
 	p.conn.Delete(path, 0)
 
 }

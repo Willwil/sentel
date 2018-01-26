@@ -49,14 +49,22 @@ const SERVICE_NAME = "iothub"
 type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
+	khosts, err := c.String("iothub", "zookeeper")
+	if err != nil || khosts == "" {
+		return nil, errors.New("invalid zookeeper hosts option")
+	}
 	clustermgr, cerr := cluster.New(c)
 	hubdb, nerr := newHubDB(c)
-	discovery, derr := sd.New(c, sd.BackendZookeeper)
+	discovery, derr := sd.New(sd.Option{
+		Backend:      sd.BackendZookeeper,
+		Hosts:        khosts,
+		ServicesPath: "/iotservices",
+	})
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}
 	// initialize message consumer
-	khosts, err := c.String("iothub", "kafka")
+	khosts, err = c.String("iothub", "kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}
