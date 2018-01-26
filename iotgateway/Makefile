@@ -1,7 +1,7 @@
 # The import path is where your repository can be found.
 # To import subpackages, always prepend the full import path.
 # If you change this, run `make clean`. Read more: https://git.io/vM7zV
-IMPORT_PATH := github.com/cloustone/sentel
+IMPORT_PATH := github.com/cloustone/sentel-gateway
 
 V := 1 # When V is set, print commands and build progress.
 
@@ -14,44 +14,18 @@ GCFLAGS  := -gcflags "-N -l"
 all: build
 
 .PHONY: build
-build: .GOPATH/.ok apiserver broker iothub iotgateway conductor keystone meter
+build: .GOPATH/.ok
+	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)
+
+.PHONY: docker
+docker: all
+	$Q docker build -f nginx-mqtt/Dockerfile .
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
 # otherbin: .GOPATH/.ok
 # 	$Q go install $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/cmd/otherbin
 #
-
-.PHONY: apiserver
-apiserver: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/apiserver
-
-.PHONY: broker 
-broker: .GOPATH/.ok
-	$Q go install $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/broker 
-
-.PHONY: iothub 
-iothub: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/iothub
-
-.PHONY: iotgateway
-iotgateway: .GOPATH/.ok
-	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/iotgateway
-
-
-.PHONY: meter 
-meter: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/meter
-
-.PHONY: conductor 
-conductor: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/conductor
-
-.PHONY: keystone 
-keystone: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/keystone
-
-
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
 
