@@ -13,6 +13,11 @@ GCFLAGS  := -gcflags "-N -l"
 .PHONY: all
 all: build
 
+.PHONY: docker
+docker: all
+	$Q docker build -f broker/Dockerfile .
+	$Q docker build -f iotgateway/nginx-mqtt/Dockerfile .
+
 .PHONY: build
 build: .GOPATH/.ok apiserver broker iothub iotgateway conductor keystone meter
 
@@ -38,7 +43,6 @@ iothub: .GOPATH/.ok
 iotgateway: .GOPATH/.ok
 	$Q go install $(GCFLAGS)  $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/iotgateway
 
-
 .PHONY: meter 
 meter: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/meter
@@ -50,8 +54,6 @@ conductor: .GOPATH/.ok
 .PHONY: keystone 
 keystone: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/keystone
-
-
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
 
