@@ -17,7 +17,7 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/data"
+	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )

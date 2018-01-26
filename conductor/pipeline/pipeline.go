@@ -15,10 +15,10 @@ package pipeline
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/conductor/data"
-	"github.com/cloustone/sentel/conductor/extractor"
-	"github.com/cloustone/sentel/conductor/loader"
-	"github.com/cloustone/sentel/conductor/transformer"
+	"github.com/cloustone/sentel/conductor/pipeline/data"
+	"github.com/cloustone/sentel/conductor/pipeline/extractor"
+	"github.com/cloustone/sentel/conductor/pipeline/loader"
+	"github.com/cloustone/sentel/conductor/pipeline/transformer"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )

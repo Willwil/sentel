@@ -10,28 +10,26 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package transformer
+package loader
 
 import (
-	"github.com/cloustone/sentel/conductor/data"
+	"fmt"
+
+	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type Transformer interface {
-	Transform(data map[string]interface{}, ctx *data.Context) (map[string]interface{}, error)
+type Loader interface {
+	Name() string
+	Load(data map[string]interface{}, ctx *data.Context) error
 	Close()
 }
 
-func New(c config.Config, name string) Transformer {
+func New(c config.Config, name string) (Loader, error) {
 	switch name {
+	case "topic":
+		return newTopicLoader(c)
 	default:
-		return &noTransformer{}
+		return nil, fmt.Errorf("invalid loader '%s'", name)
 	}
 }
-
-type noTransformer struct{}
-
-func (p *noTransformer) Transform(data map[string]interface{}, ctx *data.Context) (map[string]interface{}, error) {
-	return data, nil
-}
-func (p *noTransformer) Close() {}

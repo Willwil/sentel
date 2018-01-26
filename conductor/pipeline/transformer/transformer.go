@@ -10,25 +10,28 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package extractor
+package transformer
 
 import (
-	"fmt"
-
-	"github.com/cloustone/sentel/conductor/data"
+	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type Extractor interface {
-	Extract(data interface{}, ctx *data.Context) (map[string]interface{}, error)
+type Transformer interface {
+	Transform(data map[string]interface{}, ctx *data.Context) (map[string]interface{}, error)
 	Close()
 }
 
-func New(c config.Config, name string) (Extractor, error) {
+func New(c config.Config, name string) Transformer {
 	switch name {
-	case "event":
-		return &eventExtractor{config: c}, nil
 	default:
-		return nil, fmt.Errorf("invalid extractor '%s'", name)
+		return &noTransformer{}
 	}
 }
+
+type noTransformer struct{}
+
+func (p *noTransformer) Transform(data map[string]interface{}, ctx *data.Context) (map[string]interface{}, error) {
+	return data, nil
+}
+func (p *noTransformer) Close() {}
