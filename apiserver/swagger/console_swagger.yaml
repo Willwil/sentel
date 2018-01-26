@@ -307,7 +307,7 @@ paths:
         name: "device"
         required: false
         schema:
-          $ref: "#/definitions/Device"
+          $ref: "#/definitions/DeviceRequest"
       responses:
         200:
           description: "response"
@@ -330,7 +330,7 @@ paths:
         name: "device"
         required: false
         schema:
-          $ref: "#/definitions/Device"
+          $ref: "#/definitions/DeviceRequest"
       responses:
         200:
           description: "response"
@@ -410,7 +410,7 @@ paths:
         name: "device"
         required: false
         schema:
-          $ref: "#/definitions/BulkDevice"
+          $ref: "#/definitions/BulkDeviceRequest"
       responses:
         200:
           description: "response"
@@ -460,7 +460,7 @@ paths:
       operationId: "updateShadowDevice"
       parameters:
       - in: "body"
-        name: "device"
+        name: "deviceRequest"
         required: false
         schema:
           $ref: "#/definitions/BulkDevice"
@@ -1167,6 +1167,32 @@ definitions:
       Result:
       - "{}"
       - "{}"
+  DeviceRequest:
+    type: "object"
+    properties:
+      ProductId:
+        type: "string"
+      DeviceId:
+        type: "string"
+      DeviceName:
+        type: "string"
+    example:
+      DeviceId: ""
+      ProductId: "ProductId"
+      DeviceName: "DeviceName"
+  BulkDeviceRequest:
+    type: "object"
+    properties:
+      ProductId:
+        type: "string"
+      Number:
+        type: "string"
+      DeviceName:
+        type: "string"
+    example:
+      ProductId: "ProductId"
+      Number: "10"
+      DeviceName: "DeviceName"
   Device:
     type: "object"
     properties:

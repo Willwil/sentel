@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	noAuth = false
+	noAuth = true
 )
 
 func Initialize(c config.Config) error {

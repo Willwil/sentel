@@ -23,24 +23,33 @@ import (
 	"github.com/labstack/echo"
 )
 
+type deviceRequest struct {
+	DeviceName string `json:"DeviceName"`
+	ProductId  string `json:"ProductId"`
+	DeviceId   string `json:"DeviceId"`
+}
+
 // RegisterDevice register a new device in IoT hub
 func CreateDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	device := registry.Device{}
-	if err := ctx.Bind(&device); err != nil {
+	req := deviceRequest{}
+	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	if device.ProductId == "" || device.DeviceName == "" {
+	if req.ProductId == "" || req.DeviceName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/devices"
+	objectName := req.ProductId + "/devices"
 	if err := base.Authorize(accessId, objectName, "w"); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r := getRegistry(ctx)
+	device := registry.Device{}
+	device.DeviceName = req.DeviceName
+	device.ProductId = req.ProductId
 	device.DeviceId = ram.NewObjectId()
 	device.TimeCreated = time.Now()
 	device.TimeUpdated = time.Now()
@@ -108,19 +117,23 @@ func GetOneDevice(ctx echo.Context) error {
 func UpdateDevice(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	device := registry.Device{}
-	if err := ctx.Bind(&device); err != nil {
+	req := deviceRequest{}
+	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	if device.ProductId == "" || device.DeviceId == "" {
+	if req.ProductId == "" || req.DeviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	// Authorization
-	objectName := device.ProductId + "/devices"
+	objectName := req.ProductId + "/devices"
 	if err := base.Authorize(accessId, objectName, "r"); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
+	device := registry.Device{}
+	device.ProductId = req.ProductId
+	device.DeviceId = req.DeviceId
+	device.DeviceName = req.DeviceName
 	r := getRegistry(ctx)
 	device.TimeUpdated = time.Now()
 	if err := r.UpdateDevice(&device); err != nil {
@@ -147,9 +160,9 @@ func GetDeviceList(ctx echo.Context) error {
 
 // Device bulk req.
 type DeviceBulkRequest struct {
-	Number     string
-	ProductId  string
 	DeviceName string
+	ProductId  string
+	Number     string
 }
 
 func BulkGetDeviceStatus(ctx echo.Context) error {

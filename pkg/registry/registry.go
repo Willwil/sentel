@@ -306,10 +306,7 @@ func (r *Registry) BulkRegisterDevices(devices []Device) error {
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 	c := r.db.C(dbNameDevices)
-	if err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}); err == nil {
-		return c.Remove(bson.M{"ProductId": productId, "DeviceId": deviceId})
-	}
-	return fmt.Errorf("invalid operataion")
+	return c.Remove(bson.M{"ProductId": productId, "DeviceId": deviceId})
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
