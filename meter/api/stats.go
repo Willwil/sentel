@@ -14,26 +14,21 @@ package api
 
 import (
 	"fmt"
-	"net/http"
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/cloustone/sentel/meter/collector"
-	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
 // getClusterStats return cluster stats
 func getClusterStats(ctx echo.Context) error {
-	glog.Infof("calling getClusterStats from %s", ctx.Request().RemoteAddr)
-
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeStatsInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{Success: false, Message: err.Error()})
 	}
 	c := session.DB("iothub").C("stats")
@@ -41,8 +36,7 @@ func getClusterStats(ctx echo.Context) error {
 
 	stats := []collector.Stats{}
 	if err := c.Find(nil).Iter().All(&stats); err != nil {
-		glog.Errorf("getClusterStats:%v", err)
-		return ctx.JSON(http.StatusNotFound, &response{Success: false, Message: err.Error()})
+		return ctx.JSON(NotFound, &response{Success: false, Message: err.Error()})
 	}
 	services := map[string]map[string]uint64{}
 	for _, stat := range stats {
@@ -58,16 +52,14 @@ func getClusterStats(ctx echo.Context) error {
 			}
 		}
 	}
-	return ctx.JSON(http.StatusOK, &response{Success: true, Result: services})
+	return ctx.JSON(OK, &response{Success: true, Result: services})
 }
 
 //getNodeStatsInfo return a node's stats
 func getNodeStatsInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodeStats from %s", ctx.Request().RemoteAddr)
-
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -75,11 +67,10 @@ func getNodeStatsInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeStatsInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -90,16 +81,14 @@ func getNodeStatsInfo(ctx echo.Context) error {
 
 	node := collector.Node{}
 	if err := c.Find(bson.M{"NodeName": nodeName}).One(&node); err != nil {
-		glog.Errorf("getNodeStatsInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
 	if node.NodeIp == "" {
-		glog.Errorf("getNodeStatsInfo: cann't resolve node ip for %s", nodeName)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: fmt.Sprintf("cann't resolve node ip for %s", nodeName),
@@ -109,7 +98,7 @@ func getNodeStatsInfo(ctx echo.Context) error {
 		sentelapi, err := newSentelApi(node.NodeIp)
 		if err != nil {
 			glog.Errorf("getNodeStatsInfo:%v", err)
-			return ctx.JSON(http.StatusInternalServerError,
+			return ctx.JSON(ServerError,
 				&response{
 					Success: false,
 					Message: err.Error(),
@@ -118,17 +107,17 @@ func getNodeStatsInfo(ctx echo.Context) error {
 		reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "stats"})
 		if err != nil {
 			glog.Errorf("getNodeStatusInfo:%v", err)
-			return ctx.JSON(http.StatusInternalServerError,
+			return ctx.JSON(ServerError,
 				&response{
 					Success: false,
 					Message: err.Error(),
 				})
 		}
 
-		return ctx.JSON(http.StatusOK, &response{
+		return ctx.JSON(OK, &response{
 			Success: true,
 			Result:  reply.Stats,
 		})
 	*/
-	return ctx.JSON(http.StatusOK, nil)
+	return ctx.JSON(OK, nil)
 }

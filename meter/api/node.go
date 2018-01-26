@@ -14,27 +14,22 @@ package api
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/cloustone/sentel/meter/collector"
-	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
 // getAllNodes return all nodes in clusters
 func getAllNodes(ctx echo.Context) error {
-	glog.Infof("calling getAllNodes from %s", ctx.Request().RemoteAddr)
-
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getAllNodes:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -47,15 +42,14 @@ func getAllNodes(ctx echo.Context) error {
 	iter := c.Find(nil).Limit(100).Iter()
 	err = iter.All(nodes)
 	if err != nil {
-		glog.Errorf("getAllNodes:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
 
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Message: "",
 		Result:  nodes,
@@ -64,22 +58,19 @@ func getAllNodes(ctx echo.Context) error {
 
 // getNodeInfo return a node's detail info
 func getNodeInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodeInfo from %s", ctx.Request().RemoteAddr)
-
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
 			})
 	}
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -91,15 +82,14 @@ func getNodeInfo(ctx echo.Context) error {
 
 	node := collector.Node{}
 	if err := c.Find(bson.M{"NodeName": nodeName}).One(&node); err != nil {
-		glog.Errorf("getNodeInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
 
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  node,
 	})
@@ -113,23 +103,21 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 	from, err1 := time.Parse("yyyy-mm-dd hh:mm:ss", ctx.Param("from"))
 	to, err2 := time.Parse("yyyy-mm-dd hh:mm:ss", ctx.Param("to"))
 	duration, err3 := time.ParseDuration(ctx.Param("unit"))
-	glog.Infof("getNodesClientInfoWithinTimeScope(from=%v, to=%v, unit=%v", from, to, duration)
-
 	if err1 != nil || err2 != nil || err3 != nil {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{Success: false, Message: "time format is wrong"})
 	}
 
 	if to.Sub(from) < duration {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{Success: false, Message: "time format is wrong"})
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{Success: false, Message: err.Error()})
 	}
 
@@ -139,8 +127,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 	// Get all nodes
 	nodes := []collector.Node{}
 	if err := c.Find(nil).Limit(100).Iter().All(&nodes); err != nil {
-		glog.Errorf("getNodesClientInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -168,7 +155,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 		}
 		results[node.NodeId] = result
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  results,
 	})
@@ -177,8 +164,6 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 
 //getNodesClientInfo return clients static infor for each node
 func getNodesClientInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodesClientInfo from %s", ctx.Request().RemoteAddr)
-
 	// Deal specifully if timescope is specified
 	from := ctx.Param("from")
 	if from != "" {
@@ -187,11 +172,10 @@ func getNodesClientInfo(ctx echo.Context) error {
 
 	// Retrun last statics for each node
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -204,8 +188,7 @@ func getNodesClientInfo(ctx echo.Context) error {
 	// Get all nodes
 	nodes := []collector.Node{}
 	if err := c.Find(nil).Limit(100).Iter().All(&nodes); err != nil {
-		glog.Errorf("getNodesClientInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -223,7 +206,7 @@ func getNodesClientInfo(ctx echo.Context) error {
 			result[node.NodeId] = 0
 		}
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  result,
 	})
@@ -237,24 +220,21 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 	to, err2 := time.Parse("yyyy-mm-dd hh:mm:ss", ctx.Param("to"))
 	duration, err3 := time.ParseDuration(ctx.Param("unit"))
 	nodeName := ctx.Param("nodeName")
-
-	glog.Infof("getNodeClientsWithinTimeScope(node:%s, from=%v, to=%v, unit=%v", nodeName, from, to, duration)
-
 	if err1 != nil || err2 != nil || err3 != nil || nodeName == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{Success: false, Message: "time format is wrong"})
 	}
 
 	if to.Sub(from) < duration {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{Success: false, Message: "time format is wrong"})
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{Success: false, Message: err.Error()})
 	}
 
@@ -275,7 +255,7 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 			result = append(result, 0)
 		}
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  result,
 	})
@@ -283,8 +263,6 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 
 // getNodeClients return a node's all clients
 func getNodeClients(ctx echo.Context) error {
-	glog.Infof("calling getNodeClients from %s", ctx.Request().RemoteAddr)
-
 	// Deal specifully if timescope is specified
 	from := ctx.Param("from")
 	if from != "" {
@@ -294,7 +272,7 @@ func getNodeClients(ctx echo.Context) error {
 	// Retrun last statics for this node
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -304,8 +282,7 @@ func getNodeClients(ctx echo.Context) error {
 	hosts := config.MustString("condutor", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -316,16 +293,14 @@ func getNodeClients(ctx echo.Context) error {
 
 	node := collector.Node{}
 	if err := c.Find(bson.M{"NodeName": nodeName}).One(&node); err != nil {
-		glog.Errorf("getNodeClients:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
 	if node.NodeIp == "" {
-		glog.Errorf("getNodeClients: cann't resolve node ip for %s", nodeName)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: fmt.Sprintf("cann't resolve node ip for %s", nodeName),
@@ -339,7 +314,7 @@ func getNodeClients(ctx echo.Context) error {
 	} else {
 		result[node.NodeId] = 0
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  result,
 	})
@@ -347,12 +322,10 @@ func getNodeClients(ctx echo.Context) error {
 
 // getNodeClientInfo return spcicified client infor on a node
 func getNodeClientInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodeClientInfo from %s", ctx.Request().RemoteAddr)
-
 	nodeName := ctx.Param("nodeName")
 	clientId := ctx.Param("clientId")
 	if nodeName == "" || clientId == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -360,11 +333,10 @@ func getNodeClientInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getAllNodeClientInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -375,14 +347,13 @@ func getNodeClientInfo(ctx echo.Context) error {
 
 	client := collector.Client{}
 	if err := c.Find(bson.M{"NodeName": nodeName, "ClientId": clientId}).One(&client); err != nil {
-		glog.Errorf("getNodeClientInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  client,
 	})

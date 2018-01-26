@@ -13,23 +13,18 @@
 package api
 
 import (
-	"net/http"
-
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/cloustone/sentel/meter/collector"
-	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
 // getNodeSubscriptions return a node's subscriptions
 func getNodeSubscriptions(ctx echo.Context) error {
-	glog.Infof("calling getNodeSubscriptions from %s", ctx.Request().RemoteAddr)
-
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -37,11 +32,10 @@ func getNodeSubscriptions(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeSubscriptions:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -52,14 +46,13 @@ func getNodeSubscriptions(ctx echo.Context) error {
 
 	subs := []collector.Subscription{}
 	if err := c.Find(bson.M{"NodeName": nodeName}).Limit(100).Iter().All(&subs); err != nil {
-		glog.Errorf("getNodeSubscriptions:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  subs,
 	})
@@ -67,12 +60,10 @@ func getNodeSubscriptions(ctx echo.Context) error {
 
 // getNodeSubscriptionsClientInfo return client info in node's subscriptions
 func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
-	glog.Infof("calling getNodeSubscriptionsClientInfo from %s", ctx.Request().RemoteAddr)
-
 	nodeName := ctx.Param("nodeName")
 	clientId := ctx.Param("clientId")
 	if nodeName == "" || clientId == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -80,11 +71,10 @@ func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getNodeSubscriptionsClientInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -95,14 +85,13 @@ func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
 
 	subs := []collector.Subscription{}
 	if err := c.Find(bson.M{"NodeName": nodeName, "ClientId": clientId}).Limit(100).Iter().All(&subs); err != nil {
-		glog.Errorf("getNodeSubscriptionsclientInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  subs,
 	})
@@ -110,11 +99,9 @@ func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
 
 // getClusterSubscriptionsInfo return client info in cluster subscriptions
 func getClusterSubscriptionsInfo(ctx echo.Context) error {
-	glog.Infof("calling getClusterSubscriptionsInfo from %s", ctx.Request().RemoteAddr)
-
 	clientId := ctx.Param("clientId")
 	if clientId == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -122,11 +109,10 @@ func getClusterSubscriptionsInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getClusterSubscriptionsInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -137,14 +123,13 @@ func getClusterSubscriptionsInfo(ctx echo.Context) error {
 
 	subs := []collector.Subscription{}
 	if err := c.Find(bson.M{"ClientId": clientId}).Limit(100).Iter().All(&subs); err != nil {
-		glog.Errorf("getClusterSubscriptionsInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  subs,
 	})

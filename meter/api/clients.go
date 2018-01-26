@@ -13,23 +13,18 @@
 package api
 
 import (
-	"net/http"
-
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/cloustone/sentel/meter/collector"
-	"github.com/golang/glog"
 	"github.com/labstack/echo"
 )
 
 // getClusterClientInfo return clients info in cluster
 func getClientInfo(ctx echo.Context) error {
-	glog.Infof("calling getClientInfo from %s", ctx.Request().RemoteAddr)
-
 	clientId := ctx.Param("clientId")
 	if clientId == "" {
-		return ctx.JSON(http.StatusBadRequest,
+		return ctx.JSON(BadRequest,
 			&response{
 				Success: false,
 				Message: "Invalid parameter",
@@ -40,8 +35,7 @@ func getClientInfo(ctx echo.Context) error {
 	hosts := config.MustString("condutor", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
-		glog.Errorf("getClientInfo:%v", err)
-		return ctx.JSON(http.StatusInternalServerError,
+		return ctx.JSON(ServerError,
 			&response{
 				Success: false,
 				Message: err.Error(),
@@ -52,14 +46,13 @@ func getClientInfo(ctx echo.Context) error {
 
 	clients := []collector.Client{}
 	if err := c.Find(bson.M{"ClientId": clientId}).Limit(100).Iter().All(&clients); err != nil {
-		glog.Errorf("getClientInfo:%v", err)
-		return ctx.JSON(http.StatusNotFound,
+		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
 				Message: err.Error(),
 			})
 	}
-	return ctx.JSON(http.StatusOK, &response{
+	return ctx.JSON(OK, &response{
 		Success: true,
 		Result:  clients,
 	})
