@@ -36,38 +36,10 @@ type swarmCluster struct {
 }
 
 func newSwarmCluster(c config.Config) (*swarmCluster, error) {
-	// Get requried images
-	// images := make(map[string]bool)
-	// if v, err := c.String("iothub", "docker-images"); err != nil || v == "" {
-	// 	return nil, errors.New("invalid configuration for docker-images in iothub.conf")
-	// } else {
-	// 	names := strings.Split(v, ",")
-	// 	if len(names) == 0 {
-	// 		return nil, errors.New("no docker-images are specified in iothub.conf")
-	// 	}
-	// 	for _, v := range names {
-	// 		name := strings.TrimSpace(v)
-	// 		images[name] = false
-	// 	}
-	// }
-	// Connect with swarm
 	cli, err := client.NewEnvClient()
 	if err != nil || cli == nil {
 		return nil, fmt.Errorf("cluster manager failed to connect with swarm:'%s'", err.Error())
 	}
-
-	// for imageName, _ := range images {
-	// 	filters := filters.NewArgs()
-	// 	filters.Add("reference", imageName)
-	// 	options := types.ImageListOptions{
-	// 		Filters: filters,
-	// 	}
-	// 	if _, err := cli.ImageList(context.Background(), options); err != nil {
-	// 		return nil, fmt.Errorf("swarm cluster can not find required '%s docker image", imageName)
-	// 	}
-	// 	glog.Infof("swarm found docker image '%s' in docker host", imageName)
-	// }
-
 	return &swarmCluster{
 		config:   c,
 		mutex:    sync.Mutex{},
@@ -77,23 +49,8 @@ func newSwarmCluster(c config.Config) (*swarmCluster, error) {
 
 }
 
-func (p *swarmCluster) SetServiceDiscovery(s sd.ServiceDiscovery) {
-	p.serviceDiscovery = s
-}
-
-func (p *swarmCluster) Initialize() error {
-	/*
-		// leave first
-		//p.client.SwarmLeave(context.Background(), true)
-		// become a swarm manager
-		options := swarm.InitRequest{
-			ListenAddr: "0.0.0.0:2377",
-		}
-		_, err := p.client.SwarmInit(context.Background(), options)
-		return err
-	*/
-	return nil
-}
+func (p *swarmCluster) SetServiceDiscovery(s sd.ServiceDiscovery) { p.serviceDiscovery = s }
+func (p *swarmCluster) Initialize() error                         { return nil }
 
 func (p *swarmCluster) CreateNetwork(name string) (string, error) {
 	// Before create network, we should check wether the network already exist
@@ -107,16 +64,11 @@ func (p *swarmCluster) RemoveNetwork(name string) error {
 	return p.client.NetworkRemove(context.Background(), name)
 }
 
-func (p *swarmCluster) CreateService(tid string, network string, replicas int32) (string, error) {
-	serviceName := fmt.Sprintf("tenant_%s", tid)
-	env := []string{
-		"KAFKA_HOST=kafka:9092",
-		"MONGO_HOST=mongo:27017",
-		fmt.Sprintf("BROKER_TENANT=%s", tid),
-	}
+func (p *swarmCluster) CreateService(spec ServiceSpec) (string, error) {
 	delay := time.Duration(1 * time.Second)
 	maxAttempts := uint64(10)
-	reps := uint64(replicas)
+	reps := uint64(spec.Replicas)
+	serviceName := spec.ServiceName
 
 	service := swarm.ServiceSpec{
 		Annotations: swarm.Annotations{
@@ -124,11 +76,11 @@ func (p *swarmCluster) CreateService(tid string, network string, replicas int32)
 		},
 		TaskTemplate: swarm.TaskSpec{
 			ContainerSpec: &swarm.ContainerSpec{
-				Image: "sentel/broker",
-				Env:   env,
+				Image: spec.Image,
+				Env:   spec.Environment,
 			},
 			Networks: []swarm.NetworkAttachmentConfig{
-				{Target: network},
+				{Target: spec.NetworkId},
 			},
 			RestartPolicy: &swarm.RestartPolicy{
 				Condition:   swarm.RestartPolicyConditionOnFailure,
@@ -204,12 +156,12 @@ func (p *swarmCluster) RemoveService(serviceName string) error {
 	return nil
 }
 
-func (p *swarmCluster) UpdateService(serviceName string, replicas int32) error {
+func (p *swarmCluster) UpdateService(serviceId string, spec ServiceSpec) error {
 	return nil
 }
 
-func (p *swarmCluster) IntrospectService(serviceID string) (ServiceSpec, error) {
-	serviceSpec := ServiceSpec{
+func (p *swarmCluster) IntrospectService(serviceID string) (ServiceIntrospec, error) {
+	serviceSpec := ServiceIntrospec{
 		ServiceId: serviceID,
 	}
 	if p.serviceDiscovery != nil {
