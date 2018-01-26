@@ -31,6 +31,15 @@ type ServiceEndpoint struct {
 }
 
 type ServiceSpec struct {
+	TenantId    string
+	ServiceName string
+	Image       string
+	NetworkId   string
+	Replicas    int32
+	Environment []string
+}
+
+type ServiceIntrospec struct {
 	ServiceName  string
 	ServiceId    string
 	ServiceState string
@@ -46,13 +55,13 @@ type ClusterManager interface {
 	// RemoveNetwork remove tenant network
 	RemoveNetwork(name string) error
 	// CreateService create broker service for product
-	CreateService(tid string, network string, replicas int32) (string, error)
+	CreateService(spec ServiceSpec) (string, error)
 	// RemoveService remove broker service of product
 	RemoveService(serviceId string) error
 	// UpdateService updatet product' service about replicas and ...
-	UpdateService(serviceId string, replicas int32) error
+	UpdateService(serviceId string, spec ServiceSpec) error
 	// IntrospectService return service detail from cluster
-	IntrospectService(serviceId string) (ServiceSpec, error)
+	IntrospectService(serviceId string) (ServiceIntrospec, error)
 }
 
 // New retrieve clustermanager instance connected with clustermgr

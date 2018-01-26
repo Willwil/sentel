@@ -81,31 +81,31 @@ func (p *k8sCluster) RemoveNetwork(name string) error {
 }
 
 // CreateBrokers create a number of brokers for tenant and product
-func (p *k8sCluster) CreateService(tid string, network string, replicas int32) (string, error) {
-	podname := fmt.Sprintf("tenant-%s", tid)
+func (p *k8sCluster) CreateService(spec ServiceSpec) (string, error) {
+	podname := fmt.Sprintf("tenant-%s", spec.TenantId)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	deployment := &appsv1beta1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "sentel-broker",
+			Name: spec.ServiceName,
 		},
 		Spec: appsv1beta1.DeploymentSpec{
-			Replicas: int32ptr(replicas),
+			Replicas: int32ptr(spec.Replicas),
 			Template: apiv1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: map[string]string{
-						"app": "sentel-broker",
+						"app": spec.ServiceName,
 					},
 				},
 				Spec: apiv1.PodSpec{
 					Containers: []apiv1.Container{
 						{
 							Name:  podname,
-							Image: "sentel-broker:1.00",
+							Image: spec.Image,
 							Ports: []apiv1.ContainerPort{
 								{
-									Name:          "broker",
+									Name:          spec.ServiceName,
 									Protocol:      apiv1.ProtocolTCP,
 									ContainerPort: 80,
 								},
@@ -133,22 +133,22 @@ func (p *k8sCluster) RemoveService(serviceName string) error {
 	})
 }
 
-func (p *k8sCluster) UpdateService(serviceName string, replicas int32) error {
+func (p *k8sCluster) UpdateService(serviceId string, spec ServiceSpec) error {
 	deploymentsClient := p.clientset.AppsV1beta1().Deployments(apiv1.NamespaceDefault)
 	retryErr := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		result, getErr := deploymentsClient.Get(serviceName, metav1.GetOptions{})
+		result, getErr := deploymentsClient.Get(spec.ServiceName, metav1.GetOptions{})
 		if getErr != nil {
 			return getErr
 		}
 
-		result.Spec.Replicas = int32ptr(replicas)
+		result.Spec.Replicas = int32ptr(spec.Replicas)
 		_, updateErr := deploymentsClient.Update(result)
 		return updateErr
 	})
 	return retryErr
 }
-func (p *k8sCluster) IntrospectService(serviceId string) (ServiceSpec, error) {
-	return ServiceSpec{}, errors.New("no implemented")
+func (p *k8sCluster) IntrospectService(serviceId string) (ServiceIntrospec, error) {
+	return ServiceIntrospec{}, errors.New("no implemented")
 }
 
 func int32ptr(i int32) *int32 { return &i }

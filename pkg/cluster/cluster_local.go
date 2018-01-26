@@ -30,7 +30,7 @@ type localCluster struct {
 	serviceDiscovery sd.ServiceDiscovery
 	ports            map[uint32]string
 	portIndex        uint32
-	serviceSpecs     map[string]ServiceSpec
+	serviceSpecs     map[string]ServiceIntrospec
 	ctxs             map[string]context.Context
 }
 
@@ -41,7 +41,7 @@ func newLocalCluster(c config.Config) (*localCluster, error) {
 		services:     make(map[string]*exec.Cmd),
 		ports:        make(map[uint32]string),
 		portIndex:    10000,
-		serviceSpecs: make(map[string]ServiceSpec),
+		serviceSpecs: make(map[string]ServiceIntrospec),
 		ctxs:         make(map[string]context.Context),
 	}, nil
 }
@@ -62,7 +62,7 @@ func (p *localCluster) Initialize() error                         { return nil }
 func (p *localCluster) CreateNetwork(name string) (string, error) { return "", nil }
 func (p *localCluster) RemoveNetwork(name string) error           { return nil }
 
-func (p *localCluster) CreateService(tid string, network string, replicas int32) (string, error) {
+func (p *localCluster) CreateService(spec ServiceSpec) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	// Now only support one service instance in local cluster mode
@@ -71,11 +71,11 @@ func (p *localCluster) CreateService(tid string, network string, replicas int32)
 	cmd := exec.CommandContext(ctx,
 		"broker",
 		"-d",
-		fmt.Sprintf("-t %s", tid),
+		fmt.Sprintf("-t %s", spec.TenantId),
 		"-P tcp",
 		fmt.Sprintf("-l localhost:%d", port))
-	spec := ServiceSpec{
-		ServiceName:  tid,
+	sip := ServiceIntrospec{
+		ServiceName:  spec.TenantId,
 		ServiceId:    fmt.Sprintf("%d", len(p.services)+1),
 		ServiceState: ServiceStateStarted,
 		Endpoints:    []ServiceEndpoint{{VirtualIP: "127.0.0.1", Port: uint32(port)}},
@@ -83,15 +83,15 @@ func (p *localCluster) CreateService(tid string, network string, replicas int32)
 	if err := cmd.Start(); err != nil {
 		return "", err
 	}
-	serviceID := spec.ServiceId
+	serviceID := sip.ServiceId
 	p.services[serviceID] = cmd
 	p.ports[port] = serviceID
-	p.serviceSpecs[serviceID] = spec
+	p.serviceSpecs[serviceID] = sip
 	p.ctxs[serviceID] = ctx
 
 	if p.serviceDiscovery != nil {
 		service := sd.Service{
-			Name: tid,
+			Name: spec.TenantId,
 			ID:   serviceID,
 			IP:   "127.0.0.1",
 			Port: port,
@@ -120,14 +120,14 @@ func (p *localCluster) RemoveService(serviceID string) error {
 	return nil
 }
 
-func (p *localCluster) UpdateService(serviceID string, replicas int32) error {
+func (p *localCluster) UpdateService(serviceId string, spec ServiceSpec) error {
 	return nil
 }
 
-func (p *localCluster) IntrospectService(serviceID string) (ServiceSpec, error) {
+func (p *localCluster) IntrospectService(serviceID string) (ServiceIntrospec, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	serviceSpec := ServiceSpec{
+	serviceSpec := ServiceIntrospec{
 		ServiceId: serviceID,
 	}
 	if _, found := p.serviceSpecs[serviceID]; !found {

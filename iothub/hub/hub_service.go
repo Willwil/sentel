@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/iothub/cluster"
+	"github.com/cloustone/sentel/pkg/cluster"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -148,7 +148,20 @@ func (p *hubService) recoverStartup() {
 	for tid, t := range p.tenants {
 		if t.ServiceState != cluster.ServiceStateNone {
 			if _, err := p.clustermgr.IntrospectService(tid); err != nil {
-				if _, err := p.clustermgr.CreateService(tid, network, t.InstanceReplicas); err != nil {
+				env := []string{
+					"KAFKA_HOST=kafka:9092",
+					"MONGO_HOST=mongo:27017",
+					fmt.Sprintf("BROKER_TENANT=%s", tid),
+				}
+				spec := cluster.ServiceSpec{
+					TenantId:    tid,
+					NetworkId:   network,
+					Replicas:    t.InstanceReplicas,
+					Environment: env,
+					Image:       "sentel/broker",
+					ServiceName: fmt.Sprintf("tenant_%s", tid),
+				}
+				if _, err := p.clustermgr.CreateService(spec); err != nil {
 					retries = append(retries, t)
 				}
 			}
@@ -156,7 +169,12 @@ func (p *hubService) recoverStartup() {
 	}
 	// retry to recover again
 	for _, t := range retries {
-		if _, err := p.clustermgr.CreateService(t.TenantId, network, t.InstanceReplicas); err != nil {
+		spec := cluster.ServiceSpec{
+			TenantId:  t.TenantId,
+			NetworkId: network,
+			Replicas:  t.InstanceReplicas,
+		}
+		if _, err := p.clustermgr.CreateService(spec); err != nil {
 			glog.Errorf("service '%s' recovery failed", t.TenantId)
 		}
 	}
@@ -262,7 +280,7 @@ func (p *hubService) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iothub
-func (p *hubService) createProduct(tid, pid string, replicas int32) (string, error) {
+func (p *hubService) createProduct(tid string, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
@@ -274,7 +292,13 @@ func (p *hubService) createProduct(tid, pid string, replicas int32) (string, err
 		if err != nil {
 			network = ""
 		}
-		serviceId, err := p.clustermgr.CreateService(tid, network, replicas)
+		spec := cluster.ServiceSpec{
+			TenantId:  tid,
+			NetworkId: network,
+			Replicas:  replicas,
+			Image:     "sentel/broker",
+		}
+		serviceId, err := p.clustermgr.CreateService(spec)
 		if err != nil {
 			return "", err
 		}
