@@ -33,11 +33,15 @@ type Service struct {
 	Port uint32 `json:"Port"`
 }
 
+type WatcherHandlerFunc func(services []Service, ctx interface{})
+
 // ServiceDiscovery service discovery
 type ServiceDiscovery interface {
 	RegisterService(s Service) error
 	RemoveService(s Service)
 	UpdateService(s Service) error
+	StartWatcher(rootPath string, handler WatcherHandlerFunc, ctx interface{}) error
+	GetServices(rootPath string) []Service
 	Close()
 }
 
