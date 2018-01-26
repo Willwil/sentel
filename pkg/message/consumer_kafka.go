@@ -99,15 +99,7 @@ func (p *kafkaConsumer) Start() error {
 							return
 						case msg := <-pc.Messages():
 							if s.handler != nil {
-								// if message factory is provided, using it
-								// directly
-								var t Message
-								if p.msgFactory != nil {
-									t = p.msgFactory.CreateMessage(topic)
-								} else {
-									// using default message factory
-									t = New(topic)
-								}
+								t := p.msgFactory.CreateMessage(topic)
 								if t != nil && t.Deserialize(msg.Value, JSONSerialization) == nil {
 									s.handler(t, s.ctx)
 								} else {

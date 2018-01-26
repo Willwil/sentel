@@ -25,5 +25,9 @@ type Consumer interface {
 }
 
 func NewConsumer(khosts string, clientId string) (Consumer, error) {
-	return newKafkaConsumer(khosts, clientId)
+	consumer, err := newKafkaConsumer(khosts, clientId)
+	if consumer != nil {
+		consumer.SetMessageFactory(&builtinFactory{})
+	}
+	return consumer, err
 }

@@ -25,7 +25,9 @@ type Message interface {
 	Deserialize(buf []byte, opt SerializeOption) error
 }
 
-func New(topicName string) Message {
+type builtinFactory struct{}
+
+func (p *builtinFactory) CreateMessage(topicName string) Message {
 	switch topicName {
 	case TopicNameTenant:
 		return &Tenant{}
