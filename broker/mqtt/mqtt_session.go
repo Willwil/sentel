@@ -59,6 +59,7 @@ type mqttSession struct {
 	bytesReceived  int64            // Byte recivied
 	authNeed       bool             // Indicate wether authentication is needed
 	metrics        metric.Metric    // Metrics
+	info           sm.SessionInfo   // Session Info
 }
 
 // newMqttSession create new session  for each client connection
@@ -255,7 +256,7 @@ func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
 
 func (p *mqttSession) Id() string            { return p.clientId }
 func (p *mqttSession) BrokerId() string      { return base.GetBrokerId() }
-func (p *mqttSession) Info() *sm.SessionInfo { return nil }
+func (p *mqttSession) Info() *sm.SessionInfo { return &p.info }
 func (p *mqttSession) IsValid() bool         { return true }
 func (p *mqttSession) IsPersistent() bool    { return (p.cleanSession == 0) }
 
@@ -394,6 +395,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
+	p.info.CleanSession = cleanSession
 	if cleanSession == 0 {
 		if found, _ := sm.FindSession(p.clientId); found != nil {
 			// Found old session
