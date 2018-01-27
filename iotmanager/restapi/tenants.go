@@ -10,12 +10,12 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package api
+package restapi
 
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/iotmanager/hub"
+	"github.com/cloustone/sentel/iotmanager/scheduler"
 	"github.com/labstack/echo"
 )
 
@@ -29,7 +29,7 @@ func createTenant(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: err.Error()})
 	}
-	if err := hub.CreateTenant(req.TenantId); err != nil {
+	if err := scheduler.CreateTenant(req.TenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -38,7 +38,7 @@ func createTenant(ctx echo.Context) error {
 
 func removeTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tid")
-	if err := hub.RemoveTenant(tenantId); err != nil {
+	if err := scheduler.RemoveTenant(tenantId); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true})
@@ -64,7 +64,7 @@ func createProduct(ctx echo.Context) error {
 		return ctx.JSON(http.StatusBadRequest, &response{Success: false, Message: "Invalid Parameter"})
 	}
 
-	if brokers, err := hub.CreateProduct(tid, pid, replicas); err != nil {
+	if brokers, err := scheduler.CreateProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	} else {
 		return ctx.JSON(http.StatusOK, &response{Success: true, Result: brokers})
@@ -74,7 +74,7 @@ func createProduct(ctx echo.Context) error {
 func removeProduct(ctx echo.Context) error {
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
-	if err := hub.RemoveProduct(tid, pid); err != nil {
+	if err := scheduler.RemoveProduct(tid, pid); err != nil {
 		return ctx.JSON(http.StatusInternalServerError, &response{Success: false, Message: err.Error()})
 	}
 	return ctx.JSON(http.StatusOK, &response{Success: true})

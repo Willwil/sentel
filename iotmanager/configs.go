@@ -13,7 +13,7 @@
 package main
 
 var defaultConfigs = map[string]map[string]string{
-	"iotcenter": {
+	"iotmanager": {
 		"loglevel":        "debug",
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
@@ -25,7 +25,7 @@ var defaultConfigs = map[string]map[string]string{
 	"collector": {
 		"listen": "localhost:",
 	},
-	"api": {
+	"restapi": {
 		"listen":          ":8080",
 		"loglevel":        "debug",
 		"connect_timeout": "2",

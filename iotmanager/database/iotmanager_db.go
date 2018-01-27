@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package hub
+package db
 
 import (
 	"fmt"
@@ -21,9 +21,9 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type tenant struct {
+type Tenant struct {
 	TenantId         string              `bson:"tenantId"`
-	Products         map[string]*product `bson:"products"`
+	Products         map[string]*Product `bson:"products"`
 	ServiceName      string              `bson:"serviceName"`
 	ServiceId        string              `bson:"serviceId"`
 	ServiceState     string              `bson:"servcieState"`
@@ -32,57 +32,61 @@ type tenant struct {
 	CreatedAt        time.Time           `bson:"createdAt"`
 }
 
-type product struct {
+type Product struct {
 	ProductId string    `bson:"productId"`
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
-type hubDB struct {
+type IotmanagerDB struct {
 	config  config.Config
 	session *mgo.Session
 }
 
 const (
-	dbnameIothub    = "iothub"
-	collectionAdmin = "admin"
+	dbnameIotmanager = "iotmanager"
+	collectionAdmin  = "admin"
 )
 
-func newHubDB(c config.Config) (*hubDB, error) {
+func NewIotmanagerDB(c config.Config) (*IotmanagerDB, error) {
 	// try connect with mongo db
-	addr := c.MustString("iothub", "mongo")
+	addr := c.MustString("iotmanager", "mongo")
 	session, err := mgo.DialWithTimeout(addr, 1*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("iothub connect with mongo '%s'failed: '%s'", addr, err.Error())
+		return nil, fmt.Errorf("connect with mongo '%s'failed: '%s'", addr, err.Error())
 	}
-	return &hubDB{config: c, session: session}, nil
+	return &IotmanagerDB{config: c, session: session}, nil
 }
 
-func (p *hubDB) getAllTenants() []tenant {
-	tenants := []tenant{}
-	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+func (p *IotmanagerDB) GetAllTenants() []Tenant {
+	tenants := []Tenant{}
+	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
 	c.Find(bson.M{}).All(&tenants)
 	return tenants
 }
 
-func (p *hubDB) createTenant(t *tenant) error {
-	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+func (p *IotmanagerDB) CreateTenant(t *Tenant) error {
+	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
 	return c.Insert(t)
 }
 
-func (p *hubDB) removeTenant(tid string) error {
-	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+func (p *IotmanagerDB) RemoveTenant(tid string) error {
+	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
 	return c.Remove(bson.M{"tenantId": tid})
 }
 
-func (p *hubDB) createProduct(tid string, pid string) error {
-	c := p.session.DB(dbnameIothub).C(collectionAdmin)
-	pp := product{ProductId: pid, CreatedAt: time.Now()}
+func (p *IotmanagerDB) CreateProduct(tid string, pid string) error {
+	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+	pp := Product{ProductId: pid, CreatedAt: time.Now()}
 	return c.Update(bson.M{"tenantId": tid},
 		bson.M{"$addToSet": bson.M{"products": pp}})
 }
 
-func (p *hubDB) removeProduct(tid string, pid string) error {
-	c := p.session.DB(dbnameIothub).C(collectionAdmin)
+func (p *IotmanagerDB) RemoveProduct(tid string, pid string) error {
+	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
 	return c.Update(bson.M{"tenantId": tid},
 		bson.M{"$pull": bson.M{"products": bson.M{"productId": pid}}})
+}
+
+func (p *IotmanagerDB) Close() {
+	p.session.Close()
 }

@@ -16,9 +16,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/iotmanager/api"
 	"github.com/cloustone/sentel/iotmanager/collector"
-	"github.com/cloustone/sentel/iotmanager/hub"
+	"github.com/cloustone/sentel/iotmanager/restapi"
+	"github.com/cloustone/sentel/iotmanager/scheduler"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
@@ -34,8 +34,8 @@ func main() {
 	glog.Info("Initializing iotmanager...")
 	config, _ := createConfig(*configFileName)
 	mgr, _ := service.NewServiceManager("iotmanager", config)
-	mgr.AddService(hub.ServiceFactory{})
-	mgr.AddService(api.ServiceFactory{})
+	mgr.AddService(scheduler.ServiceFactory{})
+	mgr.AddService(restapi.ServiceFactory{})
 	mgr.AddService(collector.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
