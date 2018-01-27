@@ -12,12 +12,14 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"conductor": {
 		"loglevel":        "debug",
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
-		"connect_timeout": "5",
+		"connect_timeout": 5,
 	},
 	"restapi": {
 		"listen": "localhost:50060",

@@ -12,12 +12,14 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"broker": {
 		"loglevel":        "debug",
 		"mongo":           "localhost:27017",
 		"connect_timeout": 5,
-		"auth":            "false",
+		"auth":            false,
 		"protocol":        "tcp",
 		"kafka":           "localhost:9092",
 	},
@@ -36,11 +38,11 @@ var defaultConfigs = map[string]map[string]interface{}{
 		"protocols":          "tcp",
 		"tcp":                "localhost:1883",
 		"tls":                "localhost:1885",
-		"message_size_limit": "125",
+		"message_size_limit": 125,
 		"bind_address":       "localhost:1883",
-		"max_connections":    "1000",
-		"allow_anonymous":    "true",
-		"session_queue_size": "20",
+		"max_connections":    1000,
+		"allow_anonymous":    true,
+		"session_queue_size": 20,
 	},
 	"rpc": {
 		"listen": "localhost:55001",
@@ -52,8 +54,8 @@ var defaultConfigs = map[string]map[string]interface{}{
 		"redis_db": "1",
 	},
 	"metric": {
-		"keepalive":       "5",
-		"report_duration": "5",
+		"keepalive":       5,
+		"report_duration": 5,
 		"services":        "mqtt",
 	},
 }

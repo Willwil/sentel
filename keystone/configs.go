@@ -12,7 +12,9 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"keystone": {
 		"listen":          "localhost:4147",
 		"loglevel":        "debug",
@@ -31,6 +33,6 @@ var defaultConfigs = map[string]map[string]interface{}{
 		"capath":              "",
 		"certfile":            "",
 		"keyfile":             "",
-		"require_certificate": "false",
+		"require_certificate": false,
 	},
 }

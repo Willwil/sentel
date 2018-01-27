@@ -12,12 +12,14 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"iotmanager": {
 		"loglevel":        "debug",
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
-		"connect_timeout": "5",
+		"connect_timeout": 5,
 		"cluster":         "swarm",
 		"docker-images":   "mongo,kafka,zookeeper, redis, sentel/broker",
 		"network":         "sentel-front",
@@ -28,6 +30,6 @@ var defaultConfigs = map[string]map[string]interface{}{
 	"restapi": {
 		"listen":          ":8080",
 		"loglevel":        "debug",
-		"connect_timeout": "2",
+		"connect_timeout": 2,
 	},
 }

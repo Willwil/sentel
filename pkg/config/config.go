@@ -19,6 +19,8 @@ import (
 	"github.com/golang/glog"
 )
 
+type M map[string]map[string]interface{}
+
 // Config interface
 type Config interface {
 	// using primary section as default

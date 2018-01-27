@@ -12,7 +12,9 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"apiserver": {
 		"loglevel": "debug",
 		"kafka":    "localhost:9092",

@@ -12,7 +12,9 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]interface{}{
+import "github.com/cloustone/sentel/pkg/config"
+
+var defaultConfigs = config.M{
 	"iothub": {
 		"backend":   "zookeeper",
 		"loglevel":  "debug",
