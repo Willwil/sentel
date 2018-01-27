@@ -22,6 +22,7 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 type apiService struct {
@@ -41,10 +42,10 @@ type response struct {
 	Result  interface{} `json:"result"`
 }
 
+const SERVICE_NAME = "restapi"
+
 // apiServiceFactory
 type ServiceFactory struct{}
-
-const APIHEAD = "api/v1/"
 
 // New create apiService service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
@@ -53,7 +54,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	timeout := c.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to connect with mongo:'%s'", err.Error())
+		return nil, fmt.Errorf("failed to connect with mongo:'%s'", err.Error())
 	}
 	session.Close()
 
@@ -65,58 +66,64 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 			return h(cc)
 		}
 	})
+	//Cross-Origin
+	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
+	e.Use(middleware.RequestID())
+	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
+	}))
+
+	g := e.Group("/iot/api/v1")
 	// Clusters & Node
-	e.GET(APIHEAD+"nodes", getAllNodes)
-	e.GET(APIHEAD+"nodes/:nodeName", getNodeInfo)
-	e.GET(APIHEAD+"nodes/clients", getNodesClientInfo)
-	e.GET(APIHEAD+"nodes/:nodeName/clients", getNodeClients)
-	e.GET(APIHEAD+"nodes/:nodeName/clients/:clientId", getNodeClientInfo)
+	g.GET("/nodes", getAllNodes)
+	g.GET("/nodes/:nodeName", getNodeInfo)
+	g.GET("/nodes/clients", getNodesClientInfo)
+	g.GET("/nodes/:nodeName/clients", getNodeClients)
+	g.GET("/nodes/:nodeName/clients/:clientId", getNodeClientInfo)
 
 	// Client
-	e.GET(APIHEAD+"clients/:clientId", getClientInfo)
+	g.GET("/clients/:clientId", getClientInfo)
 
 	// Session
-	e.GET(APIHEAD+"nodes/:nodeName/sessions", getNodeSessions)
-	e.GET(APIHEAD+"nodes/:nodeName/sessions/:clientId", getNodeSessionsClientInfo)
-	e.GET(APIHEAD+"sessions/:clientId", getClusterSessionClientInfo)
+	g.GET("/nodes/:nodeName/sessions", getNodeSessions)
+	g.GET("/nodes/:nodeName/sessions/:clientId", getNodeSessionsClientInfo)
+	g.GET("/sessions/:clientId", getClusterSessionClientInfo)
 
 	// Subscription
-	e.GET(APIHEAD+"nodes/:nodeName/subscriptions", getNodeSubscriptions)
-	e.GET(APIHEAD+"nodes/:nodeName/subscriptions/:clientId", getNodeSubscriptionsClientInfo)
-	e.GET(APIHEAD+"subscriptions/:clientId", getClusterSubscriptionsInfo)
+	g.GET("/nodes/:nodeName/subscriptions", getNodeSubscriptions)
+	g.GET("/nodes/:nodeName/subscriptions/:clientId", getNodeSubscriptionsClientInfo)
+	g.GET("/subscriptions/:clientId", getClusterSubscriptionsInfo)
 
 	// Routes
-	e.GET(APIHEAD+"routes", getClusterRoutes)
-	e.GET(APIHEAD+"routes/:topic", getTopicRoutes)
+	g.GET("/routes", getClusterRoutes)
+	g.GET("/routes/:topic", getTopicRoutes)
 
 	// Publish & Subscribe
-	e.POST(APIHEAD+"mqtt/publish", publishMqttMessage)
-	e.POST(APIHEAD+"mqtt/subscribe", subscribeMqttMessage)
-	e.POST(APIHEAD+"mqtt/unsubscribe", unsubscribeMqttMessage)
+	g.POST("/mqtt/publish", publishMqttMessage)
+	g.POST("/mqtt/subscribe", subscribeMqttMessage)
+	g.POST("/mqtt/unsubscribe", unsubscribeMqttMessage)
 
 	// Plugins
-	e.GET(APIHEAD+"nodes/:nodeName/plugins", getNodePluginsInfo)
+	g.GET("/nodes/:nodeName/plugins", getNodePluginsInfo)
 
 	// Services
-	e.GET(APIHEAD+"services", getClusterServicesInfo)
-	e.GET(APIHEAD+"nodes/:nodeName/services", getNodeServicesInfo)
+	g.GET("/services", getClusterServicesInfo)
+	g.GET("/nodes/:nodeName/services", getNodeServicesInfo)
 
 	// Metrics
-	e.GET(APIHEAD+"metrics", getClusterMetricsInfo)
-	e.GET(APIHEAD+"nodes/:nodeName/metrics", getNodeMetricsInfo)
+	g.GET("/metrics", getClusterMetricsInfo)
+	g.GET("/nodes/:nodeName/metrics", getNodeMetricsInfo)
 
 	// Stats
-	e.GET(APIHEAD+"stats", getClusterStats)
-	e.GET(APIHEAD+"nodes/:nodeName/stats", getNodeStatsInfo)
+	g.GET("/stats", getClusterStats)
+	g.GET("/nodes/:nodeName/stats", getNodeStatsInfo)
 
 	// Tenant
-	e.POST("iot/api/v1/tenants", createTenant)
-	e.DELETE("iot/api/v1/tenants/:tid", removeTenant)
-
-	// Product
-	e.POST("iot/api/v1/tenants/:tid/products", createProduct)
-	e.DELETE("iot/api/v1/tenants/:tid/products/:pid", removeProduct)
+	g.POST("/tenants", createTenant)
+	g.DELETE("/tenants/:tid", removeTenant)
+	g.POST("/tenants/:tid/products", createProduct)
+	g.DELETE("/tenants/:tid/products/:pid", removeProduct)
 
 	return &apiService{
 		config:    c,
@@ -127,7 +134,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 }
 
 // Name
-func (p *apiService) Name() string      { return "api" }
+func (p *apiService) Name() string      { return SERVICE_NAME }
 func (p *apiService) Initialize() error { return nil }
 
 // Start
