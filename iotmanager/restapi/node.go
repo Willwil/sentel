@@ -26,7 +26,7 @@ import (
 // getAllNodes return all nodes in clusters
 func getAllNodes(ctx echo.Context) error {
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -67,7 +67,7 @@ func getNodeInfo(ctx echo.Context) error {
 			})
 	}
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -114,7 +114,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -172,7 +172,7 @@ func getNodesClientInfo(ctx echo.Context) error {
 
 	// Retrun last statics for each node
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -231,7 +231,7 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -279,7 +279,7 @@ func getNodeClients(ctx echo.Context) error {
 			})
 	}
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -333,7 +333,7 @@ func getNodeClientInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,

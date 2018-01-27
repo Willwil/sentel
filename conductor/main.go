@@ -44,17 +44,14 @@ func main() {
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New()
+	config := config.New("conductor")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	k := os.Getenv("KAFKA_HOST")
 	m := os.Getenv("MONGO_HOST")
 	if k != "" && m != "" {
-		options := map[string]map[string]string{}
-		options["conductor"] = make(map[string]string)
-		options["conductor"]["kafka"] = os.Getenv("KAFKA_HOST")
-		options["conductor"]["mongo"] = os.Getenv("MONGO_HOST")
-		config.AddConfig(options)
+		config.AddConfigItem("kafka", k)
+		config.AddConfigItem("mongo", m)
 	}
 	return config, nil
 }

@@ -54,7 +54,7 @@ func (p *consoleService) Initialize() error { return nil }
 func (p *consoleService) Start() error {
 	p.waitgroup.Add(1)
 	go func(s *consoleService) {
-		addr := p.config.MustString("console", "listen")
+		addr := p.config.MustStringWithSection("console", "listen")
 		p.echo.Start(addr)
 		p.waitgroup.Done()
 	}(p)
@@ -150,8 +150,8 @@ func (p *consoleService) initialize(c config.Config) error {
 // setAuth setup api group 's authentication method
 func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 	auth := "jwt"
-	if _, err := c.String("apiserver", "auth"); err == nil {
-		auth = c.MustString("apiserver", "auth")
+	if _, err := c.String("auth"); err == nil {
+		auth = c.MustString("auth")
 	}
 	switch auth {
 	case "jwt":

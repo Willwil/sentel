@@ -39,12 +39,9 @@ func main() {
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New()
+	config := config.New("iothub")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-	options := map[string]map[string]string{}
-	options["iothub"] = map[string]string{}
-	// options["iothub"]["zookeeper"] = os.Getenv("ZOOKEEPER_HOST")
-	config.AddConfig(options)
+	//config.AddConfigItem("zookeeper", os.Getenv("ZOOKEEPER_HOST"))
 	return config, nil
 }

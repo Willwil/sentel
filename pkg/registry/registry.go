@@ -48,7 +48,7 @@ type Registry struct {
 // InitializeRegistry try to connect with background database
 // to confirm wether it is normal
 func Initialize(c config.Config) error {
-	hosts := c.MustString("registry", "hosts")
+	hosts := c.MustStringWithSection("registry", "hosts")
 	glog.Infof("Initializing registry:%s...", hosts)
 	session, err := mgo.Dial(hosts)
 	if err != nil {
@@ -67,7 +67,7 @@ func Initialize(c config.Config) error {
 
 // NewRegistry create registry instance
 func New(owner string, c config.Config) (*Registry, error) {
-	hosts := c.MustString(owner, "mongo")
+	hosts := c.MustStringWithSection(owner, "mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {
 		glog.Infof("Failed to initialize registry:%s", err.Error())

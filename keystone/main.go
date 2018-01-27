@@ -43,14 +43,11 @@ func main() {
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New()
+	config := config.New("keystone")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-	if os.Getenv("MONGO_HOST") != "" {
-		options := map[string]map[string]string{}
-		options["keystone"] = map[string]string{}
-		options["keystone"]["mongo"] = os.Getenv("MONGO_HOST")
-		config.AddConfig(options)
+	if m := os.Getenv("MONGO_HOST"); m != "" {
+		config.AddConfigItem("mongo", m)
 	}
 	return config, nil
 }

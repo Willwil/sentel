@@ -43,7 +43,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 func (p *watcherService) Name() string { return "iothub" }
 
 func (p *watcherService) Initialize() error {
-	khosts, err := p.config.String("iothub", "zookeeper")
+	khosts, err := p.config.String("zookeeper")
 	if err != nil || khosts == "" {
 		return errors.New("invalid zookeeper hosts option")
 	}
@@ -62,7 +62,7 @@ func (p *watcherService) Initialize() error {
 
 // Start
 func (p *watcherService) Start() error {
-	var path = p.config.MustString("iothub", "root_path")
+	var path = p.config.MustString("root_path")
 	p.discovery.StartWatcher(path, p.handle, nil)
 	services := p.discovery.GetServices(path)
 	p.handle(services, nil)

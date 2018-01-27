@@ -12,7 +12,7 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]string{
+var defaultConfigs = map[string]map[string]interface{}{
 	"iotmanager": {
 		"loglevel":        "debug",
 		"kafka":           "localhost:9092",

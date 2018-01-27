@@ -45,7 +45,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		waitgroup: sync.WaitGroup{},
 	}
 
-	listen := c.MustString("rpc", "listen")
+	listen := c.MustStringWithSection("rpc", "listen")
 	lis, err := net.Listen("tcp", listen)
 	if err != nil {
 		glog.Errorf("Failed to listen: %v", err)

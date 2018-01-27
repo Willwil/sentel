@@ -25,7 +25,7 @@ import (
 // getClusterStats return cluster stats
 func getClusterStats(ctx echo.Context) error {
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -67,7 +67,7 @@ func getNodeStatsInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,

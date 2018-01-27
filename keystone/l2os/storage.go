@@ -24,7 +24,7 @@ type objectStorage interface {
 }
 
 func newStorage(c config.Config) (objectStorage, error) {
-	v, err := c.String("keystone", "storage")
+	v, err := c.String("storage")
 	if err != nil || v == "" {
 		v = "mongo"
 	}

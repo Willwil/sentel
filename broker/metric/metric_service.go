@@ -67,7 +67,7 @@ func (p *metricService) Initialize() error { return nil }
 
 // Start
 func (p *metricService) Start() error {
-	services, err := p.config.String(ServiceName, "services")
+	services, err := p.config.StringWithSection(ServiceName, "services")
 	// If no services are specified, just return simpily
 	if err != nil || services == "" {
 		glog.Errorf("No metric services are specified")
@@ -75,8 +75,8 @@ func (p *metricService) Start() error {
 	}
 	glog.Infof("metrics for '%s' is started", services)
 
-	t1 := p.config.MustInt(ServiceName, "report_duration")
-	t2 := p.config.MustInt(ServiceName, "keepalive")
+	t1 := p.config.MustIntWithSection(ServiceName, "report_duration")
+	t2 := p.config.MustIntWithSection(ServiceName, "keepalive")
 	p.metricTimer = time.NewTimer(time.Duration(t1) * time.Second)
 	p.aliveTimer = time.NewTimer(time.Duration(t2) * time.Second)
 	p.waitgroup.Add(1)
@@ -111,7 +111,7 @@ func (p *metricService) Stop() {
 
 // reportHubStats report current iothub stats
 func (p *metricService) reportMetric() {
-	val := p.config.MustString(ServiceName, "services")
+	val := p.config.MustStringWithSection(ServiceName, "services")
 	services := strings.Split(val, ",")
 	for _, service := range services {
 		metrics := GetMetric(service)

@@ -55,8 +55,8 @@ func (p *mqttService) Initialize() error { return nil }
 
 // Start is mainloop for mqtt service
 func (p *mqttService) Start() error {
-	protocol := p.config.MustString("broker", "protocol")
-	host := p.config.MustString("mqtt", protocol)
+	protocol := p.config.MustString("protocol")
+	host := p.config.MustStringWithSection("mqtt", protocol)
 
 	listen, err := listen(protocol, host, p.config)
 	if err != nil {
@@ -103,14 +103,14 @@ func listen(network, laddr string, c config.Config) (net.Listener, error) {
 	case mqttNetworkTcp:
 		return net.Listen("tcp", laddr)
 	case mqttNetworkTls:
-		if _, err := c.String("security", "crt_file"); err != nil {
+		if _, err := c.StringWithSection("security", "crt_file"); err != nil {
 			return nil, err
 		}
-		if _, err := c.String("security", "key_file"); err != nil {
+		if _, err := c.StringWithSection("security", "key_file"); err != nil {
 			return nil, err
 		}
-		crt := c.MustString("security", "crt_file")
-		key := c.MustString("security", "key_file")
+		crt := c.MustStringWithSection("security", "crt_file")
+		key := c.MustStringWithSection("security", "key_file")
 		cer, err := tls.LoadX509KeyPair(crt, key)
 		if err != nil {
 			return nil, err

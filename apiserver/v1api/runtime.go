@@ -48,7 +48,7 @@ func SendMessageToDevice(ctx echo.Context) error {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	c := getConfig(ctx)
-	khosts, err := c.String("apiserver", "kafka")
+	khosts, err := c.String("kafka")
 	if err != nil || khosts == "" {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}

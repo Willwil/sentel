@@ -27,8 +27,8 @@ type mongoStorage struct {
 }
 
 func newMongoStorage(c config.Config) (*mongoStorage, error) {
-	hosts := c.MustString("keystone", "mongo")
-	timeout := c.MustInt("keystone", "connect_timeout")
+	hosts := c.MustString("mongo")
+	timeout := c.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err

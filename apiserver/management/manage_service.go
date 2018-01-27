@@ -58,7 +58,7 @@ func (p *managementService) Initialize() error { return nil }
 func (p *managementService) Start() error {
 	p.waitgroup.Add(1)
 	go func(s *managementService) {
-		addr := p.config.MustString("management", "listen")
+		addr := p.config.MustStringWithSection("management", "listen")
 		p.echo.Start(addr)
 		p.waitgroup.Done()
 	}(p)

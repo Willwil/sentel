@@ -62,20 +62,16 @@ func main() {
 }
 
 func createConfig(fileName string, daemon bool) (config.Config, error) {
-	config := config.New()
+	config := config.New("broker")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	if daemon {
-		options := map[string]map[string]string{}
-		options["broker"] = map[string]string{}
-		k := os.Getenv("KAFKA_HOST")
-		v := os.Getenv("MONGO_HOST")
-		if k != "" && v != "" {
-			options["broker"]["kafka"] = os.Getenv("KAFKA_HOST")
-			options["broker"]["mongo"] = os.Getenv("MONGO_HOST")
+		kafka := os.Getenv("KAFKA_HOST")
+		mongo := os.Getenv("MONGO_HOST")
+		if kafka != "" && mongo != "" {
+			config.AddConfigItem("kafka", kafka)
+			config.AddConfigItem("mongo", mongo)
 		}
-		options["mqtt"] = map[string]string{}
-
 		// tenant and product must be set
 		if *tenant == "" {
 			*tenant = os.Getenv("BROKER_TENANT")
@@ -83,21 +79,20 @@ func createConfig(fileName string, daemon bool) (config.Config, error) {
 				return nil, errors.New("teant must be specified for broker")
 			}
 		}
-		options["broker"]["tenant"] = *tenant
+		config.AddConfigItem("tenant", *tenant)
 
 		// Mqtt protocol
 		if *protocol != "" {
 			switch *protocol {
 			case "tcp", "ws", "tls", "https":
-				options["broker"]["protocol"] = *protocol
+				config.AddConfigItem("protocol", *protocol)
 				if *listen != "" {
-					options["mqtt"][*protocol] = *listen
+					config.AddConfigItemWithSection("mqtt", *protocol, *listen)
 				}
 			default:
 				return nil, errors.New("unknown mqtt access protocol '%s', *protocol")
 			}
 		}
-		config.AddConfig(options)
 	}
 	return config, nil
 }
@@ -113,7 +108,7 @@ func runBrokerDaemon(c config.Config) error {
 	base.SetBrokerStartupInfo(
 		&base.BrokerStartupInfo{
 			Id:     uuid.NewV4().String(),
-			Tenant: c.MustString("broker", "tenant"),
+			Tenant: c.MustString("tenant"),
 		})
 	mgr, _ := service.NewServiceManager("broker", c)
 	mgr.AddService(event.ServiceFactory{})

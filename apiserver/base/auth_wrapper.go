@@ -22,7 +22,7 @@ var (
 )
 
 func Initialize(c config.Config) error {
-	if auth, err := c.String("apiserver", "auth"); err != nil || auth == "none" {
+	if auth, err := c.String("auth"); err != nil || auth == "none" {
 		noAuth = true
 		return nil
 	}

@@ -59,8 +59,8 @@ type ServiceFactory struct{}
 // New create global broker
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Retrieve tenant and product
-	tenant := c.MustString("broker", "tenant")
-	khosts, err := c.String("broker", "kafka")
+	tenant := c.MustString("tenant")
+	khosts, err := c.String("kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("message server is not rightly configed")
 	}

@@ -54,8 +54,8 @@ type ServiceFactory struct{}
 // New create metadata service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
-	hosts := c.MustString("broker", "mongo")
-	timeout := c.MustInt("broker", "connect_timeout")
+	hosts := c.MustString("mongo")
+	timeout := c.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -64,15 +64,15 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 
 	// Connect with redis if cache policy is redis
 	policy := cachePolicyMemory
-	if v, err := c.String("quto", "cace_policy"); err == nil && v == cachePolicyRedis {
+	if v, err := c.StringWithSection("quto", "cace_policy"); err == nil && v == cachePolicyRedis {
 		policy = cachePolicyRedis
 	}
 
 	var rclient *redis.Client = nil
 	if policy == cachePolicyRedis {
-		addr, _ := c.String("broker", "redis")
-		password := c.MustString("quto", "redis_password")
-		db := c.MustInt("quto", "redis_db")
+		addr, _ := c.String("redis")
+		password := c.MustStringWithSection("quto", "redis_password")
+		db := c.MustIntWithSection("quto", "redis_db")
 
 		rclient = redis.NewClient(&redis.Options{
 			Addr:     addr,
@@ -139,8 +139,8 @@ func onEventCallback(e event.Event, ctx interface{}) {
 func (p *qutoService) handleQutoChanged(e event.Event) {
 	t := e.(*event.QutoChangeEvent)
 	// check mongo db configuration
-	hosts := p.config.MustString("broker", "mongo")
-	timeout := p.config.MustInt("broker", "connect_timeout")
+	hosts := p.config.MustString("mongo")
+	timeout := p.config.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		glog.Errorf("quto: Access backend database failed for quto event:%d", t.Type)
@@ -195,8 +195,8 @@ func (p *qutoService) getQuto(id string) (uint64, error) {
 	}
 
 	// Read from database if not found in cache
-	hosts := p.config.MustString("broker", "mongo")
-	timeout := p.config.MustInt("broker", "connect_timeout")
+	hosts := p.config.MustString("mongo")
+	timeout := p.config.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		glog.Error("quto: Access backend database failed")

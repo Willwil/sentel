@@ -45,7 +45,7 @@ type ServiceFactory struct{}
 
 // New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	kafka, err := c.String("conductor", "kafka")
+	kafka, err := c.String("kafka")
 	if err != nil || kafka == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}

@@ -66,7 +66,7 @@ type ClusterManager interface {
 
 // New retrieve clustermanager instance connected with clustermgr
 func New(c config.Config) (ClusterManager, error) {
-	if v, err := c.String("iothub", "cluster"); err == nil {
+	if v, err := c.String("cluster"); err == nil {
 		switch v {
 		case "k8s":
 			return newK8sCluster(c)

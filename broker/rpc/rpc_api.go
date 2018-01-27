@@ -26,7 +26,7 @@ type BrokerApi struct {
 
 func NewBrokerApi(c config.Config) (*BrokerApi, error) {
 	address := "localhost:55001"
-	if val, err := c.String("rpc", "listen"); err == nil && address != "" {
+	if val, err := c.StringWithSection("rpc", "listen"); err == nil && address != "" {
 		address = val
 	}
 	conn, err := grpc.Dial(address, grpc.WithInsecure())

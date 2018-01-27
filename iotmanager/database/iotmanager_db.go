@@ -49,7 +49,7 @@ const (
 
 func NewIotmanagerDB(c config.Config) (*IotmanagerDB, error) {
 	// try connect with mongo db
-	addr := c.MustString("iotmanager", "mongo")
+	addr := c.MustString("mongo")
 	session, err := mgo.DialWithTimeout(addr, 1*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("connect with mongo '%s'failed: '%s'", addr, err.Error())

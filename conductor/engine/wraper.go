@@ -52,10 +52,10 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 }
 
 func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error) {
-	config := config.New()
+	config := config.New("conductor")
 	options := make(map[string]string)
-	options["mongo"] = c.MustString("conductor", "mongo")
-	options["message_server"] = c.MustString("conductor", "kafka")
+	options["mongo"] = c.MustString("mongo")
+	options["message_server"] = c.MustString("kafka")
 	if r.DataTarget.Type == registry.DataTargetTypeTopic {
 		options["topic"] = r.DataTarget.Topic
 	}

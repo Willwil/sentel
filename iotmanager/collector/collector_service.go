@@ -34,8 +34,8 @@ type ServiceFactory struct{}
 // New create apiService service factory
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
-	hosts := c.MustString("iotmanager", "mongo")
-	timeout := c.MustInt("iotmanager", "connect_timeout")
+	hosts := c.MustString("mongo")
+	timeout := c.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	session.Close()
 
 	// kafka
-	khosts := c.MustString("iotmanager", "kafka")
+	khosts := c.MustString("kafka")
 	consumer, _ := message.NewConsumer(khosts, "iotmanager")
 	return &collectorService{
 		config:   c,
@@ -106,8 +106,8 @@ func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface
 
 func (p *collectorService) getDatabase() (*mgo.Database, error) {
 	// check mongo db configuration
-	hosts := p.config.MustString("iotmanager", "mongo")
-	timeout := p.config.MustInt("iotmanager", "connect_timeout")
+	hosts := p.config.MustString("mongo")
+	timeout := p.config.MustInt("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err

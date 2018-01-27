@@ -41,18 +41,15 @@ func main() {
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New()
+	config := config.New("iotmanager")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 
 	k := os.Getenv("KAFKA_HOST")
 	m := os.Getenv("MONGO_HOST")
 	if k != "" && m != "" {
-		options := map[string]map[string]string{}
-		options["iotmanager"] = map[string]string{}
-		options["iotmanager"]["kafka"] = k
-		options["iotmanager"]["mongo"] = m
-		config.AddConfig(options)
+		config.AddConfigItem("kafka", k)
+		config.AddConfigItem("mongo", m)
 	}
 	return config, nil
 }

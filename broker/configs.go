@@ -12,11 +12,11 @@
 
 package main
 
-var defaultConfigs = map[string]map[string]string{
+var defaultConfigs = map[string]map[string]interface{}{
 	"broker": {
 		"loglevel":        "debug",
 		"mongo":           "localhost:27017",
-		"connect_timeout": "5",
+		"connect_timeout": 5,
 		"auth":            "false",
 		"protocol":        "tcp",
 		"kafka":           "localhost:9092",

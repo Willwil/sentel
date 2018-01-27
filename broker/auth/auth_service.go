@@ -44,8 +44,8 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		flavorsMutex: sync.Mutex{},
 	}
 	// check mongo db configuration
-	hosts, _ := c.String("broker", "mongo")
-	timeout, _ := c.Int("broker", "connect_timeout")
+	hosts, _ := c.String("mongo")
+	timeout, _ := c.Int("connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -53,9 +53,9 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	defer session.Close()
 
 	// Connect with redis if cache policy is redis
-	addr, _ := c.String("broker", "redis")
-	password, _ := c.String("broker", "redis_password")
-	db, _ := c.Int("auth", "redis_db")
+	addr, _ := c.String("redis")
+	password, _ := c.String("redis_password")
+	db, _ := c.IntWithSection("auth", "redis_db")
 	rc := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: password,

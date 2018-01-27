@@ -38,7 +38,7 @@ func main() {
 	mgr, _ := service.NewServiceManager("apiserver", config)
 	mgr.AddService(console.ServiceFactory{})
 	mgr.AddService(management.ServiceFactory{})
-	if _, err := config.String("apiserver", "swagger"); err == nil {
+	if _, err := config.String("swagger"); err == nil {
 		mgr.AddService(swagger.ServiceFactory{})
 	}
 	if err := mgr.RunAndWait(); err != nil {
@@ -48,24 +48,18 @@ func main() {
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New()
+	config := config.New("apiserver")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 
 	kafka := os.Getenv("KAFKA_HOST")
 	mongo := os.Getenv("MONGO_HOST")
 	if kafka != "" && mongo != "" {
-		options := make(map[string]map[string]string)
-		options["apiserver"] = make(map[string]string)
-		options["apiserver"]["kafka"] = os.Getenv("KAFKA_HOST")
-		options["apiserver"]["mongo"] = os.Getenv("MONGO_HOST")
-		config.AddConfig(options)
+		config.AddConfigItem("kafka", kafka)
+		config.AddConfigItem("mongo", mongo)
 	}
-	if _, err := config.String("apiserver", "swagger"); err == nil {
-		config.AddConfig(map[string]map[string]string{
-			"swagger": {
-				"path": *swaggerFile,
-			}})
+	if _, err := config.String("swagger"); err == nil {
+		config.AddConfigItemWithSection("swagger", "path", *swaggerFile)
 	}
 
 	return config, nil

@@ -66,7 +66,7 @@ type mqttSession struct {
 func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 	// Retrieve authentication option
 	authNeed := true
-	if n, err := mqtt.config.Bool("broker", "auth"); err == nil {
+	if n, err := mqtt.config.Bool("auth"); err == nil {
 		authNeed = n
 	}
 
@@ -622,7 +622,7 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 	// Payload
 	payloadlen := packet.remainingLength - packet.pos
 	if payloadlen > 0 {
-		limitSize, _ := p.config.Int("mqtt", "message_size_limit")
+		limitSize, _ := p.config.IntWithSection("mqtt", "message_size_limit")
 		if payloadlen > limitSize {
 			return mqttErrorInvalidProtocol
 		}

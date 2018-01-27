@@ -32,7 +32,7 @@ func getNodeSessions(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -71,7 +71,7 @@ func getNodeSessionsClientInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -109,7 +109,7 @@ func getClusterSessionClientInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("meter", "mongo")
+	hosts := config.MustString("mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,

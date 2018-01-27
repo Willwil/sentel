@@ -52,7 +52,7 @@ type swaggerService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	hosts := c.MustString("apiserver", "swagger")
+	hosts := c.MustString("swagger")
 	names := strings.Split(hosts, ":")
 	if len(names) != 2 {
 		return nil, errors.New("swagger configuration error")
@@ -72,7 +72,7 @@ func (p *swaggerService) Initialize() error { return nil }
 
 // Start
 func (p *swaggerService) Start() error {
-	specFile, err := p.config.String("swagger", "path")
+	specFile, err := p.config.StringWithSection("swagger", "path")
 	if err != nil || specFile == "" {
 		return errors.New("invalid swagger file")
 	}
@@ -121,7 +121,7 @@ func (p *swaggerService) Start() error {
 		p.waitgroup.Done()
 	}(p)
 
-	if ui, err := p.config.Bool("swagger", "open_browser"); err == nil && ui == true {
+	if ui, err := p.config.BoolWithSection("swagger", "open_browser"); err == nil && ui == true {
 		webbrowser.Open(visit)
 	}
 	log.Println("serving docs at", visit)

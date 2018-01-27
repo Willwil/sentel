@@ -48,12 +48,12 @@ func getRegistry(ctx echo.Context) *registry.Registry {
 
 func syncProduceMessage(ctx echo.Context, msg message.Message) error {
 	c := getConfig(ctx)
-	hosts := c.MustString("apiserver", "kafka")
+	hosts := c.MustString("kafka")
 	return message.SendMessage(hosts, msg)
 }
 
 func asyncProduceMessage(ctx echo.Context, msg message.Message) error {
 	c := getConfig(ctx)
-	hosts := c.MustString("apiserver", "kafka")
+	hosts := c.MustString("kafka")
 	return message.PostMessage(hosts, msg)
 }

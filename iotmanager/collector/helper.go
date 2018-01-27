@@ -44,7 +44,7 @@ type topicHandler interface {
 
 func SyncReport(c config.Config, msg message.Message) error {
 	hosts := "localhost:9092"
-	if h, err := c.String("kafka", "hosts"); err != nil {
+	if h, err := c.String("kafka"); err != nil {
 		glog.Warningf("kafka is not configured, using localhost:9092")
 	} else {
 		hosts = h
@@ -53,7 +53,7 @@ func SyncReport(c config.Config, msg message.Message) error {
 }
 
 func AsyncReport(c config.Config, msg message.Message) error {
-	hosts, err := c.String("kafka", "hosts")
+	hosts, err := c.String("kafka")
 	if err != nil {
 		return err
 	}

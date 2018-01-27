@@ -71,7 +71,7 @@ func (p *restapiService) Start() error {
 	p.waitgroup.Add(1)
 	go func(s *restapiService) {
 		defer s.waitgroup.Done()
-		addr := s.config.MustString("restapi", "listen")
+		addr := s.config.MustStringWithSection("restapi", "listen")
 		s.echo.Start(addr)
 	}(p)
 	return nil

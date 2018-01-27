@@ -50,7 +50,7 @@ const SERVICE_NAME = "iotmanager"
 type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
-	khosts, err := c.String("iotmanager", "zookeeper")
+	khosts, err := c.String("zookeeper")
 	if err != nil || khosts == "" {
 		return nil, errors.New("invalid zookeeper hosts option")
 	}
@@ -65,7 +65,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		return nil, errors.New("service backend initialization failed")
 	}
 	// initialize message consumer
-	khosts, err = c.String("iotmanager", "kafka")
+	khosts, err = c.String("kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}
@@ -139,7 +139,7 @@ func (p *schedulerService) recoverStartup() {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	network, err := p.config.String("iotmanager", "network")
+	network, err := p.config.String("network")
 	if err != nil {
 		network = ""
 	}
@@ -289,7 +289,7 @@ func (p *schedulerService) createProduct(tid string, pid string, replicas int32)
 	}
 	t := p.tenants[tid]
 	if t.ServiceState == cluster.ServiceStateNone {
-		network, err := p.config.String("iotmanager", "network")
+		network, err := p.config.String("network")
 		if err != nil {
 			network = ""
 		}

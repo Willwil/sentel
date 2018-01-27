@@ -14,7 +14,6 @@ package config
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/Unknwon/goconfig"
 	"github.com/golang/glog"
@@ -22,39 +21,54 @@ import (
 
 // Config interface
 type Config interface {
-	Bool(section string, key string) (bool, error)
-	Int(section string, key string) (int, error)
-	String(section string, key string) (string, error)
-	MustBool(section string, key string) bool
-	MustInt(section string, key string) int
-	MustString(section string, key string) string
-	SetValue(section string, key string, val string)
-	AddConfig(options map[string]map[string]string) Config
+	// using primary section as default
+	Bool(key string) (bool, error)
+	Int(key string) (int, error)
+	String(key string) (string, error)
+	MustBool(key string) bool
+	MustInt(key string) int
+	MustString(key string) string
+	SetValue(key string, val string)
+	AddConfigItem(key string, value interface{})
+
+	// WithSection
+	BoolWithSection(section string, key string) (bool, error)
+	IntWithSection(section string, key string) (int, error)
+	StringWithSection(section string, key string) (string, error)
+	MustBoolWithSection(section string, key string) bool
+	MustIntWithSection(section string, key string) int
+	MustStringWithSection(section string, key string) string
+	SetValueWithSection(section string, key string, val string)
+	AddConfigItemWithSection(section string, key string, value interface{})
+
+	AddConfig(options map[string]map[string]interface{}) Config
 	AddConfigSection(setion string, options map[string]string) Config
 	AddConfigFile(fileName string) (Config, error)
 }
 
 type config struct {
-	sections map[string]map[string]string
+	primary  string
+	sections map[string]map[string]interface{}
 }
 
-func New() Config {
-	return &config{
-		sections: make(map[string]map[string]string),
+func New(primary string) Config {
+	c := &config{
+		primary:  primary,
+		sections: make(map[string]map[string]interface{}),
 	}
+	c.sections[primary] = make(map[string]interface{})
+	return c
 }
 
 // NewConfigWithFile load configurations from files
-func NewWithFile(fileName string, moreFiles ...string) (Config, error) {
-	c := &config{
-		sections: make(map[string]map[string]string),
-	}
-	if cfg, err := goconfig.LoadConfigFile(fileName, moreFiles...); err == nil {
+func NewWithFile(primary string, fileName string) (Config, error) {
+	c := New(primary).(*config)
+	if cfg, err := goconfig.LoadConfigFile(fileName); err == nil {
 		sections := cfg.GetSectionList()
 		for _, name := range sections {
 			// create section if it doesn't exist
 			if _, ok := c.sections[name]; !ok {
-				c.sections[name] = make(map[string]string)
+				c.sections[name] = make(map[string]interface{})
 			}
 			items, err := cfg.GetSection(name)
 			if err == nil {
@@ -79,8 +93,19 @@ func (c *config) checkItemExist(section string, key string) error {
 	return nil
 }
 
+func (c *config) AddConfigItemWithSection(section string, key string, value interface{}) {
+	if _, found := c.sections[section]; !found {
+		c.sections[section] = make(map[string]interface{})
+	}
+	c.sections[section][key] = value
+}
+
+func (c *config) AddConfigItem(key string, value interface{}) {
+	c.AddConfigItemWithSection(c.primary, key, value)
+}
+
 // Bool return bool value for key
-func (c *config) Bool(section string, key string) (bool, error) {
+func (c *config) BoolWithSection(section string, key string) (bool, error) {
 	if err := c.checkItemExist(section, key); err != nil {
 		return false, err
 	}
@@ -95,23 +120,28 @@ func (c *config) Bool(section string, key string) (bool, error) {
 }
 
 // Int return int value for key
-func (c *config) Int(section string, key string) (int, error) {
+func (c *config) IntWithSection(section string, key string) (int, error) {
 	if err := c.checkItemExist(section, key); err != nil {
 		return -1, err
 	}
 	val := c.sections[section][key]
-	return strconv.Atoi(val)
+	if _, ok := val.(int); !ok {
+		return -1, fmt.Errorf("invalid value for key '%s'", key)
+	}
+	return val.(int), nil
 }
 
 // String return string valu for key
-func (c *config) String(section string, key string) (string, error) {
-	if err := c.checkItemExist(section, key); err != nil {
-		return "", err
+func (c *config) StringWithSection(section string, key string) (string, error) {
+	if err := c.checkItemExist(section, key); err == nil {
+		if val, ok := c.sections[section][key].(string); ok {
+			return val, nil
+		}
 	}
-	return c.sections[section][key], nil
+	return "", fmt.Errorf("invalid value for key '%s'", key)
 }
 
-func (c *config) MustBool(section string, key string) bool {
+func (c *config) MustBoolWithSection(section string, key string) bool {
 	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
@@ -122,35 +152,46 @@ func (c *config) MustBool(section string, key string) bool {
 	case "false":
 		return false
 	}
-	glog.Fatalf("Invalid configuration item for service '%s':'%s'", section, key)
+	glog.Fatalf("invalid config '%s':'%s'", section, key)
 	return false
 }
-func (c *config) MustInt(section string, key string) int {
+func (c *config) MustIntWithSection(section string, key string) int {
 	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
-	val := c.sections[section][key]
-	n, err := strconv.Atoi(val)
-	if err != nil {
-		glog.Fatalf("Invalid configuration for service '%s':'%s'", section, key)
+	if val, ok := c.sections[section][key].(int); ok {
+		return val
 	}
-	return n
+	glog.Fatalf("invalid config '%s':'%s'", section, key)
+	return -1
 }
 
-func (c *config) MustString(section string, key string) string {
+func (c *config) MustStringWithSection(section string, key string) string {
 	if err := c.checkItemExist(section, key); err != nil {
 		glog.Fatal(err)
 	}
-	return c.sections[section][key]
+	if val, ok := c.sections[section][key].(string); ok {
+		return val
+	}
+	glog.Fatalf("invalid config '%s':'%s'", section, key)
+	return ""
 }
 
-func (c *config) SetValue(section string, key string, valu string) {
+func (c *config) SetValueWithSection(section string, key string, valu string) {
 }
 
-func (c *config) AddConfig(options map[string]map[string]string) Config {
+func (c *config) Bool(key string) (bool, error)     { return c.BoolWithSection(c.primary, key) }
+func (c *config) Int(key string) (int, error)       { return c.IntWithSection(c.primary, key) }
+func (c *config) String(key string) (string, error) { return c.StringWithSection(c.primary, key) }
+func (c *config) MustBool(key string) bool          { return c.MustBoolWithSection(c.primary, key) }
+func (c *config) MustInt(key string) int            { return c.MustIntWithSection(c.primary, key) }
+func (c *config) MustString(key string) string      { return c.MustStringWithSection(c.primary, key) }
+func (c *config) SetValue(key string, val string)   { c.SetValueWithSection(c.primary, key, val) }
+
+func (c *config) AddConfig(options map[string]map[string]interface{}) Config {
 	for section, values := range options {
 		if _, found := c.sections[section]; !found {
-			c.sections[section] = make(map[string]string)
+			c.sections[section] = make(map[string]interface{})
 		}
 		for key, val := range values {
 			c.sections[section][key] = val
@@ -169,7 +210,7 @@ func (c *config) AddConfigSection(sectionName string, items map[string]string) C
 			c.sections[sectionName][key] = val
 		}
 	} else {
-		c.sections[sectionName] = make(map[string]string)
+		c.sections[sectionName] = make(map[string]interface{})
 		for key, val := range items {
 			c.sections[sectionName][key] = val
 		}
@@ -183,7 +224,7 @@ func (c *config) AddConfigFile(fileName string) (Config, error) {
 		for _, name := range sections {
 			// create section if it doesn't exist
 			if _, ok := c.sections[name]; !ok {
-				c.sections[name] = make(map[string]string)
+				c.sections[name] = make(map[string]interface{})
 			}
 			items, err := cfg.GetSection(name)
 			if err == nil {
