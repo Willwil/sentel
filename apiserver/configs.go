@@ -30,7 +30,7 @@ var defaultConfigs = map[string]map[string]interface{}{
 		"capath":              "",
 		"certfile":            "",
 		"keyfile":             "",
-		"require_certificate": "false",
+		"require_certificate": false,
 	},
 	"console": {
 		"listen": "0.0.0.0:4145",
@@ -42,6 +42,6 @@ var defaultConfigs = map[string]map[string]interface{}{
 		"hosts": "localhost:4147",
 	},
 	"swagger": {
-		"open_browser": "true",
+		"open_browser": true,
 	},
 }

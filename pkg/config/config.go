@@ -85,10 +85,10 @@ func NewWithFile(primary string, fileName string) (Config, error) {
 
 func (c *config) checkItemExist(section string, key string) error {
 	if _, found := c.sections[section]; !found {
-		return fmt.Errorf("Invalid configuration, section '%s' doesn't exist'", section)
+		return fmt.Errorf("section '%s' no exist'", section)
 	}
 	if _, found := c.sections[section][key]; !found {
-		return fmt.Errorf("Invalid configuration, there are no item '%s' in section '%s'", key, section)
+		return fmt.Errorf("no item '%s' in section '%s'", key, section)
 	}
 	return nil
 }
@@ -109,14 +109,10 @@ func (c *config) BoolWithSection(section string, key string) (bool, error) {
 	if err := c.checkItemExist(section, key); err != nil {
 		return false, err
 	}
-	val := c.sections[section][key]
-	switch val {
-	case "true":
-		return true, nil
-	case "false":
-		return false, nil
+	if val, ok := c.sections[section][key].(bool); ok {
+		return val, nil
 	}
-	return false, fmt.Errorf("Invalid configuration item for service '%s' item '%s'", section, key)
+	return false, fmt.Errorf("invalid seciont '%' with key '%s'", section, key)
 }
 
 // Int return int value for key
@@ -142,39 +138,26 @@ func (c *config) StringWithSection(section string, key string) (string, error) {
 }
 
 func (c *config) MustBoolWithSection(section string, key string) bool {
-	if err := c.checkItemExist(section, key); err != nil {
+	val, err := c.BoolWithSection(section, key)
+	if err != nil {
 		glog.Fatal(err)
 	}
-	val := c.sections[section][key]
-	switch val {
-	case "true":
-		return true
-	case "false":
-		return false
-	}
-	glog.Fatalf("invalid config '%s':'%s'", section, key)
-	return false
+	return val
 }
 func (c *config) MustIntWithSection(section string, key string) int {
-	if err := c.checkItemExist(section, key); err != nil {
+	val, err := c.IntWithSection(section, key)
+	if err != nil {
 		glog.Fatal(err)
 	}
-	if val, ok := c.sections[section][key].(int); ok {
-		return val
-	}
-	glog.Fatalf("invalid config '%s':'%s'", section, key)
-	return -1
+	return val
 }
 
 func (c *config) MustStringWithSection(section string, key string) string {
-	if err := c.checkItemExist(section, key); err != nil {
+	val, err := c.StringWithSection(section, key)
+	if err != nil {
 		glog.Fatal(err)
 	}
-	if val, ok := c.sections[section][key].(string); ok {
-		return val
-	}
-	glog.Fatalf("invalid config '%s':'%s'", section, key)
-	return ""
+	return val
 }
 
 func (c *config) SetValueWithSection(section string, key string, valu string) {
@@ -205,7 +188,7 @@ func (c *config) AddConfigSection(sectionName string, items map[string]string) C
 	if _, found := c.sections[sectionName]; found {
 		for key, val := range c.sections[sectionName] {
 			if c.sections[sectionName][key] != "" {
-				glog.Infof("Config item(%s) will overide existed item:%s", key, val)
+				glog.Infof("config item '%s' overwriting occured", key, val)
 			}
 			c.sections[sectionName][key] = val
 		}
