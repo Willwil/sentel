@@ -14,15 +14,10 @@ package main
 
 var defaultConfigs = map[string]map[string]string{
 	"iothub": {
-		"mongo":         "localhost:27017",
-		"kafka":         "localhost:9092",
-		"cluster":       "swarm",
-		"docker-images": "mongo,kafka,zookeeper, redis, sentel/broker",
-		"network":       "sentel-front",
-	},
-	"api": {
-		"listen":          ":50052",
-		"loglevel":        "debug",
-		"connect_timeout": "2",
+		"backend":   "zookeeper",
+		"loglevel":  "debug",
+		"version":   "v1",
+		"zookeeper": "localhost:2181",
+		"root_path": "/iotservices",
 	},
 }

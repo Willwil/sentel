@@ -1,5 +1,5 @@
 # sentel-gateway
-Sentel gateway
+Sentel iothub 
 
 # pull base image
 docker pull centos

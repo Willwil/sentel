@@ -14,24 +14,45 @@ package main
 
 import (
 	"flag"
+	"os"
 
-	"github.com/cloustone/sentel/meter/api"
-	"github.com/cloustone/sentel/meter/collector"
+	"github.com/cloustone/sentel/iotcenter/api"
+	"github.com/cloustone/sentel/iotcenter/collector"
+	"github.com/cloustone/sentel/iotcenter/hub"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
 var (
-	configFileFullPath = flag.String("c", "/etc/sentel/meter.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/iocenter.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
-	config := config.New()
-	config.AddConfig(defaultConfigs)
-	mgr, _ := service.NewServiceManager("meter", config)
+
+	glog.Info("Initializing iotcenter...")
+	config, _ := createConfig(*configFileName)
+	mgr, _ := service.NewServiceManager("iotcenter", config)
+	mgr.AddService(hub.ServiceFactory{})
 	mgr.AddService(api.ServiceFactory{})
 	mgr.AddService(collector.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
+}
+
+func createConfig(fileName string) (config.Config, error) {
+	config := config.New()
+	config.AddConfig(defaultConfigs)
+	config.AddConfigFile(fileName)
+
+	k := os.Getenv("KAFKA_HOST")
+	m := os.Getenv("MONGO_HOST")
+	if k != "" && m != "" {
+		options := map[string]map[string]string{}
+		options["iotcenter"] = map[string]string{}
+		options["iotcenter"]["kafka"] = k
+		options["iotcenter"]["mongo"] = m
+		config.AddConfig(options)
+	}
+	return config, nil
 }

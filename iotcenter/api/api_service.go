@@ -110,6 +110,14 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	e.GET(APIHEAD+"stats", getClusterStats)
 	e.GET(APIHEAD+"nodes/:nodeName/stats", getNodeStatsInfo)
 
+	// Tenant
+	e.POST("iot/api/v1/tenants", createTenant)
+	e.DELETE("iot/api/v1/tenants/:tid", removeTenant)
+
+	// Product
+	e.POST("iot/api/v1/tenants/:tid/products", createProduct)
+	e.DELETE("iot/api/v1/tenants/:tid/products/:pid", removeProduct)
+
 	return &apiService{
 		config:    c,
 		waitgroup: sync.WaitGroup{},

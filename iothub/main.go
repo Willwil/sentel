@@ -9,32 +9,32 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-
 package main
 
 import (
 	"flag"
-	"os"
 
-	"github.com/cloustone/sentel/iothub/hub"
-	"github.com/cloustone/sentel/iothub/restapi"
+	"github.com/golang/glog"
+
+	"github.com/cloustone/sentel/iothub/watcher"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
-	"github.com/golang/glog"
 )
 
 var (
-	configFileName = flag.String("c", "/etc/sentel/iothub.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/gateway.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
+	glog.Info("Starting  iothub...")
 
-	glog.Info("Initializing iothub...")
 	config, _ := createConfig(*configFileName)
-	mgr, _ := service.NewServiceManager("iothub", config)
-	mgr.AddService(hub.ServiceFactory{})
-	mgr.AddService(restapi.ServiceFactory{})
+	mgr, err := service.NewServiceManager("iothub", config)
+	if err != nil {
+		glog.Fatalf("iothub create failed: '%s'", err.Error())
+	}
+	mgr.AddService(watcher.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
 }
 
@@ -42,15 +42,9 @@ func createConfig(fileName string) (config.Config, error) {
 	config := config.New()
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
-
-	k := os.Getenv("KAFKA_HOST")
-	m := os.Getenv("MONGO_HOST")
-	if k != "" && m != "" {
-		options := map[string]map[string]string{}
-		options["iothub"] = map[string]string{}
-		options["iothub"]["kafka"] = k
-		options["iothub"]["mongo"] = m
-		config.AddConfig(options)
-	}
+	options := map[string]map[string]string{}
+	options["iothub"] = map[string]string{}
+	// options["iothub"]["zookeeper"] = os.Getenv("ZOOKEEPER_HOST")
+	config.AddConfig(options)
 	return config, nil
 }

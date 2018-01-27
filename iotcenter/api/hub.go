@@ -10,88 +10,14 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package restapi
+package api
 
 import (
 	"net/http"
-	"sync"
 
-	"github.com/cloustone/sentel/iothub/hub"
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/service"
+	"github.com/cloustone/sentel/iotcenter/hub"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 )
-
-type restapiService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	echo      *echo.Echo
-}
-
-type apiContext struct {
-	echo.Context
-	config config.Config
-}
-
-type response struct {
-	Success bool        `json:"success"`
-	Message string      `json:"message"`
-	Result  interface{} `json:"result"`
-}
-
-// restapiServiceFactory
-type ServiceFactory struct{}
-
-func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	e := echo.New()
-	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(e echo.Context) error {
-			cc := &apiContext{Context: e, config: c}
-			return h(cc)
-		}
-	})
-	e.Use(middleware.RequestID())
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
-	}))
-
-	// Tenant
-	e.POST("iothub/api/v1/tenants", createTenant)
-	e.DELETE("iothub/api/v1/tenants/:tid", removeTenant)
-
-	// Product
-	e.POST("iothub/api/v1/tenants/:tid/products", createProduct)
-	e.DELETE("iothub/api/v1/tenants/:tid/products/:pid", removeProduct)
-
-	return &restapiService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		echo:      e,
-	}, nil
-
-}
-
-// Name
-func (p *restapiService) Name() string      { return "api" }
-func (p *restapiService) Initialize() error { return nil }
-
-// Start
-func (p *restapiService) Start() error {
-	p.waitgroup.Add(1)
-	go func(s *restapiService) {
-		defer s.waitgroup.Done()
-		addr := s.config.MustString("api", "listen")
-		s.echo.Start(addr)
-	}(p)
-	return nil
-}
-
-// Stop
-func (p *restapiService) Stop() {
-	p.echo.Close()
-	p.waitgroup.Wait()
-}
 
 // addTenant
 type addTenantRequest struct {

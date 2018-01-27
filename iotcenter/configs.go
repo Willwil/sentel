@@ -13,11 +13,21 @@
 package main
 
 var defaultConfigs = map[string]map[string]string{
-	"gateway": {
-		"backend":   "zookeeper",
-		"loglevel":  "debug",
-		"version":   "v1",
-		"zookeeper": "localhost:2181",
-		"root_path": "/iotservices",
+	"iotcenter": {
+		"loglevel":        "debug",
+		"kafka":           "localhost:9092",
+		"mongo":           "localhost:27017",
+		"connect_timeout": "5",
+		"cluster":         "swarm",
+		"docker-images":   "mongo,kafka,zookeeper, redis, sentel/broker",
+		"network":         "sentel-front",
+	},
+	"collector": {
+		"listen": "localhost:",
+	},
+	"api": {
+		"listen":          ":8080",
+		"loglevel":        "debug",
+		"connect_timeout": "2",
 	},
 }
