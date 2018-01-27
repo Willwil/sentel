@@ -49,8 +49,8 @@ const APIHEAD = "api/v1/"
 // New create apiService service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// try connect with mongo db
-	hosts := c.MustString("meter", "mongo")
-	timeout := c.MustInt("meter", "connect_timeout")
+	hosts := c.MustString("iotmanager", "mongo")
+	timeout := c.MustInt("iotmanager", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to connect with mongo:'%s'", err.Error())

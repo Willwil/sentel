@@ -26,7 +26,7 @@ type collectorService struct {
 	consumer message.Consumer
 }
 
-const SERVICE_NAME = "meter"
+const SERVICE_NAME = "collector"
 
 // collectorServiceFactory
 type ServiceFactory struct{}
@@ -34,8 +34,8 @@ type ServiceFactory struct{}
 // New create apiService service factory
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	// check mongo db configuration
-	hosts := c.MustString("meter", "mongo")
-	timeout := c.MustInt("meter", "connect_timeout")
+	hosts := c.MustString("iotmanager", "mongo")
+	timeout := c.MustInt("iotmanager", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err
@@ -43,8 +43,8 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	session.Close()
 
 	// kafka
-	khosts := c.MustString("meter", "kafka")
-	consumer, _ := message.NewConsumer(khosts, "meter")
+	khosts := c.MustString("iotmanager", "kafka")
+	consumer, _ := message.NewConsumer(khosts, "iotmanager")
 	return &collectorService{
 		config:   c,
 		consumer: consumer,
@@ -106,8 +106,8 @@ func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface
 
 func (p *collectorService) getDatabase() (*mgo.Database, error) {
 	// check mongo db configuration
-	hosts := p.config.MustString("meter", "mongo")
-	timeout := p.config.MustInt("meter", "connect_timeout")
+	hosts := p.config.MustString("iotmanager", "mongo")
+	timeout := p.config.MustInt("iotmanager", "connect_timeout")
 	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
 	if err != nil {
 		return nil, err

@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	configFileName = flag.String("c", "/etc/sentel/iocenter.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/iotmanager.conf", "config file")
 )
 
 func main() {
