@@ -15,7 +15,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/iotcenter/hub"
+	"github.com/cloustone/sentel/iotmanager/hub"
 	"github.com/labstack/echo"
 )
 

@@ -18,16 +18,14 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cloustone/sentel/iotcenter/collector"
+	"github.com/cloustone/sentel/iotmanager/collector"
 	"github.com/labstack/echo"
 )
 
-// Metrics
-
-// getClusterMetricsInfo return cluster metrics
-func getClusterMetricsInfo(ctx echo.Context) error {
+// getClusterStats return cluster stats
+func getClusterStats(ctx echo.Context) error {
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -36,16 +34,16 @@ func getClusterMetricsInfo(ctx echo.Context) error {
 	c := session.DB("iothub").C("stats")
 	defer session.Close()
 
-	metrics := []collector.Metric{}
-	if err := c.Find(nil).Iter().All(&metrics); err != nil {
+	stats := []collector.Stats{}
+	if err := c.Find(nil).Iter().All(&stats); err != nil {
 		return ctx.JSON(NotFound, &response{Success: false, Message: err.Error()})
 	}
 	services := map[string]map[string]uint64{}
-	for _, metric := range metrics {
-		if service, ok := services[metric.Service]; !ok { // not found
-			services[metric.Service] = metric.Values
+	for _, stat := range stats {
+		if service, ok := services[stat.Service]; !ok { // not found
+			services[stat.Service] = stat.Values
 		} else {
-			for key, val := range metric.Values {
+			for key, val := range stat.Values {
 				if _, ok := service[key]; !ok {
 					service[key] = val
 				} else {
@@ -57,8 +55,8 @@ func getClusterMetricsInfo(ctx echo.Context) error {
 	return ctx.JSON(OK, &response{Success: true, Result: services})
 }
 
-// getNodeMetricsInfo return a node's metrics
-func getNodeMetricsInfo(ctx echo.Context) error {
+//getNodeStatsInfo return a node's stats
+func getNodeStatsInfo(ctx echo.Context) error {
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
 		return ctx.JSON(BadRequest,
@@ -69,7 +67,7 @@ func getNodeMetricsInfo(ctx echo.Context) error {
 	}
 
 	config := ctx.(*apiContext).config
-	hosts := config.MustString("condutor", "mongo")
+	hosts := config.MustString("meter", "mongo")
 	session, err := mgo.Dial(hosts)
 	if err != nil {
 		return ctx.JSON(ServerError,
@@ -96,31 +94,30 @@ func getNodeMetricsInfo(ctx echo.Context) error {
 				Message: fmt.Sprintf("cann't resolve node ip for %s", nodeName),
 			})
 	}
-
 	/*
 		sentelapi, err := newSentelApi(node.NodeIp)
 		if err != nil {
-			glog.Errorf("getNodeMetricsInfo:%v", err)
+			glog.Errorf("getNodeStatsInfo:%v", err)
 			return ctx.JSON(ServerError,
 				&response{
 					Success: false,
 					Message: err.Error(),
 				})
 		}
-				reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "metrics"})
-				if err != nil {
-					glog.Errorf("getNodeMetricsInfo:%v", err)
-					return ctx.JSON(ServerError,
-						&response{
-							Success: false,
-							Message: err.Error(),
-						})
-				}
+		reply, err := sentelapi.broker(&pb.BrokerRequest{Category: "stats"})
+		if err != nil {
+			glog.Errorf("getNodeStatusInfo:%v", err)
+			return ctx.JSON(ServerError,
+				&response{
+					Success: false,
+					Message: err.Error(),
+				})
+		}
 
-			return ctx.JSON(OK, &response{
-				Success: true,
-				Result:  reply.Metrics,
-			})
+		return ctx.JSON(OK, &response{
+			Success: true,
+			Result:  reply.Stats,
+		})
 	*/
 	return ctx.JSON(OK, nil)
 }

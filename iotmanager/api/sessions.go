@@ -16,12 +16,12 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cloustone/sentel/iotcenter/collector"
+	"github.com/cloustone/sentel/iotmanager/collector"
 	"github.com/labstack/echo"
 )
 
-// getNodeSubscriptions return a node's subscriptions
-func getNodeSubscriptions(ctx echo.Context) error {
+// getNodeSessions return a node's session
+func getNodeSessions(ctx echo.Context) error {
 	nodeName := ctx.Param("nodeName")
 	if nodeName == "" {
 		return ctx.JSON(BadRequest,
@@ -41,11 +41,11 @@ func getNodeSubscriptions(ctx echo.Context) error {
 				Message: err.Error(),
 			})
 	}
-	c := session.DB("iothub").C("subscriptions")
+	c := session.DB("iothub").C("sessions")
 	defer session.Close()
 
-	subs := []collector.Subscription{}
-	if err := c.Find(bson.M{"NodeName": nodeName}).Limit(100).Iter().All(&subs); err != nil {
+	sessions := collector.Session{}
+	if err := c.Find(bson.M{"NodeName": nodeName}).Limit(100).Iter().All(&sessions); err != nil {
 		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
@@ -54,12 +54,12 @@ func getNodeSubscriptions(ctx echo.Context) error {
 	}
 	return ctx.JSON(OK, &response{
 		Success: true,
-		Result:  subs,
+		Result:  sessions,
 	})
 }
 
-// getNodeSubscriptionsClientInfo return client info in node's subscriptions
-func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
+// getNodeSessionsClient return client infor in a node's sessions
+func getNodeSessionsClientInfo(ctx echo.Context) error {
 	nodeName := ctx.Param("nodeName")
 	clientId := ctx.Param("clientId")
 	if nodeName == "" || clientId == "" {
@@ -80,11 +80,11 @@ func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
 				Message: err.Error(),
 			})
 	}
-	c := session.DB("iothub").C("subscriptions")
+	c := session.DB("iothub").C("sessions")
 	defer session.Close()
 
-	subs := []collector.Subscription{}
-	if err := c.Find(bson.M{"NodeName": nodeName, "ClientId": clientId}).Limit(100).Iter().All(&subs); err != nil {
+	sessions := collector.Session{}
+	if err := c.Find(bson.M{"NodeName": nodeName, "ClientId": clientId}).Limit(100).Iter().All(&sessions); err != nil {
 		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
@@ -93,12 +93,12 @@ func getNodeSubscriptionsClientInfo(ctx echo.Context) error {
 	}
 	return ctx.JSON(OK, &response{
 		Success: true,
-		Result:  subs,
+		Result:  sessions,
 	})
 }
 
-// getClusterSubscriptionsInfo return client info in cluster subscriptions
-func getClusterSubscriptionsInfo(ctx echo.Context) error {
+// getClusterSessionInfor return client info in cluster session
+func getClusterSessionClientInfo(ctx echo.Context) error {
 	clientId := ctx.Param("clientId")
 	if clientId == "" {
 		return ctx.JSON(BadRequest,
@@ -118,11 +118,11 @@ func getClusterSubscriptionsInfo(ctx echo.Context) error {
 				Message: err.Error(),
 			})
 	}
-	c := session.DB("iothub").C("subscriptions")
+	c := session.DB("iothub").C("sessions")
 	defer session.Close()
 
-	subs := []collector.Subscription{}
-	if err := c.Find(bson.M{"ClientId": clientId}).Limit(100).Iter().All(&subs); err != nil {
+	sessions := collector.Session{}
+	if err := c.Find(bson.M{"ClientId": clientId}).Limit(100).Iter().All(&sessions); err != nil {
 		return ctx.JSON(NotFound,
 			&response{
 				Success: false,
@@ -131,6 +131,6 @@ func getClusterSubscriptionsInfo(ctx echo.Context) error {
 	}
 	return ctx.JSON(OK, &response{
 		Success: true,
-		Result:  subs,
+		Result:  sessions,
 	})
 }

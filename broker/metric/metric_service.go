@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/broker/base"
-	"github.com/cloustone/sentel/iotcenter/collector"
+	"github.com/cloustone/sentel/iotmanager/collector"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"

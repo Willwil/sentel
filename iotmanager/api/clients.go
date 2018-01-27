@@ -16,7 +16,7 @@ import (
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/cloustone/sentel/iotcenter/collector"
+	"github.com/cloustone/sentel/iotmanager/collector"
 	"github.com/labstack/echo"
 )
 

@@ -16,9 +16,9 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/iotcenter/api"
-	"github.com/cloustone/sentel/iotcenter/collector"
-	"github.com/cloustone/sentel/iotcenter/hub"
+	"github.com/cloustone/sentel/iotmanager/api"
+	"github.com/cloustone/sentel/iotmanager/collector"
+	"github.com/cloustone/sentel/iotmanager/hub"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
@@ -31,9 +31,9 @@ var (
 func main() {
 	flag.Parse()
 
-	glog.Info("Initializing iotcenter...")
+	glog.Info("Initializing iotmanager...")
 	config, _ := createConfig(*configFileName)
-	mgr, _ := service.NewServiceManager("iotcenter", config)
+	mgr, _ := service.NewServiceManager("iotmanager", config)
 	mgr.AddService(hub.ServiceFactory{})
 	mgr.AddService(api.ServiceFactory{})
 	mgr.AddService(collector.ServiceFactory{})
@@ -49,9 +49,9 @@ func createConfig(fileName string) (config.Config, error) {
 	m := os.Getenv("MONGO_HOST")
 	if k != "" && m != "" {
 		options := map[string]map[string]string{}
-		options["iotcenter"] = map[string]string{}
-		options["iotcenter"]["kafka"] = k
-		options["iotcenter"]["mongo"] = m
+		options["iotmanager"] = map[string]string{}
+		options["iotmanager"]["kafka"] = k
+		options["iotmanager"]["mongo"] = m
 		config.AddConfig(options)
 	}
 	return config, nil
