@@ -20,19 +20,20 @@ import (
 	"github.com/cloustone/sentel/pkg/message"
 )
 
-// Client
-type Client struct {
+// ClientTopic
+type ClientTopic struct {
+	TopicName string
 	db.Client
 }
 
-func (p *Client) Topic() string        { return TopicNameClient }
-func (p *Client) SetTopic(name string) {}
-func (p *Client) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *ClientTopic) Topic() string        { return TopicNameClient }
+func (p *ClientTopic) SetTopic(name string) {}
+func (p *ClientTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Client) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *ClientTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Client) handleTopic(c config.Config, ctx context.Context) error {
+func (p *ClientTopic) handleTopic(c config.Config, ctx context.Context) error {
 	db, err := db.NewManagerDB(c)
 	if err != nil {
 		return err

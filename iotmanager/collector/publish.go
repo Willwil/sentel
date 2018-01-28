@@ -21,17 +21,18 @@ import (
 )
 
 // Publish
-type Publish struct {
+type PublishTopic struct {
 	db.Publish
+	TopicName string
 }
 
-func (p *Publish) Topic() string        { return TopicNamePublish }
-func (p *Publish) SetTopic(name string) {}
-func (p *Publish) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *PublishTopic) Topic() string        { return TopicNamePublish }
+func (p *PublishTopic) SetTopic(name string) {}
+func (p *PublishTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Publish) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *PublishTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Publish) handleTopic(c config.Config, ctx context.Context) error {
+func (p *PublishTopic) handleTopic(c config.Config, ctx context.Context) error {
 	return nil
 }

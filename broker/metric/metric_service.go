@@ -20,6 +20,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/iotmanager/collector"
+	db "github.com/cloustone/sentel/iotmanager/database"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
@@ -116,11 +117,13 @@ func (p *metricService) reportMetric() {
 	for _, service := range services {
 		metrics := GetMetric(service)
 		collector.AsyncReport(p.config,
-			&collector.Metric{
+			&collector.MetricTopic{
 				TopicName: collector.TopicNameMetric,
-				NodeName:  p.name,
-				Service:   service,
-				Values:    metrics,
+				Metric: db.Metric{
+					NodeName: p.name,
+					Service:  service,
+					Values:   metrics,
+				},
 			})
 	}
 }
@@ -129,13 +132,15 @@ func (p *metricService) reportMetric() {
 func (p *metricService) reportKeepalive() {
 	info := base.GetBrokerStartupInfo()
 	collector.AsyncReport(p.config,
-		&collector.Node{
-			TopicName:  collector.TopicNameNode,
-			NodeId:     info.Id,
-			NodeIp:     info.Ip,
-			CreatedAt:  info.CreatedAt,
-			UpdatedAt:  time.Now(),
-			NodeStatus: "started",
+		&collector.NodeTopic{
+			TopicName: collector.TopicNameNode,
+			Node: db.Node{
+				NodeId:     info.Id,
+				NodeIp:     info.Ip,
+				CreatedAt:  info.CreatedAt,
+				UpdatedAt:  time.Now(),
+				NodeStatus: "started",
+			},
 		})
 }
 

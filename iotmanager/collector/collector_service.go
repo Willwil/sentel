@@ -15,7 +15,6 @@ package collector
 import (
 	"time"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -60,19 +59,19 @@ func (p *collectorService) Initialize() error { return nil }
 func (p *collectorService) CreateMessage(topic string) message.Message {
 	switch topic {
 	case TopicNameNode:
-		return &Node{TopicName: topic}
+		return &NodeTopic{TopicName: topic}
 	case TopicNameClient:
-		return &Client{db.Client{TopicName: topic}}
+		return &ClientTopic{TopicName: topic}
 	case TopicNameSession:
-		return &Session{db.Session{TopicName: topic}}
+		return &SessionTopic{TopicName: topic}
 	case TopicNameSubscription:
-		return &Subscription{TopicName: topic}
+		return &SubscriptionTopic{TopicName: topic}
 	case TopicNamePublish:
-		return &Publish{db.Publish{TopicName: topic}}
+		return &PublishTopic{TopicName: topic}
 	case TopicNameMetric:
-		return &Metric{TopicName: topic}
+		return &MetricTopic{TopicName: topic}
 	case TopicNameStats:
-		return &Stats{TopicName: topic}
+		return &StatsTopic{TopicName: topic}
 	default:
 		return nil
 	}

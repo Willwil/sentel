@@ -21,16 +21,19 @@ import (
 )
 
 // Stat
-type Stats db.Stats
+type StatsTopic struct {
+	db.Stats
+	TopicName string
+}
 
-func (p *Stats) Topic() string        { return TopicNameStats }
-func (p *Stats) SetTopic(name string) {}
-func (p *Stats) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *StatsTopic) Topic() string        { return TopicNameStats }
+func (p *StatsTopic) SetTopic(name string) {}
+func (p *StatsTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Stats) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *StatsTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Stats) handleTopic(c config.Config, ctx context.Context) error {
+func (p *StatsTopic) handleTopic(c config.Config, ctx context.Context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
 	case ObjectActionDelete:

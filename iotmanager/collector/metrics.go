@@ -20,17 +20,20 @@ import (
 	"github.com/cloustone/sentel/pkg/message"
 )
 
-// Metric
-type Metric db.Metric
+// MetricTopic
+type MetricTopic struct {
+	db.Metric
+	TopicName string
+}
 
-func (p *Metric) Topic() string        { return TopicNameMetric }
-func (p *Metric) SetTopic(name string) {}
-func (p *Metric) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *MetricTopic) Topic() string        { return TopicNameMetric }
+func (p *MetricTopic) SetTopic(name string) {}
+func (p *MetricTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Metric) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *MetricTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Metric) handleTopic(c config.Config, ctx context.Context) error {
+func (p *MetricTopic) handleTopic(c config.Config, ctx context.Context) error {
 	dbc, err := db.NewManagerDB(c)
 	if err != nil {
 		return err
@@ -39,7 +42,7 @@ func (p *Metric) handleTopic(c config.Config, ctx context.Context) error {
 
 	switch p.Action {
 	case ObjectActionUpdate:
-		// dbc.UpdateMetric(p)
+		// dbc.UpdateMetricTopic(p)
 		// TODO:save history data
 	case ObjectActionDelete:
 	case ObjectActionRegister:

@@ -20,17 +20,20 @@ import (
 	"github.com/cloustone/sentel/pkg/message"
 )
 
-// Node
-type Node db.Node
+// NodeTopic
+type NodeTopic struct {
+	db.Node
+	TopicName string
+}
 
-func (p *Node) Topic() string        { return TopicNameNode }
-func (p *Node) SetTopic(name string) {}
-func (p *Node) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *NodeTopic) Topic() string        { return TopicNameNode }
+func (p *NodeTopic) SetTopic(name string) {}
+func (p *NodeTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Node) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *NodeTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Node) handleTopic(c config.Config, ctx context.Context) error {
+func (p *NodeTopic) handleTopic(c config.Config, ctx context.Context) error {
 	// update object status according to action
 	switch p.Action {
 	case ObjectActionRegister:

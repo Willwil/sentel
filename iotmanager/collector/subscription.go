@@ -21,16 +21,19 @@ import (
 )
 
 // Subscription
-type Subscription db.Subscription
+type SubscriptionTopic struct {
+	db.Subscription
+	TopicName string
+}
 
-func (p *Subscription) Topic() string        { return TopicNameSubscription }
-func (p *Subscription) SetTopic(name string) {}
-func (p *Subscription) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *SubscriptionTopic) Topic() string        { return TopicNameSubscription }
+func (p *SubscriptionTopic) SetTopic(name string) {}
+func (p *SubscriptionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Subscription) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *SubscriptionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Subscription) handleTopic(c config.Config, ctx context.Context) error {
+func (p *SubscriptionTopic) handleTopic(c config.Config, ctx context.Context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
 	case ObjectActionDelete:

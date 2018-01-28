@@ -20,18 +20,19 @@ import (
 	"github.com/cloustone/sentel/pkg/message"
 )
 
-type Session struct {
+type SessionTopic struct {
 	db.Session
+	TopicName string
 }
 
-func (p *Session) Topic() string        { return TopicNameSession }
-func (p *Session) SetTopic(name string) {}
-func (p *Session) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (p *SessionTopic) Topic() string        { return TopicNameSession }
+func (p *SessionTopic) SetTopic(name string) {}
+func (p *SessionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *Session) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *SessionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Session) handleTopic(c config.Config, ctx context.Context) error {
+func (p *SessionTopic) handleTopic(c config.Config, ctx context.Context) error {
 	dbc, err := db.NewManagerDB(c)
 	if err != nil {
 		return err
