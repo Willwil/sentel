@@ -60,12 +60,8 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Retrieve tenant and product
 	tenant := c.MustString("tenant")
-	khosts, err := c.String("kafka")
-	if err != nil || khosts == "" {
-		return nil, errors.New("message server is not rightly configed")
-	}
-	consumer, err1 := message.NewConsumer(khosts, base.GetBrokerId())
-	producer, err2 := message.NewProducer(khosts, base.GetBrokerId(), true)
+	consumer, err1 := message.NewConsumer(c, base.GetBrokerId())
+	producer, err2 := message.NewProducer(c, base.GetBrokerId(), true)
 	if err1 != nil || err2 != nil {
 		return nil, errors.New("message client endpoint failed")
 	}

@@ -43,8 +43,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	session.Close()
 
 	// kafka
-	khosts := c.MustString("kafka")
-	consumer, _ := message.NewConsumer(khosts, "iotmanager")
+	consumer, _ := message.NewConsumer(c, "iotmanager")
 	return &collectorService{
 		config:   c,
 		consumer: consumer,

@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -27,7 +28,11 @@ type kafkaProducer struct {
 	asyncProducer sarama.AsyncProducer
 }
 
-func newKafkaProducer(khosts string, clientId string, sync bool) (Producer, error) {
+func newKafkaProducer(c config.Config, clientId string, sync bool) (Producer, error) {
+	khosts, err := c.String("kafka")
+	if err != nil || khosts == "" {
+		return nil, errors.New("invalid kafka setting")
+	}
 	p := &kafkaProducer{
 		khosts:   khosts,
 		clientId: clientId,

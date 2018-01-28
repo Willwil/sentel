@@ -28,11 +28,7 @@ type topicLoader struct {
 }
 
 func newTopicLoader(c config.Config) (Loader, error) {
-	hosts, err := c.String("message_server")
-	if err != nil || hosts == "" {
-		return nil, errors.New("invalid message server setting")
-	}
-	producer, err := message.NewProducer(hosts, "", true)
+	producer, err := message.NewProducer(c, "", true)
 	if err != nil {
 		return nil, err
 	}

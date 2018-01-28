@@ -62,8 +62,7 @@ const (
 
 // newRuleExecutor create a engine according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
-	khosts := c.MustString("kafka")
-	consumer, _ := message.NewConsumer(khosts, "conductorRuleExecutor")
+	consumer, _ := message.NewConsumer(c, "conductorRuleExecutor")
 	return &ruleExecutor{
 		productId: productId,
 		config:    c,

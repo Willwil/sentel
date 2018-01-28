@@ -17,7 +17,6 @@ import (
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
-	"github.com/golang/glog"
 )
 
 const (
@@ -43,19 +42,9 @@ type topicHandler interface {
 }
 
 func SyncReport(c config.Config, msg message.Message) error {
-	hosts := "localhost:9092"
-	if h, err := c.String("kafka"); err != nil {
-		glog.Warningf("kafka is not configured, using localhost:9092")
-	} else {
-		hosts = h
-	}
-	return message.PostMessage(hosts, msg)
+	return message.PostMessage(c, msg)
 }
 
 func AsyncReport(c config.Config, msg message.Message) error {
-	hosts, err := c.String("kafka")
-	if err != nil {
-		return err
-	}
-	return message.PostMessage(hosts, msg)
+	return message.PostMessage(c, msg)
 }

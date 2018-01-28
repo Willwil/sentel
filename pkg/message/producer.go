@@ -11,17 +11,19 @@
 //  under the License.
 package message
 
+import "github.com/cloustone/sentel/pkg/config"
+
 type Producer interface {
 	SendMessage(msg Message) error
 	Close()
 }
 
-func NewProducer(khosts string, clientId string, sync bool) (Producer, error) {
-	return newKafkaProducer(khosts, clientId, sync)
+func NewProducer(c config.Config, clientId string, sync bool) (Producer, error) {
+	return newKafkaProducer(c, clientId, sync)
 }
 
-func PostMessage(khosts string, msg Message) error {
-	if producer, err := NewProducer(khosts, "", false); err != nil {
+func PostMessage(c config.Config, msg Message) error {
+	if producer, err := NewProducer(c, "", false); err != nil {
 		return err
 	} else {
 		defer producer.Close()
@@ -29,8 +31,8 @@ func PostMessage(khosts string, msg Message) error {
 	}
 }
 
-func SendMessage(khosts string, msg Message) error {
-	if producer, err := NewProducer(khosts, "", true); err != nil {
+func SendMessage(c config.Config, msg Message) error {
+	if producer, err := NewProducer(c, "", true); err != nil {
 		return err
 	} else {
 		defer producer.Close()

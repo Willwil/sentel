@@ -43,15 +43,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 func (p *watcherService) Name() string { return "iothub" }
 
 func (p *watcherService) Initialize() error {
-	khosts, err := p.config.String("zookeeper")
-	if err != nil || khosts == "" {
-		return errors.New("invalid zookeeper hosts option")
-	}
-	discovery, derr := sd.New(sd.Option{
-		Backend:      sd.BackendZookeeper,
-		Hosts:        khosts,
-		ServicesPath: "/iotservices",
-	})
+	discovery, derr := sd.New(p.config)
 	if derr != nil {
 		return errors.New("service backend initialization failed")
 	}

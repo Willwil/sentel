@@ -13,7 +13,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -45,11 +44,7 @@ type ServiceFactory struct{}
 
 // New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	kafka, err := c.String("kafka")
-	if err != nil || kafka == "" {
-		return nil, errors.New("message service is not rightly configed")
-	}
-	consumer, _ := message.NewConsumer(kafka, "conductor")
+	consumer, _ := message.NewConsumer(c, "conductor")
 	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},

@@ -50,26 +50,13 @@ const SERVICE_NAME = "iotmanager"
 type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
-	khosts, err := c.String("zookeeper")
-	if err != nil || khosts == "" {
-		return nil, errors.New("invalid zookeeper hosts option")
-	}
 	clustermgr, cerr := cluster.New(c)
 	dbconn, nerr := db.NewIotmanagerDB(c)
-	discovery, derr := sd.New(sd.Option{
-		Backend:      sd.BackendZookeeper,
-		Hosts:        khosts,
-		ServicesPath: "/iotservices",
-	})
+	discovery, derr := sd.New(c)
 	if cerr != nil || nerr != nil || derr != nil {
 		return nil, errors.New("service backend initialization failed")
 	}
-	// initialize message consumer
-	khosts, err = c.String("kafka")
-	if err != nil || khosts == "" {
-		return nil, errors.New("message service is not rightly configed")
-	}
-	consumer, _ := message.NewConsumer(khosts, "iotmanager")
+	consumer, _ := message.NewConsumer(c, "iotmanager")
 	clustermgr.SetServiceDiscovery(discovery)
 	return &schedulerService{
 		config:      c,

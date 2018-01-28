@@ -48,11 +48,6 @@ func SendMessageToDevice(ctx echo.Context) error {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	c := getConfig(ctx)
-	khosts, err := c.String("kafka")
-	if err != nil || khosts == "" {
-		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
-	}
-	// Make topic message
 	e := event.TopicPublishEvent{
 		Type:    event.TopicPublish,
 		Topic:   req.Topic,
@@ -63,7 +58,7 @@ func SendMessageToDevice(ctx echo.Context) error {
 	topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
 	value, _ := event.Encode(&e, event.JSONCodec)
 	msg := message.Broker{TopicName: topic, Payload: value}
-	if err := message.PostMessage(khosts, &msg); err != nil {
+	if err := message.PostMessage(c, &msg); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	return ctx.JSON(OK, apiResponse{})

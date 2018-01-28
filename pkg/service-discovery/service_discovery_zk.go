@@ -14,39 +14,49 @@ package sd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
 	"github.com/samuel/go-zookeeper/zk"
 )
 
 type serviceDisZK struct {
-	option    Option
+	config    config.Config
 	conn      *zk.Conn
 	waitgroup sync.WaitGroup
 	quitChan  chan interface{}
 	handler   WatcherHandlerFunc
+	rootPath  string
 }
 
-func newServiceDiscoveryZK(opt Option) (ServiceDiscovery, error) {
-	conn, _, err := zk.Connect(strings.Split(opt.Hosts, ","), time.Second*2)
+func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
+	khosts, err1 := c.StringWithSection("service-discovery", "hosts")
+	rootPath, err2 := c.StringWithSection("sevice-discovery", "root_path")
+	if err1 != nil || err2 != nil || khosts == "" || rootPath == "" {
+		return nil, errors.New("invalid service-discovery config")
+	}
+
+	conn, _, err := zk.Connect(strings.Split(khosts, ","), time.Second*2)
 	if err != nil {
-		return nil, fmt.Errorf("service discovery can not connect with zk:%s", opt.Hosts)
+		return nil, fmt.Errorf("service discovery can not connect with zk:%s", khosts)
 	}
 	return &serviceDisZK{
-		option:    opt,
+		config:    c,
 		waitgroup: sync.WaitGroup{},
 		quitChan:  make(chan interface{}, 1),
 		conn:      conn,
+		rootPath:  rootPath,
 	}, nil
 }
 
 func (p *serviceDisZK) RegisterService(s Service) error {
-	path := fmt.Sprintf("%s/%s", p.option.ServicesPath, s.Name)
+	path := fmt.Sprintf("%s/%s", p.rootPath, s.Name)
 	buf, err := json.Marshal(&s)
 	if err != nil {
 		return fmt.Errorf("service '%s' data marshal failed", s.Name)
@@ -57,7 +67,7 @@ func (p *serviceDisZK) RegisterService(s Service) error {
 }
 
 func (p *serviceDisZK) RemoveService(s Service) {
-	path := fmt.Sprintf("%s/%s", p.option.ServicesPath, s.Name)
+	path := fmt.Sprintf("%s/%s", p.rootPath, s.Name)
 	p.conn.Delete(path, 0)
 
 }

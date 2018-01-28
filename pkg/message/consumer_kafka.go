@@ -12,11 +12,13 @@
 package message
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/Shopify/sarama"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 )
 
@@ -39,7 +41,11 @@ type subscriber struct {
 	quitChan   chan interface{}
 }
 
-func newKafkaConsumer(khosts string, clientId string) (Consumer, error) {
+func newKafkaConsumer(c config.Config, clientId string) (Consumer, error) {
+	khosts, err := c.String("kafka")
+	if err != nil || khosts == "" {
+		return nil, errors.New("message service is not rightly configed")
+	}
 	return &kafkaConsumer{
 		khosts:      khosts,
 		clientId:    clientId,

@@ -11,6 +11,8 @@
 //  under the License.
 package message
 
+import "github.com/cloustone/sentel/pkg/config"
+
 type MessageHandlerFunc func(msg Message, ctx interface{})
 
 type MessageFactory interface {
@@ -24,8 +26,8 @@ type Consumer interface {
 	SetMessageFactory(factory MessageFactory)
 }
 
-func NewConsumer(khosts string, clientId string) (Consumer, error) {
-	consumer, err := newKafkaConsumer(khosts, clientId)
+func NewConsumer(c config.Config, clientId string) (Consumer, error) {
+	consumer, err := newKafkaConsumer(c, clientId)
 	if consumer != nil {
 		consumer.SetMessageFactory(&builtinFactory{})
 	}
