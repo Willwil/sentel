@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	dbnameIotmanager = "iotmanager"
+	DBNAME = "iotmanager"
 )
 
 // Node
@@ -114,26 +114,43 @@ type Publish struct {
 
 type ManagerDB interface {
 	// Node
+	// GetAllNodes retrieve all broker nodes info in cluster
 	GetAllNodes() []Node
+	// GetNode retrieve specified node info
 	GetNode(nodeId string) (Node, error)
+	// GetNodeClients retrieve all clients info on specified broker node
 	GetNodeClients(nodeId string) []Client
+	// GetNodeClients retrieve clients info on specified broker node in duration
 	GetNodesClientWithTimeScope(nodeId string, from time.Time, to time.Time) []Client
+	// GetClientWithNode return specified client info on specified broker node
 	GetClientWithNode(nodeId string, clientId string) (Client, error)
+
 	// Session
+	// GetSession return client's session info
 	GetSession(clientId string) (Session, error)
+	// UpdateSession update session info
 	UpdateSession(s Session) error
+	// GetNodeSessions retrieve all sessions on specified broker node
 	GetNodeSessions(nodeId string) []Session
+	// GetSessionWithNode retrieve specifed client session on specifed broker node
 	GetSessionWithNode(nodeId string, clientId string) (Session, error)
+
 	// Tenants
+	// GetAllTenants retrieve all tenants in cluster
 	GetAllTenants() []Tenant
+	// AddTenant add tenant into db
 	AddTenant(t *Tenant) error
+	// RemoveTenant remove tenant from db
 	RemoveTenant(tenantId string) error
+
 	// Product
 	AddProduct(tenantId string, productId string) error
 	RemoveProduct(tenantId string, productId string) error
+
 	// Client
 	GetClient(clientId string) (Client, error)
 	UpdateClient(client Client) error
+
 	// Metrics
 	GetMetrics() []Metric
 	GetNodeMetric(nodeId string) (Metric, error)

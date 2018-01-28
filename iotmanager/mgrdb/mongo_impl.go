@@ -45,7 +45,7 @@ func newMgrdbMongo(c config.Config) (ManagerDB, error) {
 	return &mgrdbMongo{
 		config:  c,
 		dbconn:  dbc,
-		session: dbc.DB("iotmanager"),
+		session: dbc.DB(DBNAME),
 	}, nil
 }
 
