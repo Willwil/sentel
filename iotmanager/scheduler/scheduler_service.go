@@ -50,13 +50,22 @@ const SERVICE_NAME = "iotmanager"
 type ServiceFactory struct{}
 
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
-	clustermgr, cerr := cluster.New(c)
-	dbconn, nerr := db.NewIotmanagerDB(c)
-	discovery, derr := sd.New(c)
-	if cerr != nil || nerr != nil || derr != nil {
-		return nil, errors.New("service backend initialization failed")
+	clustermgr, err := cluster.New(c)
+	if err != nil {
+		return nil, err
 	}
-	consumer, _ := message.NewConsumer(c, "iotmanager")
+	dbconn, err := db.NewIotmanagerDB(c)
+	if err != nil {
+		return nil, err
+	}
+	discovery, err := sd.New(c)
+	if err != nil {
+		return nil, err
+	}
+	consumer, err := message.NewConsumer(c, "iotmanager")
+	if err != nil {
+		return nil, err
+	}
 	clustermgr.SetServiceDiscovery(discovery)
 	return &schedulerService{
 		config:      c,

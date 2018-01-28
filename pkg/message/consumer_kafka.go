@@ -78,7 +78,7 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 		consumer:   consumer,
 		clientId:   clientId,
 		pconsumers: []sarama.PartitionConsumer{},
-		quitChan:   make(chan interface{}),
+		quitChan:   make(chan interface{}, 1),
 	}
 	return nil
 }

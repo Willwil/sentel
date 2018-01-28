@@ -37,7 +37,7 @@ type serviceDisZK struct {
 
 func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
 	khosts, err1 := c.StringWithSection("service-discovery", "hosts")
-	rootPath, err2 := c.StringWithSection("sevice-discovery", "root_path")
+	rootPath, err2 := c.StringWithSection("service-discovery", "services_path")
 	if err1 != nil || err2 != nil || khosts == "" || rootPath == "" {
 		return nil, errors.New("invalid service-discovery config")
 	}

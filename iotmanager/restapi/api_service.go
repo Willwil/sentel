@@ -142,7 +142,7 @@ func (p *apiService) Start() error {
 	p.waitgroup.Add(1)
 	go func(p *apiService) {
 		defer p.waitgroup.Done()
-		addr := p.config.MustStringWithSection("api", "listen")
+		addr := p.config.MustStringWithSection(SERVICE_NAME, "listen")
 		p.echo.Start(addr)
 	}(p)
 	return nil

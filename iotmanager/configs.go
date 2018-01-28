@@ -25,11 +25,16 @@ var defaultConfigs = config.M{
 		"network":         "sentel-front",
 	},
 	"collector": {
-		"listen": "localhost:",
+		"listen": "localhost:8081",
 	},
 	"restapi": {
 		"listen":          ":8080",
 		"loglevel":        "debug",
 		"connect_timeout": 2,
+	},
+	"service-discovery": {
+		"hosts":         "localhost:27017",
+		"backend":       "zookeeper",
+		"services_path": "/iotservices",
 	},
 }
