@@ -32,7 +32,7 @@ func main() {
 	flag.Parse()
 
 	glog.Info("Initializing iotmanager...")
-	config, _ := createConfig(*configFileName)
+	config := createConfig(*configFileName)
 	mgr, _ := service.NewServiceManager("iotmanager", config)
 	mgr.AddService(scheduler.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
@@ -40,16 +40,16 @@ func main() {
 	glog.Fatal(mgr.RunAndWait())
 }
 
-func createConfig(fileName string) (config.Config, error) {
-	config := config.New("iotmanager")
-	config.AddConfig(defaultConfigs)
-	config.AddConfigFile(fileName)
+func createConfig(fileName string) config.Config {
+	c := config.New("iotmanager")
+	c.AddConfig(defaultConfigs)
+	c.AddConfigFile(fileName)
 
 	k := os.Getenv("KAFKA_HOST")
 	m := os.Getenv("MONGO_HOST")
 	if k != "" && m != "" {
-		config.AddConfigItem("kafka", k)
-		config.AddConfigItem("mongo", m)
+		c.AddConfigItem("kafka", k)
+		c.AddConfigItem("mongo", m)
 	}
-	return config, nil
+	return c
 }

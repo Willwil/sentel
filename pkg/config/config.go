@@ -99,7 +99,9 @@ func (c *config) AddConfigItemWithSection(section string, key string, value inte
 	if _, found := c.sections[section]; !found {
 		c.sections[section] = make(map[string]interface{})
 	}
-	c.sections[section][key] = value
+	if key != "" && value != nil {
+		c.sections[section][key] = value
+	}
 }
 
 func (c *config) AddConfigItem(key string, value interface{}) {
