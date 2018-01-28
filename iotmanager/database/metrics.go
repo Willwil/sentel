@@ -20,12 +20,11 @@ import (
 
 // Metric
 type Metric struct {
-	TopicName  string
-	Action     string            `json:"action"`
-	NodeName   string            `json:"nodeName"`
-	Service    string            `json:"service"`
-	Values     map[string]uint64 `json:"values"`
-	UpdateTime time.Time         `json:"updateTime"`
+	Action     string            `json:"action" bson:"Action"`
+	NodeName   string            `json:"nodeName" bson:"NodeName"`
+	Service    string            `json:"service" bson:"Service"`
+	Values     map[string]uint64 `json:"values" bson:"Values"`
+	UpdateTime time.Time         `json:"updateTime" bson:"UpdateTime"`
 }
 
 func (p *ManagerDB) GetMetrics() []Metric {

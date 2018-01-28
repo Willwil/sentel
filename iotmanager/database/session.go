@@ -16,18 +16,17 @@ import "gopkg.in/mgo.v2/bson"
 
 // Session
 type Session struct {
-	TopicName          string
-	Action             string `json:"action"`
-	ClientId           string `json:"clientId"`
-	CleanSession       bool   `json:"cleanSession"`
-	MessageMaxInflight uint64 `json:"messageMaxInflight"`
-	MessageInflight    uint64 `json:"messageInflight"`
-	MessageInQueue     uint64 `json:"messageInQueue"`
-	MessageDropped     uint64 `json:"messageDropped"`
-	AwaitingRel        uint64 `json:"awaitingRel"`
-	AwaitingComp       uint64 `json:"awaitingComp"`
-	AwaitingAck        uint64 `json:"awaitingAck"`
-	CreatedAt          string `json:"createdAt"`
+	Action             string `json:"action" bson:"Action"`
+	ClientId           string `json:"clientId" bson:"ClientId"`
+	CleanSession       bool   `json:"cleanSession" bson:"CleanSession"`
+	MessageMaxInflight uint64 `json:"messageMaxInflight" bson:"MessageMaxInflight"`
+	MessageInflight    uint64 `json:"messageInflight" bson:"MessageInflight"`
+	MessageInQueue     uint64 `json:"messageInQueue" bson:"MessageInQueue"`
+	MessageDropped     uint64 `json:"messageDropped" bson:"MessageDropped"`
+	AwaitingRel        uint64 `json:"awaitingRel" bson:"AwaitingRel"`
+	AwaitingComp       uint64 `json:"awaitingComp" bson:"AwaitingComp"`
+	AwaitingAck        uint64 `json:"awaitingAck" bson:"AwaitingAck"`
+	CreatedAt          string `json:"createdAt" bson:"CreatedAt"`
 }
 
 func (p *ManagerDB) GetSession(clientId string) (Session, error) {

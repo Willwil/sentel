@@ -16,7 +16,6 @@ import "gopkg.in/mgo.v2/bson"
 
 // Client
 type Client struct {
-	TopicName       string
 	ClientId        string `json:"clientId" bson:"ClientId"`
 	UserName        string `json:"userName" bson:"UserName"`
 	IpAddress       string `json:"ipAddress" bson:"IpAddress"`

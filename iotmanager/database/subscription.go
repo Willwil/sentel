@@ -16,10 +16,9 @@ import "time"
 
 // Subscription
 type Subscription struct {
-	TopicName       string
-	ClientId        string    `json:"clientId"`
-	SubscribedTopic string    `json:"topic"`
-	Qos             int       `json:"qos"`
-	CreatedAt       time.Time `json:"createdAt"`
-	Action          string    `json:"action"`
+	ClientId        string    `json:"clientId" bson:"ClientId"`
+	SubscribedTopic string    `json:"topic" bson:"Topic"`
+	Qos             int       `json:"qos" bson:"Qos"`
+	CreatedAt       time.Time `json:"createdAt" bson:"CreatedAt"`
+	Action          string    `json:"action" bson:"Action"`
 }

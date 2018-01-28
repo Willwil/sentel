@@ -14,8 +14,7 @@ package db
 
 // Publish
 type Publish struct {
-	TopicName       string
-	ClientId        string `json:"clientId"`
-	SubscribedTopic string `json:"topic"`
-	ProductId       string `json:"product"`
+	ClientId        string `json:"clientId" bson:"ClientId"`
+	SubscribedTopic string `json:"topic" bson:"SubscribedTopic"`
+	ProductId       string `json:"product" bson:"ProductId"`
 }

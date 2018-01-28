@@ -16,10 +16,9 @@ import "time"
 
 // Stat
 type Stats struct {
-	TopicName  string
-	NodeName   string            `json:"nodeName"`
-	Service    string            `json:"service"`
-	Action     string            `json:"action"`
-	UpdateTime time.Time         `json:"updateTime"`
-	Values     map[string]uint64 `json:"values"`
+	NodeName   string            `json:"nodeName" bson:"NodeName"`
+	Service    string            `json:"service" bson:"Service"`
+	Action     string            `json:"action" bson:"Action"`
+	UpdateTime time.Time         `json:"updateTime" bson:"UpdateTime"`
+	Values     map[string]uint64 `json:"values", bson:"Values"`
 }

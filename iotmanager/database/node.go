@@ -20,7 +20,6 @@ import (
 
 // Node
 type Node struct {
-	TopicName  string
 	NodeId     string    `json:"nodeId" bson:"NodeId"`
 	NodeIp     string    `json:"nodeIp" bson:"NodeIp"`
 	Version    string    `json:"version" bson:"Version"`
