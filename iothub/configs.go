@@ -23,7 +23,7 @@ var defaultConfigs = config.M{
 		"root_path": "/iotservices",
 	},
 	"service-discovery": {
-		"hosts":         "localhost:27017",
+		"hosts":         "localhost:2181",
 		"backend":       "zookeeper",
 		"services_path": "/iotservices",
 	},

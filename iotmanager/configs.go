@@ -33,7 +33,7 @@ var defaultConfigs = config.M{
 		"connect_timeout": 2,
 	},
 	"service-discovery": {
-		"hosts":         "localhost:27017",
+		"hosts":         "localhost:2181",
 		"backend":       "zookeeper",
 		"services_path": "/iotservices",
 	},
