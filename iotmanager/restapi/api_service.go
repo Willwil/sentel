@@ -529,3 +529,51 @@ func removeProduct(ctx echo.Context) error {
 	}
 	return ctx.JSON(OK, response{})
 }
+
+// Routes
+
+// getClusterRoutes return cluster's routes table
+func getClusterRoutes(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// getTopicRoutes return a topic's route
+func getTopicRoutes(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Publish & Subscribe
+
+// publishMqttMessage will publish a mqtt message
+func publishMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// subscribeMqttMessage subscribe a mqtt topic
+func subscribeMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// unsubscribeMqttMessage unsubsribe mqtt topic
+func unsubscribeMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Plugins
+
+// getNodePluginsInfo return plugins info for a node
+func getNodePluginsInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Services
+
+// getClusterServicesInfo return all services infor in cluster
+func getClusterServicesInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// getNodeServicesInfo return a node's service info
+func getNodeServicesInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}

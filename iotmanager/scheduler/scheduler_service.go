@@ -20,7 +20,7 @@ import (
 	"sync"
 	"time"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/cluster"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -33,10 +33,10 @@ type schedulerService struct {
 	config      config.Config
 	waitgroup   sync.WaitGroup
 	clustermgr  cluster.ClusterManager
-	tenants     map[string]*db.Tenant
+	tenants     map[string]*mgrdb.Tenant
 	mutex       sync.Mutex
 	consumer    message.Consumer
-	dbconn      *db.ManagerDB
+	dbconn      mgrdb.ManagerDB
 	recoverChan chan interface{}
 	quitChan    chan interface{}
 }
@@ -54,7 +54,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbconn, err := db.NewManagerDB(c)
+	dbconn, err := mgrdb.New(c)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		clustermgr:  clustermgr,
-		tenants:     make(map[string]*db.Tenant),
+		tenants:     make(map[string]*mgrdb.Tenant),
 		mutex:       sync.Mutex{},
 		dbconn:      dbconn,
 		recoverChan: make(chan interface{}),
@@ -141,7 +141,7 @@ func (p *schedulerService) recoverStartup() {
 	}
 	p.clustermgr.CreateNetwork(network)
 
-	retries := []*db.Tenant{}
+	retries := []*mgrdb.Tenant{}
 	for tid, t := range p.tenants {
 		if t.ServiceState != cluster.ServiceStateNone {
 			if _, err := p.clustermgr.IntrospectService(tid); err != nil {
@@ -231,13 +231,13 @@ func (p *schedulerService) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
-		p.tenants[tid] = &db.Tenant{
+		p.tenants[tid] = &mgrdb.Tenant{
 			TenantId:     tid,
 			CreatedAt:    time.Now(),
-			Products:     make(map[string]*db.Product),
+			Products:     make(map[string]*mgrdb.Product),
 			ServiceState: cluster.ServiceStateNone,
 		}
-		p.dbconn.CreateTenant(p.tenants[tid])
+		p.dbconn.AddTenant(p.tenants[tid])
 		return nil
 	}
 	return fmt.Errorf("tenant '%s' already existed in iotmanager", tid)
@@ -303,9 +303,9 @@ func (p *schedulerService) createProduct(tid string, pid string, replicas int32)
 		t.ServiceId = serviceId
 		t.ServiceName = tid
 	}
-	product := &db.Product{ProductId: pid, CreatedAt: time.Now()}
+	product := &mgrdb.Product{ProductId: pid, CreatedAt: time.Now()}
 	t.Products[pid] = product
-	p.dbconn.CreateProduct(tid, pid)
+	p.dbconn.AddProduct(tid, pid)
 	return t.ServiceId, nil
 }
 

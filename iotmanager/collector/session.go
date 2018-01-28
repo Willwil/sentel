@@ -15,14 +15,14 @@ package collector
 import (
 	"context"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 type SessionTopic struct {
-	db.Session
 	TopicName string
+	mgrdb.Session
 }
 
 func (p *SessionTopic) Topic() string        { return TopicNameSession }
@@ -33,7 +33,7 @@ func (p *SessionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *SessionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *SessionTopic) handleTopic(c config.Config, ctx context.Context) error {
-	dbc, err := db.NewManagerDB(c)
+	dbc, err := mgrdb.New(c)
 	if err != nil {
 		return err
 	}

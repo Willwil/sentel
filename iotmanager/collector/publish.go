@@ -15,15 +15,15 @@ package collector
 import (
 	"context"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Publish
 type PublishTopic struct {
-	db.Publish
 	TopicName string
+	mgrdb.Publish
 }
 
 func (p *PublishTopic) Topic() string        { return TopicNamePublish }
