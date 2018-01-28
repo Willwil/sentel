@@ -80,7 +80,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		protocol:      mqttProtocolInvalid,
 		msgState:      mqttMsgStateQueued,
 		aliveTimer:    nil,
-		availableChan: make(chan int, 1),
+		availableChan: make(chan int),
 		packetChan:    make(chan *mqttPacket),
 		errorChan:     make(chan error),
 		queue:         nil,
@@ -462,11 +462,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		}(p)
 	}
 
-	if p.cleanSession == 0 {
-		p.availableChan <- 1
-	}
-
-	return nil
+	return p.handleDataAvailableNotification()
 }
 
 // handleDisconnect handle disconnect packet
