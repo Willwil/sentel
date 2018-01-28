@@ -14,22 +14,14 @@ package collector
 
 import (
 	"context"
-	"time"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Stat
-type Stats struct {
-	TopicName  string
-	NodeName   string            `json:"nodeName"`
-	Service    string            `json:"service"`
-	Action     string            `json:"action"`
-	UpdateTime time.Time         `json:"updateTime"`
-	Values     map[string]uint64 `json:"values"`
-}
+type Stats db.Stats
 
 func (p *Stats) Topic() string        { return TopicNameStats }
 func (p *Stats) SetTopic(name string) {}
@@ -38,42 +30,9 @@ func (p *Stats) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Stats) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Stats) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Session.Close()
-
+func (p *Stats) handleTopic(c config.Config, ctx context.Context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
-		// update newest stats for the node
-		c := db.C("stats")
-		node := Node{}
-		if err := c.Find(bson.M{"NodeName": p.NodeName}).One(&node); err != nil { // not found
-			c.Insert(&Stats{
-				NodeName:   p.NodeName,
-				Service:    p.Service,
-				Values:     p.Values,
-				UpdateTime: time.Now(),
-			})
-		} else {
-			c.Update(&node,
-				&Stats{
-					NodeName:   p.NodeName,
-					Service:    p.Service,
-					Values:     p.Values,
-					UpdateTime: time.Now(),
-				})
-		}
-		// save history data
-		c = db.C("stats_history")
-		c.Insert(&Stats{
-			NodeName:   p.NodeName,
-			Service:    p.Service,
-			Values:     p.Values,
-			UpdateTime: time.Now(),
-		})
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

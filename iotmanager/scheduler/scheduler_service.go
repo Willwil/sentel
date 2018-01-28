@@ -36,7 +36,7 @@ type schedulerService struct {
 	tenants     map[string]*db.Tenant
 	mutex       sync.Mutex
 	consumer    message.Consumer
-	dbconn      *db.IotmanagerDB
+	dbconn      *db.ManagerDB
 	recoverChan chan interface{}
 	quitChan    chan interface{}
 }
@@ -54,7 +54,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	dbconn, err := db.NewIotmanagerDB(c)
+	dbconn, err := db.NewManagerDB(c)
 	if err != nil {
 		return nil, err
 	}

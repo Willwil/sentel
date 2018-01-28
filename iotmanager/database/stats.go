@@ -9,29 +9,17 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package restapi
 
-import (
-	"net/http"
+package db
 
-	db "github.com/cloustone/sentel/iotmanager/database"
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/labstack/echo"
-)
+import "time"
 
-const (
-	OK           = http.StatusOK
-	ServerError  = http.StatusInternalServerError
-	BadRequest   = http.StatusBadRequest
-	NotFound     = http.StatusNotFound
-	Unauthorized = http.StatusUnauthorized
-)
-
-func getConfig(ctx echo.Context) config.Config {
-	return ctx.(*apiContext).config
-}
-
-func openManagerDB(ctx echo.Context) (*db.ManagerDB, error) {
-	c := getConfig(ctx)
-	return db.NewManagerDB(c)
+// Stat
+type Stats struct {
+	TopicName  string
+	NodeName   string            `json:"nodeName"`
+	Service    string            `json:"service"`
+	Action     string            `json:"action"`
+	UpdateTime time.Time         `json:"updateTime"`
+	Values     map[string]uint64 `json:"values"`
 }

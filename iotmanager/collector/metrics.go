@@ -14,22 +14,14 @@ package collector
 
 import (
 	"context"
-	"time"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Metric
-type Metric struct {
-	TopicName  string
-	Action     string            `json:"action"`
-	NodeName   string            `json:"nodeName"`
-	Service    string            `json:"service"`
-	Values     map[string]uint64 `json:"values"`
-	UpdateTime time.Time         `json:"updateTime"`
-}
+type Metric db.Metric
 
 func (p *Metric) Topic() string        { return TopicNameMetric }
 func (p *Metric) SetTopic(name string) {}
@@ -38,42 +30,17 @@ func (p *Metric) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Metric) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Metric) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
+func (p *Metric) handleTopic(c config.Config, ctx context.Context) error {
+	dbc, err := db.NewManagerDB(c)
 	if err != nil {
 		return err
 	}
-	defer db.Session.Close()
+	defer dbc.Close()
 
 	switch p.Action {
 	case ObjectActionUpdate:
-		// update newest stats for the node
-		c := db.C("metrics")
-		node := Node{}
-		if err := c.Find(bson.M{"NodeName": p.NodeName}).One(&node); err != nil { // not found
-			c.Insert(&Metric{
-				NodeName:   p.NodeName,
-				Service:    p.Service,
-				Values:     p.Values,
-				UpdateTime: time.Now(),
-			})
-		} else {
-			c.Update(&node,
-				&Metric{
-					NodeName:   p.NodeName,
-					Service:    p.Service,
-					Values:     p.Values,
-					UpdateTime: time.Now(),
-				})
-		}
-		// save history data
-		c = db.C("metrics_history")
-		c.Insert(&Metric{
-			NodeName:   p.NodeName,
-			Service:    p.Service,
-			Values:     p.Values,
-			UpdateTime: time.Now(),
-		})
+		// dbc.UpdateMetric(p)
+		// TODO:save history data
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

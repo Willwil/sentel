@@ -14,22 +14,14 @@ package collector
 
 import (
 	"context"
-	"time"
 
+	"github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Node
-type Node struct {
-	TopicName  string
-	NodeId     string    `json:"nodeId"`
-	NodeIp     string    `json:"nodeIp"`
-	Version    string    `json:"version"`
-	CreatedAt  time.Time `json:"createdAt"`
-	NodeStatus string    `json:"nodeStatus"`
-	UpdatedAt  time.Time `json:"updatedAt"`
-	Action     string    `json:"action"`
-}
+type Node db.Node
 
 func (p *Node) Topic() string        { return TopicNameNode }
 func (p *Node) SetTopic(name string) {}
@@ -38,18 +30,10 @@ func (p *Node) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Node) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Node) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Session.Close()
-	c := db.C("nodes")
-
+func (p *Node) handleTopic(c config.Config, ctx context.Context) error {
 	// update object status according to action
 	switch p.Action {
 	case ObjectActionRegister:
-		c.Insert(p)
 	case ObjectActionUpdate:
 	case ObjectActionUnregister:
 	case ObjectActionDelete:

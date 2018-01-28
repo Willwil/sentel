@@ -14,6 +14,9 @@ package collector
 
 import (
 	"context"
+	"time"
+
+	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -38,7 +41,7 @@ const (
 )
 
 type topicHandler interface {
-	handleTopic(s *collectorService, ctx context.Context) error
+	handleTopic(c config.Config, ctx context.Context) error
 }
 
 func SyncReport(c config.Config, msg message.Message) error {
@@ -47,4 +50,15 @@ func SyncReport(c config.Config, msg message.Message) error {
 
 func AsyncReport(c config.Config, msg message.Message) error {
 	return message.PostMessage(c, msg)
+}
+
+func getDatabase(c config.Config) (*mgo.Database, error) {
+	hosts := c.MustString("mongo")
+	timeout := c.MustInt("connect_timeout")
+	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	session.SetMode(mgo.Monotonic, true)
+	return session.DB("iotmanager"), nil
 }

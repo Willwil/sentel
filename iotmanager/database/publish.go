@@ -10,28 +10,12 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package collector
-
-import (
-	"context"
-
-	db "github.com/cloustone/sentel/iotmanager/database"
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/message"
-)
+package db
 
 // Publish
 type Publish struct {
-	db.Publish
-}
-
-func (p *Publish) Topic() string        { return TopicNamePublish }
-func (p *Publish) SetTopic(name string) {}
-func (p *Publish) Serialize(opt message.SerializeOption) ([]byte, error) {
-	return message.Serialize(p, opt)
-}
-func (p *Publish) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
-
-func (p *Publish) handleTopic(c config.Config, ctx context.Context) error {
-	return nil
+	TopicName       string
+	ClientId        string `json:"clientId"`
+	SubscribedTopic string `json:"topic"`
+	ProductId       string `json:"product"`
 }

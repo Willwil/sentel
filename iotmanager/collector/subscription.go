@@ -14,20 +14,14 @@ package collector
 
 import (
 	"context"
-	"time"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Subscription
-type Subscription struct {
-	TopicName       string
-	ClientId        string    `json:"clientId"`
-	SubscribedTopic string    `json:"topic"`
-	Qos             int       `json:"qos"`
-	CreatedAt       time.Time `json:"createdAt"`
-	Action          string    `json:"action"`
-}
+type Subscription db.Subscription
 
 func (p *Subscription) Topic() string        { return TopicNameSubscription }
 func (p *Subscription) SetTopic(name string) {}
@@ -36,17 +30,9 @@ func (p *Subscription) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Subscription) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Subscription) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
-	if err != nil {
-		return err
-	}
-	defer db.Session.Close()
-	c := db.C("subscriptions")
-
+func (p *Subscription) handleTopic(c config.Config, ctx context.Context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
-		c.Insert(p)
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

@@ -33,7 +33,7 @@ var (
 )
 
 func Initialize(c config.Config) error {
-	hosts, err := c.String("hosts")
+	hosts, err := c.StringWithSection("keystone", "hosts")
 	if err != nil {
 		return err
 	}

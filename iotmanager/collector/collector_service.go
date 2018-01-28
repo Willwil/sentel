@@ -15,6 +15,7 @@ package collector
 import (
 	"time"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -61,13 +62,13 @@ func (p *collectorService) CreateMessage(topic string) message.Message {
 	case TopicNameNode:
 		return &Node{TopicName: topic}
 	case TopicNameClient:
-		return &Client{TopicName: topic}
+		return &Client{db.Client{TopicName: topic}}
 	case TopicNameSession:
-		return &Session{TopicName: topic}
+		return &Session{db.Session{TopicName: topic}}
 	case TopicNameSubscription:
 		return &Subscription{TopicName: topic}
 	case TopicNamePublish:
-		return &Publish{TopicName: topic}
+		return &Publish{db.Publish{TopicName: topic}}
 	case TopicNameMetric:
 		return &Metric{TopicName: topic}
 	case TopicNameStats:
@@ -99,18 +100,6 @@ func (p *collectorService) Stop() {
 // handleNotifications handle notification from kafka
 func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) {
 	if handler, ok := msg.(topicHandler); ok {
-		handler.handleTopic(p, nil)
+		handler.handleTopic(p.config, nil)
 	}
-}
-
-func (p *collectorService) getDatabase() (*mgo.Database, error) {
-	// check mongo db configuration
-	hosts := p.config.MustString("mongo")
-	timeout := p.config.MustInt("connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	session.SetMode(mgo.Monotonic, true)
-	return session.DB("iothub"), nil
 }

@@ -15,25 +15,13 @@ package collector
 import (
 	"context"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
-// Session
 type Session struct {
-	TopicName          string
-	Action             string `json:"action"`
-	ClientId           string `json:"clientId"`
-	CleanSession       bool   `json:"cleanSession"`
-	MessageMaxInflight uint64 `json:"messageMaxInflight"`
-	MessageInflight    uint64 `json:"messageInflight"`
-	MessageInQueue     uint64 `json:"messageInQueue"`
-	MessageDropped     uint64 `json:"messageDropped"`
-	AwaitingRel        uint64 `json:"awaitingRel"`
-	AwaitingComp       uint64 `json:"awaitingComp"`
-	AwaitingAck        uint64 `json:"awaitingAck"`
-	CreatedAt          string `json:"createdAt"`
+	db.Session
 }
 
 func (p *Session) Topic() string        { return TopicNameSession }
@@ -43,22 +31,15 @@ func (p *Session) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Session) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Session) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
+func (p *Session) handleTopic(c config.Config, ctx context.Context) error {
+	dbc, err := db.NewManagerDB(c)
 	if err != nil {
 		return err
 	}
-	defer db.Session.Close()
-	c := db.C("subscriptions")
-
+	defer dbc.Close()
 	switch p.Action {
 	case ObjectActionUpdate:
-		result := Session{}
-		if err := c.Find(bson.M{"ClientId": p.ClientId}).One(&result); err == nil {
-			return c.Update(result, p)
-		} else {
-			c.Insert(p)
-		}
+		dbc.UpdateSession(p.Session)
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

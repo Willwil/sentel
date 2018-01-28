@@ -21,6 +21,14 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+const (
+	collectionNodes    = "nodes"
+	collectionClients  = "clients"
+	collectionMetrics  = "metrics"
+	collectionAdmin    = "admin"
+	collectionSessions = "sessions"
+)
+
 type Tenant struct {
 	TenantId         string              `bson:"tenantId"`
 	Products         map[string]*Product `bson:"products"`
@@ -37,56 +45,60 @@ type Product struct {
 	CreatedAt time.Time `bson:"createdAt"`
 }
 
-type IotmanagerDB struct {
+type ManagerDB struct {
 	config  config.Config
-	session *mgo.Session
+	dbconn  *mgo.Session
+	session *mgo.Database
 }
 
 const (
 	dbnameIotmanager = "iotmanager"
-	collectionAdmin  = "admin"
 )
 
-func NewIotmanagerDB(c config.Config) (*IotmanagerDB, error) {
+func NewManagerDB(c config.Config) (*ManagerDB, error) {
 	// try connect with mongo db
 	addr := c.MustString("mongo")
-	session, err := mgo.DialWithTimeout(addr, 1*time.Second)
+	dbc, err := mgo.DialWithTimeout(addr, 1*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("connect with mongo '%s'failed: '%s'", addr, err.Error())
 	}
-	return &IotmanagerDB{config: c, session: session}, nil
+	return &ManagerDB{
+		config:  c,
+		dbconn:  dbc,
+		session: dbc.DB("iotmanager"),
+	}, nil
 }
 
-func (p *IotmanagerDB) GetAllTenants() []Tenant {
+func (p *ManagerDB) GetAllTenants() []Tenant {
 	tenants := []Tenant{}
-	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+	c := p.session.C(collectionAdmin)
 	c.Find(bson.M{}).All(&tenants)
 	return tenants
 }
 
-func (p *IotmanagerDB) CreateTenant(t *Tenant) error {
-	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+func (p *ManagerDB) CreateTenant(t *Tenant) error {
+	c := p.session.C(collectionAdmin)
 	return c.Insert(t)
 }
 
-func (p *IotmanagerDB) RemoveTenant(tid string) error {
-	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+func (p *ManagerDB) RemoveTenant(tid string) error {
+	c := p.session.C(collectionAdmin)
 	return c.Remove(bson.M{"tenantId": tid})
 }
 
-func (p *IotmanagerDB) CreateProduct(tid string, pid string) error {
-	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+func (p *ManagerDB) CreateProduct(tid string, pid string) error {
+	c := p.session.C(collectionAdmin)
 	pp := Product{ProductId: pid, CreatedAt: time.Now()}
 	return c.Update(bson.M{"tenantId": tid},
 		bson.M{"$addToSet": bson.M{"products": pp}})
 }
 
-func (p *IotmanagerDB) RemoveProduct(tid string, pid string) error {
-	c := p.session.DB(dbnameIotmanager).C(collectionAdmin)
+func (p *ManagerDB) RemoveProduct(tid string, pid string) error {
+	c := p.session.C(collectionAdmin)
 	return c.Update(bson.M{"tenantId": tid},
 		bson.M{"$pull": bson.M{"products": bson.M{"productId": pid}}})
 }
 
-func (p *IotmanagerDB) Close() {
-	p.session.Close()
+func (p *ManagerDB) Close() {
+	p.dbconn.Close()
 }

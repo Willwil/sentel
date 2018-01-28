@@ -15,22 +15,14 @@ package collector
 import (
 	"context"
 
+	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 // Client
 type Client struct {
-	TopicName       string
-	ClientId        string `json:"clientId"`
-	UserName        string `json:"userName"`
-	IpAddress       string `json:"ipAddress"`
-	Port            uint16 `json:"port"`
-	CleanSession    bool   `json:"cleanSession"`
-	ProtocolVersion string `json:"protocolVersion"`
-	Keepalive       uint16 `json:"keepalive"`
-	ConnectedAt     string `json:"connectedAt"`
+	db.Client
 }
 
 func (p *Client) Topic() string        { return TopicNameClient }
@@ -40,19 +32,12 @@ func (p *Client) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *Client) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *Client) handleTopic(service *collectorService, ctx context.Context) error {
-	db, err := service.getDatabase()
+func (p *Client) handleTopic(c config.Config, ctx context.Context) error {
+	db, err := db.NewManagerDB(c)
 	if err != nil {
 		return err
 	}
-	defer db.Session.Close()
-	c := db.C("clients")
+	defer db.Close()
+	return db.UpdateClient(&p.Client)
 
-	result := Client{}
-	if err := c.Find(bson.M{"ClientId": p.ClientId}).One(&result); err == nil {
-		// Existed client found
-		return c.Update(result, p)
-	} else {
-		return c.Insert(p)
-	}
 }
