@@ -13,12 +13,9 @@
 package collector
 
 import (
-	"time"
-
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
-	"gopkg.in/mgo.v2"
 )
 
 type collectorService struct {
@@ -31,18 +28,7 @@ const SERVICE_NAME = "collector"
 // collectorServiceFactory
 type ServiceFactory struct{}
 
-// New create apiService service factory
 func (m ServiceFactory) New(c config.Config) (service.Service, error) {
-	// check mongo db configuration
-	hosts := c.MustString("mongo")
-	timeout := c.MustInt("connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, err
-	}
-	session.Close()
-
-	// kafka
 	consumer, _ := message.NewConsumer(c, "iotmanager")
 	return &collectorService{
 		config:   c,

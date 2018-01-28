@@ -13,11 +13,8 @@
 package restapi
 
 import (
-	"fmt"
 	"sync"
 	"time"
-
-	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/iotmanager/scheduler"
 	"github.com/cloustone/sentel/pkg/config"
@@ -49,16 +46,6 @@ type ServiceFactory struct{}
 
 // New create apiService service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	// try connect with mongo db
-	hosts := c.MustString("mongo")
-	timeout := c.MustInt("connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect with mongo:'%s'", err.Error())
-	}
-	session.Close()
-
-	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
