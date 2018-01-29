@@ -221,6 +221,7 @@ func (p *mqttSession) handleDataAvailableNotification(t uint16) error {
 					p.metrics.Add(metric.MessageSent, 1)
 					p.metrics.Add(metric.PacketPublishSent, 1)
 					if msg.Qos == 1 {
+						msg.Dup = true
 						p.queue.GetRetainList().Pushback(msg)
 					}
 				}
