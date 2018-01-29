@@ -23,6 +23,7 @@ type transientQueue struct {
 	clientId string
 	observer Observer
 	syncq    *syncQueue
+	list     List
 }
 
 func newTransientQueue(clientId string, c config.Config) (Queue, error) {
@@ -31,6 +32,7 @@ func newTransientQueue(clientId string, c config.Config) (Queue, error) {
 		clientId: clientId,
 		syncq:    newSyncQueue(),
 		observer: nil,
+		list:     newTransientList(),
 	}
 	return q, nil
 }
@@ -62,3 +64,5 @@ func (p *transientQueue) Name() string       { return p.clientId }
 func (p *transientQueue) RegisterObserver(o Observer) {
 	p.observer = o
 }
+
+func (p *transientQueue) GetRetainList() List { return p.list }

@@ -22,6 +22,7 @@ type persistentQueue struct {
 	clientId string        // Queue identifier
 	observer Observer      // Queue observer when data is available
 	plugin   queuePlugin   // backend queue plugin
+	list     List
 }
 
 func newPersistentQueue(clientId string, c config.Config) (Queue, error) {
@@ -34,6 +35,7 @@ func newPersistentQueue(clientId string, c config.Config) (Queue, error) {
 		clientId: clientId,
 		plugin:   plugin,
 		observer: nil,
+		list:     newTransientList(),
 	}
 	return q, nil
 }
@@ -54,3 +56,5 @@ func (p *persistentQueue) Close() error                { return p.plugin.close()
 func (p *persistentQueue) IsPersistent() bool          { return true }
 func (p *persistentQueue) Name() string                { return p.clientId }
 func (p *persistentQueue) RegisterObserver(o Observer) { p.observer = o }
+
+func (p *persistentQueue) GetRetainList() List { return p.list }

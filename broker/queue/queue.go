@@ -19,6 +19,20 @@ type Observer interface {
 	DataAvailable(q Queue, msg *base.Message)
 }
 
+type List interface {
+	// Length return total mesasge count in List
+	Length() int
+
+	// Pushback push message at tail of List
+	Pushback(msg *base.Message)
+
+	// Get returns the element at index i in the List
+	Get(index int) *base.Message
+
+	// Remove
+	Remove(pktID uint16)
+}
+
 type Queue interface {
 	// Id return client id of queue
 	ClientId() string
@@ -37,6 +51,9 @@ type Queue interface {
 
 	// Pop popup head message from queue
 	Pop() *base.Message
+
+	// GetRetainList get the message list waiting for PUBACK
+	GetRetainList() List
 
 	// Close closes the connection.
 	Close() error

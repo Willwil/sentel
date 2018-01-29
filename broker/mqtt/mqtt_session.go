@@ -34,6 +34,12 @@ import (
 	"github.com/golang/glog"
 )
 
+const (
+	availableQueue uint16 = 1 << iota
+	availableList
+	availableAll = availableQueue | availableList
+)
+
 // mqttSession handle mqtt protocol session
 type mqttSession struct {
 	config         config.Config    // Session Configuration
@@ -49,7 +55,7 @@ type mqttSession struct {
 	authctx        auth.Context     // authentication options
 	aliveTimer     *time.Timer      // Keepalive timer
 	pingTime       *time.Time       // Ping timer
-	availableChan  chan int         // Event chanel for data availabel notification
+	availableChan  chan uint16      // Event chanel for data availabel notification
 	packetChan     chan *mqttPacket // Mqtt packet channel
 	errorChan      chan error       // Error channel
 	queue          queue.Queue      // Session's queue
@@ -80,7 +86,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		protocol:      mqttProtocolInvalid,
 		msgState:      mqttMsgStateQueued,
 		aliveTimer:    nil,
-		availableChan: make(chan int),
+		availableChan: make(chan uint16),
 		packetChan:    make(chan *mqttPacket),
 		errorChan:     make(chan error),
 		queue:         nil,
@@ -146,8 +152,8 @@ func (p *mqttSession) Handle() error {
 		select {
 		case e := <-p.errorChan:
 			err = e
-		case <-p.availableChan:
-			err = p.handleDataAvailableNotification()
+		case t := <-p.availableChan:
+			err = p.handleDataAvailableNotification(t)
 		case packet := <-p.packetChan:
 			err = p.handleMqttPacket(packet)
 		}
@@ -196,28 +202,32 @@ func (p *mqttSession) handleMqttPacket(packet *mqttPacket) error {
 }
 
 // handleDataAvailableNotification read message from queue and send to client
-func (p *mqttSession) handleDataAvailableNotification() error {
-	if p.msgState != mqttMsgStateQueued {
-		return fmt.Errorf("mqtt invalid message state:%s", nameOfMessageState(p.msgState))
-	}
-	for p.queue.Length() > 0 {
-		if msg := p.queue.Front(); msg != nil {
-			if err := p.sendPublish(msg); err == nil {
-				p.metrics.Add(metric.MessageSent, 1)
-				switch msg.Qos {
-				case 0:
-					// No client response for qos0 pub packet
-					p.queue.Pop()
+func (p *mqttSession) handleDataAvailableNotification(t uint16) error {
+	if t&availableList == availableList {
+		for i := 0; i < p.queue.GetRetainList().Length(); i++ {
+			if msg := p.queue.GetRetainList().Get(i); msg != nil {
+				if err := p.sendPublish(msg); err == nil {
+					p.metrics.Add(metric.MessageSent, 1)
 					p.metrics.Add(metric.PacketPublishSent, 1)
-					continue
-				case 1:
-					p.msgState = mqttMsgStateWaitPubAck
-					break
-				default:
 				}
 			}
 		}
 	}
+	if t&availableQueue == availableQueue {
+		for p.queue.Length() > 0 {
+			if msg := p.queue.Front(); msg != nil {
+				if err := p.sendPublish(msg); err == nil {
+					p.queue.Pop()
+					p.metrics.Add(metric.MessageSent, 1)
+					p.metrics.Add(metric.PacketPublishSent, 1)
+					if msg.Qos == 1 {
+						p.queue.GetRetainList().Pushback(msg)
+					}
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -251,7 +261,7 @@ func (p *mqttSession) handleAliveTimeout() error {
 
 // DataAvailable called when queue have data to deal with
 func (p *mqttSession) DataAvailable(q queue.Queue, msg *base.Message) {
-	p.availableChan <- 1
+	p.availableChan <- availableQueue
 }
 
 func (p *mqttSession) Id() string            { return p.clientId }
@@ -462,7 +472,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		}(p)
 	}
 
-	return p.handleDataAvailableNotification()
+	return p.handleDataAvailableNotification(availableAll)
 }
 
 // handleDisconnect handle disconnect packet
@@ -669,12 +679,16 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 
 // handlePubAck handle pubrel packet
 func (p *mqttSession) handlePubAck(packet *mqttPacket) error {
-	if p.msgState == mqttMsgStateWaitPubAck {
-		q := queue.GetQueue(p.clientId)
-		q.Pop()
-		p.setMessageState(mqttMsgStateQueued)
-		p.availableChan <- 1
+	if packet.remainingLength != 2 {
+		return errors.New("PUBACK remainingLength error")
 	}
+
+	if pid, err := packet.readUint16(); err != nil {
+		return err
+	} else {
+		p.queue.GetRetainList().Remove(pid)
+	}
+
 	return nil
 }
 
