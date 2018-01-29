@@ -811,6 +811,8 @@ func (p *mqttSession) sendPublish(msg *base.Message) error {
 
 	packet := newMqttPacket()
 	packet.command = PUBLISH
+	packet.qos = qos
+	packet.dup = msg.Dup
 	packet.remainingLength = 2 + len(msg.Topic) + len(msg.Payload)
 	if qos > 0 {
 		packet.remainingLength += 2
