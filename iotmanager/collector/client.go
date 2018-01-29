@@ -15,7 +15,7 @@ package collector
 import (
 	"context"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
@@ -23,7 +23,7 @@ import (
 // ClientTopic
 type ClientTopic struct {
 	TopicName string
-	db.Client
+	mgrdb.Client
 }
 
 func (p *ClientTopic) Topic() string        { return TopicNameClient }
@@ -34,11 +34,11 @@ func (p *ClientTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *ClientTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *ClientTopic) handleTopic(c config.Config, ctx context.Context) error {
-	db, err := db.NewManagerDB(c)
+	db, err := mgrdb.New(c)
 	if err != nil {
 		return err
 	}
 	defer db.Close()
-	return db.UpdateClient(&p.Client)
+	return db.UpdateClient(p.Client)
 
 }

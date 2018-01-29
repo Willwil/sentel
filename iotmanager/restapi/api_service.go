@@ -13,11 +13,8 @@
 package restapi
 
 import (
-	"fmt"
 	"sync"
 	"time"
-
-	mgo "gopkg.in/mgo.v2"
 
 	"github.com/cloustone/sentel/iotmanager/scheduler"
 	"github.com/cloustone/sentel/pkg/config"
@@ -49,16 +46,6 @@ type ServiceFactory struct{}
 
 // New create apiService service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	// try connect with mongo db
-	hosts := c.MustString("mongo")
-	timeout := c.MustInt("connect_timeout")
-	session, err := mgo.DialWithTimeout(hosts, time.Duration(timeout)*time.Second)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect with mongo:'%s'", err.Error())
-	}
-	session.Close()
-
-	// Create echo instance and setup router
 	e := echo.New()
 	e.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
@@ -528,4 +515,52 @@ func removeProduct(ctx echo.Context) error {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
 	return ctx.JSON(OK, response{})
+}
+
+// Routes
+
+// getClusterRoutes return cluster's routes table
+func getClusterRoutes(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// getTopicRoutes return a topic's route
+func getTopicRoutes(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Publish & Subscribe
+
+// publishMqttMessage will publish a mqtt message
+func publishMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// subscribeMqttMessage subscribe a mqtt topic
+func subscribeMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// unsubscribeMqttMessage unsubsribe mqtt topic
+func unsubscribeMqttMessage(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Plugins
+
+// getNodePluginsInfo return plugins info for a node
+func getNodePluginsInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// Services
+
+// getClusterServicesInfo return all services infor in cluster
+func getClusterServicesInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
+}
+
+// getNodeServicesInfo return a node's service info
+func getNodeServicesInfo(ctx echo.Context) error {
+	return ctx.JSON(NotFound, response{})
 }

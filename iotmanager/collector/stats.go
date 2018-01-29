@@ -15,15 +15,15 @@ package collector
 import (
 	"context"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 // Stat
 type StatsTopic struct {
-	db.Stats
 	TopicName string
+	mgrdb.Stats
 }
 
 func (p *StatsTopic) Topic() string        { return TopicNameStats }

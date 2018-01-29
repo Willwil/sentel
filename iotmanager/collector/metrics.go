@@ -15,15 +15,15 @@ package collector
 import (
 	"context"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 )
 
 // MetricTopic
 type MetricTopic struct {
-	db.Metric
 	TopicName string
+	mgrdb.Metric
 }
 
 func (p *MetricTopic) Topic() string        { return TopicNameMetric }
@@ -34,7 +34,7 @@ func (p *MetricTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *MetricTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *MetricTopic) handleTopic(c config.Config, ctx context.Context) error {
-	dbc, err := db.NewManagerDB(c)
+	dbc, err := mgrdb.New(c)
 	if err != nil {
 		return err
 	}

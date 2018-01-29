@@ -20,7 +20,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/iotmanager/collector"
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
@@ -119,7 +119,7 @@ func (p *metricService) reportMetric() {
 		collector.AsyncReport(p.config,
 			&collector.MetricTopic{
 				TopicName: collector.TopicNameMetric,
-				Metric: db.Metric{
+				Metric: mgrdb.Metric{
 					NodeName: p.name,
 					Service:  service,
 					Values:   metrics,
@@ -134,7 +134,7 @@ func (p *metricService) reportKeepalive() {
 	collector.AsyncReport(p.config,
 		&collector.NodeTopic{
 			TopicName: collector.TopicNameNode,
-			Node: db.Node{
+			Node: mgrdb.Node{
 				NodeId:     info.Id,
 				NodeIp:     info.Ip,
 				CreatedAt:  info.CreatedAt,

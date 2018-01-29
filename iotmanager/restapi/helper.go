@@ -14,7 +14,7 @@ package restapi
 import (
 	"net/http"
 
-	db "github.com/cloustone/sentel/iotmanager/database"
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/labstack/echo"
 )
@@ -31,7 +31,7 @@ func getConfig(ctx echo.Context) config.Config {
 	return ctx.(*apiContext).config
 }
 
-func openManagerDB(ctx echo.Context) (*db.ManagerDB, error) {
+func openManagerDB(ctx echo.Context) (mgrdb.ManagerDB, error) {
 	c := getConfig(ctx)
-	return db.NewManagerDB(c)
+	return mgrdb.New(c)
 }
