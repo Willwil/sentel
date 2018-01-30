@@ -124,11 +124,11 @@ func (p *consoleService) initialize(c config.Config) error {
 
 	// Rules
 	g.POST("/rules", createRule)
-	g.DELETE("/rules", removeRule)
+	g.DELETE("/products/:productId/rules/:ruleName", removeRule)
 	g.PATCH("/rules", updateRule)
 	g.PUT("/rules/start", startRule)
 	g.PUT("/rules/stop", stopRule)
-	g.GET("/rules/:ruleName", getRule)
+	g.GET("/products/:productId/rules/:ruleName", getRule)
 
 	// Topic Flavor
 	g.POST("/topicflavors", createTopicFlavor)

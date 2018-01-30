@@ -57,29 +57,27 @@ func CreateRule(ctx echo.Context) error {
 // deleteRule delete existed rule
 func RemoveRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-	rule := registry.Rule{}
-
-	if err := ctx.Bind(&rule); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if rule.ProductId == "" || rule.RuleName == "" {
+	productId := ctx.Param("productId")
+	ruleName := ctx.Param("ruleName")
+	if productId == "" || ruleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	objname := rule.ProductId + "/rules"
-	if err := base.Authorize(objname, accessId, "w"); err != nil {
+
+	objname := productId + "/rules"
+	if err := base.Authorize(objname, accessId, "r"); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r := getRegistry(ctx)
-	if err := r.RemoveRule(rule.ProductId, rule.RuleName); err != nil {
+	if err := r.RemoveRule(productId, ruleName); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		&message.Rule{
 			TopicName: message.TopicNameRule,
-			RuleName:  rule.RuleName,
-			ProductId: rule.ProductId,
+			RuleName:  ruleName,
+			ProductId: productId,
 			Action:    message.ActionRemove,
 		})
 	return ctx.JSON(OK, apiResponse{})
@@ -168,7 +166,7 @@ func StopRule(ctx echo.Context) error {
 func GetRule(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
 
-	productId := ctx.QueryParam("productId")
+	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	if productId == "" || ruleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
