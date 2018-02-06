@@ -202,10 +202,10 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
-func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
+func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	r, ok := msg.(*message.Rule)
 	if !ok || r == nil {
-		return
+		return fmt.Errorf("invalid message topic '%s' with rule", msg.Topic())
 	}
 
 	action := ""
@@ -221,8 +221,7 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
 	case message.ActionStop:
 		action = RuleActionStop
 	default:
-		glog.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
-		return
+		return fmt.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
 	}
 	rc := RuleContext{
 		Action:    action,
@@ -230,6 +229,7 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
 		RuleName:  r.RuleName,
 	}
 	p.ruleChan <- rc
+	return nil
 }
 
 func HandleRuleNotification(ctx RuleContext) error {

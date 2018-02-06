@@ -45,7 +45,7 @@ var (
 	logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
 )
 
-const SERVICE_NAME = "iotmanager"
+const SERVICE_NAME = "scheduler"
 
 type ServiceFactory struct{}
 
@@ -101,7 +101,7 @@ func (p *schedulerService) Start() error {
 	err1 := p.consumer.Subscribe(message.TopicNameTenant, p.messageHandlerFunc, nil)
 	err2 := p.consumer.Subscribe(message.TopicNameProduct, p.messageHandlerFunc, nil)
 	if err1 != nil || err2 != nil {
-		return errors.New("iotmanager failed to subsribe topic from message server")
+		return errors.New("failed to subscribe topic from message server")
 	}
 	if err := p.consumer.Start(); err != nil {
 		return err
@@ -135,12 +135,13 @@ func (p *schedulerService) recoverStartup() {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	// create default network if network is specified
 	network, err := p.config.String("network")
-	if err != nil {
-		network = ""
+	if err == nil && network != "" {
+		p.clustermgr.CreateNetwork(network)
 	}
-	p.clustermgr.CreateNetwork(network)
 
+	// load all tenants form mgrdb and create services if tenant service no exist
 	retries := []*mgrdb.Tenant{}
 	for tid, t := range p.tenants {
 		if t.ServiceState != cluster.ServiceStateNone {
@@ -158,6 +159,7 @@ func (p *schedulerService) recoverStartup() {
 					Image:       "sentel/broker",
 					ServiceName: fmt.Sprintf("tenant_%s", tid),
 				}
+				// remember all failed recovery and try again at later
 				if _, err := p.clustermgr.CreateService(spec); err != nil {
 					retries = append(retries, t)
 				}
@@ -177,20 +179,17 @@ func (p *schedulerService) recoverStartup() {
 	}
 }
 
-func (p *schedulerService) messageHandlerFunc(msg message.Message, ctx interface{}) {
-	var err error
+func (p *schedulerService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	topic := msg.Topic()
-	glog.Infof("iotmanager receive message from topic '%s'", topic)
+	glog.Infof("receive message from topic '%s'", topic)
 
 	switch topic {
 	case message.TopicNameTenant:
-		err = p.handleTenantNotify(msg)
+		return p.handleTenantNotify(msg)
 	case message.TopicNameProduct:
-		err = p.handleProductNotify(msg)
+		return p.handleProductNotify(msg)
 	default:
-	}
-	if err != nil {
-		glog.Error(err)
+		return fmt.Errorf("invalid topic '%s'", topic)
 	}
 }
 
@@ -258,7 +257,7 @@ func (p *schedulerService) removeTenant(tid string) error {
 	// Delete all products
 	for name := range t.Products {
 		if err := p.removeProduct(tid, name); err != nil {
-			glog.Errorf("iotmanager remove tenant '%s' product '%s' failed", tid, name)
+			glog.Errorf("remove tenant '%s' product '%s' failed", tid, name)
 		}
 	}
 	// Remove service

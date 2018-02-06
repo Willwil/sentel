@@ -92,8 +92,10 @@ func (p *eventService) Name() string      { return ServiceName }
 func (p *eventService) bootstrap() error  { return nil }
 
 // messageHandlerFunc handle mqtt event from other service
-func (p *eventService) messageHandlerFunc(msg message.Message, ctx interface{}) {
-	if e, err := Decode(msg, JSONCodec); err == nil && e != nil {
+func (p *eventService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
+	if e, err := Decode(msg, JSONCodec); err != nil {
+		return err
+	} else {
 		// cluster event manager only handle kafka event from other broker
 		// Iterate all subscribers to notify
 		etype := e.GetType()
@@ -105,6 +107,7 @@ func (p *eventService) messageHandlerFunc(msg message.Message, ctx interface{}) 
 				}
 			}
 		}
+		return nil
 	}
 }
 

@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -83,8 +85,9 @@ func (p *collectorService) Stop() {
 }
 
 // handleNotifications handle notification from kafka
-func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) {
+func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	if handler, ok := msg.(topicHandler); ok {
-		handler.handleTopic(p.config, nil)
+		return handler.handleTopic(p.config, nil)
 	}
+	return fmt.Errorf("invalid topic '%s'", msg.Topic())
 }

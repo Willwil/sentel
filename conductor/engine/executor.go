@@ -112,13 +112,15 @@ func (p *ruleExecutor) stop() {
 }
 
 // messageHandlerFunc handle mqtt event from other service
-func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) {
+func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	t, err := event.Decode(msg, event.JSONCodec)
 	if err == nil && t != nil && t.GetType() == event.TopicPublish {
 		p.dataChan <- t
 		// we can call p.execute(t) here, but in consider of avoiding to block message receiver
 		// we use datachannel
+		return nil
 	}
+	return err
 }
 
 // getRuleObject get all rule's information from backend database
