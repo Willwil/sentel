@@ -10,29 +10,33 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package extractor
+package loader
 
 import (
 	"fmt"
 
-	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/cloustone/sentel/whaler/pipeline/data"
 )
 
-const (
-	EventExtractor = "event"
-)
-
-type Extractor interface {
-	Extract(data interface{}) (*data.DataFrame, error)
+type Loader interface {
+	Name() string
+	Load(f *data.DataFrame) error
 	Close()
 }
 
-func New(c config.Config, name string) (Extractor, error) {
+func New(c config.Config, name string) (Loader, error) {
 	switch name {
-	case EventExtractor:
-		return &eventExtractor{config: c}, nil
+	case registry.DataTargetTypeTopic:
+		return newTopicLoader(c)
+	case registry.DataTargetTypeES:
+		return newESLoader(c)
+	case registry.DataTargetTypeSQLDB:
+		return newMysqlLoader(c)
+	case registry.DataTargetTypeCAS:
+		return newCassLoader(c)
 	default:
-		return nil, fmt.Errorf("invalid extractor '%s'", name)
+		return nil, fmt.Errorf("invalid loader '%s'", name)
 	}
 }

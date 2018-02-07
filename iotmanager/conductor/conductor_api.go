@@ -10,36 +10,36 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package scheduler
+package conductor
 
 import "github.com/cloustone/sentel/pkg/service"
 
-// GetiotschedulerService return iothub service instance
-func getScheduler() *schedulerService {
+// getConductor return conductor service instance
+func getConductor() *conductorService {
 	mgr := service.GetServiceManager()
-	return mgr.GetService(SERVICE_NAME).(*schedulerService)
+	return mgr.GetService(SERVICE_NAME).(*conductorService)
 }
 
 // createTenant add tenant to iothub
 func CreateTenant(tid string) error {
-	h := getScheduler()
+	h := getConductor()
 	return h.createTenant(tid)
 }
 
 // RemoveTenant remove tenant from iothub
 func RemoveTenant(tid string) error {
-	h := getScheduler()
+	h := getConductor()
 	return h.removeTenant(tid)
 }
 
 // CreateProduct add product to iothub
 func CreateProduct(tid, pid string, replicas int32) (string, error) {
-	h := getScheduler()
+	h := getConductor()
 	return h.createProduct(tid, pid, replicas)
 }
 
 // RemoveProduct delete product from iothub
 func RemoveProduct(tid string, pid string) error {
-	h := getScheduler()
+	h := getConductor()
 	return h.removeProduct(tid, pid)
 }

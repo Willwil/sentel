@@ -16,9 +16,9 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
+	"github.com/cloustone/sentel/whaler/pipeline/data"
 )
 
 type topicLoader struct {

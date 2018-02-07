@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cloustone/sentel/iotmanager/scheduler"
+	"github.com/cloustone/sentel/iotmanager/conductor"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/labstack/echo"
@@ -447,7 +447,7 @@ func createTenant(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, response{Message: err.Error()})
 	}
-	if err := scheduler.CreateTenant(req.TenantId); err != nil {
+	if err := conductor.CreateTenant(req.TenantId); err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	} else {
 		return ctx.JSON(OK, response{})
@@ -456,7 +456,7 @@ func createTenant(ctx echo.Context) error {
 
 func removeTenant(ctx echo.Context) error {
 	tenantId := ctx.Param("tid")
-	if err := scheduler.RemoveTenant(tenantId); err != nil {
+	if err := conductor.RemoveTenant(tenantId); err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	} else {
 		return ctx.JSON(OK, response{})
@@ -482,7 +482,7 @@ func createProduct(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, response{Message: "Invalid Parameter"})
 	}
 
-	if brokers, err := scheduler.CreateProduct(tid, pid, replicas); err != nil {
+	if brokers, err := conductor.CreateProduct(tid, pid, replicas); err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	} else {
 		return ctx.JSON(OK, response{Result: brokers})
@@ -492,7 +492,7 @@ func createProduct(ctx echo.Context) error {
 func removeProduct(ctx echo.Context) error {
 	tid := ctx.Param("tid")
 	pid := ctx.Param("pid")
-	if err := scheduler.RemoveProduct(tid, pid); err != nil {
+	if err := conductor.RemoveProduct(tid, pid); err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
 	return ctx.JSON(OK, response{})

@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/cloustone/sentel/whaler/pipeline/data"
 	_ "github.com/go-sql-driver/mysql"
 )
 

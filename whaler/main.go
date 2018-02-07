@@ -16,35 +16,35 @@ import (
 	"flag"
 	"os"
 
-	"github.com/cloustone/sentel/conductor/engine"
-	"github.com/cloustone/sentel/conductor/restapi"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
+	"github.com/cloustone/sentel/whaler/engine"
+	"github.com/cloustone/sentel/whaler/restapi"
 	"github.com/golang/glog"
 )
 
 var (
-	configFile = flag.String("c", "/etc/sentel/conductor.conf", "config file")
+	configFile = flag.String("c", "/etc/sentel/whaler.conf", "config file")
 	testMode   = flag.Bool("t", false, "test mode")
 )
 
 func main() {
 	flag.Parse()
-	glog.Info("conductor is starting...")
+	glog.Info("whaler is starting...")
 
 	config, _ := createConfig(*configFile)
 	if *testMode == true {
 		initializeTestData(config)
 		defer removeTestData(config)
 	}
-	mgr, _ := service.NewServiceManager("conductor", config)
+	mgr, _ := service.NewServiceManager("whaler", config)
 	mgr.AddService(engine.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 
 func createConfig(fileName string) (config.Config, error) {
-	config := config.New("conductor")
+	config := config.New("whaler")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 	k := os.Getenv("KAFKA_HOST")

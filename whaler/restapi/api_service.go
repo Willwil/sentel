@@ -18,10 +18,10 @@ import (
 	"sync"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/engine"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
+	"github.com/cloustone/sentel/whaler/engine"
 	"github.com/labstack/echo"
 )
 
@@ -46,13 +46,13 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	e := echo.New()
 
 	// Rule
-	e.POST("conductor/api/v1/rules", createRule)
-	e.DELETE("conductor/api/v1/rules", removeRule)
-	e.PUT("conductor/api/v1/rules", controlRule)
-	e.PATCH("conductor/api/v1/rules", updateRule)
+	e.POST("whaler/api/v1/rules", createRule)
+	e.DELETE("whaler/api/v1/rules", removeRule)
+	e.PUT("whaler/api/v1/rules", controlRule)
+	e.PATCH("whaler/api/v1/rules", updateRule)
 
 	// Data
-	e.POST("conductor/api/v1/topic", publishTopic)
+	e.POST("whaler/api/v1/topic", publishTopic)
 
 	return &restapiService{
 		config:    c,

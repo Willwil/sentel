@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package scheduler
+package conductor
 
 import (
 	"errors"
@@ -29,7 +29,7 @@ import (
 	"github.com/golang/glog"
 )
 
-type schedulerService struct {
+type conductorService struct {
 	config      config.Config
 	waitgroup   sync.WaitGroup
 	clustermgr  cluster.ClusterManager
@@ -45,7 +45,7 @@ var (
 	logger = log.New(os.Stderr, "[kafka]", log.LstdFlags)
 )
 
-const SERVICE_NAME = "scheduler"
+const SERVICE_NAME = "conductor"
 
 type ServiceFactory struct{}
 
@@ -67,7 +67,7 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 		return nil, err
 	}
 	clustermgr.SetServiceDiscovery(discovery)
-	return &schedulerService{
+	return &conductorService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		clustermgr:  clustermgr,
@@ -81,10 +81,10 @@ func (m ServiceFactory) New(c config.Config) (service.Service, error) {
 }
 
 // Name
-func (p *schedulerService) Name() string { return SERVICE_NAME }
+func (p *conductorService) Name() string { return SERVICE_NAME }
 
 // Initialize load iotmanager data and recovery from scratch
-func (p *schedulerService) Initialize() error {
+func (p *conductorService) Initialize() error {
 	tenants := p.dbconn.GetAllTenants()
 	if len(tenants) > 0 {
 		for _, t := range tenants {
@@ -96,7 +96,7 @@ func (p *schedulerService) Initialize() error {
 }
 
 // Start
-func (p *schedulerService) Start() error {
+func (p *conductorService) Start() error {
 	// subscribe topic and start message consumer
 	err1 := p.consumer.Subscribe(message.TopicNameTenant, p.messageHandlerFunc, nil)
 	err2 := p.consumer.Subscribe(message.TopicNameProduct, p.messageHandlerFunc, nil)
@@ -107,7 +107,7 @@ func (p *schedulerService) Start() error {
 		return err
 	}
 	p.waitgroup.Add(1)
-	go func(p *schedulerService) {
+	go func(p *conductorService) {
 		defer p.waitgroup.Done()
 		for {
 			select {
@@ -122,7 +122,7 @@ func (p *schedulerService) Start() error {
 }
 
 // Stop
-func (p *schedulerService) Stop() {
+func (p *conductorService) Stop() {
 	p.quitChan <- true
 	p.waitgroup.Wait()
 	p.consumer.Close()
@@ -131,7 +131,7 @@ func (p *schedulerService) Stop() {
 }
 
 // recoverStartup load hub data and confirm service status
-func (p *schedulerService) recoverStartup() {
+func (p *conductorService) recoverStartup() {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -179,7 +179,7 @@ func (p *schedulerService) recoverStartup() {
 	}
 }
 
-func (p *schedulerService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
+func (p *conductorService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	topic := msg.Topic()
 	glog.Infof("receive message from topic '%s'", topic)
 
@@ -194,7 +194,7 @@ func (p *schedulerService) messageHandlerFunc(msg message.Message, ctx interface
 }
 
 // handleProductNotify handle notification about product from api server
-func (p *schedulerService) handleProductNotify(msg message.Message) error {
+func (p *conductorService) handleProductNotify(msg message.Message) error {
 	tf, ok := msg.(*message.Product)
 	if !ok || tf == nil {
 		return errors.New("invalid product notification")
@@ -210,7 +210,7 @@ func (p *schedulerService) handleProductNotify(msg message.Message) error {
 }
 
 // handleTenantNotify handle notification about tenant from api server
-func (p *schedulerService) handleTenantNotify(msg message.Message) error {
+func (p *conductorService) handleTenantNotify(msg message.Message) error {
 	tf, ok := msg.(*message.Tenant)
 	if !ok || tf == nil {
 		return errors.New("invalid product notification")
@@ -226,7 +226,7 @@ func (p *schedulerService) handleTenantNotify(msg message.Message) error {
 }
 
 // addTenant add tenant to iotmanager
-func (p *schedulerService) createTenant(tid string) error {
+func (p *conductorService) createTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -243,7 +243,7 @@ func (p *schedulerService) createTenant(tid string) error {
 }
 
 // deleteTenant remove tenant from iotmanager
-func (p *schedulerService) removeTenant(tid string) error {
+func (p *conductorService) removeTenant(tid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if _, found := p.tenants[tid]; !found {
@@ -266,7 +266,7 @@ func (p *schedulerService) removeTenant(tid string) error {
 	return nil
 }
 
-func (p *schedulerService) isProductExist(tid, pid string) bool {
+func (p *conductorService) isProductExist(tid, pid string) bool {
 	if t, found := p.tenants[tid]; found {
 		if _, found := t.Products[pid]; found {
 			return true
@@ -276,7 +276,7 @@ func (p *schedulerService) isProductExist(tid, pid string) bool {
 }
 
 // addProduct add product to iotmanager
-func (p *schedulerService) createProduct(tid string, pid string, replicas int32) (string, error) {
+func (p *conductorService) createProduct(tid string, pid string, replicas int32) (string, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if p.isProductExist(tid, pid) {
@@ -309,7 +309,7 @@ func (p *schedulerService) createProduct(tid string, pid string, replicas int32)
 }
 
 // deleteProduct delete product from iotmanager
-func (p *schedulerService) removeProduct(tid string, pid string) error {
+func (p *conductorService) removeProduct(tid string, pid string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if !p.isProductExist(tid, pid) {

@@ -13,9 +13,9 @@
 package loader
 
 import (
-	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/cloustone/sentel/whaler/pipeline/data"
 	"github.com/hailocab/gocassa"
 )
 

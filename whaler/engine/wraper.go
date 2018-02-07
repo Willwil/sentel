@@ -16,10 +16,10 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
-	"github.com/cloustone/sentel/conductor/pipeline"
-	"github.com/cloustone/sentel/conductor/pipeline/extractor"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/cloustone/sentel/whaler/pipeline"
+	"github.com/cloustone/sentel/whaler/pipeline/extractor"
 	"github.com/golang/glog"
 )
 

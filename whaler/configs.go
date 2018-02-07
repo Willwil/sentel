@@ -10,28 +10,18 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package transformer
+package main
 
-import (
-	"github.com/cloustone/sentel/conductor/pipeline/data"
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "github.com/cloustone/sentel/pkg/config"
 
-type Transformer interface {
-	Transform(f *data.DataFrame) (*data.DataFrame, error)
-	Close()
+var defaultConfigs = config.M{
+	"whaler": {
+		"loglevel":        "debug",
+		"kafka":           "localhost:9092",
+		"mongo":           "localhost:27017",
+		"connect_timeout": 5,
+	},
+	"restapi": {
+		"listen": "localhost:50060",
+	},
 }
-
-func New(c config.Config, name string) Transformer {
-	switch name {
-	default:
-		return &noTransformer{}
-	}
-}
-
-type noTransformer struct{}
-
-func (p *noTransformer) Transform(f *data.DataFrame) (*data.DataFrame, error) {
-	return f, nil
-}
-func (p *noTransformer) Close() {}
