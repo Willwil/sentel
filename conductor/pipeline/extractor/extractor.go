@@ -20,7 +20,7 @@ import (
 )
 
 type Extractor interface {
-	Extract(data interface{}, ctx *data.Context) (*data.DataFrame, error)
+	Extract(data interface{}) (*data.DataFrame, error)
 	Close()
 }
 

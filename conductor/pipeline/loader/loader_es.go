@@ -13,9 +13,6 @@
 package loader
 
 import (
-	"errors"
-
-	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
 )
@@ -31,16 +28,6 @@ func newESLoader(c config.Config) (Loader, error) {
 func (p *elasticLoader) Name() string { return "elastic" }
 func (p *elasticLoader) Close()       {}
 
-func (p *elasticLoader) Load(f *data.DataFrame, ctx *data.Context) error {
-	topic, ok1 := ctx.Get("topic").(string)
-	e, ok2 := ctx.Get("event").(*event.TopicPublishEvent)
-	if !ok1 || !ok2 || topic == "" || e == nil {
-		return errors.New("invalid topic")
-	}
-	if _, err := f.Serialize(); err != nil {
-		return err
-	} else {
-		// TODO
-		return nil
-	}
+func (p *elasticLoader) Load(f *data.DataFrame) error {
+	return nil
 }

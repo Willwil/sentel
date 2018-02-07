@@ -27,8 +27,8 @@ type Pipeline interface {
 	AddExtractor(extractor.Extractor) Pipeline
 	AddTransformer(transformer.Transformer) Pipeline
 	AddLoader(loader.Loader)
-	Start(r data.Reader, ctx data.Context) error
-	PushData(data interface{}, ctx data.Context) error
+	Start(r data.Reader) error
+	PushData(data interface{}) error
 	Close()
 }
 
@@ -46,7 +46,6 @@ type defaultPipeline struct {
 	transformers []transformer.Transformer
 	loader       loader.Loader
 	reader       data.Reader
-	ctx          data.Context
 	quitch       chan interface{}
 }
 
@@ -70,18 +69,17 @@ func (p *defaultPipeline) AddLoader(t loader.Loader) {
 	p.loader = t
 }
 
-func (p *defaultPipeline) Start(r data.Reader, ctx data.Context) error {
+func (p *defaultPipeline) Start(r data.Reader) error {
 	if p.extractor == nil || p.loader == nil {
 		return errors.New("extractor or loader is nil")
 	}
 	p.reader = r
-	p.ctx = ctx
 	if r != nil {
 		go func(p *defaultPipeline) {
 			for {
 				select {
 				case data := <-p.reader.Data():
-					p.PushData(data, p.ctx)
+					p.PushData(data)
 				case <-p.quitch:
 					return
 				}
@@ -91,22 +89,22 @@ func (p *defaultPipeline) Start(r data.Reader, ctx data.Context) error {
 	return nil
 }
 
-func (p *defaultPipeline) PushData(data interface{}, ctx data.Context) error {
+func (p *defaultPipeline) PushData(data interface{}) error {
 	if p.extractor == nil || p.loader == nil {
 		return errors.New("extractor or loader is nil")
 	}
 	// extract data
-	if value, err := p.extractor.Extract(data, &ctx); err == nil {
+	if frame, err := p.extractor.Extract(data); err == nil {
 		// transfom data
 		for _, transformer := range p.transformers {
-			if v, err := transformer.Transform(value, &ctx); err != nil {
+			if f, err := transformer.Transform(frame); err != nil {
 				return err
 			} else {
-				value = v
+				frame = f
 			}
 		}
 		// load data
-		return p.loader.Load(value, &ctx)
+		return p.loader.Load(frame)
 	}
 	return errors.New("extract data failed")
 }

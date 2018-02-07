@@ -16,11 +16,13 @@ import "encoding/json"
 
 type DataFrame struct {
 	items map[string]interface{}
+	ctx   map[string]interface{}
 }
 
 func NewDataFrame() *DataFrame {
 	return &DataFrame{
 		items: make(map[string]interface{}),
+		ctx:   make(map[string]interface{}),
 	}
 }
 
@@ -37,4 +39,12 @@ func (p *DataFrame) GetField(k string) interface{} {
 
 func (p *DataFrame) Serialize() ([]byte, error) {
 	return json.Marshal(p.items)
+}
+
+func (p *DataFrame) Context(key string) interface{} {
+	return p.ctx[key]
+}
+
+func (p *DataFrame) SetContext(key string, value interface{}) {
+	p.ctx[key] = value
 }

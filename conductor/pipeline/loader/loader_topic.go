@@ -39,9 +39,9 @@ func (p *topicLoader) Close() {
 	p.producer.Close()
 }
 
-func (p *topicLoader) Load(f *data.DataFrame, ctx *data.Context) error {
-	topic, ok1 := ctx.Get("topic").(string)
-	e, ok2 := ctx.Get("event").(*event.TopicPublishEvent)
+func (p *topicLoader) Load(f *data.DataFrame) error {
+	topic, ok1 := f.Context("topic").(string)
+	e, ok2 := f.Context("event").(*event.TopicPublishEvent)
 	if !ok1 || !ok2 || topic == "" || e == nil {
 		return errors.New("invalid topic")
 	}

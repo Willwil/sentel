@@ -18,7 +18,7 @@ import (
 )
 
 type Transformer interface {
-	Transform(f *data.DataFrame, ctx *data.Context) (*data.DataFrame, error)
+	Transform(f *data.DataFrame) (*data.DataFrame, error)
 	Close()
 }
 
@@ -31,7 +31,7 @@ func New(c config.Config, name string) Transformer {
 
 type noTransformer struct{}
 
-func (p *noTransformer) Transform(f *data.DataFrame, ctx *data.Context) (*data.DataFrame, error) {
+func (p *noTransformer) Transform(f *data.DataFrame) (*data.DataFrame, error) {
 	return f, nil
 }
 func (p *noTransformer) Close() {}

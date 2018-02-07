@@ -25,42 +25,28 @@ import (
 )
 
 type eventExtractor struct {
-	config config.Config
+	dataprocess registry.RuleDataProcess
+	config      config.Config
 }
 
 func newEventExtractor(c config.Config) (Extractor, error) {
 	return &eventExtractor{
-		config: c,
+		config:      c,
+		dataprocess: c.MustValue("dataprocess").(registry.RuleDataProcess),
 	}, nil
 }
 
-func (p *eventExtractor) isValid(data interface{}, ctx *data.Context) error {
-	if data == nil {
-		return errors.New("invalid parameter")
-	}
-	if _, ok := data.(*event.Event); !ok {
-		return errors.New("invalid parameter")
-	}
-	if v := ctx.Get("rule"); v == nil {
-		return errors.New("invalid data context")
-	} else if _, ok := v.(*registry.Rule); !ok {
-		return errors.New("invalid data context")
-	}
-	return nil
-}
-
-func (p *eventExtractor) Extract(origin interface{}, ctx *data.Context) (*data.DataFrame, error) {
-	if p.isValid(origin, ctx) != nil {
+func (p *eventExtractor) Extract(origin interface{}) (*data.DataFrame, error) {
+	if _, ok := origin.(*event.TopicPublishEvent); !ok {
 		return nil, errors.New("invalid parameter")
 	}
-	e := origin.(*event.TopicPublishEvent)
-	r := ctx.Get("rule").(*registry.Rule)
 
+	e := origin.(*event.TopicPublishEvent)
 	f := data.NewDataFrame()
-	if e.Topic == r.DataProcess.Topic {
-		ctx.Set("topic", e.Topic)
-		ctx.Set("event", e)
-		if r.DataProcess.Condition == "" {
+	if e.Topic == p.dataprocess.Topic {
+		f.SetContext("topic", e.Topic)
+		f.SetContext("event", e)
+		if p.dataprocess.Condition == "" {
 			// return data if no process condition is specified
 			err := json.Unmarshal(e.Payload, &f)
 			return f, err
@@ -71,14 +57,14 @@ func (p *eventExtractor) Extract(origin interface{}, ctx *data.Context) (*data.D
 				return nil, fmt.Errorf("data format is invalid '%s'", err.Error())
 			}
 			// parse condiction and get result
-			n, err := parser.Query(r.DataProcess.Condition)
+			n, err := parser.Query(p.dataprocess.Condition)
 			if err != nil || n == nil {
 				return nil, fmt.Errorf("data query failed '%s'", err.Error())
 			}
 			switch n.(type) {
 			case map[string]interface{}:
 				results := n.(map[string]interface{})
-				fields := r.DataProcess.Fields
+				fields := p.dataprocess.Fields
 				for _, field := range fields {
 					if _, found := results[field]; found { // message field
 						f.AddField(field, results[field])

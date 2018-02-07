@@ -27,9 +27,11 @@ type Config interface {
 	Bool(key string) (bool, error)
 	Int(key string) (int, error)
 	String(key string) (string, error)
+	Value(key string) (interface{}, error)
 	MustBool(key string) bool
 	MustInt(key string) int
 	MustString(key string) string
+	MustValue(key string) interface{}
 	SetValue(key string, val string)
 	AddConfigItem(key string, value interface{})
 
@@ -141,6 +143,14 @@ func (c *config) StringWithSection(section string, key string) (string, error) {
 	return "", fmt.Errorf("invalid value for key '%s'", key)
 }
 
+// Value return element value for key
+func (c *config) ValueWithSection(section string, key string) (interface{}, error) {
+	if err := c.checkItemExist(section, key); err == nil {
+		return c.sections[section][key].(string), nil
+	}
+	return nil, fmt.Errorf("invalid value for key '%s'", key)
+}
+
 func (c *config) MustBoolWithSection(section string, key string) bool {
 	val, err := c.BoolWithSection(section, key)
 	if err != nil {
@@ -164,16 +174,26 @@ func (c *config) MustStringWithSection(section string, key string) string {
 	return val
 }
 
+func (c *config) MustValueWithSection(section string, key string) interface{} {
+	val, err := c.ValueWithSection(section, key)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	return val
+}
+
 func (c *config) SetValueWithSection(section string, key string, valu string) {
 }
 
-func (c *config) Bool(key string) (bool, error)     { return c.BoolWithSection(c.primary, key) }
-func (c *config) Int(key string) (int, error)       { return c.IntWithSection(c.primary, key) }
-func (c *config) String(key string) (string, error) { return c.StringWithSection(c.primary, key) }
-func (c *config) MustBool(key string) bool          { return c.MustBoolWithSection(c.primary, key) }
-func (c *config) MustInt(key string) int            { return c.MustIntWithSection(c.primary, key) }
-func (c *config) MustString(key string) string      { return c.MustStringWithSection(c.primary, key) }
-func (c *config) SetValue(key string, val string)   { c.SetValueWithSection(c.primary, key, val) }
+func (c *config) Bool(key string) (bool, error)         { return c.BoolWithSection(c.primary, key) }
+func (c *config) Int(key string) (int, error)           { return c.IntWithSection(c.primary, key) }
+func (c *config) String(key string) (string, error)     { return c.StringWithSection(c.primary, key) }
+func (c *config) Value(key string) (interface{}, error) { return c.ValueWithSection(c.primary, key) }
+func (c *config) MustBool(key string) bool              { return c.MustBoolWithSection(c.primary, key) }
+func (c *config) MustInt(key string) int                { return c.MustIntWithSection(c.primary, key) }
+func (c *config) MustString(key string) string          { return c.MustStringWithSection(c.primary, key) }
+func (c *config) MustValue(key string) interface{}      { return c.MustStringWithSection(c.primary, key) }
+func (c *config) SetValue(key string, val string)       { c.SetValueWithSection(c.primary, key, val) }
 
 func (c *config) AddConfig(options map[string]map[string]interface{}) Config {
 	for section, values := range options {

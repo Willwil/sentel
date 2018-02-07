@@ -17,7 +17,6 @@ import (
 
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/pipeline"
-	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/conductor/pipeline/extractor"
 	"github.com/cloustone/sentel/conductor/pipeline/loader"
 	"github.com/cloustone/sentel/pkg/config"
@@ -44,23 +43,29 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 		datach: make(chan interface{}, 1),
 	}
 	if usingreader {
-		ctx := data.NewContext()
-		ctx.Set("rule", r)
-		ppline.Start(p, ctx)
+		ppline.Start(p)
 	}
 	return p, nil
 }
 
 func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error) {
-	config := config.New("conductor")
-	options := make(map[string]string)
-	options["mongo"] = c.MustString("mongo")
-	options["message_server"] = c.MustString("kafka")
-	if r.DataTarget.Type == registry.DataTargetTypeTopic {
-		options["topic"] = r.DataTarget.Topic
-	}
-	config.AddConfigSection("pipeline", options)
+	// make a new configuration and add default common configuration
+	config := config.New("pipeline")
+	config.AddConfigItem("productId", r.ProductId)
+	config.AddConfigItem("ruleName", r.RuleName)
+	config.AddConfigItem("dataprocess", r.DataProcess)
+	config.AddConfigItem("datatarget", r.DataTarget)
 
+	// add datatarget specified settings
+	switch r.DataTarget.Type {
+	case registry.DataTargetTypeTopic:
+		config.AddConfigItem("mongo", c.MustString("mongo"))
+		config.AddConfigItem("message_server", c.MustString("kafka"))
+		config.AddConfigItem("topic", r.DataTarget.Topic)
+	default:
+	}
+
+	// conduct pipeline
 	ppline := pipeline.New(config)
 	extractor, _ := extractor.New(config, "event")
 	loader, _ := loader.New(config, string(r.DataTarget.Type))
@@ -77,9 +82,7 @@ func (p *ruleWraper) handle(e event.Event) error {
 		p.datach <- e
 		return nil
 	} else {
-		ctx := data.NewContext()
-		ctx.Set("rule", p.rule)
-		return p.ppline.PushData(e, ctx)
+		return p.ppline.PushData(e)
 	}
 }
 
