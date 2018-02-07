@@ -13,7 +13,6 @@
 package loader
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/cloustone/sentel/broker/event"
@@ -40,13 +39,13 @@ func (p *topicLoader) Close() {
 	p.producer.Close()
 }
 
-func (p *topicLoader) Load(data map[string]interface{}, ctx *data.Context) error {
+func (p *topicLoader) Load(f *data.DataFrame, ctx *data.Context) error {
 	topic, ok1 := ctx.Get("topic").(string)
 	e, ok2 := ctx.Get("event").(*event.TopicPublishEvent)
 	if !ok1 || !ok2 || topic == "" || e == nil {
 		return errors.New("invalid topic")
 	}
-	if buf, err := json.Marshal(data); err != nil {
+	if buf, err := f.Serialize(); err != nil {
 		return err
 	} else {
 		e.Payload = buf

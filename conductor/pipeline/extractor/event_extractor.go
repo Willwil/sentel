@@ -49,20 +49,21 @@ func (p *eventExtractor) isValid(data interface{}, ctx *data.Context) error {
 	return nil
 }
 
-func (p *eventExtractor) Extract(data interface{}, ctx *data.Context) (map[string]interface{}, error) {
-	if p.isValid(data, ctx) != nil {
+func (p *eventExtractor) Extract(origin interface{}, ctx *data.Context) (*data.DataFrame, error) {
+	if p.isValid(origin, ctx) != nil {
 		return nil, errors.New("invalid parameter")
 	}
-	e := data.(*event.TopicPublishEvent)
+	e := origin.(*event.TopicPublishEvent)
 	r := ctx.Get("rule").(*registry.Rule)
+
+	f := data.NewDataFrame()
 	if e.Topic == r.DataProcess.Topic {
 		ctx.Set("topic", e.Topic)
 		ctx.Set("event", e)
 		if r.DataProcess.Condition == "" {
 			// return data if no process condition is specified
-			result := make(map[string]interface{})
-			err := json.Unmarshal(e.Payload, &result)
-			return result, err
+			err := json.Unmarshal(e.Payload, &f)
+			return f, err
 		} else {
 			// topic's data must be json format
 			parser, err := jsonql.NewStringQuery(string(e.Payload))
@@ -78,20 +79,19 @@ func (p *eventExtractor) Extract(data interface{}, ctx *data.Context) (map[strin
 			case map[string]interface{}:
 				results := n.(map[string]interface{})
 				fields := r.DataProcess.Fields
-				data := make(map[string]interface{})
 				for _, field := range fields {
 					if _, found := results[field]; found { // message field
-						data[field] = results[field]
+						f.AddField(field, results[field])
 					} else if len(field) > 0 && field[0] == '$' { // variable support
-						n := field[1:]
-						data[n] = p.getVariableValue(n, e)
+						v := p.getVariableValue(field[1:], e)
+						f.AddField(field, v)
 					} else { // functions support
 						if n, err := p.getFunctionValue(field, e); err == nil {
-							data[field] = n
+							f.AddField(field, n)
 						}
 					}
 				}
-				return data, nil
+				return f, nil
 			}
 		}
 	}

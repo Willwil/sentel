@@ -22,7 +22,7 @@ import (
 
 type Loader interface {
 	Name() string
-	Load(data map[string]interface{}, ctx *data.Context) error
+	Load(f *data.DataFrame, ctx *data.Context) error
 	Close()
 }
 

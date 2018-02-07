@@ -10,28 +10,31 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package transformer
+package data
 
-import (
-	"github.com/cloustone/sentel/conductor/pipeline/data"
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "encoding/json"
 
-type Transformer interface {
-	Transform(f *data.DataFrame, ctx *data.Context) (*data.DataFrame, error)
-	Close()
+type DataFrame struct {
+	items map[string]interface{}
 }
 
-func New(c config.Config, name string) Transformer {
-	switch name {
-	default:
-		return &noTransformer{}
+func NewDataFrame() *DataFrame {
+	return &DataFrame{
+		items: make(map[string]interface{}),
 	}
 }
 
-type noTransformer struct{}
-
-func (p *noTransformer) Transform(f *data.DataFrame, ctx *data.Context) (*data.DataFrame, error) {
-	return f, nil
+func (p *DataFrame) AddField(k string, v interface{}) {
+	p.items[k] = v
 }
-func (p *noTransformer) Close() {}
+
+func (p *DataFrame) GetField(k string) interface{} {
+	if v, found := p.items[k]; found {
+		return v
+	}
+	return nil
+}
+
+func (p *DataFrame) Serialize() ([]byte, error) {
+	return json.Marshal(p.items)
+}
