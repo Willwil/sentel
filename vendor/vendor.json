@@ -357,6 +357,18 @@
 			"revisionTime": "2017-05-23T03:00:23Z"
 		},
 		{
+			"checksumSHA1": "JU+kcMNB8CPi7DJmxK5E3vpNxcg=",
+			"path": "github.com/olivere/elastic",
+			"revision": "eb69fbabfd6151d6c0f6d3d850d4f61edcff3763",
+			"revisionTime": "2016-10-08T09:19:33Z"
+		},
+		{
+			"checksumSHA1": "AmcqvKDAUGvVsrf8NDCQ/B8cMj4=",
+			"path": "github.com/olivere/elastic/uritemplates",
+			"revision": "eb69fbabfd6151d6c0f6d3d850d4f61edcff3763",
+			"revisionTime": "2016-10-08T09:19:33Z"
+		},
+		{
 			"checksumSHA1": "zZg0J0MqvnqXVYo644QDvnUinrc=",
 			"path": "github.com/pelletier/go-toml",
 			"revision": "1d6b12b7cb290426e27e6b4e38b89fcda3aeef03",
@@ -701,6 +713,12 @@
 			"path": "gopkg.in/mgo.v2/internal/scram",
 			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
 			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "O5dZe+m70S7vbkgePsMLrUc86DA=",
+			"path": "gopkg.in/olivere/elastic.v2/uritemplates",
+			"revision": "cdc8c0afbe6aeeb1b4a99aacb1a8ce9d6f985203",
+			"revisionTime": "2017-09-15T17:21:24Z"
 		},
 		{
 			"checksumSHA1": "RDJpJQwkF012L6m/2BJizyOksNw=",

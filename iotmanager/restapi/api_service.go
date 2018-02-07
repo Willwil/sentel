@@ -64,22 +64,22 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	g := e.Group("/iot/api/v1")
 	// Clusters & Node
 	g.GET("/nodes", getAllNodes)
-	g.GET("/nodes/:nodeName", getNodeInfo)
+	g.GET("/nodes/:nodeId", getNodeInfo)
 	g.GET("/nodes/clients", getNodesClientInfo)
-	g.GET("/nodes/:nodeName/clients", getNodeClients)
-	g.GET("/nodes/:nodeName/clients/:clientId", getNodeClientInfo)
+	g.GET("/nodes/:nodeId/clients", getNodeClients)
+	g.GET("/nodes/:nodeId/clients/:clientId", getNodeClientInfo)
 
 	// Client
 	g.GET("/clients/:clientId", getClientInfo)
 
 	// Session
-	g.GET("/nodes/:nodeName/sessions", getNodeSessions)
-	g.GET("/nodes/:nodeName/sessions/:clientId", getNodeSessionsClientInfo)
+	g.GET("/nodes/:nodeId/sessions", getNodeSessions)
+	g.GET("/nodes/:nodeId/sessions/:clientId", getNodeSessionsClientInfo)
 	g.GET("/sessions/:clientId", getClusterSessionClientInfo)
 
 	// Subscription
-	g.GET("/nodes/:nodeName/subscriptions", getNodeSubscriptions)
-	g.GET("/nodes/:nodeName/subscriptions/:clientId", getNodeSubscriptionsClientInfo)
+	g.GET("/nodes/:nodeId/subscriptions", getNodeSubscriptions)
+	g.GET("/nodes/:nodeId/subscriptions/:clientId", getNodeSubscriptionsClientInfo)
 	g.GET("/subscriptions/:clientId", getClusterSubscriptionsInfo)
 
 	// Routes
@@ -92,19 +92,19 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	g.POST("/mqtt/unsubscribe", unsubscribeMqttMessage)
 
 	// Plugins
-	g.GET("/nodes/:nodeName/plugins", getNodePluginsInfo)
+	g.GET("/nodes/:nodeId/plugins", getNodePluginsInfo)
 
 	// Services
 	g.GET("/services", getClusterServicesInfo)
-	g.GET("/nodes/:nodeName/services", getNodeServicesInfo)
+	g.GET("/nodes/:nodeId/services", getNodeServicesInfo)
 
 	// Metrics
 	g.GET("/metrics", getClusterMetricsInfo)
-	g.GET("/nodes/:nodeName/metrics", getNodeMetricsInfo)
+	g.GET("/nodes/:nodeId/metrics", getNodeMetricsInfo)
 
 	// Stats
 	g.GET("/stats", getClusterStats)
-	g.GET("/nodes/:nodeName/stats", getNodeStatsInfo)
+	g.GET("/nodes/:nodeId/stats", getNodeStatsInfo)
 
 	// Tenant
 	g.POST("/tenants", createTenant)
@@ -144,28 +144,25 @@ func (p *apiService) Stop() {
 // Nodes
 // getAllNodes return all nodes in clusters
 func getAllNodes(ctx echo.Context) error {
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	nodes := dbc.GetAllNodes()
+	defer db.Close()
+	nodes := db.GetAllNodes()
 	return ctx.JSON(OK, response{Result: nodes})
 }
 
 // getNodeInfo return a node's detail info
 func getNodeInfo(ctx echo.Context) error {
 	nodeId := ctx.Param("nodeId")
-	if nodeId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
+	defer db.Close()
 
-	node, err := dbc.GetNode(nodeId)
+	node, err := db.GetNode(nodeId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -185,14 +182,14 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, response{Message: "time format is wrong"})
 	}
 
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
+	defer db.Close()
 
 	// Get all nodes, for each node, query clients collection to get client's count
-	nodes := dbc.GetAllNodes()
+	nodes := db.GetAllNodes()
 	results := map[string][]int{}
 	for _, node := range nodes {
 		f := from
@@ -202,7 +199,7 @@ func getNodesClientInfoWithinTimeScope(ctx echo.Context) error {
 			if to.Sub(t) <= duration {
 				break
 			}
-			clients := dbc.GetNodesClientWithTimeScope(node.NodeId, f, t)
+			clients := db.GetNodesClientWithTimeScope(node.NodeId, f, t)
 			result = append(result, len(clients))
 			f = f.Add(duration)
 		}
@@ -219,18 +216,18 @@ func getNodesClientInfo(ctx echo.Context) error {
 	if from != "" {
 		return getNodesClientInfoWithinTimeScope(ctx)
 	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
+	defer db.Close()
 
 	// Retrun last statics for each node
-	nodes := dbc.GetAllNodes()
+	nodes := db.GetAllNodes()
 	// For each node, query clients collection to get client's count
 	result := map[string]int{}
 	for _, node := range nodes {
-		clients := dbc.GetNodeClients(node.NodeId)
+		clients := db.GetNodeClients(node.NodeId)
 		result[node.NodeId] = len(clients)
 	}
 	return ctx.JSON(OK, response{Result: result})
@@ -251,11 +248,11 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 	if to.Sub(from) < duration {
 		return ctx.JSON(BadRequest, response{Message: "time format is wrong"})
 	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
+	defer db.Close()
 
 	result := []int{}
 	for {
@@ -263,7 +260,7 @@ func getNodeClientsWithinTimeScope(ctx echo.Context) error {
 		if to.Sub(t) <= duration {
 			break
 		}
-		clients := dbc.GetNodesClientWithTimeScope(nodeId, from, to)
+		clients := db.GetNodesClientWithTimeScope(nodeId, from, to)
 		result = append(result, len(clients))
 	}
 	return ctx.JSON(OK, response{Result: result})
@@ -283,12 +280,12 @@ func getNodeClients(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
 	}
 
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	clients := dbc.GetNodeClients(nodeId)
+	defer db.Close()
+	clients := db.GetNodeClients(nodeId)
 	return ctx.JSON(OK, response{Result: clients})
 }
 
@@ -299,12 +296,12 @@ func getNodeClientInfo(ctx echo.Context) error {
 	if nodeId == "" || clientId == "" {
 		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
 	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	client, err := dbc.GetClientWithNode(nodeId, clientId)
+	defer db.Close()
+	client, err := db.GetClientWithNode(nodeId, clientId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -315,15 +312,12 @@ func getNodeClientInfo(ctx echo.Context) error {
 // getClusterClientInfo return clients info in cluster
 func getClientInfo(ctx echo.Context) error {
 	clientId := ctx.Param("clientId")
-	if clientId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	client, err := dbc.GetClient(clientId)
+	defer db.Close()
+	client, err := db.GetClient(clientId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -334,12 +328,12 @@ func getClientInfo(ctx echo.Context) error {
 
 // getClusterMetricsInfo return cluster metrics
 func getClusterMetricsInfo(ctx echo.Context) error {
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	metrics := dbc.GetMetrics()
+	defer db.Close()
+	metrics := db.GetMetrics()
 	services := map[string]map[string]uint64{}
 	for _, metric := range metrics {
 		if service, ok := services[metric.Service]; !ok { // not found
@@ -360,15 +354,12 @@ func getClusterMetricsInfo(ctx echo.Context) error {
 // getNodeMetricsInfo return a node's metrics
 func getNodeMetricsInfo(ctx echo.Context) error {
 	nodeId := ctx.Param("nodeId")
-	if nodeId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	metric, err := dbc.GetNodeMetric(nodeId)
+	defer db.Close()
+	metric, err := db.GetNodeMetric(nodeId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -379,33 +370,26 @@ func getNodeMetricsInfo(ctx echo.Context) error {
 // getNodeSessions return a node's session
 func getNodeSessions(ctx echo.Context) error {
 	nodeId := ctx.Param("nodeId")
-	if nodeId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	sessions := dbc.GetNodeSessions(nodeId)
+	defer db.Close()
+	sessions := db.GetNodeSessions(nodeId)
 	return ctx.JSON(OK, response{Result: sessions})
 }
 
 // getNodeSessionsClient return client infor in a node's sessions
 func getNodeSessionsClientInfo(ctx echo.Context) error {
-	nodeId := ctx.Param("nodeId")
-	clientId := ctx.Param("clientId")
-	if nodeId == "" || clientId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
+	defer db.Close()
 
-	session, err := dbc.GetSessionWithNode(nodeId, clientId)
+	nodeId := ctx.Param("nodeId")
+	clientId := ctx.Param("clientId")
+	session, err := db.GetSessionWithNode(nodeId, clientId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -415,15 +399,12 @@ func getNodeSessionsClientInfo(ctx echo.Context) error {
 // getClusterSessionInfor return client info in cluster session
 func getClusterSessionClientInfo(ctx echo.Context) error {
 	clientId := ctx.Param("clientId")
-	if clientId == "" {
-		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
-	}
-	dbc, err := openManagerDB(ctx)
+	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
-	defer dbc.Close()
-	session, err := dbc.GetSession(clientId)
+	defer db.Close()
+	session, err := db.GetSession(clientId)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}

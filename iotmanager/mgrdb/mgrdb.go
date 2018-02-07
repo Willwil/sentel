@@ -118,6 +118,12 @@ type ManagerDB interface {
 	GetAllNodes() []Node
 	// GetNode retrieve specified node info
 	GetNode(nodeId string) (Node, error)
+	// AddNode add new node
+	AddNode(n Node) error
+	// UpdateNode update existed node
+	UpdateNode(n Node) error
+	// RemoveNode remove existed node
+	RemoveNode(nodeId string) error
 	// GetNodeClients retrieve all clients info on specified broker node
 	GetNodeClients(nodeId string) []Client
 	// GetNodeClients retrieve clients info on specified broker node in duration

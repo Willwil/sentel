@@ -34,11 +34,18 @@ func (p *NodeTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *NodeTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *NodeTopic) handleTopic(c config.Config, ctx context.Context) error {
-	// update object status according to action
+	db, err := mgrdb.New(c)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 	switch p.Action {
 	case ObjectActionRegister:
+		return db.AddNode(p.Node)
 	case ObjectActionUpdate:
+		return db.UpdateNode(p.Node)
 	case ObjectActionUnregister:
+		return db.RemoveNode(p.Node.NodeId)
 	case ObjectActionDelete:
 	}
 	return nil

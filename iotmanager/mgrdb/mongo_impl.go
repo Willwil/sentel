@@ -68,6 +68,19 @@ func (p *mgrdbMongo) GetNode(nodeId string) (Node, error) {
 	return node, err
 }
 
+func (p *mgrdbMongo) AddNode(n Node) error {
+	return nil
+}
+
+func (p *mgrdbMongo) UpdateNode(n Node) error {
+	return nil
+}
+
+// RemoveNode remove existed node
+func (p *mgrdbMongo) RemoveNode(nodeId string) error {
+	return nil
+}
+
 func (p *mgrdbMongo) GetNodeClients(nodeId string) []Client {
 	c := p.session.C(collectionClients)
 	clients := []Client{}

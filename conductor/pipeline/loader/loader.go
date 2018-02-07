@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
 )
 
 type Loader interface {
@@ -27,8 +28,12 @@ type Loader interface {
 
 func New(c config.Config, name string) (Loader, error) {
 	switch name {
-	case "topic":
+	case registry.DataTargetTypeTopic:
 		return newTopicLoader(c)
+	case registry.DataTargetTypeES:
+		return newESLoader(c)
+	case registry.DataTargetTypeSQLDB:
+		return newSqldbLoader(c)
 	default:
 		return nil, fmt.Errorf("invalid loader '%s'", name)
 	}
