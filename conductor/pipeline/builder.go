@@ -17,13 +17,14 @@ import (
 	"github.com/cloustone/sentel/conductor/pipeline/loader"
 	"github.com/cloustone/sentel/conductor/pipeline/transformer"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/golang/glog"
 )
 
 type Builder struct {
 	config config.Config
 }
 
-func NewBuilder(c config.Config) *Builder {
+func NewBuilder() *Builder {
 	config := config.New("pipeline")
 	return &Builder{config: config}
 }
@@ -32,8 +33,8 @@ func (p *Builder) AddConfig(key string, val interface{}) {
 	p.config.AddConfigItem(key, val)
 }
 
-func (p *Builder) Pipeline(extractorName string, transformerNames []string, loaderNames []string) (Pipeline, error) {
-	ppline := NewPipeline(p.config)
+func (p *Builder) Pipeline(name string, extractorName string, transformerNames []string, loaderNames []string) (Pipeline, error) {
+	ppline := NewPipeline(p.config, name)
 	extractor, err := extractor.New(p.config, extractorName)
 	if err != nil {
 		return nil, err
@@ -52,5 +53,6 @@ func (p *Builder) Pipeline(extractorName string, transformerNames []string, load
 		}
 		ppline.AddLoader(loader)
 	}
+	glog.Infof("pipeline '%s' is created", name)
 	return ppline, nil
 }

@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/pipeline"
+	"github.com/cloustone/sentel/conductor/pipeline/extractor"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
@@ -25,14 +26,14 @@ import (
 const usingreader = false
 
 type ruleWraper struct {
-	rule   *registry.Rule
-	ppline pipeline.Pipeline
-	datach chan interface{}
+	rule   *registry.Rule    // Underlay rule object
+	ppline pipeline.Pipeline // Pipeline for the rule
+	datach chan interface{}  // Asynchrous data channel
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
-	// make a new configuration and add default common configuration
-	builder := pipeline.NewBuilder(c)
+	// construct pipeline builder and add configuration
+	builder := pipeline.NewBuilder()
 	builder.AddConfig("productId", r.ProductId)
 	builder.AddConfig("ruleName", r.RuleName)
 	builder.AddConfig("dataprocess", r.DataProcess)
@@ -47,7 +48,7 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	default:
 	}
 	// build pipeline
-	ppline, err := builder.Pipeline("event", []string{}, []string{r.DataTarget.Type})
+	ppline, err := builder.Pipeline(r.RuleName, extractor.EventExtractor, []string{}, []string{r.DataTarget.Type})
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +64,7 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 }
 
 func (p *ruleWraper) handle(e event.Event) error {
-	glog.Infof("conductor executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
+	glog.Infof("executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	if usingreader {
 		p.datach <- e
 		return nil

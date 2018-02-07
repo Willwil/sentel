@@ -19,6 +19,10 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
+const (
+	EventExtractor = "event"
+)
+
 type Extractor interface {
 	Extract(data interface{}) (*data.DataFrame, error)
 	Close()
@@ -26,7 +30,7 @@ type Extractor interface {
 
 func New(c config.Config, name string) (Extractor, error) {
 	switch name {
-	case "event":
+	case EventExtractor:
 		return &eventExtractor{config: c}, nil
 	default:
 		return nil, fmt.Errorf("invalid extractor '%s'", name)
