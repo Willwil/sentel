@@ -17,8 +17,6 @@ import (
 
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/conductor/pipeline"
-	"github.com/cloustone/sentel/conductor/pipeline/extractor"
-	"github.com/cloustone/sentel/conductor/pipeline/loader"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/golang/glog"
@@ -33,7 +31,23 @@ type ruleWraper struct {
 }
 
 func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
-	ppline, err := buildPipeline(c, r)
+	// make a new configuration and add default common configuration
+	builder := pipeline.NewBuilder(c)
+	builder.AddConfig("productId", r.ProductId)
+	builder.AddConfig("ruleName", r.RuleName)
+	builder.AddConfig("dataprocess", r.DataProcess)
+	builder.AddConfig("datatarget", r.DataTarget)
+
+	// add datatarget specified settings
+	switch r.DataTarget.Type {
+	case registry.DataTargetTypeTopic:
+		builder.AddConfig("mongo", c.MustString("mongo"))
+		builder.AddConfig("message_server", c.MustString("kafka"))
+		builder.AddConfig("topic", r.DataTarget.Topic)
+	default:
+	}
+	// build pipeline
+	ppline, err := builder.Pipeline("event", []string{}, []string{r.DataTarget.Type})
 	if err != nil {
 		return nil, err
 	}
@@ -46,34 +60,6 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 		ppline.Start(p)
 	}
 	return p, nil
-}
-
-func buildPipeline(c config.Config, r *registry.Rule) (pipeline.Pipeline, error) {
-	// make a new configuration and add default common configuration
-	config := config.New("pipeline")
-	config.AddConfigItem("productId", r.ProductId)
-	config.AddConfigItem("ruleName", r.RuleName)
-	config.AddConfigItem("dataprocess", r.DataProcess)
-	config.AddConfigItem("datatarget", r.DataTarget)
-
-	// add datatarget specified settings
-	switch r.DataTarget.Type {
-	case registry.DataTargetTypeTopic:
-		config.AddConfigItem("mongo", c.MustString("mongo"))
-		config.AddConfigItem("message_server", c.MustString("kafka"))
-		config.AddConfigItem("topic", r.DataTarget.Topic)
-	default:
-	}
-
-	// conduct pipeline
-	ppline := pipeline.New(config)
-	extractor, _ := extractor.New(config, "event")
-	loader, _ := loader.New(config, string(r.DataTarget.Type))
-	if extractor == nil || loader == nil {
-		return nil, errors.New("pipeline initialization failed")
-	}
-	ppline.AddExtractor(extractor).AddLoader(loader)
-	return ppline, nil
 }
 
 func (p *ruleWraper) handle(e event.Event) error {

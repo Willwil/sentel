@@ -24,12 +24,4 @@ var defaultConfigs = config.M{
 	"restapi": {
 		"listen": "localhost:50060",
 	},
-	"indicator": {
-		"listen": "localhost:50059",
-	},
-	"etl": {
-		"extractor":   "event",
-		"transformer": "no",
-		"loader":      "topic",
-	},
 }

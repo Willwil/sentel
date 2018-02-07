@@ -32,7 +32,7 @@ type Pipeline interface {
 	Close()
 }
 
-func New(c config.Config) Pipeline {
+func NewPipeline(c config.Config) Pipeline {
 	return &defaultPipeline{
 		config:       c,
 		transformers: []transformer.Transformer{},

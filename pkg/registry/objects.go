@@ -61,13 +61,13 @@ type RuleDataProcess struct { // select keyword from /productid/topic with condi
 	Fields    []string `json:"fields" bson:"Fields"`
 }
 type RuleDataTarget struct {
-	Type         DataTargetType `json:"type"`       // Transfer type
-	Topic        string         `json:"topic"`      // Transfer data to another topic
-	DatabaseHost string         `json:"dbhost"`     // Database host
-	DatabaseName string         `json:"dbname"`     // Transfer data to database
-	Collection   string         `json:"collection”` // Data Collection
-	Username     string         `json:"username"`   // Database's user name
-	Password     string         `json:"password"`   // Database's password
+	Type         string `json:"type"`       // Transfer type
+	Topic        string `json:"topic"`      // Transfer data to another topic
+	DatabaseHost string `json:"dbhost"`     // Database host
+	DatabaseName string `json:"dbname"`     // Transfer data to database
+	Collection   string `json:"collection”` // Data Collection
+	Username     string `json:"username"`   // Database's user name
+	Password     string `json:"password"`   // Database's password
 }
 
 const (
