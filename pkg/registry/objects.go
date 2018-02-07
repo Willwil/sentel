@@ -52,6 +52,7 @@ const (
 	DataTargetTypeTopic = "topic"
 	DataTargetTypeES    = "es"
 	DataTargetTypeSQLDB = "sqldb"
+	DataTargetTypeCAS   = "cassandra"
 )
 
 type RuleDataProcess struct { // select keyword from /productid/topic with condition

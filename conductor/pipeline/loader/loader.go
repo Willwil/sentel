@@ -33,7 +33,9 @@ func New(c config.Config, name string) (Loader, error) {
 	case registry.DataTargetTypeES:
 		return newESLoader(c)
 	case registry.DataTargetTypeSQLDB:
-		return newSqldbLoader(c)
+		return newMysqlLoader(c)
+	case registry.DataTargetTypeCAS:
+		return newCassLoader(c)
 	default:
 		return nil, fmt.Errorf("invalid loader '%s'", name)
 	}

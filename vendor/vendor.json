@@ -141,6 +141,12 @@
 			"revisionTime": "2017-12-22T15:45:36Z"
 		},
 		{
+			"checksumSHA1": "ZbU8qGzETzJZ2t30LmHxla5PLMY=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "bc14601d1bd56421dd60f561e6052c9ed77f9daf",
+			"revisionTime": "2018-01-25T05:47:45Z"
+		},
+		{
 			"checksumSHA1": "2nOHmoQhJw1o0t0miTHb8XKLPog=",
 			"path": "github.com/go-swagger/go-swagger",
 			"revision": "2db0ce663570b503015389ce4b53e61534d5c66c",
@@ -169,6 +175,30 @@
 			"path": "github.com/go-xorm/core",
 			"revision": "da1adaf7a28ca792961721a34e6e04945200c890",
 			"revisionTime": "2017-09-09T08:56:53Z"
+		},
+		{
+			"checksumSHA1": "989p8YX+h2GxOFWhUMvh1O/K3rc=",
+			"path": "github.com/gocql/gocql",
+			"revision": "1303a32993a1242a6fb58dc497a3b8a54ffd257d",
+			"revisionTime": "2018-02-05T13:46:42Z"
+		},
+		{
+			"checksumSHA1": "7RlYIbPYgPkxDDCSEuE6bvYEEeU=",
+			"path": "github.com/gocql/gocql/internal/lru",
+			"revision": "1303a32993a1242a6fb58dc497a3b8a54ffd257d",
+			"revisionTime": "2018-02-05T13:46:42Z"
+		},
+		{
+			"checksumSHA1": "puCAbQOdeajpTEFssPsgeskXB+8=",
+			"path": "github.com/gocql/gocql/internal/murmur",
+			"revision": "1303a32993a1242a6fb58dc497a3b8a54ffd257d",
+			"revisionTime": "2018-02-05T13:46:42Z"
+		},
+		{
+			"checksumSHA1": "tZQDfMMTKrYMXqen0zjJWLtOf1A=",
+			"path": "github.com/gocql/gocql/internal/streams",
+			"revision": "1303a32993a1242a6fb58dc497a3b8a54ffd257d",
+			"revisionTime": "2018-02-05T13:46:42Z"
 		},
 		{
 			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",
@@ -217,6 +247,24 @@
 			"path": "github.com/golang/snappy",
 			"revision": "553a641470496b2327abcac10b36396bd98e45c9",
 			"revisionTime": "2017-02-15T23:32:05Z"
+		},
+		{
+			"checksumSHA1": "O0r0hj4YL+jSRNjnshkeH4GY+4s=",
+			"path": "github.com/hailocab/go-hostpool",
+			"revision": "e80d13ce29ede4452c43dea11e79b9bc8a15b478",
+			"revisionTime": "2016-01-25T11:53:50Z"
+		},
+		{
+			"checksumSHA1": "aQpV1LFDJbQkPxkw/5bQudmCASM=",
+			"path": "github.com/hailocab/gocassa",
+			"revision": "d3c840df87884c07d5ca67f08ecf62f4877ac79a",
+			"revisionTime": "2016-05-04T10:25:45Z"
+		},
+		{
+			"checksumSHA1": "F+3cADYKLTRU5bu7KR5SkFSrSi8=",
+			"path": "github.com/hailocab/gocassa/reflect",
+			"revision": "d3c840df87884c07d5ca67f08ecf62f4877ac79a",
+			"revisionTime": "2016-05-04T10:25:45Z"
 		},
 		{
 			"checksumSHA1": "Hp4nitbU8nyDAi+q3WwMqpOjFQw=",
@@ -562,6 +610,10 @@
 		},
 		{
 			"path": "golang.org/x/tools/go/loader",
+			"revision": ""
+		},
+		{
+			"path": "google.golang.org/appengine/cloudsql",
 			"revision": ""
 		},
 		{

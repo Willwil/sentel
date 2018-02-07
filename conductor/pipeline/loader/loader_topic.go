@@ -35,9 +35,7 @@ func newTopicLoader(c config.Config) (Loader, error) {
 }
 
 func (p *topicLoader) Name() string { return "topic" }
-func (p *topicLoader) Close() {
-	p.producer.Close()
-}
+func (p *topicLoader) Close()       { p.producer.Close() }
 
 func (p *topicLoader) Load(f *data.DataFrame) error {
 	topic, ok1 := f.Context("topic").(string)
