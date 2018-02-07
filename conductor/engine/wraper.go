@@ -82,7 +82,10 @@ func (p *ruleWraper) handle(e event.Event) error {
 		p.datach <- e
 		return nil
 	} else {
-		return p.ppline.PushData(e)
+		if pe, ok := e.(*event.TopicPublishEvent); ok {
+			return p.ppline.PushData(pe)
+		}
+		return errors.New("iinvalid event type")
 	}
 }
 

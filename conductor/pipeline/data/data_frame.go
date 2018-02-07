@@ -48,3 +48,5 @@ func (p *DataFrame) Context(key string) interface{} {
 func (p *DataFrame) SetContext(key string, value interface{}) {
 	p.ctx[key] = value
 }
+
+func (p *DataFrame) PrettyJson() map[string]interface{} { return p.items }

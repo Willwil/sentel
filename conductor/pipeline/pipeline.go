@@ -26,7 +26,7 @@ import (
 type Pipeline interface {
 	AddExtractor(extractor.Extractor) Pipeline
 	AddTransformer(transformer.Transformer) Pipeline
-	AddLoader(loader.Loader)
+	AddLoader(loader.Loader) Pipeline
 	Start(r data.Reader) error
 	PushData(data interface{}) error
 	Close()
@@ -36,6 +36,7 @@ func New(c config.Config) Pipeline {
 	return &defaultPipeline{
 		config:       c,
 		transformers: []transformer.Transformer{},
+		loaders:      []loader.Loader{},
 		quitch:       make(chan interface{}),
 	}
 }
@@ -44,7 +45,7 @@ type defaultPipeline struct {
 	config       config.Config
 	extractor    extractor.Extractor
 	transformers []transformer.Transformer
-	loader       loader.Loader
+	loaders      []loader.Loader
 	reader       data.Reader
 	quitch       chan interface{}
 }
@@ -62,15 +63,13 @@ func (p *defaultPipeline) AddTransformer(t transformer.Transformer) Pipeline {
 	return p
 }
 
-func (p *defaultPipeline) AddLoader(t loader.Loader) {
-	if p.loader != nil {
-		glog.Error("loader already exist")
-	}
-	p.loader = t
+func (p *defaultPipeline) AddLoader(t loader.Loader) Pipeline {
+	p.loaders = append(p.loaders, t)
+	return p
 }
 
 func (p *defaultPipeline) Start(r data.Reader) error {
-	if p.extractor == nil || p.loader == nil {
+	if p.extractor == nil || len(p.loaders) == 0 {
 		return errors.New("extractor or loader is nil")
 	}
 	p.reader = r
@@ -90,7 +89,7 @@ func (p *defaultPipeline) Start(r data.Reader) error {
 }
 
 func (p *defaultPipeline) PushData(data interface{}) error {
-	if p.extractor == nil || p.loader == nil {
+	if p.extractor == nil || len(p.loaders) == 0 {
 		return errors.New("extractor or loader is nil")
 	}
 	// extract data
@@ -104,7 +103,10 @@ func (p *defaultPipeline) PushData(data interface{}) error {
 			}
 		}
 		// load data
-		return p.loader.Load(frame)
+		for _, loader := range p.loaders {
+			loader.Load(frame)
+		}
+		return nil
 	}
 	return errors.New("extract data failed")
 }
@@ -117,6 +119,8 @@ func (p *defaultPipeline) Close() {
 	for _, trans := range p.transformers {
 		trans.Close()
 	}
-	p.loader.Close()
+	for _, loader := range p.loaders {
+		loader.Close()
+	}
 	close(p.quitch)
 }

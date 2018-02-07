@@ -15,19 +15,41 @@ package loader
 import (
 	"github.com/cloustone/sentel/conductor/pipeline/data"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/olivere/elastic"
 )
 
 type elasticLoader struct {
-	config config.Config
+	productId string
+	client    *elastic.Client
 }
 
 func newESLoader(c config.Config) (Loader, error) {
-	return &elasticLoader{config: c}, nil
+	client, err := elastic.NewClient()
+	if err != nil {
+		return nil, err
+	}
+	if _, _, err := client.Ping().Do(); err != nil {
+		return nil, err
+	}
+	productId := c.MustString("productId")
+	if exists, err := client.IndexExists(productId).Do(); err != nil {
+		return nil, err
+	} else if !exists {
+		if _, err := client.CreateIndex(productId).Do(); err != nil {
+			return nil, err
+		}
+	}
+	return &elasticLoader{
+		productId: productId,
+		client:    client,
+	}, nil
 }
 
 func (p *elasticLoader) Name() string { return "elastic" }
 func (p *elasticLoader) Close()       {}
 
 func (p *elasticLoader) Load(f *data.DataFrame) error {
-	return nil
+	topic := f.Context("topic").(string)
+	_, err := p.client.Index().Index(p.productId).Type(topic).BodyJson(f.PrettyJson()).Do()
+	return err
 }
