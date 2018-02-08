@@ -13,8 +13,6 @@
 package collector
 
 import (
-	"context"
-
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -33,11 +31,14 @@ func (p *SubscriptionTopic) Serialize(opt message.SerializeOption) ([]byte, erro
 }
 func (p *SubscriptionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *SubscriptionTopic) handleTopic(c config.Config, ctx context.Context) error {
+func (p *SubscriptionTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
+		return ctx.db.UpdateSubscription(p.Subscription)
 	case ObjectActionDelete:
+		return ctx.db.RemoveSubscription(p.Subscription)
 	case ObjectActionRegister:
+		return ctx.db.AddSubscription(p.Subscription)
 	default:
 	}
 	return nil

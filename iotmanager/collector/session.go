@@ -13,8 +13,6 @@
 package collector
 
 import (
-	"context"
-
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -32,15 +30,10 @@ func (p *SessionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *SessionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *SessionTopic) handleTopic(c config.Config, ctx context.Context) error {
-	dbc, err := mgrdb.New(c)
-	if err != nil {
-		return err
-	}
-	defer dbc.Close()
+func (p *SessionTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
-		dbc.UpdateSession(p.Session)
+		ctx.db.UpdateSession(p.Session)
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

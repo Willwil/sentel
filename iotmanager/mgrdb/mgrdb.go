@@ -161,6 +161,11 @@ type ManagerDB interface {
 	GetMetrics() []Metric
 	GetNodeMetric(nodeId string) (Metric, error)
 
+	// Subscription
+	AddSubscription(sub Subscription) error
+	UpdateSubscription(sub Subscription) error
+	RemoveSubscription(sub Subscription) error
+
 	Close()
 }
 

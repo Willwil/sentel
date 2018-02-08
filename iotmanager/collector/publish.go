@@ -13,8 +13,6 @@
 package collector
 
 import (
-	"context"
-
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -33,6 +31,6 @@ func (p *PublishTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 }
 func (p *PublishTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
-func (p *PublishTopic) handleTopic(c config.Config, ctx context.Context) error {
+func (p *PublishTopic) handleTopic(c config.Config, ctx context) error {
 	return nil
 }

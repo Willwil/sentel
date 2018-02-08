@@ -22,11 +22,12 @@ import (
 )
 
 const (
-	collectionNodes    = "nodes"
-	collectionClients  = "clients"
-	collectionMetrics  = "metrics"
-	collectionAdmin    = "admin"
-	collectionSessions = "sessions"
+	collectionNodes         = "nodes"
+	collectionClients       = "clients"
+	collectionMetrics       = "metrics"
+	collectionAdmin         = "admin"
+	collectionSessions      = "sessions"
+	collectionSubscriptions = "sessions"
 )
 
 type mgrdbMongo struct {
@@ -191,4 +192,18 @@ func (p *mgrdbMongo) GetNodeMetric(nodeId string) (Metric, error) {
 	metric := Metric{}
 	err := c.Find(bson.M{"NodeId": nodeId}).One(&metric)
 	return metric, err
+}
+
+// Subscription
+func (p *mgrdbMongo) AddSubscription(sub Subscription) error {
+	c := p.session.C(collectionSubscriptions)
+	return c.Insert(sub)
+}
+func (p *mgrdbMongo) UpdateSubscription(sub Subscription) error {
+	c := p.session.C(collectionSubscriptions)
+	return c.Update(Subscription{ClientId: sub.ClientId, SubscribedTopic: sub.SubscribedTopic}, sub)
+}
+func (p *mgrdbMongo) RemoveSubscription(sub Subscription) error {
+	c := p.session.C(collectionSubscriptions)
+	return c.Remove(bson.M{"ClientId": sub.ClientId, "SubscribedTopic": sub.SubscribedTopic})
 }

@@ -15,6 +15,7 @@ package collector
 import (
 	"fmt"
 
+	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
@@ -87,7 +88,12 @@ func (p *collectorService) Stop() {
 // handleNotifications handle notification from kafka
 func (p *collectorService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	if handler, ok := msg.(topicHandler); ok {
-		return handler.handleTopic(p.config, nil)
+		db, err := mgrdb.New(p.config)
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+		return handler.handleTopic(p.config, context{db: db})
 	}
 	return fmt.Errorf("invalid topic '%s'", msg.Topic())
 }
