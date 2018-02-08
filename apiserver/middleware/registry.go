@@ -24,7 +24,7 @@ import (
 func RegistryWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			r, err := registry.New("apiserver", config)
+			r, err := registry.New(config)
 			if err != nil {
 				return ctx.JSON(http.StatusInternalServerError, errors.New("registry access failed"))
 			}

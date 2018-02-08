@@ -44,7 +44,7 @@ type ServiceFactory struct{}
 
 // New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	consumer, _ := message.NewConsumer(c, "conductor")
+	consumer, _ := message.NewConsumer(c, "whaler-engine")
 	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
@@ -63,7 +63,7 @@ func (p *ruleEngine) Name() string { return SERVICE_NAME }
 // Initialize check all rule's state and recover if rule is started
 func (p *ruleEngine) Initialize() error {
 	// try connect with registry
-	r, err := registry.New("conductor", p.config)
+	r, err := registry.New(p.config)
 	if err != nil {
 		return err
 	}
@@ -127,9 +127,9 @@ func (p *ruleEngine) Stop() {
 	}
 }
 
-// recovery restart rules after conductor is restarted
+// recovery restart rules after whaler is restarted
 func (p *ruleEngine) recovery() {
-	r, _ := registry.New("conductor", p.config)
+	r, _ := registry.New(p.config)
 	defer r.Close()
 	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {

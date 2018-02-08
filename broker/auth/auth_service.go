@@ -83,7 +83,7 @@ func (p *authService) Name() string { return ServiceName }
 
 // Initialize load tenant's product list and topic flavor
 func (p *authService) Initialize() error {
-	r, err := registry.New("broker", p.config)
+	r, err := registry.New(p.config)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (p *authService) getDeviceSecretKey(ctx Context) (string, error) {
 		}
 	}
 	// Read from database if not found in cache
-	r, err := registry.New("broker", p.config)
+	r, err := registry.New(p.config)
 	if err != nil {
 		return "", err
 	}

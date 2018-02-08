@@ -62,7 +62,8 @@ const (
 
 // newRuleExecutor create a engine according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
-	consumer, _ := message.NewConsumer(c, "conductorRuleExecutor")
+	clientId := fmt.Sprintf("whaler-%s", productId)
+	consumer, _ := message.NewConsumer(c, clientId)
 	return &ruleExecutor{
 		productId: productId,
 		config:    c,
@@ -125,7 +126,7 @@ func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) 
 
 // getRuleObject get all rule's information from backend database
 func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
-	if r, err := registry.New("conductor", p.config); err == nil {
+	if r, err := registry.New(p.config); err == nil {
 		defer r.Close()
 		return r.GetRule(rc.ProductId, rc.RuleName)
 	} else {

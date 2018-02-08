@@ -51,7 +51,7 @@ var (
 )
 
 func initializeTestData(c config.Config) error {
-	r, err := registry.New("conductor", c)
+	r, err := registry.New(c)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func initializeTestData(c config.Config) error {
 }
 
 func removeTestData(c config.Config) {
-	if r, err := registry.New("conductor", c); err == nil {
+	if r, err := registry.New(c); err == nil {
 		defer r.Close()
 		r.RemoveRule(rule1.ProductId, rule1.RuleName)
 		r.RemoveRule(rule2.ProductId, rule2.RuleName)

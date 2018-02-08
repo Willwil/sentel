@@ -66,8 +66,8 @@ func Initialize(c config.Config) error {
 }
 
 // NewRegistry create registry instance
-func New(owner string, c config.Config) (*Registry, error) {
-	hosts := c.MustStringWithSection(owner, "mongo")
+func New(c config.Config) (*Registry, error) {
+	hosts := c.MustString("mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {
 		glog.Infof("Failed to initialize registry:%s", err.Error())
