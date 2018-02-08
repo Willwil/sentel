@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -21,6 +23,7 @@ import (
 // ClientTopic
 type ClientTopic struct {
 	TopicName string
+	Action    string `json:"action"`
 	mgrdb.Client
 }
 
@@ -32,6 +35,16 @@ func (p *ClientTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *ClientTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *ClientTopic) handleTopic(c config.Config, ctx context) error {
-	return ctx.db.UpdateClient(p.Client)
+	switch p.Action {
+	case ObjectActionRegister:
+		return ctx.db.AddClient(p.Client)
+	case ObjectActionUpdate:
+		return ctx.db.UpdateClient(p.Client)
+	case ObjectActionUnregister:
+		return ctx.db.RemoveClient(p.Client)
+	case ObjectActionDelete:
+		return ctx.db.RemoveClient(p.Client)
+	}
+	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
 
 }

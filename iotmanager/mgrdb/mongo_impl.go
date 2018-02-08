@@ -22,12 +22,15 @@ import (
 )
 
 const (
-	collectionNodes         = "nodes"
-	collectionClients       = "clients"
-	collectionMetrics       = "metrics"
-	collectionAdmin         = "admin"
-	collectionSessions      = "sessions"
-	collectionSubscriptions = "sessions"
+	collectionNodes          = "nodes"
+	collectionClients        = "clients"
+	collectionMetrics        = "metrics"
+	collectionStats          = "stats"
+	collectionMetricsHistory = "metrics_history"
+	collectionAdmin          = "admin"
+	collectionSessions       = "sessions"
+	collectionSubscriptions  = "subscriptions"
+	collectionPublishs       = "publishs"
 )
 
 type mgrdbMongo struct {
@@ -170,6 +173,16 @@ func (p *mgrdbMongo) GetClient(clientId string) (Client, error) {
 	return client, err
 }
 
+func (p *mgrdbMongo) AddClient(client Client) error {
+	c := p.session.C(collectionClients)
+	return c.Insert(client)
+}
+
+func (p *mgrdbMongo) RemoveClient(client Client) error {
+	c := p.session.C(collectionClients)
+	return c.Remove(bson.M{"ClientId": client.ClientId})
+}
+
 func (p *mgrdbMongo) UpdateClient(client Client) error {
 	c := p.session.C(collectionClients)
 	result := Client{}
@@ -180,6 +193,16 @@ func (p *mgrdbMongo) UpdateClient(client Client) error {
 	}
 }
 
+// Metrics
+func (p *mgrdbMongo) AddMetricHistory(m Metric) error {
+	c := p.session.C(collectionMetrics)
+	return c.Insert(m)
+}
+
+func (p *mgrdbMongo) UpdateMetric(m Metric) error {
+	c := p.session.C(collectionMetrics)
+	return c.Update(Metric{NodeName: m.NodeName}, m)
+}
 func (p *mgrdbMongo) GetMetrics() []Metric {
 	c := p.session.C(collectionMetrics)
 	metrics := []Metric{}
@@ -194,6 +217,23 @@ func (p *mgrdbMongo) GetNodeMetric(nodeId string) (Metric, error) {
 	return metric, err
 }
 
+// Stats
+func (p *mgrdbMongo) AddStatsHistory(s Stats) error {
+	c := p.session.C(collectionStats)
+	return c.Insert(s)
+}
+
+func (p *mgrdbMongo) UpdateStats(s Stats) error {
+	c := p.session.C(collectionStats)
+	return c.Update(Stats{NodeName: s.NodeName}, s)
+}
+func (p *mgrdbMongo) GetStats() []Stats {
+	c := p.session.C(collectionStats)
+	stats := []Stats{}
+	c.Find(nil).Iter().All(&stats)
+	return stats
+}
+
 // Subscription
 func (p *mgrdbMongo) AddSubscription(sub Subscription) error {
 	c := p.session.C(collectionSubscriptions)
@@ -206,4 +246,10 @@ func (p *mgrdbMongo) UpdateSubscription(sub Subscription) error {
 func (p *mgrdbMongo) RemoveSubscription(sub Subscription) error {
 	c := p.session.C(collectionSubscriptions)
 	return c.Remove(bson.M{"ClientId": sub.ClientId, "SubscribedTopic": sub.SubscribedTopic})
+}
+
+// Publish
+func (p *mgrdbMongo) UpdatePublish(pub Publish) error {
+	c := p.session.C(collectionPublishs)
+	return c.Update(Subscription{ClientId: pub.ClientId, SubscribedTopic: pub.SubscribedTopic}, pub)
 }

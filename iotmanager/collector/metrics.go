@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -34,12 +36,9 @@ func (p *MetricTopic) Deserialize(buf []byte, opt message.SerializeOption) error
 func (p *MetricTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
-		// dbc.UpdateMetricTopic(p)
-		// TODO:save history data
-	case ObjectActionDelete:
-	case ObjectActionRegister:
+		ctx.db.AddMetricHistory(p.Metric)
+		ctx.db.UpdateMetric(p.Metric)
 	default:
 	}
-	return nil
-
+	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
 }

@@ -22,6 +22,7 @@ import (
 type StatsTopic struct {
 	TopicName string
 	mgrdb.Stats
+	Action string `json:"action"`
 }
 
 func (p *StatsTopic) Topic() string        { return TopicNameStats }
@@ -34,6 +35,8 @@ func (p *StatsTopic) Deserialize(buf []byte, opt message.SerializeOption) error 
 func (p *StatsTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {
 	case ObjectActionUpdate:
+		ctx.db.AddStatsHistory(p.Stats)
+		ctx.db.UpdateStats(p.Stats)
 	case ObjectActionDelete:
 	case ObjectActionRegister:
 	default:

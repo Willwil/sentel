@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -38,5 +40,5 @@ func (p *SessionTopic) handleTopic(c config.Config, ctx context) error {
 	case ObjectActionRegister:
 	default:
 	}
-	return nil
+	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
 }

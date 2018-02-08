@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -21,6 +23,7 @@ import (
 // Publish
 type PublishTopic struct {
 	TopicName string
+	Action    string `json:"action"`
 	mgrdb.Publish
 }
 
@@ -32,5 +35,10 @@ func (p *PublishTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 func (p *PublishTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
 
 func (p *PublishTopic) handleTopic(c config.Config, ctx context) error {
-	return nil
+	switch p.Action {
+	case ObjectActionUpdate:
+		return ctx.db.UpdatePublish(p.Publish)
+	}
+	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+
 }

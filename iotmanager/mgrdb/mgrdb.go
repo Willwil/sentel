@@ -155,16 +155,28 @@ type ManagerDB interface {
 
 	// Client
 	GetClient(clientId string) (Client, error)
-	UpdateClient(client Client) error
+	AddClient(Client) error
+	RemoveClient(Client) error
+	UpdateClient(Client) error
 
 	// Metrics
 	GetMetrics() []Metric
 	GetNodeMetric(nodeId string) (Metric, error)
+	AddMetricHistory(Metric) error
+	UpdateMetric(Metric) error
+
+	// Stats
+	AddStatsHistory(Stats) error
+	UpdateStats(Stats) error
+	GetStats() []Stats
 
 	// Subscription
 	AddSubscription(sub Subscription) error
 	UpdateSubscription(sub Subscription) error
 	RemoveSubscription(sub Subscription) error
+
+	// Publish
+	UpdatePublish(Publish) error
 
 	Close()
 }

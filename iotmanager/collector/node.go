@@ -13,6 +13,8 @@
 package collector
 
 import (
+	"fmt"
+
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
@@ -41,5 +43,5 @@ func (p *NodeTopic) handleTopic(c config.Config, ctx context) error {
 		return ctx.db.RemoveNode(p.Node.NodeId)
 	case ObjectActionDelete:
 	}
-	return nil
+	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
 }
