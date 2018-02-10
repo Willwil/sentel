@@ -20,7 +20,7 @@ var defaultConfigs = config.M{
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
 		"connect_timeout": 5,
-		"cluster":         "swarm",
+		"deploy-mode":     "swarm",
 		"docker-images":   "mongo,kafka,zookeeper, redis, sentel/broker",
 		"network":         "sentel-front",
 	},

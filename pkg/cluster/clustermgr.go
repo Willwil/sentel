@@ -25,6 +25,12 @@ const (
 	ServiceStateStoped  = "stoped"
 )
 
+const (
+	DeployModeLocal      = "local"
+	DeployModeKubernetes = "kubernetes"
+	DeployModeSwarm      = "swarm"
+)
+
 type ServiceEndpoint struct {
 	VirtualIP string
 	Port      uint32
@@ -66,15 +72,15 @@ type ClusterManager interface {
 
 // New retrieve clustermanager instance connected with clustermgr
 func New(c config.Config) (ClusterManager, error) {
-	if v, err := c.String("cluster"); err == nil {
-		switch v {
-		case "k8s":
+	if mode, err := c.String("deploy-mode"); err == nil {
+		switch mode {
+		case DeployModeKubernetes:
 			return newK8sCluster(c)
-		case "swarm":
+		case DeployModeSwarm:
 			return newSwarmCluster(c)
-		case "local":
+		case DeployModeLocal:
 			return newLocalCluster(c)
 		}
 	}
-	return nil, errors.New("iothub cluster manager initialize failed")
+	return nil, errors.New("invalid deploy mode")
 }

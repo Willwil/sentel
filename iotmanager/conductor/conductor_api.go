@@ -20,26 +20,26 @@ func getConductor() *conductorService {
 	return mgr.GetService(SERVICE_NAME).(*conductorService)
 }
 
-// createTenant add tenant to iothub
+// createTenant add tenant
 func CreateTenant(tid string) error {
-	h := getConductor()
-	return h.createTenant(tid)
+	c := getConductor()
+	return c.createTenant(tid)
 }
 
-// RemoveTenant remove tenant from iothub
+// RemoveTenant remove tenant from iotcluster
 func RemoveTenant(tid string) error {
-	h := getConductor()
-	return h.removeTenant(tid)
+	c := getConductor()
+	return c.removeTenant(tid)
 }
 
-// CreateProduct add product to iothub
+// CreateProduct add product to iot cluster
 func CreateProduct(tid, pid string, replicas int32) (string, error) {
-	h := getConductor()
-	return h.createProduct(tid, pid, replicas)
+	c := getConductor()
+	return c.createProduct(tid, pid, replicas)
 }
 
-// RemoveProduct delete product from iothub
+// RemoveProduct delete product from iot cluster
 func RemoveProduct(tid string, pid string) error {
-	h := getConductor()
-	return h.removeProduct(tid, pid)
+	c := getConductor()
+	return c.removeProduct(tid, pid)
 }
