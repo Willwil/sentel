@@ -20,8 +20,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloustone/sentel/iotmanager/cluster"
 	"github.com/cloustone/sentel/iotmanager/mgrdb"
-	"github.com/cloustone/sentel/pkg/cluster"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/service"
