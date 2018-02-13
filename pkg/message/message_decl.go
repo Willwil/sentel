@@ -29,7 +29,7 @@ type Tenant struct {
 func (p *Tenant) Topic() string                                     { return TopicNameTenant }
 func (p *Tenant) SetTopic(name string)                              {}
 func (p *Tenant) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
-func (p *Tenant) Deserialize(buf []byte, opt SerializeOption) error { return nil }
+func (p *Tenant) Deserialize(buf []byte, opt SerializeOption) error { return Deserialize(buf, opt, p) }
 
 // Product
 type Product struct {
@@ -43,7 +43,7 @@ type Product struct {
 func (p *Product) Topic() string                                     { return TopicNameProduct }
 func (p *Product) SetTopic(name string)                              {}
 func (p *Product) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
-func (p *Product) Deserialize(buf []byte, opt SerializeOption) error { return nil }
+func (p *Product) Deserialize(buf []byte, opt SerializeOption) error { return Deserialize(buf, opt, p) }
 
 //Rule
 type Rule struct {
@@ -68,4 +68,4 @@ type Broker struct {
 func (p *Broker) Topic() string                                     { return p.TopicName }
 func (p *Broker) SetTopic(name string)                              { p.TopicName = name }
 func (p *Broker) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
-func (p *Broker) Deserialize(buf []byte, opt SerializeOption) error { return nil }
+func (p *Broker) Deserialize(buf []byte, opt SerializeOption) error { return Deserialize(buf, opt, p) }

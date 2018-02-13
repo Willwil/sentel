@@ -32,3 +32,12 @@ func Serialize(msg Message, opt SerializeOption) ([]byte, error) {
 		return nil, errors.New("invalid message codec")
 	}
 }
+
+func Deserialize(buf []byte, opt SerializeOption, obj interface{}) error {
+	switch opt {
+	case JSONSerialization:
+		return json.Unmarshal(buf, obj)
+	default:
+		return errors.New("invalid message codec")
+	}
+}

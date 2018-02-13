@@ -29,7 +29,9 @@ func (p *SubscriptionTopic) SetTopic(name string) {}
 func (p *SubscriptionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *SubscriptionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *SubscriptionTopic) Deserialize(buf []byte, opt message.SerializeOption) error {
+	return message.Deserialize(buf, opt, p)
+}
 
 func (p *SubscriptionTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {

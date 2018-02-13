@@ -30,7 +30,9 @@ func (p *SessionTopic) SetTopic(name string) {}
 func (p *SessionTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *SessionTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *SessionTopic) Deserialize(buf []byte, opt message.SerializeOption) error {
+	return message.Deserialize(buf, opt, p)
+}
 
 func (p *SessionTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {

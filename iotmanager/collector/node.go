@@ -31,7 +31,9 @@ func (p *NodeTopic) SetTopic(name string) {}
 func (p *NodeTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *NodeTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *NodeTopic) Deserialize(buf []byte, opt message.SerializeOption) error {
+	return message.Deserialize(buf, opt, p)
+}
 
 func (p *NodeTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {

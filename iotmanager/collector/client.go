@@ -32,7 +32,9 @@ func (p *ClientTopic) SetTopic(name string) {}
 func (p *ClientTopic) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(p, opt)
 }
-func (p *ClientTopic) Deserialize(buf []byte, opt message.SerializeOption) error { return nil }
+func (p *ClientTopic) Deserialize(buf []byte, opt message.SerializeOption) error {
+	return message.Deserialize(buf, opt, p)
+}
 
 func (p *ClientTopic) handleTopic(c config.Config, ctx context) error {
 	switch p.Action {
