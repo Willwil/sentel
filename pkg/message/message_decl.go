@@ -56,7 +56,7 @@ type Rule struct {
 func (p *Rule) Topic() string                                     { return TopicNameRule }
 func (p *Rule) SetTopic(name string)                              {}
 func (p *Rule) Serialize(opt SerializeOption) ([]byte, error)     { return Serialize(p, opt) }
-func (p *Rule) Deserialize(buf []byte, opt SerializeOption) error { return nil }
+func (p *Rule) Deserialize(buf []byte, opt SerializeOption) error { return Deserialize(buf, opt, p) }
 
 // Broker
 type Broker struct {
