@@ -42,5 +42,5 @@ func (p *MetricTopic) handleTopic(c config.Config, ctx context) error {
 		ctx.db.UpdateMetric(p.Metric)
 	default:
 	}
-	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+	return fmt.Errorf("invalid topic '%s' action '%s'", p.Topic(), p.Action)
 }

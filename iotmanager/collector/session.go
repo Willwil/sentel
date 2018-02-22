@@ -42,5 +42,5 @@ func (p *SessionTopic) handleTopic(c config.Config, ctx context) error {
 	case ObjectActionRegister:
 	default:
 	}
-	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+	return fmt.Errorf("invalid topic '%s' action '%s'", p.Topic(), p.Action)
 }

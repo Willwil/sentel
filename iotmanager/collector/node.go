@@ -45,5 +45,5 @@ func (p *NodeTopic) handleTopic(c config.Config, ctx context) error {
 		return ctx.db.RemoveNode(p.Node.NodeId)
 	case ObjectActionDelete:
 	}
-	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+	return fmt.Errorf("invalid topic '%s' action '%s'", p.Topic(), p.Action)
 }

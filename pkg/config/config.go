@@ -118,7 +118,7 @@ func (c *config) BoolWithSection(section string, key string) (bool, error) {
 	if val, ok := c.sections[section][key].(bool); ok {
 		return val, nil
 	}
-	return false, fmt.Errorf("invalid seciont '%' with key '%s'", section, key)
+	return false, fmt.Errorf("invalid seciont '%s' with key '%s'", section, key)
 }
 
 // Int return int value for key

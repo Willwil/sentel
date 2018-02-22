@@ -18,12 +18,12 @@ import (
 )
 
 func TestAccount_initialize(t *testing.T) {
-	c := config.New()
-	c.AddConfig(map[string]map[string]string{
+	c := config.New("keystone")
+	c.AddConfig(config.M{
 		"keystone": {
 			"hosts":           "localhost:4147",
 			"mongo":           "localhost:27017",
-			"connect_timeout": "2",
+			"connect_timeout": 2,
 		},
 	})
 	if err := Initialize(c, "direct"); err != nil {

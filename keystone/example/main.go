@@ -11,8 +11,8 @@ import (
 
 func main() {
 	flag.Parse()
-	c := config.New()
-	c.AddConfig(map[string]map[string]string{
+	c := config.New("keystone-example")
+	c.AddConfig(config.M{
 		"keystone": {
 			"hosts": "localhost:4147",
 		},

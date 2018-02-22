@@ -47,6 +47,6 @@ func (p *ClientTopic) handleTopic(c config.Config, ctx context) error {
 	case ObjectActionDelete:
 		return ctx.db.RemoveClient(p.Client)
 	}
-	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+	return fmt.Errorf("invalid topic '%s' action '%s'", p.Topic(), p.Action)
 
 }

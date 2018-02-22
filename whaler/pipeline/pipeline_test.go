@@ -15,7 +15,6 @@ package pipeline
 import (
 	"testing"
 
-	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/registry"
 )
 
@@ -40,13 +39,7 @@ var (
 type mockReader struct{}
 
 func (p *mockReader) Read() (interface{}, error) {
-	return &event.Event{
-		EventHeader: event.EventHeader{Type: event.TopicPublish, ClientId: "jenson"},
-		Detail: &event.TopicPublishDetail{
-			Topic:   "hello",
-			Payload: []byte("hello, world"),
-		},
-	}, nil
+	return nil, nil
 }
 
 func TestPipeline_Run(t *testing.T) {

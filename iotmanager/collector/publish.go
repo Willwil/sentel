@@ -41,6 +41,6 @@ func (p *PublishTopic) handleTopic(c config.Config, ctx context) error {
 	case ObjectActionUpdate:
 		return ctx.db.UpdatePublish(p.Publish)
 	}
-	return fmt.Errorf("invalid topic '%s' action '%d'", p.Topic(), p.Action)
+	return fmt.Errorf("invalid topic '%s' action '%s'", p.Topic(), p.Action)
 
 }

@@ -102,7 +102,7 @@ type Stats struct {
 	Service    string            `json:"service" bson:"Service"`
 	Action     string            `json:"action" bson:"Action"`
 	UpdateTime time.Time         `json:"updateTime" bson:"UpdateTime"`
-	Values     map[string]uint64 `json:"values", bson:"Values"`
+	Values     map[string]uint64 `json:"values" bson:"Values"`
 }
 
 // Publish
