@@ -73,7 +73,7 @@ func initializeContext(t *testing.T, method string, url string, reqdata interfac
 	return ctx
 }
 
-func Test_RegisterTenant(t *testing.T) {
+func Test_registerTenant(t *testing.T) {
 	req := struct {
 		TenantId string `json:"tenantId"`
 		Password string `json:"password"`
@@ -86,11 +86,11 @@ func Test_RegisterTenant(t *testing.T) {
 	registerTenant(ctx)
 	r := ctx.Response()
 	if r.Status != http.StatusOK {
-		t.Errorf("exepected status 200", r.Status)
+		t.Errorf("exepected status 200, return %d", r.Status)
 	}
 }
 
-func Test_LoginTenant(t *testing.T) {
+func Test_loginTenant(t *testing.T) {
 	req := struct {
 		TenantId string `json:"tenantId"`
 		Password string `json:"password"`
@@ -103,11 +103,11 @@ func Test_LoginTenant(t *testing.T) {
 	loginTenant(ctx)
 	r := ctx.Response()
 	if r.Status != http.StatusOK {
-		t.Errorf("exepected status 200", r.Status)
+		t.Errorf("exepected status 200, return %d", r.Status)
 	}
 }
 
-func Testing_LogoutTenant(t *testing.T) {
+func Test_logoutTenant(t *testing.T) {
 	req := struct {
 		TenantId string `json:"tenantId"`
 		Password string `json:"password"`
@@ -121,6 +121,6 @@ func Testing_LogoutTenant(t *testing.T) {
 	logoutTenant(ctx)
 	r := ctx.Response()
 	if r.Status != http.StatusOK {
-		t.Errorf("exepected status 200", r.Status)
+		t.Errorf("exepected status 200, return %d", r.Status)
 	}
 }
