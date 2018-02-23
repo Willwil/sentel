@@ -65,5 +65,5 @@ func SendMessageToDevice(ctx echo.Context) error {
 }
 
 func BroadcastProductMessage(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }

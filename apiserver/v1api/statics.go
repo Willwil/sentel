@@ -17,10 +17,10 @@ import "github.com/labstack/echo"
 // Retrieves statistics about devices identities in the IoT hub's
 // identify registry
 func GetDeviceStatics(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 // Retrieves services statisticsfor this IoT hubs's identity registry
 func GetServiceStatics(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }

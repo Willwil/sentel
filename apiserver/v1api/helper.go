@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	OK           = http.StatusOK
-	ServerError  = http.StatusInternalServerError
-	BadRequest   = http.StatusBadRequest
-	NotFound     = http.StatusNotFound
-	Unauthorized = http.StatusUnauthorized
+	OK             = http.StatusOK
+	ServerError    = http.StatusInternalServerError
+	BadRequest     = http.StatusBadRequest
+	NotFound       = http.StatusNotFound
+	Unauthorized   = http.StatusUnauthorized
+	NotImplemented = http.StatusNotImplemented
 )
 
 type apiResponse struct {

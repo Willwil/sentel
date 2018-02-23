@@ -143,42 +143,42 @@ func UpdateDevice(ctx echo.Context) error {
 }
 
 func BulkApplyDevices(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 func BulkApplyGetStatus(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 func BulkApplyGetDevices(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 func GetDeviceList(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 // Device bulk req.
 type DeviceBulkRequest struct {
-	DeviceName string
-	ProductId  string
-	Number     string
+	DeviceName string `json:"deviceName"`
+	ProductId  string `json:"productId"`
+	Number     string `json:"number"`
 }
 
 func BulkGetDeviceStatus(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 func GetDeviceByName(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 func SaveDevicePropsByName(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 func GetDevicePropsByName(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 func DeleteDevicePropsByName(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
@@ -219,9 +219,9 @@ func BulkRegisterDevices(ctx echo.Context) error {
 }
 
 func GetShadowDevice(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 func UpdateShadowDevice(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }

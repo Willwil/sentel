@@ -151,5 +151,5 @@ func UpdateTenant(ctx echo.Context) error {
 }
 
 func GetTenantProductList(ctx echo.Context) error {
-	return nil
+	return ctx.JSON(NotImplemented, apiResponse{})
 }

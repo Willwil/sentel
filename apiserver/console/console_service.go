@@ -107,7 +107,7 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.POST("/products", createProduct)
 	g.DELETE("/products/:productId", removeProduct)
 	g.PATCH("/products", updateProduct)
-	g.GET("/products/all", getProductList)
+	g.GET("/products", getProductList)
 	g.GET("/products/:productId", getProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 	g.GET("/products/:productId/rules", getProductRules)
@@ -133,8 +133,8 @@ func (p *consoleService) initialize(c config.Config) error {
 	// Topic Flavor
 	g.POST("/topicflavors", createTopicFlavor)
 	g.DELETE("/topicflavors/:productId", removeProductTopicFlavor)
-	g.GET("/topicflavors/product/:productId", getProductTopicFlavors)
-	g.GET("/topicflavors/tenant/:tenantId", getTenantTopicFlavors)
+	g.GET("/topicflavors/products/:productId", getProductTopicFlavors)
+	g.GET("/topicflavors/tenants/:tenantId", getTenantTopicFlavors)
 	g.GET("topicflavors/builtin", getBuiltinTopicFlavors)
 	g.PUT("/topicflavors/:productId?flavor=:topicflavor", setProductTopicFlavor)
 
