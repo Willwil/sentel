@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
+	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -88,6 +89,7 @@ func (p *managementService) initialize(c config.Config) error {
 
 	// Initialize middleware
 	p.echo.Use(middleware.RegistryWithConfig(c))
+	p.echo.Use(accessIdWithConfig(c))
 	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
@@ -102,7 +104,7 @@ func (p *managementService) initialize(c config.Config) error {
 	g.PATCH("/products/:productId", updateProduct)
 	g.GET("/products/:productId/devices", getProductDevices)
 
-	g.POST("/products/:productId/device", createDevice)
+	g.POST("/products/:productId/devices", createDevice)
 	g.POST("/prodcuts/:productId/devices/bulk", bulkApplyDevices)
 	g.GET("/products/:productId/devices/bulk/:id", bulkApplyGetStatus)
 	g.GET("/products/:productId/devices/bulk", bulkApplyGetDevices)
@@ -120,4 +122,16 @@ func (p *managementService) initialize(c config.Config) error {
 	g.PATCH("/products/:productId/devices/:deviceId/shadow", updateShadowDevice)
 
 	return nil
+}
+
+func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			// After authenticated by gateway,the authentication paramters must bevalid
+			param := auth.ApiAuthParam{}
+			ctx.Bind(&param)
+			ctx.Set("AccessId", param.AccessId)
+			return next(ctx)
+		}
+	}
 }

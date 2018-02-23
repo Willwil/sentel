@@ -180,7 +180,7 @@ func GetProduct(ctx echo.Context) error {
 
 // getProductDevices retrieve product devices list from registry store
 func GetProductDevices(ctx echo.Context) error {
-	accessId := ctx.QueryParam("accessId")
+	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
 	if err := base.Authorize(productId+"/devices", accessId, "r"); err != nil {

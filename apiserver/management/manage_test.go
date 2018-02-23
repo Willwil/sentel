@@ -11,3 +11,170 @@
 //  under the License.
 
 package management
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/registry"
+	"github.com/labstack/echo"
+)
+
+var defaultConfigs = config.M{
+	"apiserver": {
+		"loglevel": "debug",
+		"kafka":    "localhost:9092",
+		"version":  "v1",
+		"auth":     "jwt",
+		"mongo":    "localhost:27017",
+		"swagger":  "0.0.0.0:53384",
+	},
+	"registry": {
+		"hosts":    "localhost:27017",
+		"loglevel": "debug",
+	},
+	"security": {
+		"cafile":              "",
+		"capath":              "",
+		"certfile":            "",
+		"keyfile":             "",
+		"require_certificate": false,
+	},
+}
+
+const (
+	accessId        = "jenson"
+	tenantId        = "jenson"
+	productName     = "test_product1"
+	ruleName        = "test_rule"
+	topicFlavorName = "test_topicflavor"
+)
+
+var (
+	localEcho *echo.Echo = echo.New()
+	productId string     = ""
+	deviceId  string     = ""
+	token     string     = ""
+)
+
+type apiResponse struct {
+	RequestId string      `json:"requestId"`
+	Message   string      `json:"message"`
+	Result    interface{} `json:"result"`
+}
+
+func initializeContext(t *testing.T, method string, url string, reqdata interface{}) echo.Context {
+	c := config.New("apiserver")
+	c.AddConfig(defaultConfigs)
+	r, err := registry.New(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var req *http.Request
+	if reqdata != nil {
+		body, _ := json.Marshal(reqdata)
+		req = httptest.NewRequest(method, url, bytes.NewReader(body))
+	} else {
+		req = httptest.NewRequest(method, url, nil)
+	}
+	rr := httptest.NewRecorder()
+	ctx := localEcho.NewContext(req, rr)
+	ctx.Set("registry", r)
+	ctx.Set("config", c)
+	ctx.Set("AccessId", accessId)
+	return ctx
+}
+
+func getApiResponse(ctx echo.Context) (apiResponse, error) {
+	rsp := apiResponse{}
+	rr := ctx.Response().Writer.(*httptest.ResponseRecorder)
+	if rr.Code != http.StatusOK {
+		return rsp, fmt.Errorf("exepected status 200, return %d", rr.Code)
+	} else {
+		// unmarshal product detail
+		body, _ := ioutil.ReadAll(rr.Body)
+		if err := json.Unmarshal(body, &rsp); err != nil {
+			return rsp, err
+		}
+		return rsp, nil
+	}
+}
+
+func Test_createProduct(t *testing.T) {
+	req := struct {
+		ProductName string `json:"productName"`
+		Category    string `json:"category"`
+		Description string `json:"description"`
+	}{
+		ProductName: productName,
+		Category:    "home",
+		Description: "test",
+	}
+
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/products", req)
+	createProduct(ctx)
+	if rsp, err := getApiResponse(ctx); err != nil {
+		t.Error(err)
+	} else {
+		p := rsp.Result.(registry.Product)
+		if p.TenantId != tenantId || p.ProductName != productName {
+			t.Error("tenantId and productName miss")
+		}
+		productId = p.ProductId // Update global productId
+	}
+}
+
+func Test_updateProduct(t *testing.T) {
+	req := struct {
+		ProductId   string `json:"productId"`
+		ProductName string `json:"productName"`
+		Category    string `json:"category"`
+		Description string `json:"description"`
+	}{
+		ProductId:   productId,
+		ProductName: productName,
+		Category:    "home",
+		Description: "updated product",
+	}
+
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/products/"+productId, req)
+	updateProduct(ctx)
+	if _, err := getApiResponse(ctx); err != nil {
+		t.Error(err)
+	}
+}
+
+func Test_getProductDevices(t *testing.T) {
+	url := "/iot/api/v1/products/" + productId + "/devices"
+	ctx := initializeContext(t, http.MethodGet, url, nil)
+	getProductDevices(ctx)
+	if _, err := getApiResponse(ctx); err != nil {
+		t.Error(err)
+	}
+}
+
+// Device
+func Test_createDevice(t *testing.T) {
+	req := struct {
+		DeviceName string `json:"DeviceName"`
+		ProductId  string `json:"ProductId"`
+		DeviceId   string `json:"DeviceId"`
+	}{
+		DeviceName: "test device",
+		ProductId:  productId,
+	}
+
+	url := "/iot/api/v1/products/" + productId + "/devices"
+	ctx := initializeContext(t, http.MethodPost, url, req)
+	createDevice(ctx)
+	if _, err := getApiResponse(ctx); err != nil {
+		t.Error(err)
+	}
+}
