@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
+	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -149,10 +150,7 @@ func (p *consoleService) initialize(c config.Config) error {
 
 // setAuth setup api group 's authentication method
 func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
-	auth := "jwt"
-	if _, err := c.String("auth"); err == nil {
-		auth = c.MustString("auth")
-	}
+	auth := util.StringConfigWithDefaultValue(c, "auth", "jwt")
 	switch auth {
 	case "jwt":
 		// Authentication config
