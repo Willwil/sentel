@@ -5,10 +5,13 @@ Get mongo and kafka and zookeeper image from docker hub
 > docker pull wurstmeister/kafka
    
 Start mongo and zookeeper and kafka with docker-compose
-> docker-compose -f docker-compose-single-broker.yml up
+> docker-compose -f docker-compose-base-service.yaml up -d
+
+Stop docker-compose
+> docker-compose -f docker-compose-base-service.yaml stop
 
 Clear docker-compose
-> docker-compose -f docker-compose-single-broker.yml rm
+> docker-compose -f docker-compose-base-service.yaml rm
 
 Start mongo and zookeeper and kafka with docker
 > docker run -d --name mongo -p 27017:27017
