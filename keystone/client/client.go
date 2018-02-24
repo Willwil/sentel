@@ -21,7 +21,9 @@ import (
 
 	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/ram"
+	"github.com/cloustone/sentel/keystone/subject"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/labstack/echo"
 )
 
 type apiResponse struct {
@@ -33,13 +35,30 @@ var (
 )
 
 func Initialize(c config.Config) error {
-	hosts, err := c.StringWithSection("keystone", "hosts")
+	hosts, err := c.String("keystone")
 	if err != nil {
 		return err
 	}
 	khosts = hosts
 	// TODO:ping
 	return nil
+}
+
+func RegisterSubjectDeclarations(decls []subject.Declaration) error {
+	url := fmt.Sprintf("http://%s/keystone/api/v1/subjects?", khosts)
+	format := "application/json;charset=utf-8"
+
+	if buf, err := json.Marshal(decls); err == nil {
+		req := bytes.NewBuffer([]byte(buf))
+		resp, err := http.Post(url, format, req)
+		if err != nil {
+			return err
+		} else {
+			return handleResponse(resp)
+		}
+	}
+	return errors.New("object creation failed")
+
 }
 
 func Authenticate(opts interface{}) error {
@@ -71,16 +90,8 @@ func Authenticate(opts interface{}) error {
 	return err
 }
 
-func Authorize(accessId string, resource string, action string) error {
-	url := fmt.Sprintf("http://%s/keystone/api/v1/ram/resource?resource=%s&accessId=%s&action=%s",
-		khosts, resource, accessId, string(action))
-	resp, err := http.Get(url)
-	if err == nil && resp.StatusCode == http.StatusOK {
-		return nil
-	} else if resp != nil {
-		return handleResponse(resp)
-	}
-	return err
+func Authorize(ctx echo.Context) error {
+	return nil
 }
 
 func handleResponse(resp *http.Response) error {

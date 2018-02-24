@@ -12,6 +12,7 @@
 package management
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -19,7 +20,6 @@ import (
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/keystone/auth"
-	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -39,8 +39,8 @@ type managementService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	if err := client.Initialize(c); err != nil {
-		return nil, fmt.Errorf("keystone connection failed")
+	if err := base.InitializeAuthorization(c, authorizations); err != nil {
+		return nil, err
 	}
 	service := &managementService{
 		config:    c,
@@ -91,6 +91,7 @@ func (p *managementService) initialize(c config.Config) error {
 	// Initialize middleware
 	p.echo.Use(middleware.RegistryWithConfig(c))
 	p.echo.Use(accessIdWithConfig(c))
+	p.echo.Use(authorizeWithConfig(c))
 	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
@@ -132,6 +133,17 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 			param := auth.ApiAuthParam{}
 			ctx.Bind(&param)
 			ctx.Set("AccessId", param.AccessId)
+			return next(ctx)
+		}
+	}
+}
+
+func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			if err := base.Authorize(ctx); err != nil {
+				return errors.New("not authorized")
+			}
 			return next(ctx)
 		}
 	}

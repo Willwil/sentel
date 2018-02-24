@@ -43,8 +43,6 @@ func RegisterTenant(ctx echo.Context) error {
 	if err := r.RegisterTenant(&t); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	// notify keystone to register the object
-	base.CreateAccount(req.TenantId)
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		&message.Tenant{

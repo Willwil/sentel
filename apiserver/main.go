@@ -19,6 +19,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/console"
 	"github.com/cloustone/sentel/apiserver/management"
 	"github.com/cloustone/sentel/apiserver/swagger"
+	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 
@@ -35,6 +36,9 @@ func main() {
 	glog.Info("Starting api server...")
 
 	config, _ := createConfig(*configFileName)
+	if err := client.Initialize(config); err != nil {
+		glog.Fatal(err)
+	}
 	mgr, _ := service.NewServiceManager("apiserver", config)
 	mgr.AddService(console.ServiceFactory{})
 	mgr.AddService(management.ServiceFactory{})

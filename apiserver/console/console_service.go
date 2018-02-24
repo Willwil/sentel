@@ -12,6 +12,7 @@
 package console
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -39,6 +40,9 @@ type consoleService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	if err := base.InitializeAuthorization(c, authorizations); err != nil {
+		return nil, err
+	}
 	service := &consoleService{
 		config:    c,
 		waitgroup: sync.WaitGroup{},
@@ -95,6 +99,7 @@ func (p *consoleService) initialize(c config.Config) error {
 	}))
 	p.echo.Use(middleware.RegistryWithConfig(c))
 	p.echo.Use(accessIdWithConfig(c))
+	p.echo.Use(authorizeWithConfig(c))
 
 	// Api for console
 	p.echo.POST("/iot/api/v1/console/tenants", v1api.RegisterTenant)
@@ -173,6 +178,17 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 			if user, ok := ctx.Get("user").(*jwt.Token); ok {
 				claims := user.Claims.(*base.JwtApiClaims)
 				ctx.Set("AccessId", claims.AccessId)
+			}
+			return next(ctx)
+		}
+	}
+}
+
+func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			if err := base.Authorize(ctx); err != nil {
+				return errors.New("not authorized")
 			}
 			return next(ctx)
 		}

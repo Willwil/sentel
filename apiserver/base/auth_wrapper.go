@@ -13,20 +13,21 @@ package base
 
 import (
 	"github.com/cloustone/sentel/keystone/client"
-	"github.com/cloustone/sentel/keystone/ram"
+	"github.com/cloustone/sentel/keystone/subject"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/labstack/echo"
 )
 
 var (
 	noAuth = true
 )
 
-func Initialize(c config.Config) error {
+func InitializeAuthorization(c config.Config, decls []subject.Declaration) error {
 	if auth, err := c.String("auth"); err != nil || auth == "none" {
 		noAuth = true
 		return nil
 	}
-	return client.Initialize(c)
+	return client.RegisterSubjectDeclarations(decls)
 }
 
 func Authenticate(opts interface{}) error {
@@ -36,51 +37,9 @@ func Authenticate(opts interface{}) error {
 	return nil
 }
 
-func Authorize(accessId string, resource string, action string) error {
+func Authorize(ctx echo.Context) error {
 	if !noAuth {
-		return client.Authorize(accessId, resource, action)
-	}
-	return nil
-}
-
-func CreateResource(accessId string, res ram.ResourceCreateOption) error {
-	if !noAuth {
-		return client.CreateResource(accessId, res)
-	}
-	return nil
-}
-
-func AccessResource(res string, accessId string, action string) error {
-	if !noAuth {
-		return client.AccessResource(res, accessId, action)
-	}
-	return nil
-}
-
-func DestroyResource(rid string, accessId string) error {
-	if !noAuth {
-		return client.DestroyResource(rid, accessId)
-	}
-	return nil
-}
-
-func AddResourceGrantee(res string, accessId string, right string) error {
-	if !noAuth {
-		return client.AddResourceGrantee(res, accessId, right)
-	}
-	return nil
-}
-
-func CreateAccount(account string) error {
-	if !noAuth {
-		return client.CreateAccount(account)
-	}
-	return nil
-}
-
-func DestroyAccount(account string) error {
-	if !noAuth {
-		return client.DestroyAccount(account)
+		return client.Authorize(ctx)
 	}
 	return nil
 }

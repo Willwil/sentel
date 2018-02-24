@@ -22,6 +22,7 @@ var defaultConfigs = config.M{
 		"auth":     "jwt",
 		"mongo":    "localhost:27017",
 		"swagger":  "0.0.0.0:53384",
+		"keystone": "localhost:4147",
 	},
 	"registry": {
 		"hosts":    "localhost:27017",
