@@ -109,7 +109,7 @@ var authorizations = []subject.Declaration{
 		Url:     "/iot/api/v1/console/devices",
 		Method:  http.MethodPost,
 		Subject: "/tenants/$AccessId/products/$ProductId/devices",
-		Action:  "new",
+		Action:  "create",
 	},
 	// v1api.GetOneDevice
 	{
@@ -200,7 +200,7 @@ var authorizations = []subject.Declaration{
 		Url:     "/iot/api/v1/console/topicflavors",
 		Method:  http.MethodPost,
 		Subject: "/tenants/$AccessId/topicflavors",
-		Action:  "new",
+		Action:  "create",
 	},
 	// v1api.RemoveTopicFlavor
 	{

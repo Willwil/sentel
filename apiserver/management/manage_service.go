@@ -42,39 +42,16 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err := base.InitializeAuthorization(c, authorizations); err != nil {
 		return nil, err
 	}
-	service := &managementService{
+	return &managementService{
 		config:    c,
 		waitgroup: sync.WaitGroup{},
 		echo:      echo.New(),
-	}
-	if err := service.initialize(c); err != nil {
-		return nil, err
-	}
-	return service, nil
+	}, nil
 }
 
-func (p *managementService) Name() string      { return "management" }
-func (p *managementService) Initialize() error { return nil }
-
-// Start
-func (p *managementService) Start() error {
-	p.waitgroup.Add(1)
-	go func(s *managementService) {
-		addr := p.config.MustStringWithSection("management", "listen")
-		p.echo.Start(addr)
-		p.waitgroup.Done()
-	}(p)
-	return nil
-}
-
-// Stop
-func (p *managementService) Stop() {
-	p.echo.Close()
-	p.waitgroup.Wait()
-}
-
-// Initialize initialize api manager with configuration
-func (p *managementService) initialize(c config.Config) error {
+func (p *managementService) Name() string { return "management" }
+func (p *managementService) Initialize() error {
+	c := p.config
 	if err := registry.Initialize(c); err != nil {
 		return fmt.Errorf("registry initialize failed:%v", err)
 	}
@@ -124,6 +101,24 @@ func (p *managementService) initialize(c config.Config) error {
 	g.PATCH("/products/:productId/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 
 	return nil
+
+}
+
+// Start
+func (p *managementService) Start() error {
+	p.waitgroup.Add(1)
+	go func(s *managementService) {
+		addr := p.config.MustStringWithSection("management", "listen")
+		p.echo.Start(addr)
+		p.waitgroup.Done()
+	}(p)
+	return nil
+}
+
+// Stop
+func (p *managementService) Stop() {
+	p.echo.Close()
+	p.waitgroup.Wait()
 }
 
 func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {

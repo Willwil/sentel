@@ -43,39 +43,16 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err := base.InitializeAuthorization(c, authorizations); err != nil {
 		return nil, err
 	}
-	service := &consoleService{
+	return &consoleService{
 		config:    c,
 		waitgroup: sync.WaitGroup{},
 		echo:      echo.New(),
-	}
-	if err := service.initialize(c); err != nil {
-		return nil, err
-	}
-	return service, nil
+	}, nil
 }
 
-func (p *consoleService) Name() string      { return "console" }
-func (p *consoleService) Initialize() error { return nil }
-
-// Start
-func (p *consoleService) Start() error {
-	p.waitgroup.Add(1)
-	go func(s *consoleService) {
-		addr := p.config.MustStringWithSection("console", "listen")
-		p.echo.Start(addr)
-		p.waitgroup.Done()
-	}(p)
-	return nil
-}
-
-// Stop
-func (p *consoleService) Stop() {
-	p.echo.Close()
-	p.waitgroup.Wait()
-}
-
-// Initialize initialize api manager with configuration
-func (p *consoleService) initialize(c config.Config) error {
+func (p *consoleService) Name() string { return "console" }
+func (p *consoleService) Initialize() error {
+	c := p.config
 	if err := registry.Initialize(c); err != nil {
 		return fmt.Errorf("registry initialize failed:%v", err)
 	}
@@ -154,6 +131,24 @@ func (p *consoleService) initialize(c config.Config) error {
 	g.GET("/service", v1api.GetServiceStatics)
 
 	return nil
+
+}
+
+// Start
+func (p *consoleService) Start() error {
+	p.waitgroup.Add(1)
+	go func(s *consoleService) {
+		addr := p.config.MustStringWithSection("console", "listen")
+		p.echo.Start(addr)
+		p.waitgroup.Done()
+	}(p)
+	return nil
+}
+
+// Stop
+func (p *consoleService) Stop() {
+	p.echo.Close()
+	p.waitgroup.Wait()
 }
 
 // setAuth setup api group 's authentication method
