@@ -133,11 +133,11 @@ func Test_createProduct(t *testing.T) {
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
-		p := rsp.Result.(registry.Product)
-		if p.TenantId != tenantId || p.ProductName != productName {
+		p := rsp.Result.(map[string]interface{})
+		if p["TenantId"] != tenantId || p["ProductName"] != productName {
 			t.Error("tenantId and productName miss")
 		}
-		productId = p.ProductId // Update global productId
+		productId = p["ProductId"].(string) // Update global productId
 	}
 }
 

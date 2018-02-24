@@ -81,7 +81,6 @@ func initializeContext(t *testing.T, method string, url string, reqdata interfac
 	var req *http.Request
 	if reqdata != nil {
 		body, _ := json.Marshal(reqdata)
-		fmt.Println("request data :", string(body))
 		req = httptest.NewRequest(method, url, bytes.NewReader(body))
 	} else {
 		req = httptest.NewRequest(method, url, nil)
@@ -112,7 +111,6 @@ func getApiResponse(ctx echo.Context) (apiResponse, error) {
 			return rsp, fmt.Errorf("expected status 200, result %d", result.StatusCode)
 		} else {
 			body, _ := ioutil.ReadAll(result.Body)
-			fmt.Println("result data :", string(body))
 			if err := json.Unmarshal(body, &rsp); err != nil {
 				return rsp, err
 			}
@@ -152,13 +150,15 @@ func Test_loginTenant(t *testing.T) {
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
-		token = rsp.Result.(echo.Map)["token"].(string)
+		token = rsp.Result.(map[string]interface{})["token"].(string)
 	}
 }
 
 func Test_getTenant(t *testing.T) {
-	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/tenants/"+tenantId, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/tenants/:tenantId", nil)
 	defer closeRegistry(ctx)
+	ctx.SetParamNames("tenantId")
+	ctx.SetParamValues(tenantId)
 	v1api.GetTenant(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
@@ -170,7 +170,7 @@ func Test_updateTenant(t *testing.T) {
 		TenantId: tenantId,
 		Password: "default",
 	}
-	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/tenants/logout", req)
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/tenants", req)
 	defer closeRegistry(ctx)
 	v1api.UpdateTenant(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -194,11 +194,12 @@ func Test_createProduct(t *testing.T) {
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
-		p := rsp.Result.(registry.Product)
-		if p.TenantId != tenantId || p.ProductName != productName {
+		p := rsp.Result.(map[string]interface{})
+		if p["TenantId"] != tenantId || p["ProductName"] != productName {
 			t.Error("tenantId and productName miss")
+			return
 		}
-		productId = p.ProductId // Update global productId
+		productId = p["ProductId"].(string) // Update global productId
 	}
 }
 
@@ -215,7 +216,9 @@ func Test_updateProduct(t *testing.T) {
 		Description: "updated product",
 	}
 
-	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/products/"+productId, req)
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/products/:productId", req)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.UpdateProduct(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -242,22 +245,25 @@ func Test_getProductList(t *testing.T) {
 }
 
 func Test_getProduct(t *testing.T) {
-	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/"+productId, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.GetProduct(ctx)
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
-		p := rsp.Result.(registry.Product)
-		if p.ProductId != productId {
+		p := rsp.Result.(map[string]interface{})
+		if p["ProductId"] != productId {
 			t.Error("wrong product id")
 		}
 	}
 }
 
 func Test_getProductDevices(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "/devices"
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId/devices", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.GetProductDevices(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -266,8 +272,9 @@ func Test_getProductDevices(t *testing.T) {
 }
 
 func Test_getProductRules(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "/rules"
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId/rules", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.GetProductRules(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -276,8 +283,9 @@ func Test_getProductRules(t *testing.T) {
 }
 
 func Test_getDeviceStatics(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "/devices/statics"
-	ctx := initializeContext(t, http.MethodPost, url, nil)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/devices/statics", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.GetDeviceStatics(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -302,17 +310,19 @@ func Test_createDevice(t *testing.T) {
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
-		device := rsp.Result.(registry.Device)
-		if device.DeviceName != req.DeviceName || device.ProductId != req.ProductId {
+		device := rsp.Result.(map[string]interface{})
+		if device["DeviceName"] != req.DeviceName || device["ProductId"] != req.ProductId {
 			t.Error("wrong device retrived")
+			return
 		}
-		deviceId = device.DeviceId
+		deviceId = device["DeviceId"].(string)
 	}
 }
 
 func Test_getOneDevice(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "devices/" + deviceId
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId/devices/:deviceId", nil)
+	ctx.SetParamNames("productId", "deviceId")
+	ctx.SetParamValues(productId, deviceId)
 	defer closeRegistry(ctx)
 	v1api.GetOneDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -366,8 +376,9 @@ func Test_updateShadowDevice(t *testing.T) {
 }
 
 func Test_getShadowDevice(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "devices/" + deviceId + "/shadow"
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId/devices/:deviceId/shadow", nil)
+	ctx.SetParamNames("productId", "deviceId")
+	ctx.SetParamValues(productId, deviceId)
 	defer closeRegistry(ctx)
 	v1api.GetShadowDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -454,8 +465,9 @@ func Test_stopRule(t *testing.T) {
 }
 
 func Test_getRule(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "/rules/" + ruleName
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/products/:productId/rules/:ruleName", nil)
+	ctx.SetParamNames("productId", "ruleName")
+	ctx.SetParamValues(productId, ruleName)
 	defer closeRegistry(ctx)
 	v1api.GetRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -483,8 +495,9 @@ func Test_createTopicFlavor(t *testing.T) {
 }
 
 func Test_getProductTopicFlavors(t *testing.T) {
-	url := "/iot/api/v1/console/topicflavors/" + productId
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/topicflavors/:productId", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.GetProductTopicFlavors(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -493,8 +506,9 @@ func Test_getProductTopicFlavors(t *testing.T) {
 }
 
 func Test_getTenantTopicFlavors(t *testing.T) {
-	url := "/iot/api/v1/console/topicflavors/tenants/" + tenantId
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/topicflavors/tenants/:tenantId", nil)
+	ctx.SetParamNames("tenantId")
+	ctx.SetParamValues(tenantId)
 	defer closeRegistry(ctx)
 	v1api.GetTenantTopicFlavors(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -503,8 +517,7 @@ func Test_getTenantTopicFlavors(t *testing.T) {
 }
 
 func Test_getBuiltinTopicFlavors(t *testing.T) {
-	url := "/iot/api/v1/console/topicflavors/builtin"
-	ctx := initializeContext(t, http.MethodGet, url, nil)
+	ctx := initializeContext(t, http.MethodGet, "/iot/api/v1/console/topicflavors/builtin", nil)
 	defer closeRegistry(ctx)
 	v1api.GetBuiltinTopicFlavors(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -513,8 +526,9 @@ func Test_getBuiltinTopicFlavors(t *testing.T) {
 }
 
 func Test_setProductTopicFlavor(t *testing.T) {
-	url := "/iot/api/v1/console/topicflavors/" + productId + "?flavor=" + topicFlavorName
-	ctx := initializeContext(t, http.MethodPut, url, nil)
+	ctx := initializeContext(t, http.MethodPut, "/iot/api/v1/console/topicflavors/:productId?flavor=:topicFlavorName", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.SetProductTopicFlavor(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -563,7 +577,7 @@ func Test_getServiceStatics(t *testing.T) {
 		TenantId: "jenson",
 		Password: "default",
 	}
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/tenants/logout", req)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/services", req)
 	defer closeRegistry(ctx)
 	v1api.GetServiceStatics(ctx)
 	r := ctx.Response()
@@ -573,8 +587,9 @@ func Test_getServiceStatics(t *testing.T) {
 }
 
 func Test_removeProductTopicFlavor(t *testing.T) {
-	url := "/iot/api/v1/console/topicflavors/" + productId
-	ctx := initializeContext(t, http.MethodDelete, url, nil)
+	ctx := initializeContext(t, http.MethodDelete, "/iot/api/v1/console/topicflavors/:productId", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.RemoveProductTopicFlavor(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -582,8 +597,9 @@ func Test_removeProductTopicFlavor(t *testing.T) {
 	}
 }
 func Test_removeRule(t *testing.T) {
-	url := "/iot/api/v1/console/" + productId + "/rules/" + ruleName
-	ctx := initializeContext(t, http.MethodDelete, url, nil)
+	ctx := initializeContext(t, http.MethodDelete, "/iot/api/v1/console/:productId/rules/:ruleName", nil)
+	ctx.SetParamNames("productId", "ruleName")
+	ctx.SetParamValues(productId, ruleName)
 	defer closeRegistry(ctx)
 	v1api.RemoveRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -592,8 +608,9 @@ func Test_removeRule(t *testing.T) {
 }
 
 func Test_removeDevice(t *testing.T) {
-	url := "/iot/api/v1/console/products/" + productId + "devices/" + deviceId
-	ctx := initializeContext(t, http.MethodDelete, url, nil)
+	ctx := initializeContext(t, http.MethodDelete, "/iot/api/v1/console/products/:productId/devices/:deviceId", nil)
+	ctx.SetParamNames("productId", "deviceId")
+	ctx.SetParamValues(productId, deviceId)
 	defer closeRegistry(ctx)
 	v1api.RemoveDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -602,7 +619,9 @@ func Test_removeDevice(t *testing.T) {
 }
 
 func Test_removeProduct(t *testing.T) {
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/"+productId, nil)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId", nil)
+	ctx.SetParamNames("productId")
+	ctx.SetParamValues(productId)
 	defer closeRegistry(ctx)
 	v1api.RemoveProduct(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -627,7 +646,9 @@ func Test_logoutTenant(t *testing.T) {
 }
 
 func Test_deleteTenant(t *testing.T) {
-	ctx := initializeContext(t, http.MethodDelete, "/iot/api/v1/console/tenants/"+tenantId, nil)
+	ctx := initializeContext(t, http.MethodDelete, "/iot/api/v1/console/tenants/:tenantId", nil)
+	ctx.SetParamNames("tenantId")
+	ctx.SetParamValues(tenantId)
 	defer closeRegistry(ctx)
 	v1api.DeleteTenant(ctx)
 	if _, err := getApiResponse(ctx); err != nil {

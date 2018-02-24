@@ -49,7 +49,7 @@ func SendMessageToDevice(ctx echo.Context) error {
 		Qos:     req.Qos,
 		Retain:  req.Retain,
 	}
-	topic := fmt.Sprintf("%s/%s/%s", req.ProductId, req.DeviceId, req.Topic)
+	topic := fmt.Sprintf("%s-%s-%s", req.ProductId, req.DeviceId, req.Topic)
 	value, _ := event.Encode(&e, event.JSONCodec)
 	msg := message.Broker{TopicName: topic, Payload: value}
 	if err := message.PostMessage(c, &msg); err != nil {

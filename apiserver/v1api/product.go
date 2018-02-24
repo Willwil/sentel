@@ -29,6 +29,7 @@ type productCreateRequest struct {
 }
 
 func CreateProduct(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	req := productCreateRequest{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -39,7 +40,7 @@ func CreateProduct(ctx echo.Context) error {
 	}
 
 	p := &registry.Product{
-		//TenantId:    accessId,
+		TenantId:    accessId,
 		ProductId:   ram.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
@@ -58,7 +59,7 @@ func CreateProduct(ctx echo.Context) error {
 			ProductId: p.ProductId,
 			Action:    message.ActionCreate,
 		})
-	return ctx.JSON(OK, apiResponse{Result: &p})
+	return ctx.JSON(OK, apiResponse{Result: p})
 }
 
 // removeProduct delete product from registry store
