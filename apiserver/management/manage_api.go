@@ -91,6 +91,11 @@ func getDevicePropsByName(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	return v1api.GetDevicePropsByName(ctx)
 }
+func removeDevicePropsByName(ctx echo.Context) error {
+	defer closeRegistry(ctx)
+	return v1api.RemoveDevicePropsByName(ctx)
+}
+
 func getShadowDevice(ctx echo.Context) error {
 	defer closeRegistry(ctx)
 	return v1api.GetShadowDevice(ctx)

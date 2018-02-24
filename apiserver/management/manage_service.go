@@ -106,15 +106,15 @@ func (p *managementService) initialize(c config.Config) error {
 
 	g.POST("/products/:productId/devices", createDevice)
 	g.POST("/prodcuts/:productId/devices/bulk", bulkApplyDevices)
-	g.GET("/products/:productId/devices/bulk/:id", bulkApplyGetStatus)
+	g.GET("/products/:productId/devices/bulk/:deviceId", bulkApplyGetStatus)
 	g.GET("/products/:productId/devices/bulk", bulkApplyGetDevices)
-	g.GET("/products/:productId/devices/list", getDeviceList)
-	g.GET("/products/:productId/devices/status", bulkGetDeviceStatus)
+	g.GET("/products/:productId/devices/bulk/status", bulkGetDeviceStatus)
+	g.GET("/products/:productId/devices", getDeviceList)
 	g.GET("/products/:productId/devices/:deviceName", getDeviceByName)
 
 	g.POST("/products/:productId/devices/:deviceId/props", saveDevicePropsByName)
 	g.GET("/products/:productId/devices/:deviceId/props/:props", getDevicePropsByName)
-	g.DELETE("/products/:productId/devices/:deviceId/props/:props", getDevicePropsByName)
+	g.DELETE("/products/:productId/devices/:deviceId/props/:props", removeDevicePropsByName)
 
 	g.POST("/message", sendMessageToDevice)
 	g.POST("/message/broadcast", broadcastProductMessage)

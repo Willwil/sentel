@@ -177,7 +177,7 @@ func SaveDevicePropsByName(ctx echo.Context) error {
 func GetDevicePropsByName(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
-func DeleteDevicePropsByName(ctx echo.Context) error {
+func RemoveDevicePropsByName(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
