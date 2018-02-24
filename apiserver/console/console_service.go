@@ -18,9 +18,11 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/util"
+	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/golang/glog"
 
 	echo "github.com/labstack/echo"
@@ -92,58 +94,59 @@ func (p *consoleService) initialize(c config.Config) error {
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
 	p.echo.Use(middleware.RegistryWithConfig(c))
+	p.echo.Use(accessIdWithConfig(c))
 
 	// Api for console
-	p.echo.POST("/iot/api/v1/console/tenants", registerTenant)
-	p.echo.POST("/iot/api/v1/console/tenants/login", loginTenant)
+	p.echo.POST("/iot/api/v1/console/tenants", v1api.RegisterTenant)
+	p.echo.POST("/iot/api/v1/console/tenants/login", v1api.LoginTenant)
 
 	g := p.echo.Group("/iot/api/v1/console")
 	p.setAuth(c, g)
-	g.POST("/tenants/logout", logoutTenant)
-	g.DELETE("/tenants/:tenantId", deleteTenant)
-	g.GET("/tenants/:tenantId", getTenant)
-	g.PATCH("/tenants", updateTenant)
+	g.POST("/tenants/logout", v1api.LogoutTenant)
+	g.DELETE("/tenants/:tenantId", v1api.DeleteTenant)
+	g.GET("/tenants/:tenantId", v1api.GetTenant)
+	g.PATCH("/tenants", v1api.UpdateTenant)
 
 	// Product
-	g.POST("/products", createProduct)
-	g.DELETE("/products/:productId", removeProduct)
-	g.PATCH("/products", updateProduct)
-	g.GET("/products", getProductList)
-	g.GET("/products/:productId", getProduct)
-	g.GET("/products/:productId/devices", getProductDevices)
-	g.GET("/products/:productId/rules", getProductRules)
-	g.GET("/products/:productId/devices/statics", getDeviceStatics)
+	g.POST("/products", v1api.CreateProduct)
+	g.DELETE("/products/:productId", v1api.RemoveProduct)
+	g.PATCH("/products", v1api.UpdateProduct)
+	g.GET("/products", v1api.GetProductList)
+	g.GET("/products/:productId", v1api.GetProduct)
+	g.GET("/products/:productId/devices", v1api.GetProductDevices)
+	g.GET("/products/:productId/rules", v1api.GetProductRules)
+	g.GET("/products/:productId/devices/statics", v1api.GetDeviceStatics)
 
 	// Device
-	g.POST("/devices", createDevice)
-	g.GET("/products/:productId/devices/:deviceId", getOneDevice)
-	g.DELETE("/products/:productId/devices/:deviceId", removeDevice)
-	g.PATCH("/devices", updateDevice)
-	g.POST("/devices/bulk", bulkRegisterDevices)
-	g.PATCH("/devices/shadow", updateShadowDevice)
-	g.GET("/products/:productId/devices/:deviceId/shardow", getShadowDevice)
+	g.POST("/devices", v1api.CreateDevice)
+	g.GET("/products/:productId/devices/:deviceId", v1api.GetOneDevice)
+	g.DELETE("/products/:productId/devices/:deviceId", v1api.RemoveDevice)
+	g.PATCH("/devices", v1api.UpdateDevice)
+	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
+	g.GET("/products/:productId/devices/:deviceId/shardow", v1api.GetShadowDevice)
+	g.PATCH("/products/:productId/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 
 	// Rules
-	g.POST("/rules", createRule)
-	g.DELETE("/products/:productId/rules/:ruleName", removeRule)
-	g.PATCH("/rules", updateRule)
-	g.PUT("/rules/start", startRule)
-	g.PUT("/rules/stop", stopRule)
-	g.GET("/products/:productId/rules/:ruleName", getRule)
+	g.POST("/rules", v1api.CreateRule)
+	g.DELETE("/products/:productId/rules/:ruleName", v1api.RemoveRule)
+	g.PATCH("/rules", v1api.UpdateRule)
+	g.PUT("/rules/start", v1api.StartRule)
+	g.PUT("/rules/stop", v1api.StopRule)
+	g.GET("/products/:productId/rules/:ruleName", v1api.GetRule)
 
 	// Topic Flavor
-	g.POST("/topicflavors", createTopicFlavor)
-	g.DELETE("/topicflavors/:productId", removeProductTopicFlavor)
-	g.GET("/topicflavors/products/:productId", getProductTopicFlavors)
-	g.GET("/topicflavors/tenants/:tenantId", getTenantTopicFlavors)
-	g.GET("topicflavors/builtin", getBuiltinTopicFlavors)
-	g.PUT("/topicflavors/:productId?flavor=:topicflavor", setProductTopicFlavor)
+	g.POST("/topicflavors", v1api.CreateTopicFlavor)
+	g.DELETE("/topicflavors/products/:productId", v1api.RemoveProductTopicFlavor)
+	g.GET("/topicflavors/products/:productId", v1api.GetProductTopicFlavors)
+	g.GET("/topicflavors/tenants/:tenantId", v1api.GetTenantTopicFlavors)
+	g.GET("topicflavors/builtin", v1api.GetBuiltinTopicFlavors)
+	g.PUT("/topicflavors/:productId?flavor=:topicflavor", v1api.SetProductTopicFlavor)
 
 	// Runtime
-	g.POST("/message", sendMessageToDevice)
-	g.POST("/message/broadcast", broadcastProductMessage)
+	g.POST("/message", v1api.SendMessageToDevice)
+	g.POST("/message/broadcast", v1api.BroadcastProductMessage)
 
-	g.GET("/service", getServiceStatics)
+	g.GET("/service", v1api.GetServiceStatics)
 
 	return nil
 }
@@ -160,5 +163,18 @@ func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 		}
 		g.Use(mw.JWTWithConfig(config))
 	default:
+	}
+}
+
+func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(ctx echo.Context) error {
+			// After authenticated by gateway,the authentication paramters must bevalid
+			if user, ok := ctx.Get("user").(*jwt.Token); ok {
+				claims := user.Claims.(*base.JwtApiClaims)
+				ctx.Set("AccessId", claims.AccessId)
+			}
+			return next(ctx)
+		}
 	}
 }

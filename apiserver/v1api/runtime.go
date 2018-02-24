@@ -15,7 +15,6 @@ package v1api
 import (
 	"fmt"
 
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/labstack/echo"
@@ -34,7 +33,6 @@ type deviceMessage struct {
 
 // Send a could-to-device message
 func SendMessageToDevice(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	req := deviceMessage{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -42,10 +40,6 @@ func SendMessageToDevice(ctx echo.Context) error {
 	}
 	if req.ProductId == "" || req.DeviceId == "" || req.Topic == "" || len(req.Payload) == 0 {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	// Authorize
-	if err := base.Authorize(req.DeviceId+"/messages", accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	c := getConfig(ctx)
 	e := event.TopicPublishEvent{

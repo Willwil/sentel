@@ -15,7 +15,6 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
@@ -23,7 +22,6 @@ import (
 
 // createRule add new rule for product
 func CreateRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
 
 	if err := ctx.Bind(&rule); err != nil {
@@ -32,11 +30,6 @@ func CreateRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	objname := rule.ProductId + "/rules"
-	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	rule.TimeCreated = time.Now()
 	rule.TimeUpdated = time.Now()
 	r := getRegistry(ctx)
@@ -56,16 +49,10 @@ func CreateRule(ctx echo.Context) error {
 
 // deleteRule delete existed rule
 func RemoveRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	if productId == "" || ruleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-
-	objname := productId + "/rules"
-	if err := base.Authorize(objname, accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r := getRegistry(ctx)
@@ -85,7 +72,6 @@ func RemoveRule(ctx echo.Context) error {
 
 // UpdateRule update existed rule
 func UpdateRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
 
 	if err := ctx.Bind(&rule); err != nil {
@@ -94,11 +80,6 @@ func UpdateRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	objname := rule.ProductId + "/rules"
-	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	if err := r.UpdateRule(&rule); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -114,7 +95,6 @@ func UpdateRule(ctx echo.Context) error {
 }
 
 func StartRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
 
 	if err := ctx.Bind(&rule); err != nil {
@@ -123,11 +103,6 @@ func StartRule(ctx echo.Context) error {
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	objname := rule.ProductId + "/rules"
-	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	asyncProduceMessage(ctx,
 		&message.Rule{
 			TopicName: message.TopicNameRule,
@@ -139,7 +114,6 @@ func StartRule(ctx echo.Context) error {
 }
 
 func StopRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	rule := registry.Rule{}
 
 	if err := ctx.Bind(&rule); err != nil {
@@ -147,10 +121,6 @@ func StopRule(ctx echo.Context) error {
 	}
 	if rule.ProductId == "" || rule.RuleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	objname := rule.ProductId + "/rules"
-	if err := base.Authorize(objname, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	asyncProduceMessage(ctx,
 		&message.Rule{
@@ -164,17 +134,10 @@ func StopRule(ctx echo.Context) error {
 
 // getRule retrieve a rule
 func GetRule(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
 	if productId == "" || ruleName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-
-	objname := productId + "/rules"
-	if err := base.Authorize(objname, accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	r := getRegistry(ctx)
@@ -186,17 +149,10 @@ func GetRule(ctx echo.Context) error {
 }
 
 func GetProductRules(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	productId := ctx.Param("productId")
 	if productId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	objname := productId + "/rules"
-	if err := base.Authorize(objname, accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	if names, err := r.GetProductRuleNames(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})

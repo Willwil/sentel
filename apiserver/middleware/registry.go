@@ -28,6 +28,7 @@ func RegistryWithConfig(config config.Config) echo.MiddlewareFunc {
 			if err != nil {
 				return ctx.JSON(http.StatusInternalServerError, errors.New("registry access failed"))
 			}
+			defer r.Close()
 			ctx.Set("registry", r)
 			ctx.Set("config", config)
 			return next(ctx)

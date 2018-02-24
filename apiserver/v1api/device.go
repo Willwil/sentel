@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -31,8 +30,6 @@ type deviceRequest struct {
 
 // RegisterDevice register a new device in IoT hub
 func CreateDevice(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	req := deviceRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
@@ -40,12 +37,6 @@ func CreateDevice(ctx echo.Context) error {
 	if req.ProductId == "" || req.DeviceName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	// Authorization
-	objectName := req.ProductId + "/devices"
-	if err := base.Authorize(accessId, objectName, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	device := registry.Device{}
 	device.DeviceName = req.DeviceName
@@ -62,25 +53,16 @@ func CreateDevice(ctx echo.Context) error {
 
 // Delete the identify of a device from the identity registry of an IoT Hub
 func RemoveDevice(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
 	if productId == "" || deviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	// Authorization
-	objectName := productId + "/devices"
-	if err := base.Authorize(accessId, objectName, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	// Get device into registry, the created product
 	if err := r.DeleteDevice(productId, deviceId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	base.DestroyResource(deviceId, accessId)
 	return ctx.JSON(OK, apiResponse{})
 }
 
@@ -91,19 +73,11 @@ type device struct {
 
 // Retrieve a device from the identify registry of an IoT hub
 func GetOneDevice(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
 	if productId == "" || deviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	// Authorization
-	objectName := productId + "/devices"
-	if err := base.Authorize(accessId, objectName, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	// Get device into registry, the created product
 	r := getRegistry(ctx)
 	dev, err := r.GetDevice(productId, deviceId)
@@ -115,8 +89,6 @@ func GetOneDevice(ctx echo.Context) error {
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
 func UpdateDevice(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	req := deviceRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
@@ -124,12 +96,6 @@ func UpdateDevice(ctx echo.Context) error {
 	if req.ProductId == "" || req.DeviceId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	// Authorization
-	objectName := req.ProductId + "/devices"
-	if err := base.Authorize(accessId, objectName, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	device := registry.Device{}
 	device.ProductId = req.ProductId
 	device.DeviceId = req.DeviceId
@@ -182,19 +148,12 @@ func RemoveDevicePropsByName(ctx echo.Context) error {
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
-
 	req := DeviceBulkRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	if req.Number == "" || req.ProductId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	// Authorization
-	objectName := req.ProductId + "/devices"
-	if err := base.Authorize(accessId, objectName, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	n, err := strconv.Atoi(req.Number)
 	if err != nil || n < 1 {

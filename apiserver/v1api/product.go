@@ -15,7 +15,6 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/keystone/ram"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -30,7 +29,6 @@ type productCreateRequest struct {
 }
 
 func CreateProduct(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	req := productCreateRequest{}
 
 	if err := ctx.Bind(&req); err != nil {
@@ -41,7 +39,7 @@ func CreateProduct(ctx echo.Context) error {
 	}
 
 	p := &registry.Product{
-		TenantId:    accessId,
+		//TenantId:    accessId,
 		ProductId:   ram.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
@@ -53,14 +51,6 @@ func CreateProduct(ctx echo.Context) error {
 	if err := r.RegisterProduct(p); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	// Notify keystone
-	base.CreateResource(p.ProductId, ram.ResourceCreateOption{
-		Name:       req.ProductName,
-		ObjectId:   p.ProductId,
-		Creator:    accessId,
-		Category:   "product",
-		Attributes: []string{"rules", "devices"},
-	})
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		&message.Product{
@@ -73,13 +63,7 @@ func CreateProduct(ctx echo.Context) error {
 
 // removeProduct delete product from registry store
 func RemoveProduct(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
-
-	// Authrozie
-	if err := base.Authorize(productId, accessId, "x"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
 
 	r := getRegistry(ctx)
 	if err := r.DeleteProduct(productId); err != nil {
@@ -104,15 +88,9 @@ type productUpdateRequest struct {
 
 // updateProduct update product information in registry
 func UpdateProduct(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	req := productUpdateRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-
-	// Authrozie
-	if err := base.Authorize(req.ProductId, accessId, "w"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 
 	p := &registry.Product{
@@ -140,11 +118,6 @@ func UpdateProduct(ctx echo.Context) error {
 
 func GetProductList(ctx echo.Context) error {
 	accessId := getAccessId(ctx)
-
-	if err := base.Authorize(accessId+"/products", accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	if products, err := r.GetProducts(accessId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -163,12 +136,7 @@ func GetProductList(ctx echo.Context) error {
 
 // getProduct retrieve production information from registry store
 func GetProduct(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
-
-	if err := base.Authorize(productId, accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
 
 	r := getRegistry(ctx)
 	p, err := r.GetProduct(productId)
@@ -180,13 +148,7 @@ func GetProduct(ctx echo.Context) error {
 
 // getProductDevices retrieve product devices list from registry store
 func GetProductDevices(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
-
-	if err := base.Authorize(productId+"/devices", accessId, "r"); err != nil {
-		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
-	}
-
 	r := getRegistry(ctx)
 	pdevices, err := r.GetProductDevices(productId)
 	if err != nil {

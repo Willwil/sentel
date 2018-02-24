@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
+	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/keystone/client"
 	"github.com/cloustone/sentel/pkg/config"
@@ -100,26 +101,26 @@ func (p *managementService) initialize(c config.Config) error {
 
 	// API for end users with restapi support
 	g := p.echo.Group("/iot/api/v1")
-	g.POST("/products", createProduct)
-	g.PATCH("/products/:productId", updateProduct)
-	g.GET("/products/:productId/devices", getProductDevices)
+	g.POST("/products", v1api.CreateProduct)
+	g.PATCH("/products/:productId", v1api.UpdateProduct)
+	g.GET("/products/:productId/devices", v1api.GetProductDevices)
 
-	g.POST("/products/:productId/devices", createDevice)
-	g.POST("/prodcuts/:productId/devices/bulk", bulkApplyDevices)
-	g.GET("/products/:productId/devices/bulk/:deviceId", bulkApplyGetStatus)
-	g.GET("/products/:productId/devices/bulk", bulkApplyGetDevices)
-	g.GET("/products/:productId/devices/bulk/status", bulkGetDeviceStatus)
-	g.GET("/products/:productId/devices", getDeviceList)
-	g.GET("/products/:productId/devices/:deviceName", getDeviceByName)
+	g.POST("/products/:productId/devices", v1api.CreateDevice)
+	g.POST("/prodcuts/:productId/devices/bulk", v1api.BulkApplyDevices)
+	g.GET("/products/:productId/devices/bulk/:deviceId", v1api.BulkApplyGetStatus)
+	g.GET("/products/:productId/devices/bulk", v1api.BulkApplyGetDevices)
+	g.GET("/products/:productId/devices/bulk/status", v1api.BulkGetDeviceStatus)
+	g.GET("/products/:productId/devices", v1api.GetDeviceList)
+	g.GET("/products/:productId/devices/:deviceName", v1api.GetDeviceByName)
 
-	g.POST("/products/:productId/devices/:deviceId/props", saveDevicePropsByName)
-	g.GET("/products/:productId/devices/:deviceId/props/:props", getDevicePropsByName)
-	g.DELETE("/products/:productId/devices/:deviceId/props/:props", removeDevicePropsByName)
+	g.POST("/products/:productId/devices/:deviceId/props", v1api.SaveDevicePropsByName)
+	g.GET("/products/:productId/devices/:deviceId/props/:props", v1api.GetDevicePropsByName)
+	g.DELETE("/products/:productId/devices/:deviceId/props/:props", v1api.RemoveDevicePropsByName)
 
-	g.POST("/message", sendMessageToDevice)
-	g.POST("/message/broadcast", broadcastProductMessage)
-	g.GET("/products/:productId/devices/:deviceId/shardow", getShadowDevice)
-	g.PATCH("/products/:productId/devices/:deviceId/shadow", updateShadowDevice)
+	g.POST("/message", v1api.SendMessageToDevice)
+	g.POST("/message/broadcast", v1api.BroadcastProductMessage)
+	g.GET("/products/:productId/devices/:deviceId/shardow", v1api.GetShadowDevice)
+	g.PATCH("/products/:productId/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 
 	return nil
 }

@@ -21,6 +21,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
@@ -119,7 +120,7 @@ func Test_createProduct(t *testing.T) {
 	}
 
 	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/products", req)
-	createProduct(ctx)
+	v1api.CreateProduct(ctx)
 	if rsp, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	} else {
@@ -145,7 +146,7 @@ func Test_updateProduct(t *testing.T) {
 	}
 
 	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/products/"+productId, req)
-	updateProduct(ctx)
+	v1api.UpdateProduct(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -154,7 +155,7 @@ func Test_updateProduct(t *testing.T) {
 func Test_getProductDevices(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices"
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	getProductDevices(ctx)
+	v1api.GetProductDevices(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -173,7 +174,7 @@ func Test_createDevice(t *testing.T) {
 
 	url := "/iot/api/v1/products/" + productId + "/devices"
 	ctx := initializeContext(t, http.MethodPost, url, req)
-	createDevice(ctx)
+	v1api.CreateDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -181,7 +182,7 @@ func Test_createDevice(t *testing.T) {
 func Test_bulkApplyDevices(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/bulk"
 	ctx := initializeContext(t, http.MethodPost, url, nil)
-	bulkApplyDevices(ctx)
+	v1api.BulkApplyDevices(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -189,7 +190,7 @@ func Test_bulkApplyDevices(t *testing.T) {
 func Test_bulkApplyGetStatus(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/bulk/" + deviceId
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	bulkApplyGetStatus(ctx)
+	v1api.BulkApplyGetStatus(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -197,7 +198,7 @@ func Test_bulkApplyGetStatus(t *testing.T) {
 func Test_bulkApplyGetDevices(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/bulk"
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	bulkApplyGetDevices(ctx)
+	v1api.BulkApplyGetDevices(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -205,7 +206,7 @@ func Test_bulkApplyGetDevices(t *testing.T) {
 func Test_getDeviceList(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices"
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	getDeviceList(ctx)
+	v1api.GetDeviceList(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -214,7 +215,7 @@ func Test_getDeviceList(t *testing.T) {
 func Test_bulkGetDeviceStatus(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/bulk/status"
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	bulkGetDeviceStatus(ctx)
+	v1api.BulkGetDeviceStatus(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -223,7 +224,7 @@ func Test_bulkGetDeviceStatus(t *testing.T) {
 func Test_getDeviceByName(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceName
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	getDeviceByName(ctx)
+	v1api.GetDeviceByName(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -232,7 +233,7 @@ func Test_getDeviceByName(t *testing.T) {
 func Test_saveDevicePropsByName(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceId + "/props"
 	ctx := initializeContext(t, http.MethodPost, url, nil)
-	saveDevicePropsByName(ctx)
+	v1api.SaveDevicePropsByName(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -241,7 +242,7 @@ func Test_saveDevicePropsByName(t *testing.T) {
 func Test_getDevicePropsByName(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceId + "/props/" + props
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	getDevicePropsByName(ctx)
+	v1api.GetDevicePropsByName(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -250,7 +251,7 @@ func Test_getDevicePropsByName(t *testing.T) {
 func Test_removeDevicePropsByName(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceId + "/props/" + props
 	ctx := initializeContext(t, http.MethodDelete, url, nil)
-	removeDevicePropsByName(ctx)
+	v1api.RemoveDevicePropsByName(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -272,7 +273,7 @@ func Test_sendMessageToDevice(t *testing.T) {
 	}
 
 	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/message", req)
-	sendMessageToDevice(ctx)
+	v1api.SendMessageToDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -280,7 +281,7 @@ func Test_sendMessageToDevice(t *testing.T) {
 
 func Test_broadcastProductMessage(t *testing.T) {
 	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/message/broadcast", nil)
-	sendMessageToDevice(ctx)
+	v1api.SendMessageToDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -288,7 +289,7 @@ func Test_broadcastProductMessage(t *testing.T) {
 func Test_updateShadowDevice(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceId + "/shadow"
 	ctx := initializeContext(t, http.MethodPatch, url, nil)
-	updateShadowDevice(ctx)
+	v1api.UpdateShadowDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
@@ -297,7 +298,7 @@ func Test_updateShadowDevice(t *testing.T) {
 func Test_getShadowDevice(t *testing.T) {
 	url := "/iot/api/v1/products/" + productId + "/devices/" + deviceId + "/shadow"
 	ctx := initializeContext(t, http.MethodGet, url, nil)
-	getShadowDevice(ctx)
+	v1api.GetShadowDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
 		t.Error(err)
 	}
