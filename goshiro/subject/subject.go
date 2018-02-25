@@ -12,9 +12,30 @@
 
 package subject
 
-type Declaration struct {
-	Url     string `json:"url" bson:"Url"`
-	Method  string `json:"method" bson:"Method"`
-	Subject string `json:"subject" bson:"Subject"`
-	Action  string `json:"action" bson:"Action"`
+type Subject interface {
+	GetPrincipal() interface{}
+	GetPrincipals() []interface{}
+	IsPermitted(permission string) bool
+	IsPermittedWithPermission(permission Permission) bool
+	IsPermittedWithPermissions(permission ...string) []bool
+	IsPermittedWithPermissionList(permissions []Permission) []bool
+	IsPermittedAll(permissions ...string) bool
+	CheckPermission(permission Permission) error
+	CheckPermissions(permissions []Permission) error
+	CheckPermissionList(permission ...string) error
+	HasRole(id string) bool
+	HasRoles(ids []string) []bool
+	HasAllRoles(ids []string) bool
+	CheckRole(id string) error
+	CheckRoles(id ...string) error
+	CheckRolesWithList(ids []string) error
+	Login(token AuthenticationToken) error
+	IsAuthenticated() bool
+	IsRembered() bool
+	GetSession() Session
+	GetSessionWithCreation(create bool) Session
+	RunAs(principals PricipalCollection) error
+	IsRunAs() bool
+	GetPreviousPrincipals() PrincipalCollection
+	ReleaseRunAs() PrincipalCollection
 }
