@@ -12,4 +12,13 @@
 
 package auth
 
-type PrincipalCollection interface{}
+type PrincipalCollection interface {
+	Add(principal interface{}, realmName string)
+	AddAll(principals PrincipalCollection)
+	Clear()
+	GetPrimaryPrincipal() interface{}
+}
+
+func NewPrincipalCollection() PrincipalCollection {
+	return nil
+}

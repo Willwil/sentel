@@ -24,6 +24,8 @@ type SecurityManager interface {
 	LoadResources(resources []Resource) error
 	LoadResourceWithJsonFile(fname string) error
 	LoadResourceWithYamlFile(fname string) error
+	GetResourceWithUri(uri string) (bool, Resource)
+	GetResourceName(uri string, ctx ResourceContext) (string, error)
 	Login(subject Subject, token AuthenticationToken) error
 	Logout(subject Subject) error
 	CreateSubject(ctx SubjectContext) (Subject, error)

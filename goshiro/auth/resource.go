@@ -14,11 +14,30 @@ package auth
 
 import "errors"
 
+type ResourceContext interface {
+	// Param returns path parameter by name.
+	Param(name string) string
+	// ParamNames returns path parameter names.
+	ParamNames() []string
+	// SetParamNames sets path parameter names.
+	SetParamNames(names ...string)
+	// ParamValues returns path parameter values.
+	ParamValues() []string
+	// SetParamValues sets path parameter values.
+	SetParamValues(values ...string)
+	// QueryParam returns the query param for the provided name.
+	QueryParam(name string) string
+}
+
 type Resource struct {
 	Url          string `json:"url" bson:"Url"`
 	Method       string `json:"method" bson:"Method"`
 	Resource     string `json:"resource" bson:"Resource"`
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
+}
+
+func (r *Resource) ResolveResource(principals PrincipalCollection, ctx ResourceContext) error {
+	return nil
 }
 
 type ResourceLoader interface {

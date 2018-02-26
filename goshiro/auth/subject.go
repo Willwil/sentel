@@ -12,11 +12,15 @@
 
 package auth
 
-import "github.com/cloustone/sentel/goshiro/session"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/goshiro/session"
+)
 
 type Subject interface {
 	GetPrincipal() interface{}
-	GetPrincipals() []interface{}
+	GetPrincipals() PrincipalCollection
 	IsPermitted(permission string) bool
 	IsPermittedWithPermission(permission Permission) bool
 	IsPermittedWithPermissions(permission ...string) []bool
@@ -36,8 +40,8 @@ type Subject interface {
 	IsRembered() bool
 	GetSession() session.Session
 	GetSessionWithCreation(create bool) session.Session
-	RunAs(principals PrincipalCollection) error
-	IsRunAs() bool
-	GetPreviousPrincipals() PrincipalCollection
-	ReleaseRunAs() PrincipalCollection
+}
+
+func NewSubject(ctx SubjectContext) (Subject, error) {
+	return nil, errors.New("no implemented")
 }

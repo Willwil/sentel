@@ -12,6 +12,8 @@
 
 package auth
 
+import "github.com/cloustone/sentel/goshiro/session"
+
 type SubjectContext interface {
 	GetSecurityManager() SecurityManager
 	SetSecurityManager(SecurityManager)
@@ -19,4 +21,20 @@ type SubjectContext interface {
 	GetSessionId() Serializable
 	GetSubject() Subject
 	SetSubject(subject Subject)
+	GetPrincipals() PrincipalCollection
+	SetPrincipals(principals PrincipalCollection)
+	GetSession() session.Session
+	SetSession(session.Session)
+	IsAuthenticated() bool
+	SetAuthenticated(bool)
+	GetAuthenticaitonToken() AuthenticationToken
+	SetAuthenticationToken(AuthenticationToken)
+	SetAuthenticationInfo(AuthenticationInfo)
+	GetAuthenticationInfo() AuthenticationInfo
+	GetHost() string
+	SetHost(string)
+}
+
+func NewSubjectContext() SubjectContext {
+	return nil
 }

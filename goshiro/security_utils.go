@@ -31,8 +31,9 @@ func InitializeSecurityManager(c config.Config) error {
 }
 
 func GetSubject() auth.Subject {
-	//builder := auth.NewSubjectBuilder(securityManager)
-	return nil
+	ctx := auth.NewSubjectContext()
+	subject, _ := securityManager.CreateSubject(ctx)
+	return subject
 }
 
 func GetSecurityManager() auth.SecurityManager {
