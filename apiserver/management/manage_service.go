@@ -19,7 +19,6 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/v1api"
-	"github.com/cloustone/sentel/keystone/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -125,9 +124,9 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			// After authenticated by gateway,the authentication paramters must bevalid
-			param := auth.ApiAuthParam{}
-			ctx.Bind(&param)
-			ctx.Set("AccessId", param.AccessId)
+			//	param := auth.ApiAuthParam{}
+			//	ctx.Bind(&param)
+			//	ctx.Set("AccessId", param.AccessId)
 			return next(ctx)
 		}
 	}

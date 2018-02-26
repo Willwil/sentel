@@ -10,8 +10,10 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authz
+package auth
 
-type Permission interface {
-	Implies(p Permission) bool
+type Realm interface {
+	GetName() string
+	Supports(token AuthenticationToken) bool
+	GetAuthenticationInfo(token AuthenticationToken) AuthenticationInfo
 }

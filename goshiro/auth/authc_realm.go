@@ -10,13 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package subject
-
-type Builder struct {
-	ctx         SubjectContext
-	securityMgr mgr.SecurityManager
-}
-
-func NewBuilder(mgr mgr.SecurityManager) (*Builder, error) {
-	return nil, nil
-}
+package auth

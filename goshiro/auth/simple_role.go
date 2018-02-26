@@ -10,13 +10,28 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package auth
 
-import "github.com/cloustone/sentel/goshiro/auth"
+type Role interface {
+	GetName() string
+	SetName(name string)
+	GetPermissions() []Permission
+	SetPermissions(permissions []Permission)
+	AddPermission(permission Permission)
+	AddPermissions(permission []Permission)
+	IsPermitted(permission Permission)
+	IsEqual(obj interface{}) bool
+}
 
-func GetSubject() auth.Subject {
+func NewRole() Role {
 	return nil
 }
 
-func SetSecurityManager(mgr auth.SecurityManager) {}
-func GetSecurityManager() auth.SecurityManager    { return nil }
+func NewRoleWithName(name string) Role {
+	return nil
+}
+
+type simpleRole struct {
+	name        string
+	permissions []string
+}

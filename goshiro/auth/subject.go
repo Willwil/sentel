@@ -10,7 +10,9 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package subject
+package auth
+
+import "github.com/cloustone/sentel/goshiro/session"
 
 type Subject interface {
 	GetPrincipal() interface{}
@@ -32,9 +34,9 @@ type Subject interface {
 	Login(token AuthenticationToken) error
 	IsAuthenticated() bool
 	IsRembered() bool
-	GetSession() Session
-	GetSessionWithCreation(create bool) Session
-	RunAs(principals PricipalCollection) error
+	GetSession() session.Session
+	GetSessionWithCreation(create bool) session.Session
+	RunAs(principals PrincipalCollection) error
 	IsRunAs() bool
 	GetPreviousPrincipals() PrincipalCollection
 	ReleaseRunAs() PrincipalCollection

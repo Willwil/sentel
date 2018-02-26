@@ -15,7 +15,7 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/keystone/ram"
+	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -41,7 +41,7 @@ func CreateProduct(ctx echo.Context) error {
 
 	p := &registry.Product{
 		TenantId:    accessId,
-		ProductId:   ram.NewObjectId(),
+		ProductId:   util.NewObjectId(),
 		ProductName: req.ProductName,
 		TimeCreated: time.Now(),
 		Description: req.Description,

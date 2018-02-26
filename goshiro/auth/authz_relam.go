@@ -10,10 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package realm
-
-type Realm interface {
-	GetName() string
-	Supports(token AuthenticationToken) bool
-	GetAuthenticationInfo(token AuthenticationToken) AuthentiationInfo
-}
+package auth

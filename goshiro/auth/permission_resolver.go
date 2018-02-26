@@ -10,28 +10,8 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authz
+package auth
 
-type Role interface {
-	GetName() string
-	SetName(name string)
-	GetPermissions() []Permission
-	SetPermissions(permissions []Permission)
-	AddPermission(permission Permission)
-	AddPermissions(permission []Permission)
-	IsPermitted(permission Permission)
-	IsEqual(obj interface{}) bool
-}
+type PermissionResolver interface{}
 
-func NewRole() Role {
-	return nil
-}
-
-func NewRoleWithName(name string) Role {
-	return nil
-}
-
-type simpleRole struct {
-	name        string
-	permissions []string
-}
+type RolePermissionResolver interface{}

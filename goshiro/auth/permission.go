@@ -10,10 +10,8 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authz
+package auth
 
-type ModularRealmAuthorizer struct {
-	realms                 []realm.Realm
-	permissionResolver     PermissionResolver
-	rolePermissionResolver RolePermissionResolver
+type Permission interface {
+	Implies(p Permission) bool
 }

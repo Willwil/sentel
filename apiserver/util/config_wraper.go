@@ -13,6 +13,7 @@ package util
 
 import (
 	"github.com/cloustone/sentel/pkg/config"
+	uuid "github.com/satori/go.uuid"
 )
 
 func StringConfigWithDefaultValue(c config.Config, key string, defaultValue string) string {
@@ -21,4 +22,8 @@ func StringConfigWithDefaultValue(c config.Config, key string, defaultValue stri
 		result = val
 	}
 	return result
+}
+
+func NewObjectId() string {
+	return uuid.NewV4().String()
 }

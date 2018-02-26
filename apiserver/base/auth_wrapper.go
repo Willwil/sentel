@@ -12,8 +12,7 @@
 package base
 
 import (
-	"github.com/cloustone/sentel/keystone/client"
-	"github.com/cloustone/sentel/keystone/subject"
+	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/labstack/echo"
 )
@@ -22,24 +21,31 @@ var (
 	noAuth = true
 )
 
-func InitializeAuthorization(c config.Config, decls []subject.Declaration) error {
-	if auth, err := c.String("auth"); err != nil || auth == "none" {
-		noAuth = true
-		return nil
-	}
-	return client.RegisterSubjectDeclarations(decls)
+func InitializeAuthorization(c config.Config, decls []auth.Resource) error {
+	/*
+		if auth, err := c.String("auth"); err != nil || auth == "none" {
+			noAuth = true
+			return nil
+		}
+		return client.RegisterSubjectDeclarations(decls)
+	*/
+	return nil
 }
 
 func Authenticate(opts interface{}) error {
-	if !noAuth {
-		return client.Authenticate(opts)
-	}
+	/*
+		if !noAuth {
+			return client.Authenticate(opts)
+		}
+	*/
 	return nil
 }
 
 func Authorize(ctx echo.Context) error {
-	if !noAuth {
-		return client.Authorize(ctx)
-	}
+	/*
+		if !noAuth {
+			return client.Authorize(ctx)
+		}
+	*/
 	return nil
 }

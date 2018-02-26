@@ -10,11 +10,6 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package subject
+package auth
 
-type Declaration struct {
-	Url     string `json:"url" bson:"Url"`
-	Method  string `json:"method" bson:"Method"`
-	Subject string `json:"subject" bson:"Subject"`
-	Action  string `json:"action" bson:"Action"`
-}
+type SubjectContext interface{}

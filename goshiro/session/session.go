@@ -10,4 +10,6 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authc
+package session
+
+type Session interface{}

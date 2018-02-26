@@ -10,13 +10,10 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package auth
 
-import "github.com/cloustone/sentel/goshiro/auth"
-
-func GetSubject() auth.Subject {
-	return nil
+type SecurityManager interface {
+	Login(subject Subject, token AuthenticationToken) error
+	Logout(subject Subject) error
+	CreateSubject(ctx SubjectContext) (Subject, error)
 }
-
-func SetSecurityManager(mgr auth.SecurityManager) {}
-func GetSecurityManager() auth.SecurityManager    { return nil }

@@ -10,4 +10,11 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package realm
+package auth
+
+type Resource struct {
+	Url          string `json:"url" bson:"Url"`
+	Method       string `json:"method" bson:"Method"`
+	Resource     string `json:"resource" bson:"Resource"`
+	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
+}

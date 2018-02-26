@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/cloustone/sentel/keystone/ram"
+	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/pkg/registry"
 
 	"github.com/labstack/echo"
@@ -41,10 +41,10 @@ func CreateDevice(ctx echo.Context) error {
 	device := registry.Device{}
 	device.DeviceName = req.DeviceName
 	device.ProductId = req.ProductId
-	device.DeviceId = ram.NewObjectId()
+	device.DeviceId = util.NewObjectId()
 	device.TimeCreated = time.Now()
 	device.TimeUpdated = time.Now()
-	device.DeviceSecret = ram.NewObjectId()
+	device.DeviceSecret = util.NewObjectId()
 	if err := r.RegisterDevice(&device); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -163,10 +163,10 @@ func BulkRegisterDevices(ctx echo.Context) error {
 	for i := 0; i < n; i++ {
 		d := registry.Device{
 			ProductId:    req.ProductId,
-			DeviceId:     ram.NewObjectId(),
+			DeviceId:     util.NewObjectId(),
 			DeviceName:   req.DeviceName,
 			TimeCreated:  time.Now(),
-			DeviceSecret: ram.NewObjectId(),
+			DeviceSecret: util.NewObjectId(),
 		}
 		rdevices = append(rdevices, d)
 	}

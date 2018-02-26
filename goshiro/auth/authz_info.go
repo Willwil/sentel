@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authz
+package auth
 
 type AuthorizationInfo interface {
 	GetRoles() []string
@@ -20,9 +20,9 @@ type AuthorizationInfo interface {
 
 func NewAuthorizationInfo(roles []string) AuthorizationInfo {
 	info := &simpleAuthorizationInfo{
-		roles:             make([]string),
-		stringPermissions: make([]string),
-		objectPermissions: make([]interface{}),
+		roles:             []string{},
+		stringPermissions: []string{},
+		objectPermissions: []interface{}{},
 	}
 	info.AddRoles(roles)
 	return info

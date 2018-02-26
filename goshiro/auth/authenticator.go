@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package authc
+package auth
 
 // Authenticator is responsible for authenticating accounts in an application
 type Authenticator interface {
