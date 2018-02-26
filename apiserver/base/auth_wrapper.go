@@ -12,6 +12,8 @@
 package base
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/labstack/echo"
@@ -20,6 +22,22 @@ import (
 var (
 	noAuth = true
 )
+
+var (
+	ErrorInvalidArgument = errors.New("invalid argument")
+	ErrorAuthDenied      = errors.New("authentication denied")
+)
+
+type ApiAuthParam struct {
+	Format      string `json:"format"`
+	Version     string `json:"version"`
+	AccessId    string `json:"accessId"`
+	Signature   string `json:"sign"`
+	SignMethod  string `json:"signMethod"`
+	SignVersion string `json:"signVersion"`
+	SignNonce   string `json:"singNonce"`
+	Timestamp   string `json:"timestamp"`
+}
 
 func InitializeAuthorization(c config.Config, decls []auth.Resource) error {
 	/*

@@ -12,8 +12,23 @@
 
 package auth
 
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
 type SecurityManager interface {
+	SetCacheManager(mgr CacheManager)
+	SetSessionManager(mgr SessionManager)
+	LoadResources(resources []Resource) error
+	LoadResourceWithJsonFile(fname string) error
+	LoadResourceWithYamlFile(fname string) error
 	Login(subject Subject, token AuthenticationToken) error
 	Logout(subject Subject) error
 	CreateSubject(ctx SubjectContext) (Subject, error)
+}
+
+func NewSecurityManager(config.Config) (SecurityManager, error) {
+	return nil, errors.New("no implemented")
 }

@@ -12,19 +12,4 @@
 
 package auth
 
-import "errors"
-
-type Resource struct {
-	Url          string `json:"url" bson:"Url"`
-	Method       string `json:"method" bson:"Method"`
-	Resource     string `json:"resource" bson:"Resource"`
-	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
-}
-
-type ResourceLoader interface {
-	LoadResources(fname string) ([]Resource, error)
-}
-
-func NewResourceLoader(fmt string) (ResourceLoader, error) {
-	return nil, errors.New("no implemented")
-}
+type CacheManager interface{}
