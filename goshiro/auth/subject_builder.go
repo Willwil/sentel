@@ -17,6 +17,6 @@ type SubjectBuilder struct {
 	securityMgr SecurityManager
 }
 
-func NewBuilder(mgr SecurityManager) (*SubjectBuilder, error) {
+func NewSubjectBuilder(mgr SecurityManager) (*SubjectBuilder, error) {
 	return nil, nil
 }

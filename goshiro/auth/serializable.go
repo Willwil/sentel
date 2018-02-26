@@ -10,31 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package auth
 
-import (
-	"github.com/cloustone/sentel/goshiro/auth"
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-var (
-	securityManager auth.SecurityManager
-)
-
-func InitializeSecurityManager(c config.Config) error {
-	mgr, err := auth.NewSecurityManager(c)
-	if err != nil {
-		return err
-	}
-	securityManager = mgr
-	return nil
-}
-
-func GetSubject() auth.Subject {
-	//builder := auth.NewSubjectBuilder(securityManager)
-	return nil
-}
-
-func GetSecurityManager() auth.SecurityManager {
-	return securityManager
+type Serializable interface {
 }

@@ -12,4 +12,11 @@
 
 package auth
 
-type SubjectContext interface{}
+type SubjectContext interface {
+	GetSecurityManager() SecurityManager
+	SetSecurityManager(SecurityManager)
+	SetSessionId(sessionId Serializable)
+	GetSessionId() Serializable
+	GetSubject() Subject
+	SetSubject(subject Subject)
+}
