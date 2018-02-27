@@ -15,10 +15,10 @@ package v1api
 import (
 	"time"
 
-	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/goshiro"
+	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
-	jwt "github.com/dgrijalva/jwt-go"
 
 	"github.com/labstack/echo"
 )
@@ -59,30 +59,17 @@ func LoginTenant(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-
-	r := getRegistry(ctx)
-	tenant, err := r.GetTenant(req.TenantId)
-	if err != nil {
-		return ctx.JSON(NotFound, apiResponse{Message: err.Error()})
+	// combined with goshiro
+	authToken := auth.JwtToken{Username: req.TenantId, Password: req.Password}
+	securityManager := goshiro.GetSecurityManager()
+	subctx := auth.NewSubjectContext()
+	subject, _ := securityManager.CreateSubject(subctx)
+	if err := subject.Login(authToken); err != nil {
+		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
-	if req.Password != tenant.Password {
-		return echo.ErrUnauthorized
-	}
+	subject.Save()
 	// Authorized
-	claims := &base.JwtApiClaims{
-		AccessId: tenant.TenantId,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
-		},
-	}
-	// Creat token with claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Generate encoded token and send it as base.ApiResponse
-	t, err := token.SignedString([]byte("secret"))
-	if err != nil {
-		return err
-	}
+	t, _ := authToken.GetJwtToken()
 	return ctx.JSON(OK, apiResponse{Result: echo.Map{"token": t}})
 }
 

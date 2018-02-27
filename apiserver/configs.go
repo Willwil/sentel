@@ -47,4 +47,7 @@ var defaultConfigs = config.M{
 	"swagger": {
 		"open_browser": true,
 	},
+	"security_manager": {
+		"realms": "registry,sentel",
+	},
 }

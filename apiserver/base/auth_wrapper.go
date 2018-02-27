@@ -70,10 +70,9 @@ func Authenticate(opts interface{}) error {
 
 func Authorize(ctx echo.Context) error {
 	if !noAuth {
-		securityManager := goshiro.GetSecurityManager()
 		// get resource uri
 		uri := ctx.Request().URL.Path
-		resource, err := securityManager.GetResourceName(uri, ctx)
+		resource, err := goshiro.GetResourceName(uri, ctx)
 		if err != nil {
 			return err
 		}
@@ -88,20 +87,16 @@ func Authorize(ctx echo.Context) error {
 		default:
 			action = "write"
 		}
-
-		subctx := auth.NewSubjectContext()
-		subctx.SetSecurityManager(securityManager)
-		subctx.SetAuthenticated(false)
 		accessId := getAccessId(ctx)
-		principals := auth.NewPrincipalCollection()
-		principals.Add(accessId, "sentel")
-		subctx.SetPrincipals(principals)
-		subject, _ := securityManager.CreateSubject(subctx)
-		permission := fmt.Sprintf("%s:%s", resource, action)
-		if !subject.IsPermitted(permission) {
-			return errors.New("not authorized")
+		authToken := auth.JwtToken{Username: accessId}
+		if subject, err := goshiro.GetSubject(authToken); err != nil {
+			return err
+		} else {
+			permission := fmt.Sprintf("%s:%s", resource, action)
+			if !subject.IsPermitted(permission) {
+				return errors.New("not authorized")
+			}
 		}
 	}
-
 	return nil
 }

@@ -30,10 +30,12 @@ func InitializeSecurityManager(c config.Config) error {
 	return nil
 }
 
-func GetSubject() auth.Subject {
-	ctx := auth.NewSubjectContext()
-	subject, _ := securityManager.CreateSubject(ctx)
-	return subject
+func GetSubject(token auth.AuthenticationToken) (auth.Subject, error) {
+	return securityManager.GetSubject(token)
+}
+
+func GetResourceName(uri string, ctx auth.ResourceContext) (string, error) {
+	return securityManager.GetResourceName(uri, ctx)
 }
 
 func GetSecurityManager() auth.SecurityManager {

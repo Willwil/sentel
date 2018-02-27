@@ -29,6 +29,7 @@ type SecurityManager interface {
 	Login(subject Subject, token AuthenticationToken) error
 	Logout(subject Subject) error
 	CreateSubject(ctx SubjectContext) (Subject, error)
+	GetSubject(token AuthenticationToken) (Subject, error)
 }
 
 func NewSecurityManager(config.Config) (SecurityManager, error) {

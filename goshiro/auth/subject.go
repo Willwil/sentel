@@ -40,6 +40,7 @@ type Subject interface {
 	IsRembered() bool
 	GetSession() session.Session
 	GetSessionWithCreation(create bool) session.Session
+	Save()
 }
 
 func NewSubject(ctx SubjectContext) (Subject, error) {

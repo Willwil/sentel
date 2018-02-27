@@ -12,7 +12,18 @@
 
 package auth
 
-type AuthenticationToken interface {
-	GetPrincipal() interface{}
-	GetCrenditals() interface{}
+type UserAndPasswordToken struct {
+	username string
+	password string
+}
+
+func NewUserAndPasswordToken(user string, pwd string) *UserAndPasswordToken {
+	return &UserAndPasswordToken{username: user, password: pwd}
+}
+
+func (p UserAndPasswordToken) GetPrincipal() interface{} {
+	return p.username
+}
+func (p UserAndPasswordToken) GetCrenditals() interface{} {
+	return p.password
 }
