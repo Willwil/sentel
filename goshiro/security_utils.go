@@ -34,6 +34,10 @@ func GetSubject(token auth.AuthenticationToken) (auth.Subject, error) {
 	return securityManager.GetSubject(token)
 }
 
+func NewSubject() (auth.Subject, error) {
+	return securityManager.NewSubject()
+}
+
 func GetResourceName(uri string, ctx auth.ResourceContext) (string, error) {
 	return securityManager.GetResourceName(uri, ctx)
 }

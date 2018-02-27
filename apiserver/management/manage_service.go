@@ -14,6 +14,7 @@ package management
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -129,14 +130,12 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 			if err := ctx.Bind(&authToken); err != nil {
 				return err
 			}
-			securityManager := goshiro.GetSecurityManager()
-			subctx := auth.NewSubjectContext()
-			subject, _ := securityManager.CreateSubject(subctx)
+			subject, _ := goshiro.NewSubject()
 			if err := subject.Login(authToken); err != nil {
 				return err
 			}
-			//subject.Save()
 			ctx.Set("AccessId", authToken.AccessId)
+			ctx.Set("SecuritySubject", subject)
 			return next(ctx)
 		}
 	}
@@ -145,7 +144,25 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			if err := base.Authorize(ctx); err != nil {
+			uri := ctx.Request().URL.Path
+			resource, err := goshiro.GetResourceName(uri, ctx)
+			if err != nil {
+				return err
+			}
+			action := ""
+			switch ctx.Request().Method {
+			case http.MethodPost:
+				action = "create"
+			case http.MethodGet:
+				action = "read"
+			case http.MethodDelete:
+				action = "delete"
+			default:
+				action = "write"
+			}
+			subject := ctx.Get("SecuritySubject").(auth.Subject)
+			permission := fmt.Sprintf("%s:%s", resource, action)
+			if !subject.IsPermitted(permission) {
 				return errors.New("not authorized")
 			}
 			return next(ctx)

@@ -61,9 +61,7 @@ func LoginTenant(ctx echo.Context) error {
 	}
 	// combined with goshiro
 	authToken := auth.JwtToken{Username: req.TenantId, Password: req.Password}
-	securityManager := goshiro.GetSecurityManager()
-	subctx := auth.NewSubjectContext()
-	subject, _ := securityManager.CreateSubject(subctx)
+	subject, _ := goshiro.NewSubject()
 	if err := subject.Login(authToken); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
