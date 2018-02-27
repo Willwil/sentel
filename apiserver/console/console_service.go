@@ -75,8 +75,6 @@ func (p *consoleService) Initialize() error {
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
 	p.echo.Use(middleware.RegistryWithConfig(c))
-	p.echo.Use(accessIdWithConfig(c))
-	p.echo.Use(authorizeWithConfig(c))
 
 	// Api for console
 	p.echo.POST("/iot/api/v1/console/tenants", v1api.RegisterTenant)
@@ -162,6 +160,8 @@ func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 			SigningKey: []byte("secret"),
 		}
 		g.Use(mw.JWTWithConfig(config))
+		g.Use(accessIdWithConfig(c))
+		g.Use(authorizeWithConfig(c))
 	default:
 	}
 }
