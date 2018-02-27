@@ -19,6 +19,8 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/v1api"
+	"github.com/cloustone/sentel/goshiro"
+	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -66,7 +68,7 @@ func (p *managementService) Initialize() error {
 
 	// Initialize middleware
 	p.echo.Use(middleware.RegistryWithConfig(c))
-	p.echo.Use(accessIdWithConfig(c))
+	p.echo.Use(authenticationWithConfig(c))
 	p.echo.Use(authorizeWithConfig(c))
 	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
@@ -120,13 +122,23 @@ func (p *managementService) Stop() {
 	p.waitgroup.Wait()
 }
 
-func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
+func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			// After authenticated by gateway,the authentication paramters must bevalid
-			//	param := auth.ApiAuthParam{}
-			//	ctx.Bind(&param)
-			//	ctx.Set("AccessId", param.AccessId)
+			param := base.ApiAuthParam{}
+			if err := ctx.Bind(&param); err != nil {
+				return err
+			}
+			// combined with goshiro
+			authToken := iotmngToken{authParam: param}
+			securityManager := goshiro.GetSecurityManager()
+			subctx := auth.NewSubjectContext()
+			subject, _ := securityManager.CreateSubject(subctx)
+			if err := subject.Login(authToken); err != nil {
+				return err
+			}
+			//subject.Save()
+			ctx.Set("AccessId", param.AccessId)
 			return next(ctx)
 		}
 	}
