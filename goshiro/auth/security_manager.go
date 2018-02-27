@@ -28,8 +28,7 @@ type SecurityManager interface {
 	GetResourceName(uri string, ctx ResourceContext) (string, error)
 	Login(subject Subject, token AuthenticationToken) error
 	Logout(subject Subject) error
-	NewSubject() (Subject, error)
-	CewSubject(ctx SubjectContext) (Subject, error)
+	CreateSubject(ctx SubjectContext) (Subject, error)
 	GetSubject(token AuthenticationToken) (Subject, error)
 	Save()
 }
