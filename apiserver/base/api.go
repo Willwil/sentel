@@ -13,7 +13,6 @@ package base
 
 import (
 	"github.com/cloustone/sentel/goshiro"
-	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
@@ -29,7 +28,7 @@ type ApiJWTClaims struct {
 	AccessId string `json:"accessId"`
 }
 
-func InitializeAuthorization(c config.Config, decls []auth.Resource) error {
+func InitializeAuthorization(c config.Config, decls []goshiro.Resource) error {
 	if auth, err := c.String("auth"); err == nil || auth != "none" {
 		securityManager := goshiro.GetSecurityManager()
 		return securityManager.LoadResources(decls)

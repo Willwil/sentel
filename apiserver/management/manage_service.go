@@ -22,7 +22,6 @@ import (
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/goshiro"
-	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -133,7 +132,7 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 			if err := ctx.Bind(&authToken); err != nil {
 				return err
 			}
-			subject, _ := goshiro.NewSubject()
+			subject, _ := goshiro.CreateSubject()
 			if err := subject.Login(authToken); err != nil {
 				return err
 			}
@@ -163,7 +162,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			default:
 				action = "write"
 			}
-			subject := ctx.Get("SecuritySubject").(auth.Subject)
+			subject := ctx.Get("SecuritySubject").(goshiro.Subject)
 			permission := fmt.Sprintf("%s:%s", resource, action)
 			if !subject.IsPermitted(permission) {
 				return errors.New("not authorized")

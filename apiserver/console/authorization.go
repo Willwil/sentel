@@ -15,10 +15,10 @@ package console
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/goshiro/auth"
+	"github.com/cloustone/sentel/goshiro"
 )
 
-var authorizations = []auth.Resource{
+var authorizations = []goshiro.Resource{
 	// v1api.LogoutTenant
 	{
 		Url:          "/iot/api/v1/console/tenants/logout",

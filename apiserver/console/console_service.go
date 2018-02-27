@@ -22,7 +22,6 @@ import (
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/goshiro"
-	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -205,7 +204,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 				action = "write"
 			}
 			accessId := ctx.Get("AccessId").(string)
-			authToken := auth.JwtToken{Username: accessId}
+			authToken := goshiro.JwtToken{Username: accessId}
 			if subject, err := goshiro.GetSubject(authToken); err != nil {
 				return err
 			} else {
