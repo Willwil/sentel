@@ -125,12 +125,10 @@ func (p *managementService) Stop() {
 func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			param := base.ApiAuthParam{}
-			if err := ctx.Bind(&param); err != nil {
+			authToken := iotmngToken{}
+			if err := ctx.Bind(&authToken); err != nil {
 				return err
 			}
-			// combined with goshiro
-			authToken := iotmngToken{authParam: param}
 			securityManager := goshiro.GetSecurityManager()
 			subctx := auth.NewSubjectContext()
 			subject, _ := securityManager.CreateSubject(subctx)
@@ -138,7 +136,7 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 				return err
 			}
 			//subject.Save()
-			ctx.Set("AccessId", param.AccessId)
+			ctx.Set("AccessId", authToken.AccessId)
 			return next(ctx)
 		}
 	}

@@ -12,10 +12,15 @@
 
 package management
 
-import "github.com/cloustone/sentel/apiserver/base"
-
 type iotmngToken struct {
-	authParam base.ApiAuthParam
+	Format      string `json:"format"`
+	Version     string `json:"version"`
+	AccessId    string `json:"accessId"`
+	Signature   string `json:"sign"`
+	SignMethod  string `json:"signMethod"`
+	SignVersion string `json:"signVersion"`
+	SignNonce   string `json:"singNonce"`
+	Timestamp   string `json:"timestamp"`
 }
 
 func (p iotmngToken) GetPrincipal() interface{} {

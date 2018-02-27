@@ -31,17 +31,6 @@ var (
 	ErrorAuthDenied      = errors.New("authentication denied")
 )
 
-type ApiAuthParam struct {
-	Format      string `json:"format"`
-	Version     string `json:"version"`
-	AccessId    string `json:"accessId"`
-	Signature   string `json:"sign"`
-	SignMethod  string `json:"signMethod"`
-	SignVersion string `json:"signVersion"`
-	SignNonce   string `json:"singNonce"`
-	Timestamp   string `json:"timestamp"`
-}
-
 func InitializeAuthorization(c config.Config, decls []auth.Resource) error {
 	if auth, err := c.String("auth"); err != nil || auth == "none" {
 		noAuth = true
