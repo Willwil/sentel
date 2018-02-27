@@ -14,12 +14,15 @@ package console
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
+	"github.com/cloustone/sentel/goshiro"
+	"github.com/cloustone/sentel/goshiro/auth"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -156,12 +159,14 @@ func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 	case "jwt":
 		// Authentication config
 		config := mw.JWTConfig{
-			Claims:     &base.JwtApiClaims{},
+			Claims:     &base.ApiJWTClaims{},
 			SigningKey: []byte("secret"),
 		}
 		g.Use(mw.JWTWithConfig(config))
 		g.Use(accessIdWithConfig(c))
-		g.Use(authorizeWithConfig(c))
+		if util.AuthNeed(c) {
+			g.Use(authorizeWithConfig(c))
+		}
 	default:
 	}
 }
@@ -171,7 +176,7 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			// After authenticated by gateway,the authentication paramters must bevalid
 			if user, ok := ctx.Get("user").(*jwt.Token); ok {
-				claims := user.Claims.(*base.JwtApiClaims)
+				claims := user.Claims.(*base.ApiJWTClaims)
 				ctx.Set("AccessId", claims.AccessId)
 			}
 			return next(ctx)
@@ -182,9 +187,34 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			if err := base.Authorize(ctx); err != nil {
-				return errors.New("not authorized")
+			// get resource uri
+			uri := ctx.Request().URL.Path
+			resource, err := goshiro.GetResourceName(uri, ctx)
+			if err != nil {
+				return err
 			}
+			action := ""
+			switch ctx.Request().Method {
+			case http.MethodPost:
+				action = "create"
+			case http.MethodGet:
+				action = "read"
+			case http.MethodDelete:
+				action = "delete"
+			default:
+				action = "write"
+			}
+			accessId := ctx.Get("AccessId").(string)
+			authToken := auth.JwtToken{Username: accessId}
+			if subject, err := goshiro.GetSubject(authToken); err != nil {
+				return err
+			} else {
+				permission := fmt.Sprintf("%s:%s", resource, action)
+				if !subject.IsPermitted(permission) {
+					return errors.New("not authorized")
+				}
+			}
+
 			return next(ctx)
 		}
 	}

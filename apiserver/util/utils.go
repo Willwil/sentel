@@ -27,3 +27,10 @@ func StringConfigWithDefaultValue(c config.Config, key string, defaultValue stri
 func NewObjectId() string {
 	return uuid.NewV4().String()
 }
+
+func AuthNeed(c config.Config) bool {
+	if auth, err := c.String("auth"); err == nil || auth != "none" {
+		return true
+	}
+	return false
+}

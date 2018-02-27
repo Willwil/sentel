@@ -19,6 +19,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/middleware"
+	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/goshiro"
 	"github.com/cloustone/sentel/goshiro/auth"
@@ -69,8 +70,10 @@ func (p *managementService) Initialize() error {
 
 	// Initialize middleware
 	p.echo.Use(middleware.RegistryWithConfig(c))
-	p.echo.Use(authenticationWithConfig(c))
-	p.echo.Use(authorizeWithConfig(c))
+	if util.AuthNeed(c) {
+		p.echo.Use(authenticationWithConfig(c))
+		p.echo.Use(authorizeWithConfig(c))
+	}
 	p.echo.Use(mw.RequestID())
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
