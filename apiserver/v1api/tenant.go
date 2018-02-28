@@ -15,6 +15,7 @@ package v1api
 import (
 	"time"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/goshiro"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -59,8 +60,9 @@ func LoginTenant(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	// combined with goshiro
+	securityManager := base.GetSecurityManager(ctx)
 	authToken := goshiro.JwtToken{Username: req.TenantId, Password: req.Password}
-	subject, _ := goshiro.CreateSubject()
+	subject, _ := securityManager.CreateSubject(nil)
 	if err := subject.Login(authToken); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}

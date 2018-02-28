@@ -26,29 +26,34 @@ import (
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/golang/glog"
 
 	echo "github.com/labstack/echo"
 	mw "github.com/labstack/echo/middleware"
 )
 
 type consoleService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	version   string
-	echo      *echo.Echo
+	config      config.Config
+	waitgroup   sync.WaitGroup
+	version     string
+	echo        *echo.Echo
+	securitymgr goshiro.SecurityManager
 }
 
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	if err := base.InitializeAuthorization(c, authorizations); err != nil {
+	env := base.CreateGoshiroEnvironment(c)
+	factory := goshiro.NewSecurityManagerFactory(env)
+	securitymgr := factory.GetInstance()
+	resourcemgr := securitymgr.GetResourceManager()
+	if err := resourcemgr.LoadResources(authorizations); err != nil {
 		return nil, err
 	}
 	return &consoleService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		echo:      echo.New(),
+		config:      c,
+		waitgroup:   sync.WaitGroup{},
+		echo:        echo.New(),
+		securitymgr: securitymgr,
 	}, nil
 }
 
@@ -58,12 +63,14 @@ func (p *consoleService) Initialize() error {
 	if err := registry.Initialize(c); err != nil {
 		return fmt.Errorf("registry initialize failed:%v", err)
 	}
-	glog.Infof("Registry is initialized successfuly")
-
 	p.echo.HideBanner = true
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
-			cc := &base.ApiContext{Context: e, Config: c}
+			cc := &base.ApiContext{
+				Context:     e,
+				Config:      c,
+				SecurityMgr: p.securitymgr,
+			}
 			return h(cc)
 		}
 	})
@@ -187,8 +194,10 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			// get resource uri
+			securityManager := base.GetSecurityManager(ctx)
+			resmgr := securityManager.GetResourceManager()
 			uri := ctx.Request().URL.Path
-			resource, err := goshiro.GetResourceName(uri, ctx)
+			resource, err := resmgr.GetResourceName(uri, ctx)
 			if err != nil {
 				return err
 			}
@@ -205,7 +214,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			}
 			accessId := ctx.Get("AccessId").(string)
 			authToken := goshiro.JwtToken{Username: accessId}
-			if subject, err := goshiro.GetSubject(authToken); err != nil {
+			if subject, err := securityManager.GetSubject(authToken); err != nil {
 				return err
 			} else {
 				permission := fmt.Sprintf("%s:%s", resource, action)

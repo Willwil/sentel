@@ -13,3 +13,7 @@
 package goshiro
 
 type CacheManager interface{}
+
+func newCacheManager(env Environment) CacheManager {
+	return nil
+}

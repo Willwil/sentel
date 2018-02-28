@@ -32,22 +32,29 @@ import (
 )
 
 type managementService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-	version   string
-	echo      *echo.Echo
+	config      config.Config
+	waitgroup   sync.WaitGroup
+	version     string
+	echo        *echo.Echo
+	securitymgr goshiro.SecurityManager
 }
 
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	if err := base.InitializeAuthorization(c, authorizations); err != nil {
+	env := base.CreateGoshiroEnvironment(c)
+	factory := goshiro.NewSecurityManagerFactory(env)
+	securitymgr := factory.GetInstance()
+	resourcemgr := securitymgr.GetResourceManager()
+	if err := resourcemgr.LoadResources(authorizations); err != nil {
 		return nil, err
 	}
+
 	return &managementService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-		echo:      echo.New(),
+		config:      c,
+		waitgroup:   sync.WaitGroup{},
+		echo:        echo.New(),
+		securitymgr: securitymgr,
 	}, nil
 }
 
@@ -62,7 +69,11 @@ func (p *managementService) Initialize() error {
 	p.echo.HideBanner = true
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
 		return func(e echo.Context) error {
-			cc := &base.ApiContext{Context: e, Config: c}
+			cc := &base.ApiContext{
+				Context:     e,
+				Config:      c,
+				SecurityMgr: p.securitymgr,
+			}
 			return h(cc)
 		}
 	})
@@ -128,11 +139,12 @@ func (p *managementService) Stop() {
 func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			securityManager := base.GetSecurityManager(ctx)
 			authToken := iotmngToken{}
 			if err := ctx.Bind(&authToken); err != nil {
 				return err
 			}
-			subject, _ := goshiro.CreateSubject()
+			subject, _ := securityManager.CreateSubject(nil)
 			if err := subject.Login(authToken); err != nil {
 				return err
 			}
@@ -146,8 +158,10 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
+			securityManager := base.GetSecurityManager(ctx)
+			resmgr := securityManager.GetResourceManager()
 			uri := ctx.Request().URL.Path
-			resource, err := goshiro.GetResourceName(uri, ctx)
+			resource, err := resmgr.GetResourceName(uri, ctx)
 			if err != nil {
 				return err
 			}

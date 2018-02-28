@@ -20,7 +20,8 @@ import (
 
 type ApiContext struct {
 	echo.Context
-	Config config.Config
+	Config      config.Config
+	SecurityMgr goshiro.SecurityManager
 }
 
 type ApiJWTClaims struct {
@@ -28,9 +29,10 @@ type ApiJWTClaims struct {
 	AccessId string `json:"accessId"`
 }
 
-func InitializeAuthorization(c config.Config, decls []goshiro.Resource) error {
-	if auth, err := c.String("auth"); err == nil || auth != "none" {
-		return goshiro.LoadResources(decls)
-	}
-	return nil
+func CreateGoshiroEnvironment(c config.Config) goshiro.Environment {
+	return goshiro.NewEnvironment()
+}
+
+func GetSecurityManager(ctx echo.Context) goshiro.SecurityManager {
+	return ctx.(*ApiContext).SecurityMgr
 }

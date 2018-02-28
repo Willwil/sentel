@@ -12,27 +12,22 @@
 
 package goshiro
 
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type securityManager interface {
-	login(subject Subject, token AuthenticationToken) error
-	logout(subject Subject) error
-	createSubject(ctx SubjectContext) (Subject, error)
-	getSubject(token AuthenticationToken) (Subject, error)
-	save(subject Subject)
-	setCacheManager(mgr CacheManager)
-	setSessionManager(mgr SessionManager)
-	getResourceManager() ResourceManager
-	getAuthenticator() Authenticator
-	setAuthenticator(Authenticator)
-	getAuthorizer() Authorizer
-	setAuthorizer(Authorizer)
+type SecurityManager interface {
+	Login(subject Subject, token AuthenticationToken) error
+	Logout(subject Subject) error
+	CreateSubject(ctx subjectContext) (Subject, error)
+	GetSubject(token AuthenticationToken) (Subject, error)
+	Save(subject Subject)
+	SetCacheManager(mgr CacheManager)
+	SetSessionManager(mgr SessionManager)
+	GetResourceManager() ResourceManager
+	SetResourceManager(ResourceManager)
+	GetAuthenticator() Authenticator
+	SetAuthenticator(Authenticator)
+	GetAuthorizer() Authorizer
+	SetAuthorizer(Authorizer)
 }
 
-func newSecurityManager(config.Config) (securityManager, error) {
-	return nil, errors.New("no implemented")
+func newSecurityManager(env Environment) SecurityManager {
+	return nil
 }

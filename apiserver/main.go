@@ -35,11 +35,6 @@ func main() {
 	glog.Info("Starting api server...")
 
 	config, _ := createConfig(*configFileName)
-	/*
-		if err := client.Initialize(config); err != nil {
-			glog.Fatal(err)
-		}
-	*/
 	mgr, _ := service.NewServiceManager("apiserver", config)
 	mgr.AddService(console.ServiceFactory{})
 	mgr.AddService(management.ServiceFactory{})

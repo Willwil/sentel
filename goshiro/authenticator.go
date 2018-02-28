@@ -20,5 +20,9 @@ type Authenticator interface {
 }
 
 type defaultAuthenticator struct {
-	Listeners map[string]AuthenticationListener
+	listeners map[string]AuthenticationListener
+}
+
+func newAuthenticator(env Environment) Authenticator {
+	return nil
 }

@@ -12,8 +12,6 @@
 
 package goshiro
 
-import "errors"
-
 type ResourceContext interface {
 	// Param returns path parameter by name.
 	Param(name string) string
@@ -41,13 +39,13 @@ func (r *Resource) ResolveResource(principals PrincipalCollection, ctx ResourceC
 }
 
 type ResourceManager interface {
-	loadResources(resources []Resource) error
-	loadResourceWithJsonFile(fname string) error
-	loadResourceWithYamlFile(fname string) error
-	getResourceWithUri(uri string) (bool, Resource)
-	getResourceName(uri string, ctx ResourceContext) (string, error)
+	LoadResources(resources []Resource) error
+	LoadResourceWithJsonFile(fname string) error
+	LoadResourceWithYamlFile(fname string) error
+	GetResourceWithUri(uri string) (bool, Resource)
+	GetResourceName(uri string, ctx ResourceContext) (string, error)
 }
 
-func NewResourceManager(fmt string) (ResourceManager, error) {
-	return nil, errors.New("no implemented")
+func NewResourceManager(env Environment) ResourceManager {
+	return nil
 }

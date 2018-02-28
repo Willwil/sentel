@@ -12,11 +12,29 @@
 
 package goshiro
 
-type subjectBuilder struct {
-	ctx         SubjectContext
-	securityMgr securityManager
+import "fmt"
+
+type Environment interface {
+	SetValue(key string, val interface{})
+	GetValue(key string) (interface{}, error)
 }
 
-func NewSubjectBuilder(mgr securityManager) (*subjectBuilder, error) {
-	return nil, nil
+func NewEnvironment() Environment {
+	return &environment{
+		values: make(map[string]interface{}),
+	}
+}
+
+type environment struct {
+	values map[string]interface{}
+}
+
+func (p *environment) SetValue(key string, val interface{}) {
+	p.values[key] = val
+}
+func (p environment) GetValue(key string) (interface{}, error) {
+	if val, found := p.values[key]; found {
+		return val, nil
+	}
+	return nil, fmt.Errorf("'%s' not found in environment", key)
 }

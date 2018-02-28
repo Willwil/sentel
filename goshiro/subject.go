@@ -38,6 +38,6 @@ type Subject interface {
 	Save()
 }
 
-func newSubject(mgr securityManager) (Subject, error) {
+func newSubject(mgr SecurityManager) (Subject, error) {
 	return nil, errors.New("no implemented")
 }

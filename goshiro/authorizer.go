@@ -28,3 +28,7 @@ type Authorizer interface {
 	CheckRoles(principals PrincipalCollection, id ...string) error
 	CheckRolesWithList(principals PrincipalCollection, ids []string) error
 }
+
+func newAuthorizer(env Environment) Authorizer {
+	return nil
+}

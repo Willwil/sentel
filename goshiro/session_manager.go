@@ -13,3 +13,7 @@
 package goshiro
 
 type SessionManager interface{}
+
+func newSessionManager(env Environment) SessionManager {
+	return nil
+}
