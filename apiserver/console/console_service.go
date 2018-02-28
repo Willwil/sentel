@@ -21,7 +21,8 @@ import (
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
-	"github.com/cloustone/sentel/goshiro"
+	"github.com/cloustone/sentel/goshiro/extensions/web"
+	"github.com/cloustone/sentel/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -36,7 +37,7 @@ type consoleService struct {
 	waitgroup   sync.WaitGroup
 	version     string
 	echo        *echo.Echo
-	securitymgr goshiro.SecurityManager
+	securitymgr shiro.SecurityManager
 }
 
 type ServiceFactory struct{}
@@ -44,13 +45,13 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	env := base.CreateGoshiroEnvironment(c)
 	// loading customized realm
-	realmFactory := goshiro.NewRealmFactory(env)
-	realm := base.NewResourceRealm(c, "manageResource")
+	realmFactory := shiro.NewRealmFactory(env)
+	realm := web.NewResourceRealm(c, "manageResource")
 	realm.LoadResources(consoleResources)
 	realmFactory.AddRealm(realm)
 
 	// create security manager
-	factory := goshiro.NewSecurityManagerFactory(env, realmFactory)
+	factory := shiro.NewSecurityManagerFactory(env, realmFactory)
 	securitymgr := factory.GetInstance()
 
 	return &consoleService{
@@ -199,7 +200,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			// get resource uri
 			securityManager := base.GetSecurityManager(ctx)
-			realm := securityManager.GetRealm("manageResource").(*base.ResourceRealm)
+			realm := securityManager.GetRealm("manageResource").(*web.ResourceRealm)
 			uri := ctx.Request().URL.Path
 			resource, err := realm.GetResourceName(uri, ctx)
 			if err != nil {
@@ -217,7 +218,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 				action = "write"
 			}
 			accessId := ctx.Get("AccessId").(string)
-			authToken := goshiro.JwtToken{Username: accessId}
+			authToken := shiro.JwtToken{Username: accessId}
 			if subject, err := securityManager.GetSubject(authToken); err != nil {
 				return err
 			} else {

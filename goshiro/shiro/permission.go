@@ -10,10 +10,8 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
-type SessionManager interface{}
-
-func newSessionManager(env Environment) SessionManager {
-	return nil
+type Permission interface {
+	Implies(p Permission) bool
 }

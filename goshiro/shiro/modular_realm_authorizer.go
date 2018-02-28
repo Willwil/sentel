@@ -10,8 +10,10 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
-type Permission interface {
-	Implies(p Permission) bool
+type ModularRealmAuthorizer struct {
+	realms                 []Realm
+	permissionResolver     PermissionResolver
+	rolePermissionResolver RolePermissionResolver
 }

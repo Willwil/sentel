@@ -9,12 +9,12 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package base
+package web
 
 import (
 	"errors"
 
-	"github.com/cloustone/sentel/goshiro"
+	"github.com/cloustone/sentel/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/config"
 )
 
@@ -50,13 +50,13 @@ func (r *ResourceRealm) GetResourceName(uri string, ctx ResourceContext) (string
 func (r *ResourceRealm) GetName() string {
 	return r.realmName
 }
-func (r *ResourceRealm) Supports(token goshiro.AuthenticationToken) bool {
+func (r *ResourceRealm) Supports(token shiro.AuthenticationToken) bool {
 	return true
 }
-func (r *ResourceRealm) GetAuthenticationInfo(token goshiro.AuthenticationToken) (goshiro.AuthenticationInfo, error) {
+func (r *ResourceRealm) GetAuthenticationInfo(token shiro.AuthenticationToken) (shiro.AuthenticationInfo, error) {
 	return nil, errors.New("no implmented")
 }
-func (r *ResourceRealm) GetAuthorizationInfo(principals goshiro.PrincipalCollection) (goshiro.AuthorizationInfo, error) {
+func (r *ResourceRealm) GetAuthorizationInfo(principals shiro.PrincipalCollection) (shiro.AuthorizationInfo, error) {
 	return nil, errors.New("no implmented")
 }
 func (r *ResourceRealm) SetCacheEnable(bool) {}

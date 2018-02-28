@@ -10,10 +10,15 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
-type ModularRealmAuthorizer struct {
-	realms                 []Realm
-	permissionResolver     PermissionResolver
-	rolePermissionResolver RolePermissionResolver
+type PrincipalCollection interface {
+	Add(principal interface{}, realmName string)
+	AddAll(principals PrincipalCollection)
+	Clear()
+	GetPrimaryPrincipal() interface{}
+}
+
+func NewPrincipalCollection() PrincipalCollection {
+	return nil
 }

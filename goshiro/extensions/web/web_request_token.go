@@ -1,5 +1,5 @@
 //  Licensed under the Apache License, Version 2.0 (the "License"); you may
-//  not use this file except in compliance with the License. You may obtain
+//  not use p file except in compliance with the License. You may obtain
 //  a copy of the License at
 //
 //        http://www.apache.org/licenses/LICENSE-2.0
@@ -9,9 +9,13 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
+package web
 
-package goshiro
+type RestRequestToken struct{}
 
-type AuthorizeRealm interface {
-	AuthenticationRealm
+func (p RestRequestToken) GetPrincipal() interface{} {
+	return nil
+}
+func (p RestRequestToken) GetCrenditals() interface{} {
+	return nil
 }

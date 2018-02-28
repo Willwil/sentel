@@ -10,15 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
-
-type PrincipalCollection interface {
-	Add(principal interface{}, realmName string)
-	AddAll(principals PrincipalCollection)
-	Clear()
-	GetPrimaryPrincipal() interface{}
-}
-
-func NewPrincipalCollection() PrincipalCollection {
-	return nil
-}
+package shiro

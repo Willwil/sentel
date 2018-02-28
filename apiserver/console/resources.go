@@ -15,10 +15,10 @@ package console
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/goshiro/extensions/web"
 )
 
-var consoleResources = []base.Resource{
+var consoleResources = []web.Resource{
 	// v1api.LogoutTenant
 	{
 		Url:          "/iot/api/v1/console/tenants/logout",

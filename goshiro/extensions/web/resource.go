@@ -9,9 +9,9 @@
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
 //  under the License.
-package base
+package web
 
-import "github.com/cloustone/sentel/goshiro"
+import "github.com/cloustone/sentel/goshiro/shiro"
 
 type ResourceContext interface {
 	// Param returns path parameter by name.
@@ -35,6 +35,6 @@ type Resource struct {
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 
-func (r *Resource) ResolveResource(principals goshiro.PrincipalCollection, ctx ResourceContext) error {
+func (r *Resource) ResolveResource(principals shiro.PrincipalCollection, ctx ResourceContext) error {
 	return nil
 }

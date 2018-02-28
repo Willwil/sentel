@@ -15,10 +15,10 @@ package management
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/goshiro/extensions/web"
 )
 
-var mgtResources = []base.Resource{
+var mgtResources = []web.Resource{
 	// v1api.CreateProduct
 	{
 		Url:          "/iot/api/v1/products",

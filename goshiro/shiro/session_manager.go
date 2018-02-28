@@ -10,8 +10,10 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
-type AuthenticationRealm interface {
-	Realm
+type SessionManager interface{}
+
+func newSessionManager(env Environment) SessionManager {
+	return nil
 }

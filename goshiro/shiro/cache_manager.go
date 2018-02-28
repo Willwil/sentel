@@ -10,28 +10,10 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
-type Role interface {
-	GetName() string
-	SetName(name string)
-	GetPermissions() []Permission
-	SetPermissions(permissions []Permission)
-	AddPermission(permission Permission)
-	AddPermissions(permission []Permission)
-	IsPermitted(permission Permission)
-	IsEqual(obj interface{}) bool
-}
+type CacheManager interface{}
 
-func NewRole() Role {
+func newCacheManager(env Environment) CacheManager {
 	return nil
-}
-
-func NewRoleWithName(name string) Role {
-	return nil
-}
-
-type simpleRole struct {
-	name        string
-	permissions []string
 }
