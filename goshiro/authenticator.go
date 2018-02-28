@@ -12,6 +12,18 @@
 
 package goshiro
 
+type AuthenticationToken interface {
+	GetPrincipal() interface{}
+	GetCrenditals() interface{}
+}
+
+type AuthenticationInfo interface {
+	GetPrincipals() PrincipalCollection
+	GetCrenditals() interface{}
+}
+
+type AuthenticationListener interface{}
+
 // Authenticator is responsible for authenticating accounts in an application
 type Authenticator interface {
 	Authenticate(AuthenticationToken) (AuthenticationInfo, error)
