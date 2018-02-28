@@ -23,6 +23,7 @@ type Realm interface {
 	GetName() string
 	Supports(token AuthenticationToken) bool
 	GetAuthenticationInfo(token AuthenticationToken) (AuthenticationInfo, error)
+	GetAuthorizationInfo(principals PrincipalCollection) (AuthorizationInfo, error)
 	SetCacheEnable(bool)
 }
 

@@ -43,12 +43,16 @@ type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	env := base.CreateGoshiroEnvironment(c)
-	factory := goshiro.NewSecurityManagerFactory(env)
+	// loading customized realm
+	realmFactory := goshiro.NewRealmFactory(env)
+	realm := base.NewResourceRealm(c, "manageResource")
+	realm.LoadResources(consoleResources)
+	realmFactory.AddRealm(realm)
+
+	// create security manager
+	factory := goshiro.NewSecurityManagerFactory(env, realmFactory)
 	securitymgr := factory.GetInstance()
-	resourcemgr := securitymgr.GetResourceManager()
-	if err := resourcemgr.LoadResources(authorizations); err != nil {
-		return nil, err
-	}
+
 	return &consoleService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
@@ -195,9 +199,9 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			// get resource uri
 			securityManager := base.GetSecurityManager(ctx)
-			resmgr := securityManager.GetResourceManager()
+			realm := securityManager.GetRealm("manageResource").(*base.ResourceRealm)
 			uri := ctx.Request().URL.Path
-			resource, err := resmgr.GetResourceName(uri, ctx)
+			resource, err := realm.GetResourceName(uri, ctx)
 			if err != nil {
 				return err
 			}

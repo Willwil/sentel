@@ -13,9 +13,10 @@
 package goshiro
 
 type defaultSecurityManager struct {
+	env           Environment
+	realms        []Realm
 	authenticator Authenticator
 	authorizer    Authorizer
-	resourceMgr   ResourceManager
 	sessionMgr    SessionManager
 	cacheMgr      CacheManager
 }
@@ -32,12 +33,11 @@ func (p *defaultSecurityManager) CreateSubject(ctx subjectContext) (Subject, err
 func (p *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
 	return nil, nil
 }
-func (p *defaultSecurityManager) Save(subject Subject)                   {}
-func (p *defaultSecurityManager) SetCacheManager(mgr CacheManager)       { p.cacheMgr = mgr }
-func (p *defaultSecurityManager) SetSessionManager(mgr SessionManager)   { p.sessionMgr = mgr }
-func (p *defaultSecurityManager) GetResourceManager() ResourceManager    { return p.resourceMgr }
-func (p *defaultSecurityManager) SetResourceManager(mgr ResourceManager) { p.resourceMgr = mgr }
-func (p *defaultSecurityManager) GetAuthenticator() Authenticator        { return p.authenticator }
-func (p *defaultSecurityManager) SetAuthenticator(authc Authenticator)   { p.authenticator = authc }
-func (p *defaultSecurityManager) GetAuthorizer() Authorizer              { return p.authorizer }
-func (p *defaultSecurityManager) SetAuthorizer(authz Authorizer)         { p.authorizer = authz }
+func (p *defaultSecurityManager) Save(subject Subject)                 {}
+func (p *defaultSecurityManager) SetCacheManager(mgr CacheManager)     { p.cacheMgr = mgr }
+func (p *defaultSecurityManager) SetSessionManager(mgr SessionManager) { p.sessionMgr = mgr }
+func (p *defaultSecurityManager) GetAuthenticator() Authenticator      { return p.authenticator }
+func (p *defaultSecurityManager) SetAuthenticator(authc Authenticator) { p.authenticator = authc }
+func (p *defaultSecurityManager) GetAuthorizer() Authorizer            { return p.authorizer }
+func (p *defaultSecurityManager) SetAuthorizer(authz Authorizer)       { p.authorizer = authz }
+func (p *defaultSecurityManager) GetRealm(realmName string) Realm      { return nil }

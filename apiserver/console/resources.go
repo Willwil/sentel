@@ -18,7 +18,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/base"
 )
 
-var authorizations = []base.Resource{
+var consoleResources = []base.Resource{
 	// v1api.LogoutTenant
 	{
 		Url:          "/iot/api/v1/console/tenants/logout",

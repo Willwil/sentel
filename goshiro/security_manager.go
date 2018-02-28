@@ -20,33 +20,36 @@ type SecurityManager interface {
 	Save(subject Subject)
 	SetCacheManager(mgr CacheManager)
 	SetSessionManager(mgr SessionManager)
-	GetResourceManager() ResourceManager
-	SetResourceManager(ResourceManager)
 	GetAuthenticator() Authenticator
 	SetAuthenticator(Authenticator)
 	GetAuthorizer() Authorizer
 	SetAuthorizer(Authorizer)
+	GetRealm(realmName string) Realm
 }
 
 type SecurityManagerFactory struct {
-	env Environment
+	env          Environment
+	realmFactory RealmFactory
 }
 
-func newSecurityManager(env Environment) SecurityManager {
-	return &defaultSecurityManager{}
-}
-
-func NewSecurityManagerFactory(env Environment) SecurityManagerFactory {
-	return SecurityManagerFactory{env: env}
+func NewSecurityManagerFactory(env Environment, realmFactory RealmFactory) SecurityManagerFactory {
+	if realmFactory == nil {
+		realmFactory = NewRealmFactory(env)
+	}
+	return SecurityManagerFactory{env: env, realmFactory: realmFactory}
 }
 
 // GetInstance return security manager instance using environment
 func (p *SecurityManagerFactory) GetInstance() SecurityManager {
-	securitymgr := newSecurityManager(p.env)
+	realms := p.realmFactory.GetRealms()
+	securitymgr := newSecurityManager(p.env, realms)
 	securitymgr.SetAuthenticator(newAuthenticator(p.env))
 	securitymgr.SetAuthorizer(newAuthorizer(p.env))
-	securitymgr.SetResourceManager(newResourceManager(p.env))
 	securitymgr.SetSessionManager(newSessionManager(p.env))
 	securitymgr.SetCacheManager(newCacheManager(p.env))
 	return securitymgr
+}
+
+func newSecurityManager(env Environment, realms []Realm) SecurityManager {
+	return &defaultSecurityManager{env: env, realms: realms}
 }
