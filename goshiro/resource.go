@@ -46,6 +46,6 @@ type ResourceManager interface {
 	GetResourceName(uri string, ctx ResourceContext) (string, error)
 }
 
-func NewResourceManager(env Environment) ResourceManager {
+func newResourceManager(env Environment) ResourceManager {
 	return nil
 }

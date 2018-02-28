@@ -28,6 +28,25 @@ type SecurityManager interface {
 	SetAuthorizer(Authorizer)
 }
 
+type SecurityManagerFactory struct {
+	env Environment
+}
+
 func newSecurityManager(env Environment) SecurityManager {
-	return nil
+	return &defaultSecurityManager{}
+}
+
+func NewSecurityManagerFactory(env Environment) SecurityManagerFactory {
+	return SecurityManagerFactory{env: env}
+}
+
+// GetInstance return security manager instance using environment
+func (p *SecurityManagerFactory) GetInstance() SecurityManager {
+	securitymgr := newSecurityManager(p.env)
+	securitymgr.SetAuthenticator(newAuthenticator(p.env))
+	securitymgr.SetAuthorizer(newAuthorizer(p.env))
+	securitymgr.SetResourceManager(newResourceManager(p.env))
+	securitymgr.SetSessionManager(newSessionManager(p.env))
+	securitymgr.SetCacheManager(newCacheManager(p.env))
+	return securitymgr
 }

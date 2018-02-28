@@ -12,8 +12,6 @@
 
 package goshiro
 
-import "errors"
-
 type Subject interface {
 	GetPrincipal() interface{}
 	GetPrincipals() PrincipalCollection
@@ -39,5 +37,5 @@ type Subject interface {
 }
 
 func newSubject(mgr SecurityManager) (Subject, error) {
-	return nil, errors.New("no implemented")
+	return &delegateSubject{securityMgr: mgr}, nil
 }
