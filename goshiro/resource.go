@@ -40,10 +40,14 @@ func (r *Resource) ResolveResource(principals PrincipalCollection, ctx ResourceC
 	return nil
 }
 
-type ResourceLoader interface {
-	LoadResources(fname string) ([]Resource, error)
+type ResourceManager interface {
+	loadResources(resources []Resource) error
+	loadResourceWithJsonFile(fname string) error
+	loadResourceWithYamlFile(fname string) error
+	getResourceWithUri(uri string) (bool, Resource)
+	getResourceName(uri string, ctx ResourceContext) (string, error)
 }
 
-func NewResourceLoader(fmt string) (ResourceLoader, error) {
+func NewResourceManager(fmt string) (ResourceManager, error) {
 	return nil, errors.New("no implemented")
 }

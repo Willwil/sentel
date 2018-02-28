@@ -18,21 +18,21 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type SecurityManager interface {
-	SetCacheManager(mgr CacheManager)
-	SetSessionManager(mgr SessionManager)
-	LoadResources(resources []Resource) error
-	LoadResourceWithJsonFile(fname string) error
-	LoadResourceWithYamlFile(fname string) error
-	GetResourceWithUri(uri string) (bool, Resource)
-	GetResourceName(uri string, ctx ResourceContext) (string, error)
-	Login(subject Subject, token AuthenticationToken) error
-	Logout(subject Subject) error
-	CreateSubject(ctx SubjectContext) (Subject, error)
-	GetSubject(token AuthenticationToken) (Subject, error)
-	Save()
+type securityManager interface {
+	login(subject Subject, token AuthenticationToken) error
+	logout(subject Subject) error
+	createSubject(ctx SubjectContext) (Subject, error)
+	getSubject(token AuthenticationToken) (Subject, error)
+	save(subject Subject)
+	setCacheManager(mgr CacheManager)
+	setSessionManager(mgr SessionManager)
+	getResourceManager() ResourceManager
+	getAuthenticator() Authenticator
+	setAuthenticator(Authenticator)
+	getAuthorizer() Authorizer
+	setAuthorizer(Authorizer)
 }
 
-func NewSecurityManager(config.Config) (SecurityManager, error) {
+func newSecurityManager(config.Config) (securityManager, error) {
 	return nil, errors.New("no implemented")
 }

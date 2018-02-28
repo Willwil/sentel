@@ -12,11 +12,11 @@
 
 package goshiro
 
-type SubjectBuilder struct {
+type subjectBuilder struct {
 	ctx         SubjectContext
-	securityMgr SecurityManager
+	securityMgr securityManager
 }
 
-func NewSubjectBuilder(mgr SecurityManager) (*SubjectBuilder, error) {
+func NewSubjectBuilder(mgr securityManager) (*subjectBuilder, error) {
 	return nil, nil
 }

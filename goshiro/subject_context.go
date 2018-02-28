@@ -13,8 +13,8 @@
 package goshiro
 
 type SubjectContext interface {
-	GetSecurityManager() SecurityManager
-	SetSecurityManager(SecurityManager)
+	GetSecurityManager() securityManager
+	SetSecurityManager(securityManager)
 	SetSessionId(sessionId Serializable)
 	GetSessionId() Serializable
 	GetSubject() Subject

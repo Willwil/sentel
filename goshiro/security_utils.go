@@ -12,36 +12,36 @@
 
 package goshiro
 
-import (
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "github.com/cloustone/sentel/pkg/config"
 
 var (
-	securityManager SecurityManager
+	securitymgr securityManager
 )
 
 func InitializeSecurityManager(c config.Config) error {
-	mgr, err := NewSecurityManager(c)
+	mgr, err := newSecurityManager(c)
 	if err != nil {
 		return err
 	}
-	securityManager = mgr
+	securitymgr = mgr
 	return nil
 }
 
 func GetSubject(token AuthenticationToken) (Subject, error) {
-	return securityManager.GetSubject(token)
+	return securitymgr.getSubject(token)
 }
 
 func CreateSubject() (Subject, error) {
 	ctx := NewSubjectContext()
-	return securityManager.CreateSubject(ctx)
+	return securitymgr.createSubject(ctx)
 }
 
 func GetResourceName(uri string, ctx ResourceContext) (string, error) {
-	return securityManager.GetResourceName(uri, ctx)
+	resourcemgr := securitymgr.getResourceManager()
+	return resourcemgr.getResourceName(uri, ctx)
 }
 
-func GetSecurityManager() SecurityManager {
-	return securityManager
+func LoadResources(decls []Resource) error {
+	resourcemgr := securitymgr.getResourceManager()
+	return resourcemgr.loadResources(decls)
 }

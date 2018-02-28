@@ -15,5 +15,9 @@ package goshiro
 type Realm interface {
 	GetName() string
 	Supports(token AuthenticationToken) bool
-	GetAuthenticationInfo(token AuthenticationToken) AuthenticationInfo
+	GetAuthenticationInfo(token AuthenticationToken) (AuthenticationInfo, error)
+}
+
+type RealmFactory interface {
+	GetRealms() []Realm
 }

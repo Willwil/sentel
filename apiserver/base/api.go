@@ -30,8 +30,7 @@ type ApiJWTClaims struct {
 
 func InitializeAuthorization(c config.Config, decls []goshiro.Resource) error {
 	if auth, err := c.String("auth"); err == nil || auth != "none" {
-		securityManager := goshiro.GetSecurityManager()
-		return securityManager.LoadResources(decls)
+		return goshiro.LoadResources(decls)
 	}
 	return nil
 }

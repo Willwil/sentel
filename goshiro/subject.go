@@ -33,12 +33,11 @@ type Subject interface {
 	CheckRolesWithList(ids []string) error
 	Login(token AuthenticationToken) error
 	IsAuthenticated() bool
-	IsRembered() bool
 	GetSession() Session
 	GetSessionWithCreation(create bool) Session
 	Save()
 }
 
-func NewSubject(ctx SubjectContext) (Subject, error) {
+func newSubject(mgr securityManager) (Subject, error) {
 	return nil, errors.New("no implemented")
 }
