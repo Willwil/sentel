@@ -11,3 +11,7 @@
 //  under the License.
 
 package goshiro
+
+type AuthenticationRealm interface {
+	Realm
+}

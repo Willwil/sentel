@@ -12,12 +12,63 @@
 
 package goshiro
 
+import (
+	"errors"
+	"strings"
+
+	"github.com/golang/glog"
+)
+
 type Realm interface {
 	GetName() string
 	Supports(token AuthenticationToken) bool
 	GetAuthenticationInfo(token AuthenticationToken) (AuthenticationInfo, error)
+	SetCacheEnable(bool)
 }
 
 type RealmFactory interface {
+	AddRealm(r Realm)
 	GetRealms() []Realm
+	GetRealm(realmName string) Realm
+}
+
+func NewRealmFactory(env Environment) RealmFactory {
+	realms := []Realm{}
+	realmString, err := env.GetValue("realms")
+	if err == nil {
+		realmNames := strings.Split(realmString.(string), ",")
+		for _, realmName := range realmNames {
+			realm, err := newRealm(env, realmName)
+			if err != nil {
+				glog.Errorf("'%s' realm laod failed, %s", realmName, err.Error())
+				continue
+			}
+			realms = append(realms, realm)
+		}
+	}
+	return &realmFactory{env: env, realms: realms}
+}
+
+type realmFactory struct {
+	env    Environment
+	realms []Realm
+}
+
+func (r *realmFactory) GetRealms() []Realm { return r.realms }
+
+func (r *realmFactory) AddRealm(realm Realm) {
+	r.realms = append(r.realms, realm)
+}
+
+func (r *realmFactory) GetRealm(realmName string) Realm {
+	for _, realm := range r.realms {
+		if realm.GetName() == realmName {
+			return realm
+		}
+	}
+	return nil
+}
+
+func newRealm(env Environment, realmName string) (Realm, error) {
+	return nil, errors.New("not implemented")
 }
