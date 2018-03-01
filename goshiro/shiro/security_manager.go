@@ -27,29 +27,6 @@ type SecurityManager interface {
 	GetRealm(realmName string) Realm
 }
 
-type SecurityManagerFactory struct {
-	env          Environment
-	realmFactory RealmFactory
-}
-
-func NewSecurityManagerFactory(env Environment, realmFactory RealmFactory) SecurityManagerFactory {
-	if realmFactory == nil {
-		realmFactory = NewRealmFactory(env)
-	}
-	return SecurityManagerFactory{env: env, realmFactory: realmFactory}
-}
-
-// GetInstance return security manager instance using environment
-func (p *SecurityManagerFactory) GetInstance() SecurityManager {
-	realms := p.realmFactory.GetRealms()
-	securitymgr := newSecurityManager(p.env, realms)
-	securitymgr.SetAuthenticator(newAuthenticator(p.env))
-	securitymgr.SetAuthorizer(newAuthorizer(p.env))
-	securitymgr.SetSessionManager(newSessionManager(p.env))
-	securitymgr.SetCacheManager(newCacheManager(p.env))
-	return securitymgr
-}
-
-func newSecurityManager(env Environment, realms []Realm) SecurityManager {
+func NewSecurityManager(env Environment, realms []Realm) SecurityManager {
 	return &defaultSecurityManager{env: env, realms: realms}
 }

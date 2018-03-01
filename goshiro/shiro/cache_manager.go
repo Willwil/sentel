@@ -14,6 +14,6 @@ package shiro
 
 type CacheManager interface{}
 
-func newCacheManager(env Environment) CacheManager {
+func NewCacheManager(env Environment) CacheManager {
 	return nil
 }

@@ -14,6 +14,6 @@ package shiro
 
 type SessionManager interface{}
 
-func newSessionManager(env Environment) SessionManager {
+func NewSessionManager(env Environment) SessionManager {
 	return nil
 }

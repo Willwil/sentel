@@ -20,6 +20,7 @@ import (
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
+	"github.com/cloustone/sentel/goshiro"
 	"github.com/cloustone/sentel/goshiro/extensions/web"
 	"github.com/cloustone/sentel/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/config"
@@ -44,13 +45,13 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	env := base.CreateGoshiroEnvironment(c)
 	// loading customized realm
-	realmFactory := shiro.NewRealmFactory(env)
+	realmFactory := goshiro.NewRealmFactory(env)
 	realm := web.NewWebAuthorizeRealm(env, "manageResource")
 	realm.LoadDeclarations(consoleApiDeclarations)
 	realmFactory.AddRealm(realm)
 
 	// create security manager
-	factory := shiro.NewSecurityManagerFactory(env, realmFactory)
+	factory := goshiro.NewSecurityManagerFactory(env, realmFactory)
 	securitymgr := factory.GetInstance()
 
 	return &consoleService{

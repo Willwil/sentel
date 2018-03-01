@@ -35,6 +35,6 @@ type defaultAuthenticator struct {
 	listeners map[string]AuthenticationListener
 }
 
-func newAuthenticator(env Environment) Authenticator {
+func NewAuthenticator(env Environment) Authenticator {
 	return nil
 }
