@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package shiro
+package web
 
 import (
 	"time"
@@ -18,7 +18,7 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-type JwtToken struct {
+type JWTToken struct {
 	Username string
 	Password string
 }
@@ -28,14 +28,14 @@ type JwtClaims struct {
 	AccessId string `json:"accessId"`
 }
 
-func (p JwtToken) GetPrincipal() interface{} {
+func (p JWTToken) GetPrincipal() interface{} {
 	return p.Username
 }
-func (p JwtToken) GetCrenditals() interface{} {
+func (p JWTToken) GetCrenditals() interface{} {
 	return p.Password
 }
 
-func (p JwtToken) GetJwtToken() (string, error) {
+func (p JWTToken) GetJWTToken() (string, error) {
 	claims := &JwtClaims{
 		AccessId: p.Username,
 		StandardClaims: jwt.StandardClaims{
