@@ -16,10 +16,10 @@ import "github.com/cloustone/sentel/goshiro/shiro"
 
 type SecurityManagerFactory struct {
 	env          shiro.Environment
-	realmFactory RealmFactory
+	realmFactory *RealmFactory
 }
 
-func NewSecurityManagerFactory(env shiro.Environment, realmFactory RealmFactory) SecurityManagerFactory {
+func NewSecurityManagerFactory(env shiro.Environment, realmFactory *RealmFactory) SecurityManagerFactory {
 	if realmFactory == nil {
 		realmFactory = NewRealmFactory(env)
 	}

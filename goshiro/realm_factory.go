@@ -19,13 +19,12 @@ import (
 	"github.com/golang/glog"
 )
 
-type RealmFactory interface {
-	AddRealm(r shiro.Realm)
-	GetRealms() []shiro.Realm
-	GetRealm(realmName string) shiro.Realm
+type RealmFactory struct {
+	env    shiro.Environment
+	realms []shiro.Realm
 }
 
-func NewRealmFactory(env shiro.Environment) RealmFactory {
+func NewRealmFactory(env shiro.Environment) *RealmFactory {
 	realms := []shiro.Realm{}
 	realmString, err := env.GetValue("realms")
 	if err == nil {
@@ -39,21 +38,16 @@ func NewRealmFactory(env shiro.Environment) RealmFactory {
 			realms = append(realms, realm)
 		}
 	}
-	return &realmFactory{env: env, realms: realms}
+	return &RealmFactory{env: env, realms: realms}
 }
 
-type realmFactory struct {
-	env    shiro.Environment
-	realms []shiro.Realm
-}
+func (r *RealmFactory) GetRealms() []shiro.Realm { return r.realms }
 
-func (r *realmFactory) GetRealms() []shiro.Realm { return r.realms }
-
-func (r *realmFactory) AddRealm(realm shiro.Realm) {
+func (r *RealmFactory) AddRealm(realm shiro.Realm) {
 	r.realms = append(r.realms, realm)
 }
 
-func (r *realmFactory) GetRealm(realmName string) shiro.Realm {
+func (r *RealmFactory) GetRealm(realmName string) shiro.Realm {
 	for _, realm := range r.realms {
 		if realm.GetName() == realmName {
 			return realm
