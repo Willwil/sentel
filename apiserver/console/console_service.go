@@ -45,7 +45,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	env := base.CreateGoshiroEnvironment(c)
 	// loading customized realm
 	realmFactory := shiro.NewRealmFactory(env)
-	realm := web.NewWebAuthorizeRealm(c, "manageResource")
+	realm := web.NewWebAuthorizeRealm(env, "manageResource")
 	realm.LoadDeclarations(consoleApiDeclarations)
 	realmFactory.AddRealm(realm)
 

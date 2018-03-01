@@ -15,7 +15,6 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/goshiro/shiro"
-	"github.com/cloustone/sentel/pkg/config"
 )
 
 type ApiDeclaration struct {
@@ -32,12 +31,10 @@ func (r *ApiDeclaration) ResolveDeclaration(principals shiro.PrincipalCollection
 type WebAuthorizeRealm struct {
 	realmName    string
 	declarations []ApiDeclaration
-	config       config.Config
 }
 
-func NewWebAuthorizeRealm(c config.Config, realmName string) *WebAuthorizeRealm {
+func NewWebAuthorizeRealm(env shiro.Environment, realmName string) *WebAuthorizeRealm {
 	return &WebAuthorizeRealm{
-		config:       c,
 		realmName:    realmName,
 		declarations: []ApiDeclaration{},
 	}
