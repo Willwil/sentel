@@ -18,7 +18,7 @@ import (
 	"github.com/cloustone/sentel/goshiro/extensions/web"
 )
 
-var mgtResources = []web.Resource{
+var mgtapiDeclarations = []web.ApiDeclaration{
 	// v1api.CreateProduct
 	{
 		Url:          "/iot/api/v1/products",

@@ -11,9 +11,11 @@
 //  under the License.
 package web
 
-import "github.com/cloustone/sentel/goshiro/shiro"
+import "net/http"
 
-type ResourceContext interface {
+type WebRequestContext interface {
+	// Request returns `*http.Request`.
+	Request() *http.Request
 	// Param returns path parameter by name.
 	Param(name string) string
 	// ParamNames returns path parameter names.
@@ -26,15 +28,4 @@ type ResourceContext interface {
 	SetParamValues(values ...string)
 	// QueryParam returns the query param for the provided name.
 	QueryParam(name string) string
-}
-
-type Resource struct {
-	Url          string `json:"url" bson:"Url"`
-	Method       string `json:"method" bson:"Method"`
-	Resource     string `json:"resource" bson:"Resource"`
-	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
-}
-
-func (r *Resource) ResolveResource(principals shiro.PrincipalCollection, ctx ResourceContext) error {
-	return nil
 }

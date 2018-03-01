@@ -18,7 +18,7 @@ import (
 	"github.com/cloustone/sentel/goshiro/extensions/web"
 )
 
-var consoleResources = []web.Resource{
+var consoleApiDeclarations = []web.ApiDeclaration{
 	// v1api.LogoutTenant
 	{
 		Url:          "/iot/api/v1/console/tenants/logout",

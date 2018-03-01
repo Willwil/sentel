@@ -11,11 +11,21 @@
 //  under the License.
 package web
 
-type RestRequestToken struct{}
+import "github.com/cloustone/sentel/goshiro/shiro"
 
-func (p RestRequestToken) GetPrincipal() interface{} {
+type WebRequestToken struct{}
+
+func NewWebRequestToken(securityMgr shiro.SecurityManager, ctx WebRequestContext) *WebRequestToken {
+	return &WebRequestToken{}
+}
+
+func (p WebRequestToken) GetPrincipal() interface{} {
 	return nil
 }
-func (p RestRequestToken) GetCrenditals() interface{} {
+func (p WebRequestToken) GetCrenditals() interface{} {
 	return nil
+}
+
+func (p WebRequestToken) GetPermission() string {
+	return ""
 }

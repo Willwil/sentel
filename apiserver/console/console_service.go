@@ -14,7 +14,6 @@ package console
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"sync"
 
 	"github.com/cloustone/sentel/apiserver/base"
@@ -46,8 +45,8 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	env := base.CreateGoshiroEnvironment(c)
 	// loading customized realm
 	realmFactory := shiro.NewRealmFactory(env)
-	realm := web.NewResourceRealm(c, "manageResource")
-	realm.LoadResources(consoleResources)
+	realm := web.NewWebAuthorizeRealm(c, "manageResource")
+	realm.LoadDeclarations(consoleApiDeclarations)
 	realmFactory.AddRealm(realm)
 
 	// create security manager
@@ -198,36 +197,16 @@ func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			// get resource uri
 			securityManager := base.GetSecurityManager(ctx)
-			realm := securityManager.GetRealm("manageResource").(*web.ResourceRealm)
-			uri := ctx.Request().URL.Path
-			resource, err := realm.GetResourceName(uri, ctx)
-			if err != nil {
-				return err
-			}
-			action := ""
-			switch ctx.Request().Method {
-			case http.MethodPost:
-				action = "create"
-			case http.MethodGet:
-				action = "read"
-			case http.MethodDelete:
-				action = "delete"
-			default:
-				action = "write"
-			}
-			accessId := ctx.Get("AccessId").(string)
-			authToken := shiro.JwtToken{Username: accessId}
-			if subject, err := securityManager.GetSubject(authToken); err != nil {
+			token := web.NewWebRequestToken(securityManager, ctx)
+			if subject, err := securityManager.GetSubject(token); err != nil {
 				return err
 			} else {
-				permission := fmt.Sprintf("%s:%s", resource, action)
+				permission := token.GetPermission()
 				if !subject.IsPermitted(permission) {
 					return errors.New("not authorized")
 				}
 			}
-
 			return next(ctx)
 		}
 	}
