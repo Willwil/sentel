@@ -13,20 +13,29 @@
 package shiro
 
 type delegateSubject struct {
-	securityMgr SecurityManager
+	securityMgr            SecurityManager
+	principals             PrincipalCollection
+	session                Session
+	sessionCreationEnabled bool
+	authenticated          bool
+	host                   string
+	authenticator          Authenticator
+	authorizer             Authorizer
 }
 
-func (p *delegateSubject) GetPrincipal() interface{} {
-	return nil
+func (p *delegateSubject) hasPrincipals() bool { return p.principals.IsEmpty() != true }
+func (p *delegateSubject) GetHost() string     { return p.host }
+func (p *delegateSubject) GetPrincipal() Principal {
+	return p.principals.GetPrimaryPrincipal()
 }
 func (p *delegateSubject) GetPrincipals() PrincipalCollection {
-	return nil
+	return p.principals
 }
 func (p *delegateSubject) IsPermitted(permission string) bool {
-	return true
+	return p.hasPrincipals() && p.authorizer.IsPermitted(p.principals, permission)
 }
 func (p *delegateSubject) IsPermittedWithPermission(permission Permission) bool {
-	return true
+	return p.hasPrincipals() && p.authorizer.IsPermittedWithPermission(p.principals, permission)
 }
 func (p *delegateSubject) IsPermittedWithPermissions(permission ...string) []bool {
 	result := []bool{}

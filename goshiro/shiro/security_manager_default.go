@@ -27,7 +27,7 @@ func (p *defaultSecurityManager) Login(subject Subject, token AuthenticationToke
 func (p *defaultSecurityManager) Logout(subject Subject) error {
 	return nil
 }
-func (p *defaultSecurityManager) CreateSubject(ctx subjectContext) (Subject, error) {
+func (p *defaultSecurityManager) CreateSubject(ctx SubjectContext) (Subject, error) {
 	return nil, nil
 }
 func (p *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {

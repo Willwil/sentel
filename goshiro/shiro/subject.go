@@ -13,7 +13,7 @@
 package shiro
 
 type Subject interface {
-	GetPrincipal() interface{}
+	GetPrincipal() Principal
 	GetPrincipals() PrincipalCollection
 	IsPermitted(permission string) bool
 	IsPermittedWithPermission(permission Permission) bool
@@ -34,8 +34,18 @@ type Subject interface {
 	GetSession() Session
 	GetSessionWithCreation(create bool) Session
 	Save()
+	GetHost() string
 }
 
-func newSubject(mgr SecurityManager) (Subject, error) {
-	return &delegateSubject{securityMgr: mgr}, nil
+func NewSubject(ctx SubjectContext) Subject {
+	return &delegateSubject{
+		securityMgr:   ctx.GetSecurityManager(),
+		principals:    ctx.GetPrincipals(),
+		session:       ctx.GetSession(),
+		authenticated: ctx.IsAuthenticated(),
+		host:          ctx.GetHost(),
+		sessionCreationEnabled: ctx.IsSessionCreationEnabled(),
+		authenticator:          ctx.GetSecurityManager().GetAuthenticator(),
+		authorizer:             ctx.GetSecurityManager().GetAuthorizer(),
+	}
 }

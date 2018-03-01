@@ -12,27 +12,28 @@
 
 package shiro
 
-type subjectContext interface {
-	getSecurityManager() SecurityManager
-	setSecurityManager(SecurityManager)
-	setSessionId(sessionId Serializable)
-	getSessionId() Serializable
-	getSubject() Subject
-	setSubject(subject Subject)
-	getPrincipals() PrincipalCollection
-	setPrincipals(principals PrincipalCollection)
-	getSession() Session
-	setSession(Session)
-	isAuthenticated() bool
-	setAuthenticated(bool)
-	getAuthenticaitonToken() AuthenticationToken
-	setAuthenticationToken(AuthenticationToken)
-	setAuthenticationInfo(AuthenticationInfo)
-	getAuthenticationInfo() AuthenticationInfo
-	getHost() string
-	setHost(string)
+type SubjectContext interface {
+	GetSecurityManager() SecurityManager
+	SetSecurityManager(SecurityManager)
+	SetSessionId(sessionId Serializable)
+	GetSessionId() Serializable
+	GetSubject() Subject
+	SetSubject(subject Subject)
+	GetPrincipals() PrincipalCollection
+	SetPrincipals(principals PrincipalCollection)
+	GetSession() Session
+	SetSession(Session)
+	IsSessionCreationEnabled() bool
+	IsAuthenticated() bool
+	SetAuthenticated(bool)
+	GetAuthenticaitonToken() AuthenticationToken
+	SetAuthenticationToken(AuthenticationToken)
+	SetAuthenticationInfo(AuthenticationInfo)
+	GetAuthenticationInfo() AuthenticationInfo
+	GetHost() string
+	SetHost(string)
 }
 
-func newSubjectContext() subjectContext {
+func NewSubjectContext() SubjectContext {
 	return nil
 }

@@ -15,7 +15,7 @@ package shiro
 type SecurityManager interface {
 	Login(subject Subject, token AuthenticationToken) error
 	Logout(subject Subject) error
-	CreateSubject(ctx subjectContext) (Subject, error)
+	CreateSubject(ctx SubjectContext) (Subject, error)
 	GetSubject(token AuthenticationToken) (Subject, error)
 	Save(subject Subject)
 	SetCacheManager(mgr CacheManager)
