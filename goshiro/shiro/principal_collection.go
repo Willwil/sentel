@@ -90,6 +90,7 @@ func (p *principalCollection) Clear() {
 		delete(p.principals, realm)
 	}
 	p.principalList = []Principal{}
+	p.index = 0
 }
 
 func (p *principalCollection) GetPrimaryPrincipal() Principal {
