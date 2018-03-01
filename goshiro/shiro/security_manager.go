@@ -13,7 +13,7 @@
 package shiro
 
 type SecurityManager interface {
-	Login(subject Subject, token AuthenticationToken) error
+	Login(subject Subject, token AuthenticationToken) (Subject, error)
 	Logout(subject Subject) error
 	CreateSubject(ctx SubjectContext) (Subject, error)
 	GetSubject(token AuthenticationToken) (Subject, error)

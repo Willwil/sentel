@@ -15,18 +15,14 @@ package shiro
 type Authorizer interface {
 	IsPermitted(principals PrincipalCollection, permission string) bool
 	IsPermittedWithPermission(principals PrincipalCollection, permission Permission) bool
-	IsPermittedWithPermissions(principals PrincipalCollection, permission ...string) []bool
-	IsPermittedWithPermissionList(principals PrincipalCollection, permissions []Permission) []bool
-	IsPermittedAll(principals PrincipalCollection, permissions ...string) bool
+	IsPermittedWithPermissions(principals PrincipalCollection, permissions []Permission) []bool
 	CheckPermission(principals PrincipalCollection, permission Permission) error
 	CheckPermissions(principals PrincipalCollection, permissions []Permission) error
-	CheckPermissionList(principals PrincipalCollection, permission ...string) error
 	HasRole(pricipals PrincipalCollection, id string) bool
 	HasRoles(principals PrincipalCollection, ids []string) []bool
 	HasAllRoles(principals PrincipalCollection, ids []string) bool
 	CheckRole(pricipals PrincipalCollection, id string) error
-	CheckRoles(principals PrincipalCollection, id ...string) error
-	CheckRolesWithList(principals PrincipalCollection, ids []string) error
+	CheckRoles(principals PrincipalCollection, ids []string) error
 }
 
 func NewAuthorizer(env Environment) Authorizer {

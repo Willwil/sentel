@@ -17,22 +17,19 @@ type Subject interface {
 	GetPrincipals() PrincipalCollection
 	IsPermitted(permission string) bool
 	IsPermittedWithPermission(permission Permission) bool
-	IsPermittedWithPermissions(permission ...string) []bool
-	IsPermittedWithPermissionList(permissions []Permission) []bool
-	IsPermittedAll(permissions ...string) bool
+	IsPermittedWithPermissions(permissions []Permission) []bool
 	CheckPermission(permission Permission) error
 	CheckPermissions(permissions []Permission) error
-	CheckPermissionList(permission ...string) error
 	HasRole(id string) bool
 	HasRoles(ids []string) []bool
 	HasAllRoles(ids []string) bool
 	CheckRole(id string) error
-	CheckRoles(id ...string) error
-	CheckRolesWithList(ids []string) error
+	CheckRoles(ids []string) error
 	Login(token AuthenticationToken) error
 	IsAuthenticated() bool
 	GetSession() Session
-	GetSessionWithCreation(create bool) Session
+	SetSessionCreationEnabled(create bool)
+	IsSessionCreationEnabled() bool
 	Save()
 	GetHost() string
 }

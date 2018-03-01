@@ -12,6 +12,8 @@
 
 package shiro
 
+import "errors"
+
 type defaultSecurityManager struct {
 	env           Environment
 	realms        []Realm
@@ -21,8 +23,8 @@ type defaultSecurityManager struct {
 	cacheMgr      CacheManager
 }
 
-func (p *defaultSecurityManager) Login(subject Subject, token AuthenticationToken) error {
-	return nil
+func (p *defaultSecurityManager) Login(subject Subject, token AuthenticationToken) (Subject, error) {
+	return nil, errors.New("not implemented")
 }
 func (p *defaultSecurityManager) Logout(subject Subject) error {
 	return nil
