@@ -12,11 +12,10 @@
 
 package shiro
 
-type SecurityManager interface {
-	AddRealms([]Realm)
-	Login(AuthenticationToken) (Subject, error)
-	Logout(subject Subject) error
-	GetSubject(token AuthenticationToken) (Subject, error)
-	Authorize(subject Subject, req Request) error
-	SetAdaptor(Adaptor)
+// Adaptor is wraper of policy and roles peristence
+type Adaptor interface {
+	GetName() string
+	AddPolicy(Policy)
+	RemovePolicy(Policy)
+	GetAllPolicies() []Policy
 }

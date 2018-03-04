@@ -44,6 +44,9 @@ func (w *WebSecurityManager) CheckPermission(subject shiro.Subject, resourceName
 func (w *WebSecurityManager) Authorize(subject shiro.Subject, req shiro.Request) error {
 	return nil
 }
+
+func (w *WebSecurityManager) SetAdaptor(a shiro.Adaptor) {}
+
 func NewWebSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.SecurityManager, error) {
 	return nil, errors.New("not implemented")
 }

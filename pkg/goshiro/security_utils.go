@@ -13,6 +13,8 @@
 package goshiro
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/goshiro/web"
@@ -20,18 +22,26 @@ import (
 )
 
 func NewSecurityManager(c config.Config, realm ...shiro.Realm) shiro.SecurityManager {
-	mgrName, err := c.StringWithSection("security_manager", "manager")
-	if err != nil {
-		glog.Error("invalid security manager configuration, using default...")
-		return &shiro.DefaultSecurityManager{}
-	}
-	switch mgrName {
-	case "web":
-		if mgr, err := web.NewSecurityManager(c, realm...); err == nil {
-			return mgr
-		} else {
-			glog.Error("web security manager creattion failed, using default")
+	var securityMgr shiro.SecurityManager
+	if mgrName, err := c.StringWithSection("security_manager", "manager"); err != nil {
+		switch mgrName {
+		case "web":
+			if mgr, err := web.NewSecurityManager(c, realm...); err == nil {
+				securityMgr = mgr
+			}
 		}
 	}
-	return &shiro.DefaultSecurityManager{}
+	if securityMgr == nil {
+		securityMgr = &shiro.DefaultSecurityManager{}
+	}
+	adaptor, err := newAdaptor(c)
+	if err != nil {
+		glog.Fatal(err)
+	}
+	securityMgr.SetAdaptor(adaptor)
+	return securityMgr
+}
+
+func newAdaptor(c config.Config) (shiro.Adaptor, error) {
+	return nil, errors.New("not implemented")
 }

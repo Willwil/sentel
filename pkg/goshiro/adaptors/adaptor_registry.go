@@ -10,13 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package shiro
-
-type SecurityManager interface {
-	AddRealms([]Realm)
-	Login(AuthenticationToken) (Subject, error)
-	Logout(subject Subject) error
-	GetSubject(token AuthenticationToken) (Subject, error)
-	Authorize(subject Subject, req Request) error
-	SetAdaptor(Adaptor)
-}
+package adaptors

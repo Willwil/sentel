@@ -17,7 +17,8 @@ import "errors"
 type DefaultSecurityManager struct {
 }
 
-func (d *DefaultSecurityManager) AddRealms([]Realm) {}
+func (d *DefaultSecurityManager) AddRealms([]Realm)    {}
+func (d *DefaultSecurityManager) SetAdaptor(a Adaptor) {}
 func (d *DefaultSecurityManager) Login(AuthenticationToken) (Subject, error) {
 	return nil, errors.New("not implmented")
 }
