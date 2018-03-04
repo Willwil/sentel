@@ -293,6 +293,14 @@ func (r *Registry) GetDeviceByName(productId string, deviceName string) (*Device
 	return device, err
 }
 
+// GetDeviceByName retrieve a device information from registry/
+func (r *Registry) GetDevicesByName(productId string, deviceName string) ([]Device, error) {
+	c := r.db.C(dbNameDevices)
+	devices := []Device{}
+	err := c.Find(bson.M{"ProductId": productId, "DeviceName": deviceName}).All(&devices)
+	return devices, err
+}
+
 // BulkRegisterDevice add a lot of devices into registry
 func (r *Registry) BulkRegisterDevices(devices []Device) error {
 	for _, device := range devices {
@@ -303,6 +311,22 @@ func (r *Registry) BulkRegisterDevices(devices []Device) error {
 	return nil
 }
 
+// BulkRegisterDevice add a lot of devices into registry
+func (r *Registry) BulkGetDevices(devices []Device) ([]Device, error) {
+	var err error
+	rdevs := []Device{}
+	devs := []Device{}
+	for _, dev := range devices {
+		devs, err = r.GetDevicesByName(dev.ProductId, dev.DeviceName)
+		if err != nil{
+			for _, dev := range devs{
+				rdevs = append(rdevs, dev)
+			}
+		}
+	}
+	return rdevs, err
+}
+
 // DeleteDevice delete a device from registry
 func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 	c := r.db.C(dbNameDevices)
@@ -310,7 +334,11 @@ func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 }
 
 // BulkDeleteDevice delete a lot of devices from registry
-func (r *Registry) BulkDeleteDevice(devices []string) error {
+func (r *Registry) BulkDeleteDevice(devices []Device) error {
+	c := r.db.C(dbNameDevices)
+	for _, dev := range devices{
+		c.Remove(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId})
+	}
 	return nil
 }
 
@@ -322,10 +350,9 @@ func (r *Registry) UpdateDevice(dev *Device) error {
 
 // BulkUpdateDevice update a lot of devices in registry
 func (r *Registry) BulkUpdateDevice(devices []Device) error {
-	for _, device := range devices {
-		if err := r.UpdateDevice(&device); err != nil {
-			return err
-		}
+	c := r.db.C(dbNameDevices)
+	for _, dev := range devices{
+		c.Update(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId}, dev)
 	}
 	return nil
 }
