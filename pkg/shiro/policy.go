@@ -12,16 +12,8 @@
 
 package shiro
 
-import "errors"
-
-type Realm interface {
+type Policy interface {
 	GetName() string
-	Supports(token AuthenticationToken) bool
-	GetAuthenticationInfo(token AuthenticationToken) (AuthenticationInfo, error)
-	GetAuthorizationInfo(principals PrincipalCollection) (AuthorizationInfo, error)
-	SetCacheEnable(bool)
-}
-
-func NewRealm(env Environment, realmName string) (Realm, error) {
-	return nil, errors.New("not implemented")
+	ResolveName(path string, ctx RequestContext) (string, error)
+	GetPermissions() string
 }

@@ -12,6 +12,23 @@
 
 package shiro
 
-type PermissionResolver interface{}
+import (
+	"errors"
 
-type RolePermissionResolver interface{}
+	"github.com/cloustone/sentel/pkg/config"
+)
+
+// Realm is collection of policy
+type Realm interface {
+	GetName() string
+	AddPolicy(Policy)
+	RemovePolicy(Policy)
+	GetPolicy(path string, ctx RequestContext) Policy
+	GetAllPolicies() []Policy
+	GetAuthorizationInfo() AuthorizationInfo
+	Supports(token AuthenticationToken) bool
+}
+
+func NewRealm(c config.Config, realmName string) (Realm, error) {
+	return nil, errors.New("not implemented")
+}

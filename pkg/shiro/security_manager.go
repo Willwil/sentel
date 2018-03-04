@@ -10,4 +10,22 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package perm
+package shiro
+
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
+type SecurityManager interface {
+	AddRealms([]Realm)
+	Login(AuthenticationToken) (Subject, error)
+	Logout(subject Subject) error
+	GetSubject(token AuthenticationToken) (Subject, error)
+	Authorize(subject Subject, req Request) error
+}
+
+func NewSecurityManager(c config.Config, factory RealmFactory) (SecurityManager, error) {
+	return nil, errors.New("not implemented")
+}

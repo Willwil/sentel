@@ -12,8 +12,19 @@
 
 package shiro
 
-type SessionManager interface{}
+type Subject interface {
+	GetPrincipal() Principal
+	GetPrincipals() PrincipalCollection
+	HasRole(id string) bool
+	HasRoles(ids []string) []bool
+	HasAllRoles(ids []string) bool
+	IsAuthenticated() bool
+	GetSession() Session
+	SetSessionCreationEnabled(create bool)
+	IsSessionCreationEnabled() bool
+	GetHost() string
+}
 
-func NewSessionManager(env Environment) SessionManager {
+func NewSubject(ctx SubjectContext) Subject {
 	return nil
 }

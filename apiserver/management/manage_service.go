@@ -20,12 +20,10 @@ import (
 	"github.com/cloustone/sentel/apiserver/middleware"
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
-	"github.com/cloustone/sentel/goshiro"
-	"github.com/cloustone/sentel/goshiro/extensions/web"
-	"github.com/cloustone/sentel/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
+	"github.com/cloustone/sentel/pkg/shiro/web"
 	"github.com/golang/glog"
 
 	echo "github.com/labstack/echo"
@@ -37,22 +35,21 @@ type managementService struct {
 	waitgroup   sync.WaitGroup
 	version     string
 	echo        *echo.Echo
-	securitymgr shiro.SecurityManager
+	securitymgr *web.WebSecurityManager
 }
 
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	env := base.CreateGoshiroEnvironment(c)
 	// loading customized realm
-	realmFactory := goshiro.NewRealmFactory(env)
-	realm := web.NewWebAuthorizeRealm(env, "manageResource")
-	realm.LoadDeclarations(mgtapiDeclarations)
-	realmFactory.AddRealm(realm)
+	realm := web.NewWebAuthorizeRealm(c, "manageApiPolicyRealm")
+	realm.LoadPolicies(mngApiPolicies)
 
 	// create security manager
-	factory := goshiro.NewSecurityManagerFactory(env, realmFactory)
-	securitymgr := factory.GetInstance()
+	securitymgr, err := web.NewSecurityManager(c, realm)
+	if err != nil {
+		return nil, err
+	}
 
 	return &managementService{
 		config:      c,
@@ -144,16 +141,11 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			authToken := iotmngToken{}
-			if err := ctx.Bind(&authToken); err != nil {
+			authToken := web.NewToken(ctx.Request(), ctx, securityManager)
+			if _, err := securityManager.Login(authToken); err != nil {
 				return err
 			}
-			subject, _ := securityManager.CreateSubject(nil)
-			if err := subject.Login(authToken); err != nil {
-				return err
-			}
-			ctx.Set("AccessId", authToken.AccessId)
-			ctx.Set("SecuritySubject", subject)
+			// ctx.Set("AccessId", authToken.AccessId)
 			return next(ctx)
 		}
 	}
@@ -163,11 +155,13 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			token := web.NewWebRequestToken(securityManager, ctx)
-			subject := ctx.Get("SecuritySubject").(shiro.Subject)
-			permission := token.GetPermission()
-			if !subject.IsPermitted(permission) {
-				return errors.New("not authorized")
+			token := web.NewToken(ctx.Request(), ctx, securityManager)
+			subject, err := securityManager.GetSubject(token)
+			if err != nil {
+				return errors.New("no valid subject exist")
+			}
+			if err := securityManager.Authorize(subject, web.NewRequest(ctx)); err != nil {
+				return err
 			}
 			return next(ctx)
 		}

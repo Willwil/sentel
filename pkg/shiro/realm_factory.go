@@ -10,27 +10,27 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package goshiro
+package shiro
 
 import (
 	"strings"
 
-	"github.com/cloustone/sentel/goshiro/shiro"
+	"github.com/cloustone/sentel/pkg/config"
+
 	"github.com/golang/glog"
 )
 
 type RealmFactory struct {
-	env    shiro.Environment
-	realms []shiro.Realm
+	realms []Realm
 }
 
-func NewRealmFactory(env shiro.Environment) *RealmFactory {
-	realms := []shiro.Realm{}
-	realmString, err := env.GetValue("realms")
+func NewRealmFactory(c config.Config) *RealmFactory {
+	realms := []Realm{}
+	realmString, err := c.StringWithSection("security_manager", "realms")
 	if err == nil {
-		realmNames := strings.Split(realmString.(string), ",")
+		realmNames := strings.Split(realmString, ",")
 		for _, realmName := range realmNames {
-			realm, err := shiro.NewRealm(env, realmName)
+			realm, err := NewRealm(c, realmName)
 			if err != nil {
 				glog.Errorf("'%s' realm laod failed, %s", realmName, err.Error())
 				continue
@@ -38,16 +38,16 @@ func NewRealmFactory(env shiro.Environment) *RealmFactory {
 			realms = append(realms, realm)
 		}
 	}
-	return &RealmFactory{env: env, realms: realms}
+	return &RealmFactory{realms: realms}
 }
 
-func (r *RealmFactory) GetRealms() []shiro.Realm { return r.realms }
+func (r *RealmFactory) GetRealms() []Realm { return r.realms }
 
-func (r *RealmFactory) AddRealm(realm shiro.Realm) {
+func (r *RealmFactory) AddRealm(realm Realm) {
 	r.realms = append(r.realms, realm)
 }
 
-func (r *RealmFactory) GetRealm(realmName string) shiro.Realm {
+func (r *RealmFactory) GetRealm(realmName string) Realm {
 	for _, realm := range r.realms {
 		if realm.GetName() == realmName {
 			return realm
