@@ -16,12 +16,13 @@ import (
 	"strings"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 
 	"github.com/golang/glog"
 )
 
 type RealmFactory struct {
-	realms []Realm
+	realms []shiro.Realm
 }
 
 func NewRealmFactory(c config.Config) *RealmFactory {
@@ -41,13 +42,13 @@ func NewRealmFactory(c config.Config) *RealmFactory {
 	return &RealmFactory{realms: realms}
 }
 
-func (r *RealmFactory) GetRealms() []Realm { return r.realms }
+func (r *RealmFactory) GetRealms() []shiro.Realm { return r.realms }
 
-func (r *RealmFactory) AddRealm(realm Realm) {
+func (r *RealmFactory) AddRealm(realm shiro.Realm) {
 	r.realms = append(r.realms, realm)
 }
 
-func (r *RealmFactory) GetRealm(realmName string) Realm {
+func (r *RealmFactory) GetRealm(realmName string) shiro.Realm {
 	for _, realm := range r.realms {
 		if realm.GetName() == realmName {
 			return realm

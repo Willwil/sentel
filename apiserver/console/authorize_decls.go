@@ -15,7 +15,7 @@ package console
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/pkg/shiro/web"
+	"github.com/cloustone/sentel/pkg/goshiro/web"
 )
 
 var consoleApiPolicies = []web.ApiAuthorizePolicy{

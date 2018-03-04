@@ -13,7 +13,7 @@ package base
 
 import (
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/shiro/web"
+	"github.com/cloustone/sentel/pkg/goshiro/web"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )

@@ -16,7 +16,7 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/shiro"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
 type WebSecurityManager struct {

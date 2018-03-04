@@ -12,7 +12,7 @@
 
 package web
 
-import "github.com/cloustone/sentel/pkg/shiro"
+import "github.com/cloustone/sentel/pkg/goshiro/shiro"
 
 type WebRequest struct {
 }

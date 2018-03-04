@@ -21,9 +21,9 @@ import (
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
-	"github.com/cloustone/sentel/pkg/shiro/web"
 	"github.com/golang/glog"
 
 	echo "github.com/labstack/echo"
@@ -141,11 +141,11 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			authToken := web.NewToken(ctx.Request(), ctx, securityManager)
+			authToken := web.NewRequestToken(ctx.Request(), ctx)
 			if _, err := securityManager.Login(authToken); err != nil {
 				return err
 			}
-			// ctx.Set("AccessId", authToken.AccessId)
+			ctx.Set("AccessId", authToken.AccessId)
 			return next(ctx)
 		}
 	}
@@ -155,7 +155,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			token := web.NewToken(ctx.Request(), ctx, securityManager)
+			token := web.NewRequestToken(ctx.Request(), ctx)
 			subject, err := securityManager.GetSubject(token)
 			if err != nil {
 				return errors.New("no valid subject exist")

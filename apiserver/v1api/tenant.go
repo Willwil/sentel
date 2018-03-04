@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
-	web "github.com/cloustone/sentel/pkg/shiro/web"
 
 	"github.com/labstack/echo"
 )

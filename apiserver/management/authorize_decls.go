@@ -15,7 +15,7 @@ package management
 import (
 	"net/http"
 
-	web "github.com/cloustone/sentel/pkg/shiro/web"
+	web "github.com/cloustone/sentel/pkg/goshiro/web"
 )
 
 var mngApiPolicies = []web.ApiAuthorizePolicy{
