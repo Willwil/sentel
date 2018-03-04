@@ -108,6 +108,18 @@ func UpdateDevice(ctx echo.Context) error {
 	return ctx.JSON(OK, apiResponse{Result: &device})
 }
 
+// Device bulk req.
+type BulkDeviceRegisterRequest struct {
+	DeviceName string `json:"deviceName"`
+	ProductId  string `json:"productId"`
+	Number     string `json:"number"`
+}
+
+type BulkDeviceQueryRequest struct {
+	ProductId  string `json:"productId"`
+	DevicesName []string `json:"deviceName"`
+}
+
 func BulkApplyDevices(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
@@ -117,19 +129,38 @@ func BulkApplyGetStatus(ctx echo.Context) error {
 }
 
 func BulkApplyGetDevices(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	req := BulkDeviceQueryRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	rdevices := []registry.Device{}
+	for _, dev := range req.DevicesName {
+		d := registry.Device{
+			ProductId:    req.ProductId,
+			DeviceId:     util.NewObjectId(),
+			DeviceName:   dev,
+			TimeCreated:  time.Now(),
+			DeviceSecret: util.NewObjectId(),
+		}
+		rdevices = append(rdevices, d)
+	}
+	r := getRegistry(ctx)
+	odevs, err := r.BulkGetDevices(rdevices)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+
+	return ctx.JSON(NotImplemented, apiResponse{Result: odevs})
 }
 
 func GetDeviceList(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
-// Device bulk req.
-type DeviceBulkRequest struct {
-	DeviceName string `json:"deviceName"`
-	ProductId  string `json:"productId"`
-	Number     string `json:"number"`
-}
+
 
 func BulkGetDeviceStatus(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
@@ -137,7 +168,16 @@ func BulkGetDeviceStatus(ctx echo.Context) error {
 func GetDeviceByName(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
+
+type devicePropsRequest struct {
+	DeviceName string `json:"DeviceName"`
+	ProductId  string `json:"ProductId"`
+//	DeviceId   string `json:"DeviceId"`
+	Props      []map[string]string `json:"Props"`
+}
+
 func SaveDevicePropsByName(ctx echo.Context) error {
+
 	return ctx.JSON(NotImplemented, apiResponse{})
 }
 func GetDevicePropsByName(ctx echo.Context) error {
@@ -148,7 +188,7 @@ func RemoveDevicePropsByName(ctx echo.Context) error {
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
-	req := DeviceBulkRequest{}
+	req := BulkDeviceRegisterRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}

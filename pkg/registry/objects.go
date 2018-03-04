@@ -41,6 +41,7 @@ type Device struct {
 	DeviceName   string    `bson:"DeviceName" json:"DeviceName"`
 	DeviceStatus string    `bson:"DeviceStatus"`
 	DeviceSecret string    `bson:"DeviceSecret" json:"DeviceSecret"`
+	Props        string    `bson:"Props" json:"Props"`
 	TimeCreated  time.Time `bson:"TimeCreated" json:"TimeCreated"`
 	TimeUpdated  time.Time `bson:"TimeUpdated" json:"TimeUpdated"`
 }
