@@ -16,9 +16,9 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
-	"github.com/cloustone/sentel/goshiro/extensions/web"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
+	web "github.com/cloustone/sentel/pkg/shiro/web"
 
 	"github.com/labstack/echo"
 )
@@ -62,11 +62,9 @@ func LoginTenant(ctx echo.Context) error {
 	// combined with goshiro
 	securityManager := base.GetSecurityManager(ctx)
 	authToken := web.JWTToken{Username: req.TenantId, Password: req.Password}
-	subject, _ := securityManager.CreateSubject(nil)
-	if err := subject.Login(authToken); err != nil {
+	if _, err := securityManager.Login(authToken); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
-	subject.Save()
 	// Authorized
 	t, _ := authToken.GetJWTToken()
 	return ctx.JSON(OK, apiResponse{Result: echo.Map{"token": t}})

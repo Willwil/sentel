@@ -28,8 +28,6 @@ type SubjectContext interface {
 	SetAuthenticated(bool)
 	GetAuthenticaitonToken() AuthenticationToken
 	SetAuthenticationToken(AuthenticationToken)
-	SetAuthenticationInfo(AuthenticationInfo)
-	GetAuthenticationInfo() AuthenticationInfo
 	GetHost() string
 	SetHost(string)
 }
@@ -141,17 +139,6 @@ func (p *defaultSubjectContext) GetAuthenticaitonToken() AuthenticationToken {
 
 func (p *defaultSubjectContext) SetAuthenticationToken(token AuthenticationToken) {
 	p.values[AUTHENTICATION_TOKEN] = token
-}
-
-func (p *defaultSubjectContext) SetAuthenticationInfo(info AuthenticationInfo) {
-	p.values[AUTHENTICATION_INFO] = info
-}
-
-func (p *defaultSubjectContext) GetAuthenticationInfo() AuthenticationInfo {
-	if item, found := p.values[AUTHENTICATION_INFO]; found {
-		return item.(AuthenticationInfo)
-	}
-	return nil
 }
 
 func (p *defaultSubjectContext) GetHost() string {

@@ -54,3 +54,7 @@ func (p *simpleAuthorizationInfo) AddRole(role string) {
 func (p *simpleAuthorizationInfo) AddRoles(roles []string) {
 	p.roles = append(p.roles, roles...)
 }
+
+func (p *simpleAuthorizationInfo) GetAuthorizationInfo() AuthorizationInfo {
+	return nil
+}

@@ -12,17 +12,20 @@
 
 package shiro
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type SecurityManager interface {
 	AddRealms([]Realm)
 	Login(AuthenticationToken) (Subject, error)
 	Logout(subject Subject) error
 	GetSubject(token AuthenticationToken) (Subject, error)
-	Save(subject Subject)
-	CheckPermission(principal Principal, resourceName string, action string) error
+	Authorize(subject Subject, req Request) error
 }
 
-func NewSecurityManager(env Environment, factory RealmFactory) (SecuirytManager, error) {
+func NewSecurityManager(c config.Config, factory RealmFactory) (SecurityManager, error) {
 	return nil, errors.New("not implemented")
 }

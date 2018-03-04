@@ -10,4 +10,13 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package text
+package web
+
+import "github.com/cloustone/sentel/pkg/shiro"
+
+type WebRequest struct {
+}
+
+func NewRequest(ctx shiro.RequestContext) *WebRequest {
+	return &WebRequest{}
+}

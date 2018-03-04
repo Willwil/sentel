@@ -12,8 +12,8 @@
 
 package shiro
 
-type SessionManager interface{}
-
-func NewSessionManager(env Environment) SessionManager {
-	return nil
+type Policy interface {
+	GetName() string
+	ResolveName(path string, ctx RequestContext) (string, error)
+	GetPermissions() string
 }

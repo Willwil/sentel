@@ -12,8 +12,8 @@
 package base
 
 import (
-	"github.com/cloustone/sentel/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/shiro/web"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 )
@@ -21,7 +21,7 @@ import (
 type ApiContext struct {
 	echo.Context
 	Config      config.Config
-	SecurityMgr shiro.SecurityManager
+	SecurityMgr *web.WebSecurityManager
 }
 
 type ApiJWTClaims struct {
@@ -29,10 +29,6 @@ type ApiJWTClaims struct {
 	AccessId string `json:"accessId"`
 }
 
-func CreateGoshiroEnvironment(c config.Config) shiro.Environment {
-	return shiro.NewEnvironment()
-}
-
-func GetSecurityManager(ctx echo.Context) shiro.SecurityManager {
+func GetSecurityManager(ctx echo.Context) *web.WebSecurityManager {
 	return ctx.(*ApiContext).SecurityMgr
 }

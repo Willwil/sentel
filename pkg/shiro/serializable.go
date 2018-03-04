@@ -10,4 +10,6 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package activedir
+package shiro
+
+type Serializable interface{}

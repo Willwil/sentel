@@ -15,21 +15,13 @@ package shiro
 type Subject interface {
 	GetPrincipal() Principal
 	GetPrincipals() PrincipalCollection
-	IsPermitted(permission string) bool
-	IsPermittedWithPermission(permission Permission) bool
-	IsPermittedWithPermissions(permissions []Permission) []bool
-	CheckPermission(permission Permission) error
-	CheckPermissions(permissions []Permission) error
 	HasRole(id string) bool
 	HasRoles(ids []string) []bool
 	HasAllRoles(ids []string) bool
-	CheckRole(id string) error
-	CheckRoles(ids []string) error
 	IsAuthenticated() bool
 	GetSession() Session
 	SetSessionCreationEnabled(create bool)
 	IsSessionCreationEnabled() bool
-	Save()
 	GetHost() string
 }
 
