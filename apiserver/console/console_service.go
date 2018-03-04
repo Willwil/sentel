@@ -21,6 +21,8 @@ import (
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
@@ -35,7 +37,7 @@ type consoleService struct {
 	waitgroup   sync.WaitGroup
 	version     string
 	echo        *echo.Echo
-	securitymgr *web.WebSecurityManager
+	securitymgr shiro.SecurityManager
 }
 type ServiceFactory struct{}
 
@@ -44,17 +46,11 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	realm := web.NewWebAuthorizeRealm(c, "consoleApiPolicyRealm")
 	realm.LoadPolicies(consoleApiPolicies)
 
-	// create security manager
-	securitymgr, err := web.NewSecurityManager(c, realm)
-	if err != nil {
-		return nil, err
-	}
-
 	return &consoleService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		echo:        echo.New(),
-		securitymgr: securitymgr,
+		securitymgr: goshiro.NewSecurityManager(c, realm),
 	}, nil
 }
 

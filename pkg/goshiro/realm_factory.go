@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package shiro
+package goshiro
 
 import (
 	"strings"
@@ -26,12 +26,12 @@ type RealmFactory struct {
 }
 
 func NewRealmFactory(c config.Config) *RealmFactory {
-	realms := []Realm{}
+	realms := []shiro.Realm{}
 	realmString, err := c.StringWithSection("security_manager", "realms")
 	if err == nil {
 		realmNames := strings.Split(realmString, ",")
 		for _, realmName := range realmNames {
-			realm, err := NewRealm(c, realmName)
+			realm, err := shiro.NewRealm(c, realmName)
 			if err != nil {
 				glog.Errorf("'%s' realm laod failed, %s", realmName, err.Error())
 				continue

@@ -10,22 +10,23 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package management
+package shiro
 
-type iotmngToken struct {
-	Format      string `json:"format"`
-	Version     string `json:"version"`
-	AccessId    string `json:"accessId"`
-	Signature   string `json:"sign"`
-	SignMethod  string `json:"signMethod"`
-	SignVersion string `json:"signVersion"`
-	SignNonce   string `json:"singNonce"`
-	Timestamp   string `json:"timestamp"`
+import "errors"
+
+type DefaultSecurityManager struct {
 }
 
-func (p iotmngToken) GetPrincipal() interface{} {
+func (d *DefaultSecurityManager) AddRealms([]Realm) {}
+func (d *DefaultSecurityManager) Login(AuthenticationToken) (Subject, error) {
+	return nil, errors.New("not implmented")
+}
+func (d *DefaultSecurityManager) Logout(subject Subject) error {
 	return nil
 }
-func (p iotmngToken) GetCrenditals() interface{} {
-	return nil
+func (d *DefaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
+	return nil, errors.New("not implemented")
+}
+func (d *DefaultSecurityManager) Authorize(subject Subject, req Request) error {
+	return errors.New("not implemented")
 }
