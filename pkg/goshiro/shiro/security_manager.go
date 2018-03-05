@@ -13,16 +13,23 @@
 package shiro
 
 type SecurityManager interface {
-	AddRealm(Realm)
+	// AddRealm add reams to security manager
+	AddRealm(realm ...Realm)
+	// AddPolicies load authorization policies
 	AddPolicies([]AuthorizePolicy)
+	// RemovePolicy remove specified authorization policy
 	RemovePolicy(AuthorizePolicy)
-	GetPolicy(path string, ctx RequestContext) AuthorizePolicy
+	// GetPolicy return specified authorization policy
+	GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error)
+	// GetAllPolicies return all authorization policy
 	GetAllPolicies() []AuthorizePolicy
 
+	// Longin authenticate current user and return subject
 	Login(AuthenticationToken) (Subject, error)
-	Logout(subject Subject) error
+	// GetSubject return specified subject by authentication token
 	GetSubject(token AuthenticationToken) (Subject, error)
-	Authorize(subject Subject, req Request) error
+	// IsPermitted check wether the subject request is authorized
+	IsPermitted(subject Subject, req Request) error
+	// SetAdaptor set persistence adaptor
 	SetAdaptor(Adaptor)
-	SetAuthenticator(Authenticator)
 }

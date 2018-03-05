@@ -16,7 +16,3 @@ type AuthenticationToken interface {
 	GetPrincipal() interface{}
 	GetCrenditals() interface{}
 }
-
-type Authenticator interface {
-	Authenticate(AuthenticationToken) error
-}

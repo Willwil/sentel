@@ -20,16 +20,14 @@ import (
 )
 
 func NewSecurityManager(c config.Config, policies []shiro.AuthorizePolicy, realm ...shiro.Realm) shiro.SecurityManager {
-	securityMgr, _ := shiro.NewSecurityManager(c)
+	securityMgr, _ := shiro.NewDefaultSecurityManager(c)
 	adaptor, err := NewAdaptor(c)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	securityMgr.SetAdaptor(adaptor)
-	securityMgr.LoadPolicies(policies)
-	for _, r := range realm {
-		securityMgr.AddRealm(r)
-	}
+	securityMgr.AddPolicies(policies)
+	securityMgr.AddRealm(realm...)
 	return securityMgr
 }
 

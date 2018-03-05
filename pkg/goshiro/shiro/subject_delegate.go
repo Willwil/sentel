@@ -53,4 +53,7 @@ func (p *delegateSubject) HasAllRoles(ids []string) bool {
 
 func (p *delegateSubject) IsAuthenticated() bool { return p.authenticated }
 
-func (p *delegateSubject) GetSession() Session { return p.session }
+func (p *delegateSubject) GetSession() Session            { return p.session }
+func (p *delegateSubject) IsSessionCreationEnabled() bool { return false }
+
+func (p *delegateSubject) SetSessionCreationEnabled(create bool) {}

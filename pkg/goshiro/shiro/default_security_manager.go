@@ -14,47 +14,84 @@ package shiro
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type DefaultSecurityManager struct {
+// defaultSecurityManager is default security manager that manage authorization
+// and authentication
+type defaultSecurityManager struct {
+	realms   []Realm           // All backend realms
+	policies []AuthorizePolicy // All authorization policies
+	adaptor  Adaptor           // Persistence adaptor
 }
-
-func NewSecurityManager(c config.Config) (*DefaultSecurityManager, error) {
-	return &DefaultSecurityManager{}, nil
-}
-
-func (w *DefaultSecurityManager) AddRealm(r Realm) {}
-func (w *DefaultSecurityManager) Login(AuthenticationToken) (Subject, error) {
-	return nil, errors.New("not implemented")
-}
-func (w *DefaultSecurityManager) Logout(subject Subject) error {
-	return nil
-}
-func (w *DefaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
-	return nil, errors.New("not implmented")
-}
-func (w *DefaultSecurityManager) Save(subject Subject) {}
-func (w *DefaultSecurityManager) CheckPermission(subject Subject, resourceName string, action string) error {
-	return nil
-}
-
-func (w *DefaultSecurityManager) Authorize(subject Subject, req Request) error {
-	return nil
-}
-
-func (w *DefaultSecurityManager) SetAdaptor(a Adaptor)                 {}
-func (w *DefaultSecurityManager) SetAuthenticator(authc Authenticator) {}
-
-func (w *DefaultSecurityManager) AddPolicies([]AuthorizePolicy) {}
-func (w *DefaultSecurityManager) RemovePolicy(AuthorizePolicy)  {}
-func (w *DefaultSecurityManager) GetPolicy(path string, ctx RequestContext) AuthorizePolicy {
-	return AuthorizePolicy{}
-}
-func (w *DefaultSecurityManager) GetAllPolicies() []AuthorizePolicy { return nil }
-func (w *DefaultSecurityManager) LoadPolicies([]AuthorizePolicy)    {}
 
 func NewDefaultSecurityManager(c config.Config) (SecurityManager, error) {
-	return nil, errors.New("not implemented")
+	return &defaultSecurityManager{
+		realms:   []Realm{},
+		policies: []AuthorizePolicy{},
+		adaptor:  nil,
+	}, nil
+}
+
+func (w *defaultSecurityManager) AddRealm(r ...Realm) {
+	w.realms = append(w.realms, r...)
+}
+
+func (w *defaultSecurityManager) SetAdaptor(a Adaptor) {
+	w.adaptor = a
+}
+
+func (w *defaultSecurityManager) AddPolicies(policies []AuthorizePolicy) {
+	w.policies = append(w.policies, policies...)
+}
+
+func (w *defaultSecurityManager) RemovePolicy(policy AuthorizePolicy) {
+	for index, ap := range w.policies {
+		if policy.Url == ap.Url {
+			w.policies = append(w.policies[:index], w.policies[index:]...)
+			return
+		}
+	}
+}
+
+func (w *defaultSecurityManager) GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error) {
+	for _, ap := range w.policies {
+		if path == ap.Url {
+			return ap, nil
+		}
+	}
+	return AuthorizePolicy{}, fmt.Errorf("policy '%s' not found", path)
+}
+
+func (w *defaultSecurityManager) GetAllPolicies() []AuthorizePolicy {
+	return w.policies
+}
+
+func (w *defaultSecurityManager) Login(token AuthenticationToken) (Subject, error) {
+	for _, r := range w.realms {
+		if r.Supports(token) {
+			principals := r.GetPrincipals(token)
+			if !principals.IsEmpty() {
+				pp := principals.GetPrimaryPrincipal()
+				if pp.GetCrenditals() == token.GetCrenditals() { // valid principal found
+					return &delegateSubject{
+						securityMgr:   w,
+						principals:    principals,
+						authenticated: true,
+					}, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("invalid token")
+}
+
+func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
+	return nil, errors.New("not implmented")
+}
+func (w *defaultSecurityManager) Save(subject Subject) {}
+func (w *defaultSecurityManager) IsPermitted(subject Subject, req Request) error {
+	return nil
 }
