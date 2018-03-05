@@ -12,22 +12,49 @@
 
 package shiro
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type DefaultSecurityManager struct {
 }
 
-func (d *DefaultSecurityManager) AddRealms([]Realm)    {}
-func (d *DefaultSecurityManager) SetAdaptor(a Adaptor) {}
-func (d *DefaultSecurityManager) Login(AuthenticationToken) (Subject, error) {
-	return nil, errors.New("not implmented")
+func NewSecurityManager(c config.Config) (*DefaultSecurityManager, error) {
+	return &DefaultSecurityManager{}, nil
 }
-func (d *DefaultSecurityManager) Logout(subject Subject) error {
-	return nil
-}
-func (d *DefaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
+
+func (w *DefaultSecurityManager) AddRealm(r Realm) {}
+func (w *DefaultSecurityManager) Login(AuthenticationToken) (Subject, error) {
 	return nil, errors.New("not implemented")
 }
-func (d *DefaultSecurityManager) Authorize(subject Subject, req Request) error {
-	return errors.New("not implemented")
+func (w *DefaultSecurityManager) Logout(subject Subject) error {
+	return nil
+}
+func (w *DefaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
+	return nil, errors.New("not implmented")
+}
+func (w *DefaultSecurityManager) Save(subject Subject) {}
+func (w *DefaultSecurityManager) CheckPermission(subject Subject, resourceName string, action string) error {
+	return nil
+}
+
+func (w *DefaultSecurityManager) Authorize(subject Subject, req Request) error {
+	return nil
+}
+
+func (w *DefaultSecurityManager) SetAdaptor(a Adaptor)                 {}
+func (w *DefaultSecurityManager) SetAuthenticator(authc Authenticator) {}
+
+func (w *DefaultSecurityManager) AddPolicies([]AuthorizePolicy) {}
+func (w *DefaultSecurityManager) RemovePolicy(AuthorizePolicy)  {}
+func (w *DefaultSecurityManager) GetPolicy(path string, ctx RequestContext) AuthorizePolicy {
+	return AuthorizePolicy{}
+}
+func (w *DefaultSecurityManager) GetAllPolicies() []AuthorizePolicy { return nil }
+func (w *DefaultSecurityManager) LoadPolicies([]AuthorizePolicy)    {}
+
+func NewDefaultSecurityManager(c config.Config) (SecurityManager, error) {
+	return nil, errors.New("not implemented")
 }

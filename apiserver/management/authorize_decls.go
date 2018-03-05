@@ -15,10 +15,10 @@ package management
 import (
 	"net/http"
 
-	web "github.com/cloustone/sentel/pkg/goshiro/web"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
-var mngApiPolicies = []web.ApiAuthorizePolicy{
+var mngApiPolicies = []shiro.AuthorizePolicy{
 	// v1api.CreateProduct
 	{
 		Url:          "/iot/api/v1/products",

@@ -12,8 +12,13 @@
 
 package shiro
 
-type Policy interface {
-	GetName() string
-	ResolveName(path string, ctx RequestContext) (string, error)
-	GetPermissions() string
+type AuthorizePolicy struct {
+	Url          string `json:"url" bson:"Url"`
+	Method       string `json:"method" bson:"Method"`
+	Resource     string `json:"resource" bson:"AuthorizePolicy"`
+	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
+
+func (r AuthorizePolicy) GetName() string                                             { return "" }
+func (r AuthorizePolicy) ResolveName(path string, ctx RequestContext) (string, error) { return "", nil }
+func (r AuthorizePolicy) GetPermissions() string                                      { return "" }

@@ -13,10 +13,16 @@
 package shiro
 
 type SecurityManager interface {
-	AddRealms([]Realm)
+	AddRealm(Realm)
+	AddPolicies([]AuthorizePolicy)
+	RemovePolicy(AuthorizePolicy)
+	GetPolicy(path string, ctx RequestContext) AuthorizePolicy
+	GetAllPolicies() []AuthorizePolicy
+
 	Login(AuthenticationToken) (Subject, error)
 	Logout(subject Subject) error
 	GetSubject(token AuthenticationToken) (Subject, error)
 	Authorize(subject Subject, req Request) error
 	SetAdaptor(Adaptor)
+	SetAuthenticator(Authenticator)
 }

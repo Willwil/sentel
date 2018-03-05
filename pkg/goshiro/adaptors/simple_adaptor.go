@@ -10,26 +10,24 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package shiro
+package adaptors
 
 import (
-	"errors"
-
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
-// Realm is collection of policy
-type Realm interface {
-	// GetName return realm's name
-	GetName() string
-	// Supports check wether the realm support the specified authentication token
-	Supports(token AuthenticationToken) bool
-	// GetPrincipal return subject's principals
-	GetPrincipals(token AuthenticationToken) PrincipalCollection
-	// GetAuthorizeInfo return subject's authorization info
-	GetAuthorizeInfo(token AuthenticationToken) AuthorizationInfo
+type SimpleAdaptor struct {
+	policies []shiro.AuthorizePolicy
 }
 
-func NewRealm(c config.Config, realmName string) (Realm, error) {
-	return nil, errors.New("not implemented")
+func NewSimpleAdaptor(c config.Config) (*SimpleAdaptor, error) {
+	return &SimpleAdaptor{
+		policies: []shiro.AuthorizePolicy{},
+	}, nil
 }
+
+func (p *SimpleAdaptor) GetName() string                         { return "simple" }
+func (p *SimpleAdaptor) AddPolicy(shiro.AuthorizePolicy)         {}
+func (p *SimpleAdaptor) RemovePolicy(shiro.AuthorizePolicy)      {}
+func (p *SimpleAdaptor) GetAllPolicies() []shiro.AuthorizePolicy { return p.policies }

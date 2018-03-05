@@ -12,10 +12,5 @@
 
 package shiro
 
-// Adaptor is wraper of policy and roles peristence
-type Adaptor interface {
-	GetName() string
-	AddPolicy(AuthorizePolicy)
-	RemovePolicy(AuthorizePolicy)
-	GetAllPolicies() []AuthorizePolicy
-}
+type Role interface{}
+type RoleManager interface{}

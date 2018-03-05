@@ -13,35 +13,35 @@
 package goshiro
 
 import (
-	"errors"
-
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro/adaptors"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/golang/glog"
 )
 
-func NewSecurityManager(c config.Config, realm ...shiro.Realm) shiro.SecurityManager {
-	var securityMgr shiro.SecurityManager
-	if mgrName, err := c.StringWithSection("security_manager", "manager"); err != nil {
-		switch mgrName {
-		case "web":
-			if mgr, err := web.NewSecurityManager(c, realm...); err == nil {
-				securityMgr = mgr
-			}
-		}
-	}
-	if securityMgr == nil {
-		securityMgr = &shiro.DefaultSecurityManager{}
-	}
-	adaptor, err := newAdaptor(c)
+func NewSecurityManager(c config.Config, policies []shiro.AuthorizePolicy, realm ...shiro.Realm) shiro.SecurityManager {
+	securityMgr, _ := shiro.NewSecurityManager(c)
+	adaptor, err := NewAdaptor(c)
 	if err != nil {
 		glog.Fatal(err)
 	}
 	securityMgr.SetAdaptor(adaptor)
+	securityMgr.LoadPolicies(policies)
+	for _, r := range realm {
+		securityMgr.AddRealm(r)
+	}
 	return securityMgr
 }
 
-func newAdaptor(c config.Config) (shiro.Adaptor, error) {
-	return nil, errors.New("not implemented")
+func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
+	val, err := c.StringWithSection("security_manager", "adatpor")
+	if err != nil {
+		val = "simple"
+	}
+	switch val {
+	case "simple":
+		return adaptors.NewSimpleAdaptor(c)
+	default:
+		return adaptors.NewSimpleAdaptor(c)
+	}
 }

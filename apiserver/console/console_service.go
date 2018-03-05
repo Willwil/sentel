@@ -37,20 +37,20 @@ type consoleService struct {
 	waitgroup   sync.WaitGroup
 	version     string
 	echo        *echo.Echo
-	securitymgr shiro.SecurityManager
+	securityMgr shiro.SecurityManager
 }
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	// loading customized realm
-	realm := web.NewWebAuthorizeRealm(c, "consoleApiPolicyRealm")
-	realm.LoadPolicies(consoleApiPolicies)
-
+	realm, err := base.NewAuthorizeRealm(c)
+	if err != nil {
+		return nil, err
+	}
 	return &consoleService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		echo:        echo.New(),
-		securitymgr: goshiro.NewSecurityManager(c, realm),
+		securityMgr: goshiro.NewSecurityManager(c, consoleApiPolicies, realm),
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func (p *consoleService) Initialize() error {
 			cc := &base.ApiContext{
 				Context:     e,
 				Config:      c,
-				SecurityMgr: p.securitymgr,
+				SecurityMgr: p.securityMgr,
 			}
 			return h(cc)
 		}
@@ -172,6 +172,21 @@ func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 		}
 	default:
 	}
+}
+
+func (p *consoleService) Authenticate(token shiro.AuthenticationToken) error {
+	principal := token.GetPrincipal().(string)
+	crenditals := token.GetCrenditals().(string)
+	r, err := registry.New(p.config)
+	if err != nil {
+		return err
+	}
+	if t, err := r.GetTenant(principal); err == nil {
+		if t.TenantId == principal && t.Password == crenditals {
+			return nil
+		}
+	}
+	return errors.New("invalid user")
 }
 
 func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {

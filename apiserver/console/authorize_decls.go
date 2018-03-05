@@ -15,10 +15,10 @@ package console
 import (
 	"net/http"
 
-	"github.com/cloustone/sentel/pkg/goshiro/web"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
-var consoleApiPolicies = []web.ApiAuthorizePolicy{
+var consoleApiPolicies = []shiro.AuthorizePolicy{
 	// v1api.LogoutTenant
 	{
 		Url:          "/iot/api/v1/console/tenants/logout",
