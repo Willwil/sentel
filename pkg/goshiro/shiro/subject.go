@@ -28,3 +28,49 @@ type Subject interface {
 func NewSubject(ctx SubjectContext) Subject {
 	return nil
 }
+
+type delegateSubject struct {
+	securityMgr            SecurityManager
+	principals             PrincipalCollection
+	session                Session
+	sessionCreationEnabled bool
+	authenticated          bool
+	host                   string
+}
+
+func boolSliceWithCapacity(number int, v bool) []bool {
+	result := make([]bool, number)
+	for i := 0; i < number; i++ {
+		result[i] = v
+	}
+	return result
+}
+
+func (p *delegateSubject) hasPrincipals() bool { return p.principals.IsEmpty() != true }
+func (p *delegateSubject) GetHost() string     { return p.host }
+func (p *delegateSubject) GetPrincipal() Principal {
+	return p.principals.GetPrimaryPrincipal()
+}
+
+func (p *delegateSubject) GetPrincipals() PrincipalCollection {
+	return p.principals
+}
+
+func (p *delegateSubject) HasRole(id string) bool {
+	return false
+}
+
+func (p *delegateSubject) HasRoles(ids []string) []bool {
+	return boolSliceWithCapacity(len(ids), false)
+}
+
+func (p *delegateSubject) HasAllRoles(ids []string) bool {
+	return false
+}
+
+func (p *delegateSubject) IsAuthenticated() bool { return p.authenticated }
+
+func (p *delegateSubject) GetSession() Session            { return p.session }
+func (p *delegateSubject) IsSessionCreationEnabled() bool { return false }
+
+func (p *delegateSubject) SetSessionCreationEnabled(create bool) {}
