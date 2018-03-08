@@ -39,8 +39,8 @@ func (p *AuthorizeRealm) Supports(token shiro.AuthenticationToken) bool {
 	return false
 }
 
-func (p *AuthorizeRealm) GetAuthorizeInfo(subject shiro.Subject) shiro.AuthorizationInfo {
-	return nil
+func (p *AuthorizeRealm) GetAuthorizeInfo(subject shiro.Subject) (shiro.AuthorizationInfo, bool) {
+	return nil, false
 }
 
 func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.PrincipalCollection {

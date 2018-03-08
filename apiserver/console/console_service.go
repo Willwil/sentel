@@ -212,7 +212,8 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			if err != nil {
 				return errors.New("no valid subject exist")
 			}
-			if err := securityManager.IsPermitted(subject, web.NewRequest(ctx)); err != nil {
+			req, _ := web.NewRequest(securityManager, ctx.Request(), ctx)
+			if err := securityManager.Authorize(subject, req); err != nil {
 				return err
 			}
 			return next(ctx)

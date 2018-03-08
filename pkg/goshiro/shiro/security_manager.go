@@ -34,8 +34,8 @@ type SecurityManager interface {
 	Login(AuthenticationToken) (Subject, error)
 	// GetSubject return specified subject by authentication token
 	GetSubject(token AuthenticationToken) (Subject, error)
-	// IsPermitted check wether the subject request is authorized
-	IsPermitted(subject Subject, req Request) error
+	// Authorize check wether the subject request is authorized
+	Authorize(subject Subject, req Request) error
 	// SetAdaptor set persistence adaptor
 	SetAdaptor(Adaptor)
 }
@@ -70,7 +70,7 @@ func (w *defaultSecurityManager) AddPolicies(policies []AuthorizePolicy) {
 
 func (w *defaultSecurityManager) RemovePolicy(policy AuthorizePolicy) {
 	for index, ap := range w.policies {
-		if policy.Url == ap.Url {
+		if policy.Path == ap.Path {
 			w.policies = append(w.policies[:index], w.policies[index:]...)
 			return
 		}
@@ -79,7 +79,7 @@ func (w *defaultSecurityManager) RemovePolicy(policy AuthorizePolicy) {
 
 func (w *defaultSecurityManager) GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error) {
 	for _, ap := range w.policies {
-		if path == ap.Url {
+		if path == ap.Path {
 			return ap, nil
 		}
 	}
@@ -133,13 +133,27 @@ func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject,
 // Save save the subject into session or local system
 func (w *defaultSecurityManager) Save(subject Subject) {}
 
-// IsPermitted check wether the subject is authorized with the request
+// Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
-func (w *defaultSecurityManager) IsPermitted(subject Subject, req Request) error {
-	//	for _, r := range w.realms {
-	//		authorizeInfo := r.GetAuthorizeInfo(subject)
-	//	}
-
+func (w *defaultSecurityManager) Authorize(subject Subject, req Request) error {
+	if !subject.IsAuthenticated() {
+		return errors.New("no authenticated subject")
+	}
+	// try to get authorization information from registered realms
+	for _, r := range w.realms {
+		if authorizeInfo, found := r.GetAuthorizeInfo(subject); found {
+			roles := authorizeInfo.GetRoles()
+			action := req.GetAction()
+			resource := req.GetResource()
+			if err := w.isPermitted(roles, action, resource); err == nil {
+				return nil
+			}
+		}
+	}
 	return errors.New("not authorized")
+}
+
+func (w *defaultSecurityManager) isPermitted(roles []Role, action string, resource string) error {
+	return errors.New("no implemented")
 }

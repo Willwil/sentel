@@ -13,14 +13,14 @@
 package shiro
 
 type AuthorizationInfo interface {
-	GetRoles() []string
+	GetRoles() []Role
 	GetStringPermissions() []string
 	GetObjectPermissions() []interface{}
 }
 
-func NewAuthorizationInfo(roles []string) AuthorizationInfo {
+func NewAuthorizationInfo(roles []Role) AuthorizationInfo {
 	info := &simpleAuthorizationInfo{
-		roles:             []string{},
+		roles:             []Role{},
 		stringPermissions: []string{},
 		objectPermissions: []interface{}{},
 	}
@@ -29,12 +29,12 @@ func NewAuthorizationInfo(roles []string) AuthorizationInfo {
 }
 
 type simpleAuthorizationInfo struct {
-	roles             []string
+	roles             []Role
 	stringPermissions []string
 	objectPermissions []interface{}
 }
 
-func (p *simpleAuthorizationInfo) GetRoles() []string {
+func (p *simpleAuthorizationInfo) GetRoles() []Role {
 	return p.roles
 }
 func (p *simpleAuthorizationInfo) GetStringPermissions() []string {
@@ -44,14 +44,14 @@ func (p *simpleAuthorizationInfo) GetObjectPermissions() []interface{} {
 	return p.objectPermissions
 }
 
-func (p *simpleAuthorizationInfo) SetRoles(roles []string) {
+func (p *simpleAuthorizationInfo) SetRoles(roles []Role) {
 	p.roles = roles
 }
 
-func (p *simpleAuthorizationInfo) AddRole(role string) {
+func (p *simpleAuthorizationInfo) AddRole(role Role) {
 	p.roles = append(p.roles, role)
 }
-func (p *simpleAuthorizationInfo) AddRoles(roles []string) {
+func (p *simpleAuthorizationInfo) AddRoles(roles []Role) {
 	p.roles = append(p.roles, roles...)
 }
 

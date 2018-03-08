@@ -13,9 +13,9 @@
 package shiro
 
 type AuthorizePolicy struct {
-	Url          string `json:"url" bson:"Url"`
-	Method       string `json:"method" bson:"Method"`
 	Resource     string `json:"resource" bson:"AuthorizePolicy"`
+	Path         string `json:"path" bson:"Path"`
+	Methods      string `json:"method" bson:"Method"`
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 

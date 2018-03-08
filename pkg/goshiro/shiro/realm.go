@@ -27,7 +27,7 @@ type Realm interface {
 	// GetPrincipal return subject's principals
 	GetPrincipals(token AuthenticationToken) PrincipalCollection
 	// GetAuthorizeInfo return subject's authorization info
-	GetAuthorizeInfo(subject Subject) AuthorizationInfo
+	GetAuthorizeInfo(subject Subject) (AuthorizationInfo, bool)
 }
 
 func NewRealm(c config.Config, realmName string) (Realm, error) {
