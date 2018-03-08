@@ -19,8 +19,9 @@ import (
 )
 
 type JWTToken struct {
-	Username string
-	Password string
+	Username      string
+	Password      string
+	Authenticated bool
 }
 
 type JwtClaims struct {
@@ -47,4 +48,8 @@ func (p JWTToken) GetJWTToken() (string, error) {
 
 	// Generate encoded token and send it as base.ApiResponse
 	return token.SignedString([]byte("secret"))
+}
+
+func (p JWTToken) IsAuthenticated() bool {
+	return p.Authenticated
 }

@@ -109,10 +109,37 @@ func (w *defaultSecurityManager) Login(token AuthenticationToken) (Subject, erro
 	return nil, errors.New("invalid token")
 }
 
+// GetSubject return the requested subject's principals if it is authenticated
+// The current implementation is simple because jwt or specified request token
+// can be authenticated by itself.
 func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
-	return nil, errors.New("not implmented")
+	if token.IsAuthenticated() {
+		for _, r := range w.realms {
+			if r.Supports(token) {
+				principals := r.GetPrincipals(token)
+				if !principals.IsEmpty() {
+					return &delegateSubject{
+						securityMgr:   w,
+						principals:    principals,
+						authenticated: true,
+					}, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("invalid token")
 }
+
+// Save save the subject into session or local system
 func (w *defaultSecurityManager) Save(subject Subject) {}
+
+// IsPermitted check wether the subject is authorized with the request
+// It will iterate all realms to get principals and roles, comparied with saved
+// authorization policies
 func (w *defaultSecurityManager) IsPermitted(subject Subject, req Request) error {
-	return nil
+	//	for _, r := range w.realms {
+	//		authorizeInfo := r.GetAuthorizeInfo(subject)
+	//	}
+
+	return errors.New("not authorized")
 }

@@ -15,4 +15,5 @@ package shiro
 type AuthenticationToken interface {
 	GetPrincipal() interface{}
 	GetCrenditals() interface{}
+	IsAuthenticated() bool
 }

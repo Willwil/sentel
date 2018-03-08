@@ -18,14 +18,15 @@ import (
 )
 
 type RequestToken struct {
-	Format      string `json:"format"`
-	Version     string `json:"version"`
-	AccessId    string `json:"accessId"`
-	Signature   string `json:"sign"`
-	SignMethod  string `json:"signMethod"`
-	SignVersion string `json:"signVersion"`
-	SignNonce   string `json:"singNonce"`
-	Timestamp   string `json:"timestamp"`
+	Format        string `json:"format"`
+	Version       string `json:"version"`
+	AccessId      string `json:"accessId"`
+	Signature     string `json:"sign"`
+	SignMethod    string `json:"signMethod"`
+	SignVersion   string `json:"signVersion"`
+	SignNonce     string `json:"singNonce"`
+	Timestamp     string `json:"timestamp"`
+	Authenticated bool
 }
 
 func (r *RequestToken) GetPrincipal() interface{}  { return r.AccessId }
@@ -37,4 +38,8 @@ func NewRequestToken(req *http.Request, ctx shiro.RequestContext) *RequestToken 
 		return nil
 	}
 	return token
+}
+
+func (p RequestToken) IsAuthenticated() bool {
+	return p.Authenticated
 }
