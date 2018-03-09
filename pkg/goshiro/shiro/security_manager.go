@@ -22,6 +22,8 @@ import (
 type SecurityManager interface {
 	// AddRealm add reams to security manager
 	AddRealm(realm ...Realm)
+	// GetRealm return specified realm by realm name
+	GetRealm(realmName string) Realm
 	// AddPolicies load authorization policies
 	AddPolicies([]AuthorizePolicy)
 	// RemovePolicy remove specified authorization policy
@@ -35,7 +37,7 @@ type SecurityManager interface {
 	// GetSubject return specified subject by authentication token
 	GetSubject(token AuthenticationToken) (Subject, error)
 	// Authorize check wether the subject request is authorized
-	Authorize(subject Subject, req Request) error
+	Authorize(token AuthenticationToken, req Request) error
 	// SetAdaptor set persistence adaptor
 	SetAdaptor(Adaptor)
 }
@@ -58,6 +60,16 @@ func NewDefaultSecurityManager(c config.Config) (SecurityManager, error) {
 
 func (w *defaultSecurityManager) AddRealm(r ...Realm) {
 	w.realms = append(w.realms, r...)
+}
+
+// GetRealm return specified realm by realm name
+func (w *defaultSecurityManager) GetRealm(realmName string) Realm {
+	for _, r := range w.realms {
+		if r.GetName() == realmName {
+			return r
+		}
+	}
+	return nil
 }
 
 func (w *defaultSecurityManager) SetAdaptor(a Adaptor) {
@@ -130,19 +142,26 @@ func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject,
 	return nil, errors.New("invalid token")
 }
 
+func (w *defaultSecurityManager) getAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error) {
+	if token.IsAuthenticated() {
+		for _, r := range w.realms {
+			if info, found := r.GetAuthorizationInfo(token); found {
+				return info, nil
+			}
+		}
+	}
+	return nil, errors.New("invalid token")
+}
+
 // Save save the subject into session or local system
 func (w *defaultSecurityManager) Save(subject Subject) {}
 
 // Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
-func (w *defaultSecurityManager) Authorize(subject Subject, req Request) error {
-	if !subject.IsAuthenticated() {
-		return errors.New("no authenticated subject")
-	}
-	// try to get authorization information from registered realms
-	for _, r := range w.realms {
-		if authorizeInfo, found := r.GetAuthorizeInfo(subject); found {
+func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Request) error {
+	if req != nil {
+		if authorizeInfo, err := w.getAuthorizationInfo(token); err == nil {
 			roles := authorizeInfo.GetRoles()
 			action := req.GetAction()
 			resource := req.GetResource()

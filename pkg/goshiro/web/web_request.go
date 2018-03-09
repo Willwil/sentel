@@ -13,10 +13,12 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
+	"github.com/labstack/echo"
 )
 
 // WebRequest is wraper for authorization request based on http.Request
@@ -25,7 +27,7 @@ type WebRequest struct {
 	action   string
 }
 
-func NewRequest(mgr shiro.SecurityManager, req *http.Request, ctx shiro.RequestContext) (shiro.Request, error) {
+func NewRequest(mgr shiro.SecurityManager, ctx echo.Context) (shiro.Request, error) {
 	// get  resource requested from subject
 	policy, err := mgr.GetPolicy(ctx.Path(), ctx)
 	if err != nil {
@@ -44,7 +46,20 @@ func NewRequest(mgr shiro.SecurityManager, req *http.Request, ctx shiro.RequestC
 			resource += val
 		}
 	}
-	action := req.Method
+	action := ""
+	switch ctx.Request().Method {
+	case http.MethodPost:
+		action = shiro.ActionCreate
+	case http.MethodGet:
+		action = shiro.ActionRead
+	case http.MethodDelete:
+		action = shiro.ActionRemove
+	case http.MethodPut, http.MethodPatch:
+		action = shiro.ActionWrite
+	default:
+		return nil, fmt.Errorf("invalid method '%s'", ctx.Request().Method)
+	}
+
 	return &WebRequest{
 		resource: resource,
 		action:   action,

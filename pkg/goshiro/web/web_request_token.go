@@ -11,11 +11,7 @@
 //  under the License.
 package web
 
-import (
-	"net/http"
-
-	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-)
+import "github.com/labstack/echo"
 
 type RequestToken struct {
 	Format        string `json:"format"`
@@ -32,11 +28,9 @@ type RequestToken struct {
 func (r *RequestToken) GetPrincipal() interface{}  { return r.AccessId }
 func (r *RequestToken) GetCrenditals() interface{} { return nil }
 
-func NewRequestToken(req *http.Request, ctx shiro.RequestContext) *RequestToken {
+func NewRequestToken(ctx echo.Context) *RequestToken {
 	token := &RequestToken{}
-	if err := ctx.Bind(token); err != nil {
-		return nil
-	}
+	ctx.Bind(token)
 	return token
 }
 

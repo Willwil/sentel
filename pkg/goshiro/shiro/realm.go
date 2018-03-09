@@ -12,7 +12,7 @@
 
 package shiro
 
-// Realm is collection of policy
+// Realm is collection of user principals and role
 type Realm interface {
 	// GetName return realm's name
 	GetName() string
@@ -21,11 +21,17 @@ type Realm interface {
 	// GetPrincipal return subject's principals
 	GetPrincipals(token AuthenticationToken) PrincipalCollection
 	// GetAuthorizeInfo return subject's authorization info
-	GetAuthorizeInfo(subject Subject) (AuthorizationInfo, bool)
+	GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, bool)
 	// AddRole add role with permission into realm
-	AddRole(roleName string, permissions []Permission)
+	AddRole(r Role)
 	// RemoveRole remove specified role from realm
 	RemoveRole(roleName string)
+	// GetRole return role's detail information
+	GetRole(roleName string) (Role, error)
+	// AddRolePermission add permissions to a role
+	AddRolePermissions(roleName string, permissons []Permission)
+	// RemoveRolePermissions remove permission from role
+	RemoveRolePermissions(roleName string, permissions []Permission)
 	// GetRolePermission return specfied role's all permissions
 	GetRolePermissions(roleName string) []Permission
 }

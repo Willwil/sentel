@@ -154,7 +154,7 @@ func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			authToken := web.NewRequestToken(ctx.Request(), ctx)
+			authToken := web.NewRequestToken(ctx)
 			if _, err := securityManager.Login(authToken); err != nil {
 				return err
 			}
@@ -168,13 +168,9 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			token := web.NewRequestToken(ctx.Request(), ctx)
-			subject, err := securityManager.GetSubject(token)
-			if err != nil {
-				return errors.New("no valid subject exist")
-			}
-			req, _ := web.NewRequest(securityManager, ctx.Request(), ctx)
-			if err := securityManager.Authorize(subject, req); err != nil {
+			token := web.NewRequestToken(ctx)
+			req, _ := web.NewRequest(securityManager, ctx)
+			if err := securityManager.Authorize(token, req); err != nil {
 				return err
 			}
 			return next(ctx)

@@ -12,6 +12,8 @@
 package base
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/goshiro/web"
@@ -39,7 +41,7 @@ func (p *AuthorizeRealm) Supports(token shiro.AuthenticationToken) bool {
 	return false
 }
 
-func (p *AuthorizeRealm) GetAuthorizeInfo(subject shiro.Subject) (shiro.AuthorizationInfo, bool) {
+func (p *AuthorizeRealm) GetAuthorizationInfo(token shiro.AuthenticationToken) (shiro.AuthorizationInfo, bool) {
 	return nil, false
 }
 
@@ -59,10 +61,21 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 }
 
 // AddRole add role with permission into realm
-func (p *AuthorizeRealm) AddRole(roleName string, permissions []shiro.Permission) {}
+func (p *AuthorizeRealm) AddRole(r shiro.Role) {}
 
 // RemoveRole remove specified role from realm
 func (p *AuthorizeRealm) RemoveRole(roleName string) {}
+
+// GetRole return role's detail information
+func (p *AuthorizeRealm) GetRole(roleName string) (shiro.Role, error) {
+	return shiro.Role{}, errors.New("not impleted")
+}
+
+// AddRolePermission add permissions to a role
+func (p *AuthorizeRealm) AddRolePermissions(roleName string, permissons []shiro.Permission) {}
+
+// RemoveRolePermissions remove permission from role
+func (p *AuthorizeRealm) RemoveRolePermissions(roleName string, permissions []shiro.Permission) {}
 
 // GetRolePermission return specfied role's all permissions
 func (p *AuthorizeRealm) GetRolePermissions(roleName string) []shiro.Permission {

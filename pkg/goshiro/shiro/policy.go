@@ -12,13 +12,20 @@
 
 package shiro
 
+const (
+	ActionRead   = "read"
+	ActionWrite  = "write"
+	ActionCreate = "create"
+	ActionRemove = "remove"
+)
+
 type AuthorizePolicy struct {
-	Resource     string `json:"resource" bson:"AuthorizePolicy"`
 	Path         string `json:"path" bson:"Path"`
+	Resource     string `json:"resource" bson:"AuthorizePolicy"`
 	Methods      string `json:"method" bson:"Method"`
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 
-func (r AuthorizePolicy) GetName() string                                             { return "" }
-func (r AuthorizePolicy) ResolveName(path string, ctx RequestContext) (string, error) { return "", nil }
-func (r AuthorizePolicy) GetPermissions() string                                      { return "" }
+//func (r AuthorizePolicy) GetName() string { return r.Path }
+//func (r AuthorizePolicy) ResolveName(path string, ctx RequestContext) (string, error) { return "", nil }
+//func (r AuthorizePolicy) GetPermissions() string { return "" }

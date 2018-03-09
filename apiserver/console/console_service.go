@@ -207,13 +207,9 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
 			accessId := ctx.Get("AccessId").(string)
-			token := web.JWTToken{Username: accessId}
-			subject, err := securityManager.GetSubject(token)
-			if err != nil {
-				return errors.New("no valid subject exist")
-			}
-			req, _ := web.NewRequest(securityManager, ctx.Request(), ctx)
-			if err := securityManager.Authorize(subject, req); err != nil {
+			token := web.JWTToken{Username: accessId, Authenticated: true}
+			req, _ := web.NewRequest(securityManager, ctx)
+			if err := securityManager.Authorize(token, req); err != nil {
 				return err
 			}
 			return next(ctx)

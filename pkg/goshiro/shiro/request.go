@@ -18,25 +18,10 @@ type Request interface {
 }
 
 type RequestContext interface {
-	// Bind binds the request body into provided type `i`. The default binder
-	// does it based on Content-Type header.
-	Bind(i interface{}) error
 	// Path returns the registered path for the handler.
 	Path() string
 	// Get retrieves data from the context.
 	Get(key string) interface{}
-	// Set saves data in the context.
-	Set(key string, val interface{})
 	// Param returns path parameter by name.
 	Param(name string) string
-	// ParamNames returns path parameter names.
-	ParamNames() []string
-	// SetParamNames sets path parameter names.
-	SetParamNames(names ...string)
-	// ParamValues returns path parameter values.
-	ParamValues() []string
-	// SetParamValues sets path parameter values.
-	SetParamValues(values ...string)
-	// QueryParam returns the query param for the provided name.
-	QueryParam(name string) string
 }
