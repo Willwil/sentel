@@ -53,7 +53,7 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 		defer r.Close()
 		if _, err := r.GetTenant(principalName); err == nil {
 			// construct new principals
-			principal := shiro.NewPrincipal(principalName, nil, p.GetName())
+			principal := shiro.NewPrincipal(principalName, p.GetName())
 			principals.Add(principal, p.GetName())
 		}
 	}

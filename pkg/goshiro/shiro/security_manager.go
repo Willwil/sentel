@@ -165,18 +165,11 @@ func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Reques
 			roles := authorizeInfo.GetRoles()
 			action := req.GetAction()
 			resource := req.GetResource()
-			if err := w.isPermitted(roles, action, resource); err == nil {
-				return nil
+			for _, role := range roles {
+				if role.Implies(action, resource) {
+					return nil
+				}
 			}
-		}
-	}
-	return errors.New("not authorized")
-}
-
-func (w *defaultSecurityManager) isPermitted(roles []Role, action string, resource string) error {
-	for _, role := range roles {
-		if role.Implies(action, resource) {
-			return nil
 		}
 	}
 	return errors.New("not authorized")

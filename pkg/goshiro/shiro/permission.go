@@ -12,7 +12,35 @@
 
 package shiro
 
-type Permission interface {
-	Implies(action string, resource string) bool
-	ImpliesWithPermission(p Permission) bool
+import "strings"
+
+type Permission struct {
+	Resource string `json:"resource" bson:"Resource"`
+	Actions  string `json:"actions" bson:"Actions"`
+}
+
+// NewPermission create permission object from string presentation, such as
+// "resource1:read,write,update"
+func NewPermission(permission string) Permission {
+	result := Permission{}
+	items := strings.Split(permission, ":")
+	if len(items) > 0 {
+		result.Resource = items[0]
+		if len(items) > 1 {
+			result.Actions = items[1]
+		}
+	}
+	return result
+}
+
+func (p Permission) Implies(action string, resource string) bool {
+	actions := strings.Split(p.Actions, ",")
+	if resource == p.Resource {
+		for _, val := range actions {
+			if val == action {
+				return true
+			}
+		}
+	}
+	return false
 }

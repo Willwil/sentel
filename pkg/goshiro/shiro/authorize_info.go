@@ -13,48 +13,28 @@
 package shiro
 
 type AuthorizationInfo interface {
+	GetPrincipals() PrincipalCollection
+	AddPrincipal(principal Principal, realmName string)
 	GetRoles() []Role
-	GetStringPermissions() []string
-	GetObjectPermissions() []interface{}
+	AddRole(Role)
 }
 
 func NewAuthorizationInfo(roles []Role) AuthorizationInfo {
 	info := &simpleAuthorizationInfo{
-		roles:             []Role{},
-		stringPermissions: []string{},
-		objectPermissions: []interface{}{},
+		principals: NewPrincipalCollection(),
+		roles:      roles,
 	}
-	info.AddRoles(roles)
 	return info
 }
 
 type simpleAuthorizationInfo struct {
-	roles             []Role
-	stringPermissions []string
-	objectPermissions []interface{}
+	principals PrincipalCollection
+	roles      []Role
 }
 
-func (p *simpleAuthorizationInfo) GetRoles() []Role {
-	return p.roles
+func (p *simpleAuthorizationInfo) AddRole(r Role)   { p.roles = append(p.roles, r) }
+func (p *simpleAuthorizationInfo) GetRoles() []Role { return p.roles }
+func (p *simpleAuthorizationInfo) AddPrincipal(principal Principal, realmName string) {
+	p.principals.Add(principal, realmName)
 }
-func (p *simpleAuthorizationInfo) GetStringPermissions() []string {
-	return p.stringPermissions
-}
-func (p *simpleAuthorizationInfo) GetObjectPermissions() []interface{} {
-	return p.objectPermissions
-}
-
-func (p *simpleAuthorizationInfo) SetRoles(roles []Role) {
-	p.roles = roles
-}
-
-func (p *simpleAuthorizationInfo) AddRole(role Role) {
-	p.roles = append(p.roles, role)
-}
-func (p *simpleAuthorizationInfo) AddRoles(roles []Role) {
-	p.roles = append(p.roles, roles...)
-}
-
-func (p *simpleAuthorizationInfo) GetAuthorizationInfo() AuthorizationInfo {
-	return nil
-}
+func (p *simpleAuthorizationInfo) GetPrincipals() PrincipalCollection { return p.principals }

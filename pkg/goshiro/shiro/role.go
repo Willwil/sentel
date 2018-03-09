@@ -18,11 +18,27 @@ type Role struct {
 	Permissions []Permission `json:"permissions" bson:"Permissions"`
 }
 
-func (r Role) Implies(action string, resource string) bool {
+func NewRole(roleName string) *Role {
+	return &Role{Name: roleName, Permissions: []Permission{}}
+}
+
+func NewRoleWithPermissions(roleName string, perms []Permission) *Role {
+	return &Role{Name: roleName, Permissions: perms}
+}
+
+func (r *Role) Implies(action string, resource string) bool {
 	for _, permission := range r.Permissions {
 		if permission.Implies(action, resource) {
 			return true
 		}
 	}
 	return false
+}
+
+func (r *Role) AddPermission(perm Permission) {
+	r.Permissions = append(r.Permissions, perm)
+}
+
+func (r *Role) AddPermissions(perms []Permission) {
+	r.Permissions = append(r.Permissions, perms...)
 }
