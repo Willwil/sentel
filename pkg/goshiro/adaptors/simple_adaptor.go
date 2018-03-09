@@ -13,6 +13,8 @@
 package adaptors
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
@@ -31,3 +33,18 @@ func (p *SimpleAdaptor) GetName() string                         { return "simpl
 func (p *SimpleAdaptor) AddPolicy(shiro.AuthorizePolicy)         {}
 func (p *SimpleAdaptor) RemovePolicy(shiro.AuthorizePolicy)      {}
 func (p *SimpleAdaptor) GetAllPolicies() []shiro.AuthorizePolicy { return p.policies }
+func (r *SimpleAdaptor) AddRole(role shiro.Role)                 {}
+
+func (r *SimpleAdaptor) RemoveRole(roleName string) {}
+
+func (r *SimpleAdaptor) GetRole(roleName string) (*shiro.Role, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (r *SimpleAdaptor) AddRolePermissions(roleName string, permissons []shiro.Permission) {}
+
+func (r *SimpleAdaptor) RemoveRolePermissions(roleName string, permissions []shiro.Permission) {}
+
+func (r *SimpleAdaptor) GetRolePermissions(roleName string) []shiro.Permission {
+	return []shiro.Permission{}
+}
