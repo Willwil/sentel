@@ -57,3 +57,14 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 	}
 	return principals
 }
+
+// AddRole add role with permission into realm
+func (p *AuthorizeRealm) AddRole(roleName string, permissions []shiro.Permission) {}
+
+// RemoveRole remove specified role from realm
+func (p *AuthorizeRealm) RemoveRole(roleName string) {}
+
+// GetRolePermission return specfied role's all permissions
+func (p *AuthorizeRealm) GetRolePermissions(roleName string) []shiro.Permission {
+	return []shiro.Permission{}
+}

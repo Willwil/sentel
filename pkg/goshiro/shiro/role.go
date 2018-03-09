@@ -12,5 +12,17 @@
 
 package shiro
 
-type Role interface{}
-type RoleManager interface{}
+// Role contains permissions for specified resource
+type Role struct {
+	Name        string       `json:"name" bson:"Name"`
+	Permissions []Permission `json:"permissions" bson:"Permissions"`
+}
+
+func (r Role) Implies(action string, resource string) bool {
+	for _, permission := range r.Permissions {
+		if permission.Implies(action, resource) {
+			return true
+		}
+	}
+	return false
+}

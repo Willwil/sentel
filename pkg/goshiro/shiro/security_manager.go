@@ -155,5 +155,10 @@ func (w *defaultSecurityManager) Authorize(subject Subject, req Request) error {
 }
 
 func (w *defaultSecurityManager) isPermitted(roles []Role, action string, resource string) error {
-	return errors.New("no implemented")
+	for _, role := range roles {
+		if role.Implies(action, resource) {
+			return nil
+		}
+	}
+	return errors.New("not authorized")
 }

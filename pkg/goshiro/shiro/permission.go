@@ -13,5 +13,6 @@
 package shiro
 
 type Permission interface {
-	Implies(p Permission) bool
+	Implies(action string, resource string) bool
+	ImpliesWithPermission(p Permission) bool
 }

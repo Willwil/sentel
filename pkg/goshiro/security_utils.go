@@ -13,6 +13,8 @@
 package goshiro
 
 import (
+	"errors"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/adaptors"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
@@ -42,4 +44,8 @@ func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
 	default:
 		return adaptors.NewSimpleAdaptor(c)
 	}
+}
+
+func NewRealm(c config.Config, realmName string) (shiro.Realm, error) {
+	return nil, errors.New("not implemented")
 }
