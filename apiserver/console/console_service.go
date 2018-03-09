@@ -109,6 +109,7 @@ func (p *consoleService) Initialize() error {
 	g.DELETE("/products/:productId/devices/:deviceId", v1api.RemoveDevice)
 	g.PATCH("/devices", v1api.UpdateDevice)
 	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
+	g.POST("/devices/props", v1api.SaveDeviceProps)
 	g.GET("/products/:productId/devices/:deviceId/shardow", v1api.GetShadowDevice)
 	g.PATCH("/products/:productId/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 

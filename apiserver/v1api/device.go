@@ -13,8 +13,10 @@
 package v1api
 
 import (
+	"github.com/golang/glog"
 	"strconv"
 	"time"
+	"encoding/json"
 
 	"github.com/cloustone/sentel/apiserver/util"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -172,16 +174,160 @@ func GetDeviceByName(ctx echo.Context) error {
 type devicePropsRequest struct {
 	DeviceName string `json:"DeviceName"`
 	ProductId  string `json:"ProductId"`
-//	DeviceId   string `json:"DeviceId"`
+	DeviceId   string `json:"DeviceId"`
 	Props      []map[string]string `json:"Props"`
 }
 
-func SaveDevicePropsByName(ctx echo.Context) error {
+func SaveDeviceProps(ctx echo.Context) error {
+	req := devicePropsRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" || req.DeviceId =="" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	r := getRegistry(ctx)
+	device, err := r.GetDevice(req.ProductId, req.DeviceId)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	props := make(map[string]string)
+	if device.Props != "" {
+		byteprops := []byte(device.Props)
+		var mapprops map[string]string
+		err = json.Unmarshal(byteprops, &mapprops)
+		if err != nil {
+			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+		}
+		for key, value := range mapprops{
+			props[key] = value 
+		}
+	
+	}
+	for _,p := range req.Props{
+		for key, value:= range p{
+			props[key] = value //replace original.
+		}
+	}
+	b, err:=json.Marshal(props)
+	if err != nil{
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	device.Props = string(b)
+	if err := r.UpdateDevice(device); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
 
-	return ctx.JSON(NotImplemented, apiResponse{})
+	return ctx.JSON(OK, apiResponse{Result: &device})
 }
+
+func SaveDevicePropsByName(ctx echo.Context) error {
+	req := devicePropsRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	r := getRegistry(ctx)
+	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	dstprops := make(map[string]string)
+	for _,device :=  range devices{
+		if device.Props != "" {
+			byteprops := []byte(device.Props)
+			var mapprops map[string]string
+			err = json.Unmarshal(byteprops, &mapprops)
+			if err != nil {
+				return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+			}
+			for key, value := range mapprops{
+				dstprops[key] = value 
+			}
+		
+		}
+		for _,p := range req.Props{
+			for key, value:= range p{
+				dstprops[key] = value 
+			}
+		}
+		b, err:=json.Marshal(dstprops)
+		glog.Infof("sp:%s\n", b)
+		if err != nil{
+			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+		}
+		device.Props = string(b)
+	}
+
+	if err := r.BulkUpdateDevice(devices); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+
+	return ctx.JSON(OK, apiResponse{Result: devices})
+}
+
+func GetDeviceProps(ctx echo.Context) error {
+	req := devicePropsRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" || req.DeviceId =="" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	r := getRegistry(ctx)
+	device, err := r.GetDevice(req.ProductId, req.DeviceId)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	props := make(map[string]string)
+	if device.Props != "" {
+		byteprops := []byte(device.Props)
+		var mapprops map[string]string
+		err = json.Unmarshal(byteprops, &mapprops)
+		if err != nil {
+			return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+		}
+		for key, value := range mapprops{
+			props[key] = value 
+		}
+	
+	}
+
+	return ctx.JSON(OK, apiResponse{Result: &device})
+}
+
 func GetDevicePropsByName(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	req := devicePropsRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	r := getRegistry(ctx)
+	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	dstprops := make(map[string]string)
+	for _,device :=  range devices{
+		if device.Props != "" {
+			byteprops := []byte(device.Props)
+			var mapprops map[string]string
+			err = json.Unmarshal(byteprops, &mapprops)
+			if err != nil {
+				return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+			}
+			for key, value := range mapprops{
+				dstprops[key] = value 
+			}
+		
+		}
+	}
+
+	return ctx.JSON(OK, apiResponse{Result: devices})
 }
 func RemoveDevicePropsByName(ctx echo.Context) error {
 	return ctx.JSON(NotImplemented, apiResponse{})
