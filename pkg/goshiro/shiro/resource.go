@@ -12,14 +12,13 @@
 
 package shiro
 
-// Realm is collection of user principals and role
-type Realm interface {
-	// GetName return realm's name
-	GetName() string
-	// Supports check wether the realm support the specified authentication token
-	Supports(token AuthenticationToken) bool
-	// GetPrincipal return subject's principals
-	GetPrincipals(token AuthenticationToken) PrincipalCollection
-	// AddRoles add new roles for specified principal
-	AddRoles(principal Principal, roles []string)
+type Resource struct {
+	Name string `json:"name" bson:"Name"`
+}
+
+type ResourceManager interface {
+	GetAllResources() []Resource
+	GetResource(name string) Resource
+	AddResource(Resource)
+	RemoveResource(Resource)
 }

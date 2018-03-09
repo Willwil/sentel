@@ -15,6 +15,7 @@ package shiro
 type Principal interface {
 	Name() string
 	GetRealmName() string
+	GetRoles() []string
 	GetCrenditals() string
 }
 
@@ -22,12 +23,16 @@ type simplePrincipal struct {
 	principalName string
 	crenditals    string
 	realmName     string
+	roles         []string
 }
 
 func NewPrincipal(crendital string, realmName string) Principal {
-	return &simplePrincipal{}
+	return &simplePrincipal{
+		roles: []string{},
+	}
 }
 
 func (p *simplePrincipal) Name() string          { return p.principalName }
 func (p *simplePrincipal) GetRealmName() string  { return p.realmName }
 func (p *simplePrincipal) GetCrenditals() string { return p.crenditals }
+func (p *simplePrincipal) GetRoles() []string    { return p.roles }

@@ -26,6 +26,13 @@ type AuthorizePolicy struct {
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 
-//func (r AuthorizePolicy) GetName() string { return r.Path }
-//func (r AuthorizePolicy) ResolveName(path string, ctx RequestContext) (string, error) { return "", nil }
-//func (r AuthorizePolicy) GetPermissions() string { return "" }
+type PolicyManager interface {
+	// AddPolicies load authorization policies
+	AddPolicies([]AuthorizePolicy)
+	// RemovePolicy remove specified authorization policy
+	RemovePolicy(AuthorizePolicy)
+	// GetPolicy return specified authorization policy
+	GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error)
+	// GetAllPolicies return all authorization policy
+	GetAllPolicies() []AuthorizePolicy
+}
