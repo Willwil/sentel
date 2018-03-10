@@ -37,10 +37,10 @@ func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
 		val = "simple"
 	}
 	switch val {
-	case "simple":
-		return adaptors.NewSimpleAdaptor(c)
+	case "local":
+		return adaptors.NewLocalAdaptor(c)
 	default:
-		return adaptors.NewSimpleAdaptor(c)
+		return adaptors.NewLocalAdaptor(c)
 	}
 }
 

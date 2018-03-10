@@ -12,19 +12,17 @@
 
 package shiro
 
-type Resource struct {
-	Name string `json:"name" bson:"Name"`
+import "errors"
+
+type defaultResourceManager struct {
+	adaptor Adaptor
 }
 
-type ResourceManager interface {
-	GetAllResources() []Resource
-	GetResource(name string) (Resource, error)
-	AddResource(Resource)
-	RemoveResource(Resource)
+func (r *defaultResourceManager) GetAllResources() []Resource {
+	return []Resource{}
 }
-
-func NewResourceManager(adaptor Adaptor) ResourceManager {
-	return &defaultResourceManager{
-		adaptor: adaptor,
-	}
+func (r *defaultResourceManager) GetResource(name string) (Resource, error) {
+	return Resource{}, errors.New("not implemented")
 }
+func (r *defaultResourceManager) AddResource(Resource)    {}
+func (r *defaultResourceManager) RemoveResource(Resource) {}

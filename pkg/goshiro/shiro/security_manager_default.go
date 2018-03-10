@@ -22,18 +22,22 @@ import (
 // defaultSecurityManager is default security manager that manage authorization
 // and authentication
 type defaultSecurityManager struct {
-	realms      []Realm           // All backend realms
-	policies    []AuthorizePolicy // All authorization policies
-	adaptor     Adaptor           // Persistence adaptor
-	roleManager RoleManager
+	realms          []Realm           // All backend realms
+	policies        []AuthorizePolicy // All authorization policies
+	adaptor         Adaptor           // Persistence adaptor
+	roleManager     RoleManager
+	policyManager   PolicyManager
+	resourceManager ResourceManager
 }
 
 func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm) (SecurityManager, error) {
 	return &defaultSecurityManager{
-		realms:      realm,
-		policies:    []AuthorizePolicy{},
-		adaptor:     adaptor,
-		roleManager: NewRoleManager(adaptor),
+		realms:          realm,
+		policies:        []AuthorizePolicy{},
+		adaptor:         adaptor,
+		roleManager:     NewRoleManager(adaptor),
+		policyManager:   NewPolicyManager(adaptor),
+		resourceManager: NewResourceManager(adaptor),
 	}, nil
 }
 

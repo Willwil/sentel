@@ -47,8 +47,9 @@ func (r *roleManager) RemoveRole(roleName string) {
 // GetRole return role's detail information
 func (r *roleManager) GetRole(roleName string) *Role {
 	if r.adaptor != nil {
-		role, _ := r.adaptor.GetRole(roleName)
-		return role
+		if role, err := r.adaptor.GetRole(roleName); err == nil {
+			return &role
+		}
 	}
 	return nil
 }

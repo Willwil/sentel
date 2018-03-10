@@ -26,6 +26,12 @@ type AuthorizePolicy struct {
 	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 
+func (p AuthorizePolicy) Equal(rhs AuthorizePolicy) bool {
+	return (p.Path == rhs.Path &&
+		p.Resource == rhs.Resource &&
+		p.Methods == rhs.Methods)
+}
+
 type PolicyManager interface {
 	// AddPolicies load authorization policies
 	AddPolicies([]AuthorizePolicy)
@@ -35,4 +41,10 @@ type PolicyManager interface {
 	GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error)
 	// GetAllPolicies return all authorization policy
 	GetAllPolicies() []AuthorizePolicy
+}
+
+func NewPolicyManager(adaptor Adaptor) PolicyManager {
+	return &defaultPolicyManager{
+		adaptor: adaptor,
+	}
 }
