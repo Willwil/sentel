@@ -33,7 +33,6 @@ type SecurityManager interface {
 	Authorize(token AuthenticationToken, req Request) error
 	// SetAdaptor set persistence adaptor
 	SetAdaptor(Adaptor)
-
 	// GetAuthorizeInfo return subject's authorization info
 	GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error)
 	// AddRole add role with permission into realm
@@ -41,7 +40,7 @@ type SecurityManager interface {
 	// RemoveRole remove specified role from realm
 	RemoveRole(roleName string)
 	// GetRole return role's detail information
-	GetRole(roleName string) (Role, error)
+	GetRole(roleName string) *Role
 	// AddRolePermission add permissions to a role
 	AddRolePermissions(roleName string, permissons []Permission)
 	// RemoveRolePermissions remove permission from role

@@ -22,16 +22,18 @@ import (
 // defaultSecurityManager is default security manager that manage authorization
 // and authentication
 type defaultSecurityManager struct {
-	realms   []Realm           // All backend realms
-	policies []AuthorizePolicy // All authorization policies
-	adaptor  Adaptor           // Persistence adaptor
+	realms      []Realm           // All backend realms
+	policies    []AuthorizePolicy // All authorization policies
+	adaptor     Adaptor           // Persistence adaptor
+	roleManager RoleManager
 }
 
-func NewDefaultSecurityManager(c config.Config) (SecurityManager, error) {
+func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm) (SecurityManager, error) {
 	return &defaultSecurityManager{
-		realms:   []Realm{},
-		policies: []AuthorizePolicy{},
-		adaptor:  nil,
+		realms:      realm,
+		policies:    []AuthorizePolicy{},
+		adaptor:     adaptor,
+		roleManager: NewRoleManager(adaptor),
 	}, nil
 }
 
@@ -120,16 +122,21 @@ func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject,
 }
 
 func (w *defaultSecurityManager) GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error) {
-	/*
-		if token.IsAuthenticated() {
-			for _, r := range w.realms {
-				if info, found := r.GetAuthorizationInfo(token); found {
-					return info, nil
+	if subject, err := w.GetSubject(token); err == nil {
+		principals := subject.GetPrincipals()
+		if !principals.IsEmpty() {
+			authInfo := NewAuthorizationInfo(principals)
+			principal := principals.GetPrimaryPrincipal()
+			roles := principal.GetRoles()
+			for _, roleName := range roles {
+				if role := w.roleManager.GetRole(roleName); role != nil {
+					authInfo.AddRole(*role)
 				}
 			}
+			return authInfo, nil
 		}
-	*/
-	return nil, errors.New("invalid token")
+	}
+	return nil, errors.New("no valid authorization info")
 }
 
 // Save save the subject into session or local system
@@ -155,24 +162,45 @@ func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Reques
 }
 
 // AddRole add role with permission into realm
-func (p *defaultSecurityManager) AddRole(r Role) {}
+func (p *defaultSecurityManager) AddRole(r Role) {
+	if p.roleManager != nil {
+		p.roleManager.AddRole(r)
+	}
+}
 
 // RemoveRole remove specified role from realm
-func (p *defaultSecurityManager) RemoveRole(roleName string) {}
+func (p *defaultSecurityManager) RemoveRole(roleName string) {
+	if p.roleManager != nil {
+		p.roleManager.RemoveRole(roleName)
+	}
+}
 
 // GetRole return role's detail information
-func (p *defaultSecurityManager) GetRole(roleName string) (Role, error) {
-	return Role{}, errors.New("not impleted")
+func (p *defaultSecurityManager) GetRole(roleName string) *Role {
+	if p.roleManager != nil {
+		return p.roleManager.GetRole(roleName)
+	}
+	return nil
 }
 
 // AddRolePermission add permissions to a role
-func (p *defaultSecurityManager) AddRolePermissions(roleName string, permissons []Permission) {}
+func (p *defaultSecurityManager) AddRolePermissions(roleName string, permissions []Permission) {
+	if p.roleManager != nil {
+		p.roleManager.AddRolePermissions(roleName, permissions)
+	}
+}
 
 // RemoveRolePermissions remove permission from role
 func (p *defaultSecurityManager) RemoveRolePermissions(roleName string, permissions []Permission) {
+	if p.roleManager != nil {
+		p.roleManager.RemoveRolePermissions(roleName, permissions)
+	}
 }
 
 // GetRolePermission return specfied role's all permissions
 func (p *defaultSecurityManager) GetRolePermissions(roleName string) []Permission {
+	if p.roleManager != nil {
+		return p.roleManager.GetRolePermissions(roleName)
+	}
 	return []Permission{}
 }

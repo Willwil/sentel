@@ -12,35 +12,65 @@
 
 package shiro
 
-import "errors"
+// roleManager managel all roles in shiro
+type RoleManager interface {
+	AddRole(Role)
+	RemoveRole(roleName string)
+	GetRole(roleName string) *Role
+	AddRolePermissions(roleName string, permissions []Permission)
+	RemoveRolePermissions(roleName string, permissions []Permission)
+	GetRolePermissions(roleName string) []Permission
+}
 
-// RoleManager managel all roles in shiro
-type RoleManager struct {
+func NewRoleManager(adaptor Adaptor) RoleManager {
+	return &roleManager{adaptor: adaptor}
+}
+
+type roleManager struct {
 	adaptor Adaptor
 }
 
-func NewRoleManager(adaptor Adaptor) *RoleManager {
-	return &RoleManager{adaptor: adaptor}
+// AddRole add role with permission into realm
+func (r *roleManager) AddRole(role Role) {
+	if r.adaptor != nil {
+		r.adaptor.AddRole(role)
+	}
 }
 
-// AddRole add role with permission into realm
-func (r *RoleManager) AddRole(role Role) {}
-
 // RemoveRole remove specified role from realm
-func (r *RoleManager) RemoveRole(roleName string) {}
+func (r *roleManager) RemoveRole(roleName string) {
+	if r.adaptor != nil {
+		r.adaptor.RemoveRole(roleName)
+	}
+}
 
 // GetRole return role's detail information
-func (r *RoleManager) GetRole(roleName string) (*Role, error) {
-	return nil, errors.New("not implemented")
+func (r *roleManager) GetRole(roleName string) *Role {
+	if r.adaptor != nil {
+		role, _ := r.adaptor.GetRole(roleName)
+		return role
+	}
+	return nil
 }
 
 // AddRolePermission add permissions to a role
-func (r *RoleManager) AddRolePermissions(roleName string, permissons []Permission) {}
+func (r *roleManager) AddRolePermissions(roleName string, permissions []Permission) {
+	if r.adaptor != nil {
+		r.adaptor.AddRolePermissions(roleName, permissions)
+	}
+}
 
 // RemoveRolePermissions remove permission from role
-func (r *RoleManager) RemoveRolePermissions(roleName string, permissions []Permission) {}
+func (r *roleManager) RemoveRolePermissions(roleName string, permissions []Permission) {
+	if r.adaptor != nil {
+		r.adaptor.RemoveRolePermissions(roleName, permissions)
+	}
+}
 
 // GetRolePermission return specfied role's all permissions
-func (r *RoleManager) GetRolePermissions(roleName string) []Permission {
+func (r *roleManager) GetRolePermissions(roleName string) []Permission {
+	if r.adaptor != nil {
+		return r.adaptor.GetRolePermissions(roleName)
+	}
 	return []Permission{}
 }

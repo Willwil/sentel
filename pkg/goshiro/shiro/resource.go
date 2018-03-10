@@ -12,13 +12,38 @@
 
 package shiro
 
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
 type Resource struct {
 	Name string `json:"name" bson:"Name"`
 }
 
 type ResourceManager interface {
 	GetAllResources() []Resource
-	GetResource(name string) Resource
+	GetResource(name string) (Resource, error)
 	AddResource(Resource)
 	RemoveResource(Resource)
 }
+
+func NewResourceManager(c config.Config) (ResourceManager, error) {
+	return &simpleResourceManager{
+		config: c,
+	}, nil
+}
+
+type simpleResourceManager struct {
+	config config.Config
+}
+
+func (r *simpleResourceManager) GetAllResources() []Resource {
+	return []Resource{}
+}
+func (r *simpleResourceManager) GetResource(name string) (Resource, error) {
+	return Resource{}, errors.New("not implemented")
+}
+func (r *simpleResourceManager) AddResource(Resource)    {}
+func (r *simpleResourceManager) RemoveResource(Resource) {}

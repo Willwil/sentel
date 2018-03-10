@@ -17,12 +17,13 @@ type AuthorizationInfo interface {
 	AddPrincipal(principal Principal, realmName string)
 	GetRoles() []Role
 	AddRole(Role)
+	AddRoles([]Role)
 }
 
-func NewAuthorizationInfo(roles []Role) AuthorizationInfo {
+func NewAuthorizationInfo(principals PrincipalCollection) AuthorizationInfo {
 	info := &simpleAuthorizationInfo{
-		principals: NewPrincipalCollection(),
-		roles:      roles,
+		principals: principals,
+		roles:      []Role{},
 	}
 	return info
 }
@@ -32,8 +33,9 @@ type simpleAuthorizationInfo struct {
 	roles      []Role
 }
 
-func (p *simpleAuthorizationInfo) AddRole(r Role)   { p.roles = append(p.roles, r) }
-func (p *simpleAuthorizationInfo) GetRoles() []Role { return p.roles }
+func (p *simpleAuthorizationInfo) AddRole(r Role)    { p.roles = append(p.roles, r) }
+func (p *simpleAuthorizationInfo) AddRoles(r []Role) { p.roles = append(p.roles, r...) }
+func (p *simpleAuthorizationInfo) GetRoles() []Role  { return p.roles }
 func (p *simpleAuthorizationInfo) AddPrincipal(principal Principal, realmName string) {
 	p.principals.Add(principal, realmName)
 }
