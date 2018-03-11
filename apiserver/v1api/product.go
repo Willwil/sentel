@@ -155,9 +155,9 @@ func GetProductDevices(ctx echo.Context) error {
 	if err != nil {
 		return ctx.JSON(OK, apiResponse{Message: err.Error()})
 	}
-	rdevices := []device{}
+	rdevices := []deviceStatus{}
 	for _, dev := range pdevices {
-		rdevices = append(rdevices, device{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
+		rdevices = append(rdevices, deviceStatus{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(OK, apiResponse{Result: rdevices})
 }

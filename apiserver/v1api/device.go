@@ -68,7 +68,7 @@ func RemoveDevice(ctx echo.Context) error {
 	return ctx.JSON(OK, apiResponse{})
 }
 
-type device struct {
+type deviceStatus struct {
 	DeviceId string `json:"id"`
 	Status   string `json:"status"`
 }
@@ -127,7 +127,32 @@ func BulkApplyDevices(ctx echo.Context) error {
 }
 
 func BulkApplyGetStatus(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	req := BulkDeviceQueryRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	rdevices := []registry.Device{}
+	for _, dev := range req.DevicesName {
+		d := registry.Device{
+			ProductId:    req.ProductId,
+			DeviceId:     util.NewObjectId(),
+			DeviceName:   dev,
+		}
+		rdevices = append(rdevices, d)
+	}
+	r := getRegistry(ctx)
+	odevs, err := r.BulkGetDevices(rdevices)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	rdevicestatus := []deviceStatus{}
+	for _, dev := range odevs {
+		rdevicestatus = append(rdevicestatus, deviceStatus{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
+	}
+	return ctx.JSON(OK, apiResponse{Result: rdevicestatus})
 }
 
 func BulkApplyGetDevices(ctx echo.Context) error {
@@ -330,7 +355,25 @@ func GetDevicePropsByName(ctx echo.Context) error {
 	return ctx.JSON(OK, apiResponse{Result: devices})
 }
 func RemoveDevicePropsByName(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	req := devicePropsRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	r := getRegistry(ctx)
+	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	for _,device :=  range devices{
+		device.Props = ""
+	}
+	if err := r.BulkUpdateDevice(devices); err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(OK, apiResponse{Result: devices})
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
