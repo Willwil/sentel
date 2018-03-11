@@ -22,34 +22,18 @@ import (
 
 // LocalAdaptor save policy,role and resource objects in local memory in simple context
 type LocalAdaptor struct {
-	policies  []shiro.AuthorizePolicy
 	roles     map[string]shiro.Role
 	resources map[string]shiro.Resource
 }
 
 func NewLocalAdaptor(c config.Config) (*LocalAdaptor, error) {
 	return &LocalAdaptor{
-		policies:  []shiro.AuthorizePolicy{},
 		roles:     make(map[string]shiro.Role),
 		resources: make(map[string]shiro.Resource),
 	}, nil
 }
 
 func (l *LocalAdaptor) GetName() string { return "local" }
-func (l *LocalAdaptor) AddPolicy(p shiro.AuthorizePolicy) {
-	l.policies = append(l.policies, p)
-}
-
-func (l *LocalAdaptor) RemovePolicy(p shiro.AuthorizePolicy) {
-	for index, policy := range l.policies {
-		if policy.Equal(p) {
-			l.policies = append(l.policies[:index], l.policies[index:]...)
-			return
-		}
-	}
-}
-
-func (l *LocalAdaptor) GetAllPolicies() []shiro.AuthorizePolicy { return l.policies }
 func (l *LocalAdaptor) AddRole(r shiro.Role) {
 	if role, found := l.roles[r.Name]; found {
 		l.roles[r.Name] = shiro.Role{
@@ -84,15 +68,6 @@ func (l *LocalAdaptor) AddRolePermissions(roleName string, permissons []shiro.Pe
 }
 
 func (l *LocalAdaptor) RemoveRolePermissions(roleName string, permissions []shiro.Permission) {
-	if r, found := l.roles[roleName]; found {
-		for _, perm := range permissions {
-			for index, p := range r.Permissions {
-				if p.Resource == perm.Resource {
-					r.Permissions = append(r.Permissions[:index], r.Permissions[:index]...)
-				}
-			}
-		}
-	}
 }
 
 func (l *LocalAdaptor) GetRolePermissions(roleName string) []shiro.Permission {

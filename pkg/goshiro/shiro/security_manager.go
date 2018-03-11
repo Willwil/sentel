@@ -19,28 +19,9 @@ type SecurityManager interface {
 	AddRealm(realm ...Realm)
 	// GetRealm return specified realm by realm name
 	GetRealm(realmName string) Realm
-	// AddPolicies load authorization policies
-	AddPolicies([]AuthorizePolicy)
-	// RemovePolicy remove specified authorization policy
-	RemovePolicy(AuthorizePolicy)
-	// GetPolicy return specified authorization policy
-	GetPolicy(path string) (AuthorizePolicy, error)
-	// GetAllPolicies return all authorization policy
-	GetAllPolicies() []AuthorizePolicy
 	// Login authenticate current user and return subject
 	Login(AuthenticationToken) (Subject, error)
 	// Authorize check wether the subject request is authorized
 	Authorize(token AuthenticationToken, resource, action string) error
-	// AddRole add role with permission into realm
-	AddRole(r Role)
-	// RemoveRole remove specified role from realm
-	RemoveRole(roleName string)
-	// GetRole return role's detail information
-	GetRole(roleName string) *Role
-	// AddRolePermission add permissions to a role
-	AddRolePermissions(roleName string, permissons []Permission)
-	// RemoveRolePermissions remove permission from role
-	RemoveRolePermissions(roleName string, permissions []Permission)
-	// GetRolePermission return specfied role's all permissions
-	GetRolePermissions(roleName string) []Permission
+	GetPrincipalsPermissions(principals PrincipalCollection) []Permission
 }

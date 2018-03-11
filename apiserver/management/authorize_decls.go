@@ -12,9 +12,9 @@
 
 package management
 
-import "github.com/cloustone/sentel/pkg/goshiro/shiro"
+import "github.com/cloustone/sentel/apiserver/base"
 
-var mngApiPolicies = []shiro.AuthorizePolicy{
+var mngApiPolicies = []base.AuthorizePolicy{
 	// v1api.CreateProduct
 	{
 		Path:     "/iot/api/v1/products",

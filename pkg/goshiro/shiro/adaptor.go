@@ -16,14 +16,6 @@ package shiro
 type Adaptor interface {
 	// GetName return adaptor's name
 	GetName() string
-	// Policy
-	// AddPolicy add a new policy
-	AddPolicy(AuthorizePolicy)
-	// RemovePolicy remove specified policy
-	RemovePolicy(AuthorizePolicy)
-	// GetAllPolicies return all policies in backend
-	GetAllPolicies() []AuthorizePolicy
-
 	// Role
 	// AddRole add role with permission into realm
 	AddRole(r Role)

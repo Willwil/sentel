@@ -55,7 +55,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		echo:        echo.New(),
-		securityMgr: goshiro.NewSecurityManager(c, consoleApiPolicies, realm),
+		securityMgr: goshiro.NewSecurityManager(c, realm),
 	}, nil
 }
 

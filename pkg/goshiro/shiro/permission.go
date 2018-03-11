@@ -14,31 +14,32 @@ package shiro
 
 import "strings"
 
+const (
+	ActionRead   = "read"
+	ActionWrite  = "write"
+	ActionCreate = "create"
+	ActionRemove = "remove"
+)
+
 type Permission struct {
-	Resource string `json:"resource" bson:"Resource"`
-	Actions  string `json:"actions" bson:"Actions"`
+	Resources []string `json:"resources" bson:"Resources"`
+	Actions   string   `json:"actions" bson:"Actions"`
 }
 
 // NewPermission create permission object from string presentation, such as
 // "resource1:read,write,update"
-func NewPermission(permission string) Permission {
-	result := Permission{}
-	items := strings.Split(permission, ":")
-	if len(items) > 0 {
-		result.Resource = items[0]
-		if len(items) > 1 {
-			result.Actions = items[1]
-		}
-	}
-	return result
+func NewPermission(resources []string, action string) Permission {
+	return Permission{Resources: resources, Actions: action}
 }
 
-func (p Permission) Implies(action string, resource string) bool {
+func (p Permission) Implies(resource string, action string) bool {
 	actions := strings.Split(p.Actions, ",")
-	if resource == p.Resource {
-		for _, val := range actions {
-			if val == action {
-				return true
+	for _, res := range p.Resources {
+		if resource == res {
+			for _, val := range actions {
+				if val == action {
+					return true
+				}
 			}
 		}
 	}

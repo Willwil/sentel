@@ -20,10 +20,9 @@ import (
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
-func NewSecurityManager(c config.Config, policies []shiro.AuthorizePolicy, realm ...shiro.Realm) shiro.SecurityManager {
+func NewSecurityManager(c config.Config, realm ...shiro.Realm) shiro.SecurityManager {
 	adaptor, _ := NewAdaptor(c)
 	securityMgr, _ := shiro.NewDefaultSecurityManager(c, adaptor, realm...)
-	securityMgr.AddPolicies(policies)
 	return securityMgr
 }
 

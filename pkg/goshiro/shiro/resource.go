@@ -12,13 +12,6 @@
 
 package shiro
 
-type ResourceContext interface {
-	// Param returns path parameter by name.
-	Param(name string) string
-	// Get retrieves data from the context.
-	Get(key string) interface{}
-}
-
 type Resource struct {
 	Name  string `json:"name" bson:"Name"`
 	Roles string `json:"roles" bson:"Roles"`

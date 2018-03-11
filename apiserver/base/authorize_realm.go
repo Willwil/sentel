@@ -18,6 +18,15 @@ import (
 	"github.com/cloustone/sentel/pkg/registry"
 )
 
+type AuthorizePolicy struct {
+	Path     string
+	Resource string
+}
+
+func (p AuthorizePolicy) Equal(rhs AuthorizePolicy) bool {
+	return (p.Path == rhs.Path && p.Resource == rhs.Resource)
+}
+
 type AuthorizeRealm struct {
 	config config.Config
 }

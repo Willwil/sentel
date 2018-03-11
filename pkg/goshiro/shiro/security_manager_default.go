@@ -23,7 +23,6 @@ import (
 type defaultSecurityManager struct {
 	realms          []Realm // All backend realms
 	roleManager     RoleManager
-	policyManager   PolicyManager
 	resourceManager ResourceManager
 }
 
@@ -31,7 +30,6 @@ func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm)
 	return &defaultSecurityManager{
 		realms:          realm,
 		roleManager:     NewRoleManager(adaptor),
-		policyManager:   NewPolicyManager(adaptor),
 		resourceManager: NewResourceManager(adaptor),
 	}, nil
 }
@@ -48,22 +46,6 @@ func (w *defaultSecurityManager) GetRealm(realmName string) Realm {
 		}
 	}
 	return nil
-}
-
-func (w *defaultSecurityManager) AddPolicies(policies []AuthorizePolicy) {
-	w.policyManager.AddPolicies(policies)
-}
-
-func (w *defaultSecurityManager) RemovePolicy(policy AuthorizePolicy) {
-	w.policyManager.RemovePolicy(policy)
-}
-
-func (w *defaultSecurityManager) GetPolicy(path string) (AuthorizePolicy, error) {
-	return w.policyManager.GetPolicy(path)
-}
-
-func (w *defaultSecurityManager) GetAllPolicies() []AuthorizePolicy {
-	return w.policyManager.GetAllPolicies()
 }
 
 func (w *defaultSecurityManager) Login(token AuthenticationToken) (Subject, error) {
@@ -108,7 +90,7 @@ func anySliceElementInSlice(slice1, slice2 []string) bool {
 	return false
 }
 
-func (w *defaultSecurityManager) getPrincipalsPermissions(principals PrincipalCollection) []Permission {
+func (w *defaultSecurityManager) GetPrincipalsPermissions(principals PrincipalCollection) []Permission {
 	return []Permission{}
 }
 
@@ -119,7 +101,7 @@ func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource, 
 	if token != nil {
 		// get principals and roles
 		if principals := w.getPrincipals(token); !principals.IsEmpty() {
-			permissions := w.getPrincipalsPermissions(principals)
+			permissions := w.GetPrincipalsPermissions(principals)
 			for _, permission := range permissions {
 				if permission.Implies(resource, action) {
 					return nil

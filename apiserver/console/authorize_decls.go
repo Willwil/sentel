@@ -12,9 +12,9 @@
 
 package console
 
-import "github.com/cloustone/sentel/pkg/goshiro/shiro"
+import "github.com/cloustone/sentel/apiserver/base"
 
-var consoleApiPolicies = []shiro.AuthorizePolicy{
+var consoleApiPolicies = []base.AuthorizePolicy{
 	// v1api.CreateProduct
 	{
 		Path:     "/iot/api/v1/console/products",

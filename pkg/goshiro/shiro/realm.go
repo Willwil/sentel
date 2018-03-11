@@ -20,6 +20,4 @@ type Realm interface {
 	Supports(token AuthenticationToken) bool
 	// GetPrincipal return subject's principals
 	GetPrincipals(token AuthenticationToken) PrincipalCollection
-	// AddRoles add new roles for specified principal
-	AddRoles(principal Principal, roles []string)
 }
