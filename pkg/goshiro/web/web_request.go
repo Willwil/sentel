@@ -26,6 +26,7 @@ type WebRequest struct {
 	path     string
 	resource string
 	action   string
+	ctx      echo.Context
 }
 
 func NewRequest(mgr shiro.SecurityManager, ctx echo.Context) (shiro.Request, error) {
@@ -65,9 +66,11 @@ func NewRequest(mgr shiro.SecurityManager, ctx echo.Context) (shiro.Request, err
 		path:     ctx.Path(),
 		resource: resource,
 		action:   action,
+		ctx:      ctx,
 	}, nil
 }
 
-func (w *WebRequest) GetPath() string     { return w.path }
-func (w *WebRequest) GetAction() string   { return w.action }
-func (w *WebRequest) GetResource() string { return w.resource }
+func (w *WebRequest) GetPath() string                           { return w.path }
+func (w *WebRequest) GetAction() string                         { return w.action }
+func (w *WebRequest) GetResource() string                       { return w.resource }
+func (w *WebRequest) GetResourceContext() shiro.ResourceContext { return w.ctx }

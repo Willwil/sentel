@@ -17,6 +17,7 @@ type Principal interface {
 	GetRealmName() string
 	GetRoles() []string
 	GetCrenditals() string
+	AddRoles([]string)
 }
 
 type simplePrincipal struct {
@@ -26,9 +27,11 @@ type simplePrincipal struct {
 	roles         []string
 }
 
-func NewPrincipal(crendital string, realmName string) Principal {
+func NewPrincipal(name string, realmName string) Principal {
 	return &simplePrincipal{
-		roles: []string{},
+		principalName: name,
+		roles:         []string{},
+		realmName:     realmName,
 	}
 }
 
@@ -36,3 +39,6 @@ func (p *simplePrincipal) Name() string          { return p.principalName }
 func (p *simplePrincipal) GetRealmName() string  { return p.realmName }
 func (p *simplePrincipal) GetCrenditals() string { return p.crenditals }
 func (p *simplePrincipal) GetRoles() []string    { return p.roles }
+func (p *simplePrincipal) AddRoles(roles []string) {
+	p.roles = append(p.roles, roles...)
+}

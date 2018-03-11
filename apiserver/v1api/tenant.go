@@ -38,6 +38,7 @@ func RegisterTenant(ctx echo.Context) error {
 		TenantId:  req.TenantId,
 		Password:  req.Password,
 		CreatedAt: time.Now(),
+		Roles:     []string{"tenant"},
 	}
 	r := getRegistry(ctx)
 	if err := r.RegisterTenant(&t); err != nil {

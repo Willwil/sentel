@@ -16,4 +16,5 @@ type Request interface {
 	GetPath() string
 	GetAction() string
 	GetResource() string
+	GetResourceContext() ResourceContext
 }

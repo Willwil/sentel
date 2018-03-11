@@ -45,9 +45,10 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 	r, err := registry.New(p.config)
 	if err == nil {
 		defer r.Close()
-		if _, err := r.GetTenant(principalName); err == nil {
+		if tenant, err := r.GetTenant(principalName); err == nil {
 			// construct new principals
 			principal := shiro.NewPrincipal(principalName, p.GetName())
+			principal.AddRoles(tenant.Roles)
 			principals.Add(principal, p.GetName())
 		}
 	}

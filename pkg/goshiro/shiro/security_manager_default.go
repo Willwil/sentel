@@ -106,6 +106,22 @@ func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject,
 	return nil, errors.New("invalid token")
 }
 
+// getPrincipals return authentication token's principals
+func (w *defaultSecurityManager) getPrincipals(token AuthenticationToken) PrincipalCollection {
+	principals := NewPrincipalCollection()
+	if token.IsAuthenticated() {
+		for _, r := range w.realms {
+			if r.Supports(token) {
+				pps := r.GetPrincipals(token)
+				if !pps.IsEmpty() {
+					principals.AddAll(pps)
+				}
+			}
+		}
+	}
+	return principals
+}
+
 func (w *defaultSecurityManager) GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error) {
 	if subject, err := w.GetSubject(token); err == nil {
 		principals := subject.GetPrincipals()
@@ -127,19 +143,29 @@ func (w *defaultSecurityManager) GetAuthorizationInfo(token AuthenticationToken)
 // Save save the subject into session or local system
 func (w *defaultSecurityManager) Save(subject Subject) {}
 
+func anySliceElementInSlice(slice1, slice2 []string) bool {
+	for _, elem1 := range slice1 {
+		for _, elem2 := range slice2 {
+			if elem1 == elem2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
 func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Request) error {
-	if req != nil {
-		if authorizeInfo, err := w.GetAuthorizationInfo(token); err == nil {
-			roles := authorizeInfo.GetRoles()
-			action := req.GetAction()
+	if token != nil && req != nil {
+		// get principals and roles
+		if principals := w.getPrincipals(token); !principals.IsEmpty() {
 			resource := req.GetResource()
-			for _, role := range roles {
-				if role.Implies(action, resource) {
-					return nil
-				}
+			resourceRoles := w.resourceManager.GetResourceRoleNames(resource)
+			principalRoles := w.roleManager.GetPrincipalsRoleNames(principals)
+			if anySliceElementInSlice(principalRoles, resourceRoles) {
+				return nil
 			}
 		}
 	}
@@ -147,45 +173,29 @@ func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Reques
 }
 
 // AddRole add role with permission into realm
-func (p *defaultSecurityManager) AddRole(r Role) {
-	if p.roleManager != nil {
-		p.roleManager.AddRole(r)
-	}
-}
+func (p *defaultSecurityManager) AddRole(r Role) { p.roleManager.AddRole(r) }
 
 // RemoveRole remove specified role from realm
 func (p *defaultSecurityManager) RemoveRole(roleName string) {
-	if p.roleManager != nil {
-		p.roleManager.RemoveRole(roleName)
-	}
+	p.roleManager.RemoveRole(roleName)
 }
 
 // GetRole return role's detail information
 func (p *defaultSecurityManager) GetRole(roleName string) *Role {
-	if p.roleManager != nil {
-		return p.roleManager.GetRole(roleName)
-	}
-	return nil
+	return p.roleManager.GetRole(roleName)
 }
 
 // AddRolePermission add permissions to a role
 func (p *defaultSecurityManager) AddRolePermissions(roleName string, permissions []Permission) {
-	if p.roleManager != nil {
-		p.roleManager.AddRolePermissions(roleName, permissions)
-	}
+	p.roleManager.AddRolePermissions(roleName, permissions)
 }
 
 // RemoveRolePermissions remove permission from role
 func (p *defaultSecurityManager) RemoveRolePermissions(roleName string, permissions []Permission) {
-	if p.roleManager != nil {
-		p.roleManager.RemoveRolePermissions(roleName, permissions)
-	}
+	p.roleManager.RemoveRolePermissions(roleName, permissions)
 }
 
 // GetRolePermission return specfied role's all permissions
 func (p *defaultSecurityManager) GetRolePermissions(roleName string) []Permission {
-	if p.roleManager != nil {
-		return p.roleManager.GetRolePermissions(roleName)
-	}
-	return []Permission{}
+	return p.roleManager.GetRolePermissions(roleName)
 }

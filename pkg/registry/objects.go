@@ -20,6 +20,7 @@ type Tenant struct {
 	Password  string    `bson:"Password"`
 	CreatedAt time.Time `bson:"CreatedAt"`
 	UpdatedAt time.Time `bson:"UpdatedAt"`
+	Roles     []string  `bons:"Roles"`
 }
 
 // Product

@@ -12,15 +12,25 @@
 
 package shiro
 
-type Resource struct {
-	Name string `json:"name" bson:"Name"`
+type ResourceContext interface {
+	// Param returns path parameter by name.
+	Param(name string) string
+	// Get retrieves data from the context.
+	Get(key string) interface{}
 }
 
+type Resource struct {
+	Name  string `json:"name" bson:"Name"`
+	Roles string `json:"roles" bson:"Roles"`
+}
+
+// ResourceManager manage what resource we have and resource's role
 type ResourceManager interface {
 	GetAllResources() []Resource
 	GetResource(name string) (Resource, error)
 	AddResource(Resource)
 	RemoveResource(Resource)
+	GetResourceRoleNames(resourceName string) []string
 }
 
 func NewResourceManager(adaptor Adaptor) ResourceManager {

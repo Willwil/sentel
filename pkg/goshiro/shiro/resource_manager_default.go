@@ -26,3 +26,6 @@ func (r *defaultResourceManager) GetResource(name string) (Resource, error) {
 }
 func (r *defaultResourceManager) AddResource(Resource)    {}
 func (r *defaultResourceManager) RemoveResource(Resource) {}
+func (r *defaultResourceManager) GetResourceRoleNames(resourceName string) []string {
+	return []string{}
+}
