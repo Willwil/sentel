@@ -12,20 +12,54 @@
 
 package shiro
 
+import "fmt"
+
 type defaultPolicyManager struct {
-	adaptor Adaptor
+	policies []AuthorizePolicy
+	adaptor  Adaptor
 }
 
 // AddPolicies load authorization policies
-func (p *defaultPolicyManager) AddPolicies([]AuthorizePolicy) {}
+func (p *defaultPolicyManager) AddPolicies(policies []AuthorizePolicy) {
+	p.policies = append(p.policies, policies...)
+	if p.adaptor != nil {
+		for _, policy := range policies {
+			p.adaptor.AddPolicy(policy)
+		}
+	}
+}
 
 // RemovePolicy remove specified authorization policy
-func (p *defaultPolicyManager) RemovePolicy(AuthorizePolicy) {}
+func (p *defaultPolicyManager) RemovePolicy(policy AuthorizePolicy) {
+	for index, pp := range p.policies {
+		if pp.Equal(policy) {
+			p.policies = append(p.policies[:index], p.policies[index:]...)
+			if p.adaptor != nil {
+				p.adaptor.RemovePolicy(policy)
+			}
+			return
+		}
+	}
+}
 
 // GetPolicy return specified authorization policy
-func (p *defaultPolicyManager) GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error) {
-	return AuthorizePolicy{}, nil
+func (p *defaultPolicyManager) GetPolicy(path string) (AuthorizePolicy, error) {
+	for _, policy := range p.policies {
+		if policy.Path == path {
+			return policy, nil
+		}
+	}
+	return AuthorizePolicy{}, fmt.Errorf("invalid policy path '%s'", path)
 }
 
 // GetAllPolicies return all authorization policy
-func (p *defaultPolicyManager) GetAllPolicies() []AuthorizePolicy { return []AuthorizePolicy{} }
+func (p *defaultPolicyManager) GetAllPolicies() []AuthorizePolicy {
+	return p.policies
+}
+
+// Reload load all policies from database
+func (p *defaultPolicyManager) Reload() {
+	if p.adaptor != nil {
+		p.policies = p.adaptor.GetAllPolicies()
+	}
+}

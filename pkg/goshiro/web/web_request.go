@@ -23,13 +23,14 @@ import (
 
 // WebRequest is wraper for authorization request based on http.Request
 type WebRequest struct {
+	path     string
 	resource string
 	action   string
 }
 
 func NewRequest(mgr shiro.SecurityManager, ctx echo.Context) (shiro.Request, error) {
 	// get  resource requested from subject
-	policy, err := mgr.GetPolicy(ctx.Path(), ctx)
+	policy, err := mgr.GetPolicy(ctx.Path())
 	if err != nil {
 		return nil, err
 	}
@@ -61,10 +62,12 @@ func NewRequest(mgr shiro.SecurityManager, ctx echo.Context) (shiro.Request, err
 	}
 
 	return &WebRequest{
+		path:     ctx.Path(),
 		resource: resource,
 		action:   action,
 	}, nil
 }
 
+func (w *WebRequest) GetPath() string     { return w.path }
 func (w *WebRequest) GetAction() string   { return w.action }
 func (w *WebRequest) GetResource() string { return w.resource }

@@ -22,7 +22,7 @@ type SecurityManager interface {
 	// RemovePolicy remove specified authorization policy
 	RemovePolicy(AuthorizePolicy)
 	// GetPolicy return specified authorization policy
-	GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error)
+	GetPolicy(path string) (AuthorizePolicy, error)
 	// GetAllPolicies return all authorization policy
 	GetAllPolicies() []AuthorizePolicy
 	// Login authenticate current user and return subject
@@ -31,8 +31,6 @@ type SecurityManager interface {
 	GetSubject(token AuthenticationToken) (Subject, error)
 	// Authorize check wether the subject request is authorized
 	Authorize(token AuthenticationToken, req Request) error
-	// SetAdaptor set persistence adaptor
-	SetAdaptor(Adaptor)
 	// GetAuthorizeInfo return subject's authorization info
 	GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error)
 	// AddRole add role with permission into realm

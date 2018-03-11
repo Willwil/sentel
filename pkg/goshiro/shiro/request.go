@@ -13,15 +13,7 @@
 package shiro
 
 type Request interface {
+	GetPath() string
 	GetAction() string
 	GetResource() string
-}
-
-type RequestContext interface {
-	// Path returns the registered path for the handler.
-	Path() string
-	// Get retrieves data from the context.
-	Get(key string) interface{}
-	// Param returns path parameter by name.
-	Param(name string) string
 }

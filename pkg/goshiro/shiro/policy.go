@@ -27,9 +27,7 @@ type AuthorizePolicy struct {
 }
 
 func (p AuthorizePolicy) Equal(rhs AuthorizePolicy) bool {
-	return (p.Path == rhs.Path &&
-		p.Resource == rhs.Resource &&
-		p.Methods == rhs.Methods)
+	return (p.Path == rhs.Path && p.Resource == rhs.Resource && p.Methods == rhs.Methods)
 }
 
 type PolicyManager interface {
@@ -38,13 +36,16 @@ type PolicyManager interface {
 	// RemovePolicy remove specified authorization policy
 	RemovePolicy(AuthorizePolicy)
 	// GetPolicy return specified authorization policy
-	GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error)
+	GetPolicy(path string) (AuthorizePolicy, error)
 	// GetAllPolicies return all authorization policy
 	GetAllPolicies() []AuthorizePolicy
+	// Reload load all policies from database
+	Reload()
 }
 
 func NewPolicyManager(adaptor Adaptor) PolicyManager {
 	return &defaultPolicyManager{
-		adaptor: adaptor,
+		adaptor:  adaptor,
+		policies: []AuthorizePolicy{},
 	}
 }

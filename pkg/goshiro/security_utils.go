@@ -18,30 +18,24 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/adaptors"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-	"github.com/golang/glog"
 )
 
 func NewSecurityManager(c config.Config, policies []shiro.AuthorizePolicy, realm ...shiro.Realm) shiro.SecurityManager {
-	adaptor, err := NewAdaptor(c)
-	if err != nil {
-		glog.Fatal(err)
-	}
+	adaptor, _ := NewAdaptor(c)
 	securityMgr, _ := shiro.NewDefaultSecurityManager(c, adaptor, realm...)
 	securityMgr.AddPolicies(policies)
 	return securityMgr
 }
 
 func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
-	val, err := c.StringWithSection("security_manager", "adatpor")
-	if err != nil {
-		val = "simple"
-	}
+	val, _ := c.StringWithSection("security_manager", "adatpor")
 	switch val {
 	case "local":
 		return adaptors.NewLocalAdaptor(c)
+	case "mongo":
 	default:
-		return adaptors.NewLocalAdaptor(c)
 	}
+	return adaptors.NewLocalAdaptor(c)
 }
 
 func NewRealm(c config.Config, realmName string) (shiro.Realm, error) {

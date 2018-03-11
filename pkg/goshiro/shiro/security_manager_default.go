@@ -14,7 +14,6 @@ package shiro
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/cloustone/sentel/pkg/config"
 )
@@ -22,9 +21,7 @@ import (
 // defaultSecurityManager is default security manager that manage authorization
 // and authentication
 type defaultSecurityManager struct {
-	realms          []Realm           // All backend realms
-	policies        []AuthorizePolicy // All authorization policies
-	adaptor         Adaptor           // Persistence adaptor
+	realms          []Realm // All backend realms
 	roleManager     RoleManager
 	policyManager   PolicyManager
 	resourceManager ResourceManager
@@ -33,8 +30,6 @@ type defaultSecurityManager struct {
 func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm) (SecurityManager, error) {
 	return &defaultSecurityManager{
 		realms:          realm,
-		policies:        []AuthorizePolicy{},
-		adaptor:         adaptor,
 		roleManager:     NewRoleManager(adaptor),
 		policyManager:   NewPolicyManager(adaptor),
 		resourceManager: NewResourceManager(adaptor),
@@ -55,34 +50,20 @@ func (w *defaultSecurityManager) GetRealm(realmName string) Realm {
 	return nil
 }
 
-func (w *defaultSecurityManager) SetAdaptor(a Adaptor) {
-	w.adaptor = a
-}
-
 func (w *defaultSecurityManager) AddPolicies(policies []AuthorizePolicy) {
-	w.policies = append(w.policies, policies...)
+	w.policyManager.AddPolicies(policies)
 }
 
 func (w *defaultSecurityManager) RemovePolicy(policy AuthorizePolicy) {
-	for index, ap := range w.policies {
-		if policy.Path == ap.Path {
-			w.policies = append(w.policies[:index], w.policies[index:]...)
-			return
-		}
-	}
+	w.policyManager.RemovePolicy(policy)
 }
 
-func (w *defaultSecurityManager) GetPolicy(path string, ctx RequestContext) (AuthorizePolicy, error) {
-	for _, ap := range w.policies {
-		if path == ap.Path {
-			return ap, nil
-		}
-	}
-	return AuthorizePolicy{}, fmt.Errorf("policy '%s' not found", path)
+func (w *defaultSecurityManager) GetPolicy(path string) (AuthorizePolicy, error) {
+	return w.policyManager.GetPolicy(path)
 }
 
 func (w *defaultSecurityManager) GetAllPolicies() []AuthorizePolicy {
-	return w.policies
+	return w.policyManager.GetAllPolicies()
 }
 
 func (w *defaultSecurityManager) Login(token AuthenticationToken) (Subject, error) {
