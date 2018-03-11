@@ -12,243 +12,152 @@
 
 package console
 
-import (
-	"net/http"
-
-	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-)
+import "github.com/cloustone/sentel/pkg/goshiro/shiro"
 
 var consoleApiPolicies = []shiro.AuthorizePolicy{
-	// v1api.LogoutTenant
-	{
-		Path:         "/iot/api/v1/console/tenants/logout",
-		Methods:      http.MethodPost,
-		Resource:     "/logout",
-		AllowedRoles: "tenant",
-	},
-	// v1api.DeleteTenant
-	{
-		Path:         "/iot/api/v1/console/tenants/:tenantId",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId",
-		AllowedRoles: "tenant",
-	},
-	// v1api.GetTenant
-	{
-		Path:         "/iot/api/v1/console/tenants/:tenantId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId",
-		AllowedRoles: "tenant",
-	},
-	// v1api.UpdateTenant
-	{
-		Path:         "/iot/api/v1/console/tenants",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId",
-		AllowedRoles: "tenant",
-	},
-
 	// v1api.CreateProduct
 	{
-		Path:         "/iot/api/v1/console/products",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products",
+		Resource: "/products",
 	},
 	// v1api.RemoveProduct
 	{
-		Path:         "/iot/api/v1/console/products/:productId",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId/products/:productId",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId",
+		Resource: "/products/:productId",
 	},
 	// v1api.UpdateProduct
 	{
-		Path:         "/iot/api/v1/console/products",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products",
+		Resource: "/products",
 	},
 	// v1api.GetProductList
 	{
-		Path:         "/iot/api/v1/console/products",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products",
+		Resource: "/products",
 	},
 	// v1api.GetProduct
 	{
-		Path:         "/iot/api/v1/console/products/:productId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetProductDevices
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devices",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetProductRules
 	{
-		Path:         "/iot/api/v1/console/procuts/:productId/rules",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/procuts/:productId/rules",
+		Resource: "/products/:productId/rules",
 	},
 	// v1api.GetDeviceStatics
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devices/statics",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devices/statics",
+		Resource: "/products/:productId",
 	},
 	// v1api.CreateDevice
 	{
-		Path:         "/iot/api/v1/console/devices",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/devices",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.GetOneDevice
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devics/:deviceId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devics/:deviceId",
+		Resource: "/products/:productId",
 	},
 	// v1api.RemoveDevice
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devicds/:deviceId",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devicds/:deviceId",
+		Resource: "/products/:productId",
 	},
 	// v1api.UpdateDevice
 	{
-		Path:         "/iot/api/v1/console/devices",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products/$ProductId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/devices",
+		Resource: "/products/$ProductId/devices",
 	},
 	// v1api.BulkRegisterDevices
 	{
-		Path:         "/iot/api/v1/console/devices/bulk",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/devices/bulk",
+		Resource: "/products/$ProductId/devices",
 	},
 	// v1api.UpdateShadowDevice
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devices/:deviceId/shadow",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devices/:deviceId/shadow",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetShadowDevice
 	{
-		Path:         "/iot/api/v1/console/products/:productId/devices/:deviceId/shadow",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/devices/:deviceId/shadow",
+		Resource: "/products/:productId",
 	},
 	// v1api.CreateRule
 	{
-		Path:         "/iot/api/v1/console/rules",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/rules",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.RemoveRule
 	{
-		Path:         "/iot/api/v1/console/products/:productId/rules/:ruleName",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId/products/$ProductId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/rules/:ruleName",
+		Resource: "/products/:productId",
 	},
 	// v1api.UpdateRule
 	{
-		Path:         "/iot/api/v1/console/rules",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products/$ProductId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/rules",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.StopRule
 	{
-		Path:         "/iot/api/v1/console/rules/stop",
-		Methods:      http.MethodPut,
-		Resource:     "/tenants/$AccessId/products/$ProductId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/rules/stop",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.GetRule
 	{
-		Path:         "/iot/api/v1/console/products/:productId/rules/:ruleName",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/$ProductId/rules",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/products/:productId/rules/:ruleName",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.CreateTopicFlavor
 	{
-		Path:         "/iot/api/v1/console/topicflavors",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/topicflavors",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors",
+		Resource: "/topicflavors",
 	},
 	// v1api.RemoveTopicFlavor
 	{
-		Path:         "/iot/api/v1/console/topicflavors/products/:productId",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId/topicflavors",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors/products/:productId",
+		Resource: "/topicflavors",
 	},
 	// v1api.GetProductTopicFlavor
 	{
-		Path:         "/iot/api/v1/console/topicflavors/products/:productId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/topicflavors",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors/products/:productId",
+		Resource: "/topicflavors",
 	},
 	// v1api.GetTenantTopicFlavors
 	{
-		Path:         "/iot/api/v1/console/topicflavors/tenants/:tenantId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/topicflavors",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors/tenants/:tenantId",
+		Resource: "/topicflavors",
 	},
 	// v1api.GetBuiltinTopicFlavors
 	{
-		Path:         "/iot/api/v1/console/topicflavors/builtin",
-		Methods:      http.MethodGet,
-		Resource:     "/topicflavors/builtin",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors/builtin",
+		Resource: "/topicflavors",
 	},
 	// v1api.SetProductTopicFlavor
 	{
-		Path:         "/iot/api/v1/console/topicflavors/:productId?flavor=:topicflavor",
-		Methods:      http.MethodPut,
-		Resource:     "/tenants/$AccessId/topicflavors",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/topicflavors/:productId?flavor=:topicflavor",
+		Resource: "/products/:productId",
 	},
 	// v1api.SendMessageToDevice
 	{
-		Path:         "/iot/api/v1/console/message",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/devices/$DeviceId/message",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/message",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.BroadcastProductMessage
 	{
-		Path:         "/iot/api/v1/console/message/broadcast",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/message",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/message/broadcast",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.GetServiceStatics
 	{
-		Path:         "/iot/api/v1/console/service",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/services",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/console/service",
+		Resource: "/services",
 	},
 }

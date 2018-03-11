@@ -12,7 +12,6 @@
 package console
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -32,6 +31,8 @@ import (
 	mw "github.com/labstack/echo/middleware"
 )
 
+var resourceMaps = make(map[string]string)
+
 type consoleService struct {
 	config      config.Config
 	waitgroup   sync.WaitGroup
@@ -42,6 +43,10 @@ type consoleService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	// create resource maps
+	for _, res := range consoleApiPolicies {
+		resourceMaps[res.Path] = res.Resource
+	}
 	realm, err := base.NewAuthorizeRealm(c)
 	if err != nil {
 		return nil, err
@@ -175,21 +180,6 @@ func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
 	}
 }
 
-func (p *consoleService) Authenticate(token shiro.AuthenticationToken) error {
-	principal := token.GetPrincipal().(string)
-	crenditals := token.GetCrenditals().(string)
-	r, err := registry.New(p.config)
-	if err != nil {
-		return err
-	}
-	if t, err := r.GetTenant(principal); err == nil {
-		if t.TenantId == principal && t.Password == crenditals {
-			return nil
-		}
-	}
-	return errors.New("invalid user")
-}
-
 func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
@@ -209,9 +199,11 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			securityManager := base.GetSecurityManager(ctx)
 			accessId := ctx.Get("AccessId").(string)
 			token := web.JWTToken{Username: accessId, Authenticated: true}
-			req, _ := web.NewRequest(securityManager, ctx)
-			if err := securityManager.Authorize(token, req); err != nil {
-				return err
+			resource, action := base.GetRequestInfo(ctx, resourceMaps)
+			if resource != "" {
+				if err := securityManager.Authorize(token, resource, action); err != nil {
+					return err
+				}
 			}
 			return next(ctx)
 		}

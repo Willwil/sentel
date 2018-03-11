@@ -73,32 +73,7 @@ func (w *defaultSecurityManager) Login(token AuthenticationToken) (Subject, erro
 			if !principals.IsEmpty() {
 				pp := principals.GetPrimaryPrincipal()
 				if pp.GetCrenditals() == token.GetCrenditals() { // valid principal found
-					return &delegateSubject{
-						securityMgr:   w,
-						principals:    principals,
-						authenticated: true,
-					}, nil
-				}
-			}
-		}
-	}
-	return nil, errors.New("invalid token")
-}
-
-// GetSubject return the requested subject's principals if it is authenticated
-// The current implementation is simple because jwt or specified request token
-// can be authenticated by itself.
-func (w *defaultSecurityManager) GetSubject(token AuthenticationToken) (Subject, error) {
-	if token.IsAuthenticated() {
-		for _, r := range w.realms {
-			if r.Supports(token) {
-				principals := r.GetPrincipals(token)
-				if !principals.IsEmpty() {
-					return &delegateSubject{
-						securityMgr:   w,
-						principals:    principals,
-						authenticated: true,
-					}, nil
+					return nil, nil
 				}
 			}
 		}
@@ -122,27 +97,6 @@ func (w *defaultSecurityManager) getPrincipals(token AuthenticationToken) Princi
 	return principals
 }
 
-func (w *defaultSecurityManager) GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error) {
-	if subject, err := w.GetSubject(token); err == nil {
-		principals := subject.GetPrincipals()
-		if !principals.IsEmpty() {
-			authInfo := NewAuthorizationInfo(principals)
-			principal := principals.GetPrimaryPrincipal()
-			roles := principal.GetRoles()
-			for _, roleName := range roles {
-				if role := w.roleManager.GetRole(roleName); role != nil {
-					authInfo.AddRole(*role)
-				}
-			}
-			return authInfo, nil
-		}
-	}
-	return nil, errors.New("no valid authorization info")
-}
-
-// Save save the subject into session or local system
-func (w *defaultSecurityManager) Save(subject Subject) {}
-
 func anySliceElementInSlice(slice1, slice2 []string) bool {
 	for _, elem1 := range slice1 {
 		for _, elem2 := range slice2 {
@@ -154,18 +108,22 @@ func anySliceElementInSlice(slice1, slice2 []string) bool {
 	return false
 }
 
+func (w *defaultSecurityManager) getPrincipalsPermissions(principals PrincipalCollection) []Permission {
+	return []Permission{}
+}
+
 // Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
-func (w *defaultSecurityManager) Authorize(token AuthenticationToken, req Request) error {
-	if token != nil && req != nil {
+func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource, action string) error {
+	if token != nil {
 		// get principals and roles
 		if principals := w.getPrincipals(token); !principals.IsEmpty() {
-			resource := req.GetResource()
-			resourceRoles := w.resourceManager.GetResourceRoleNames(resource)
-			principalRoles := w.roleManager.GetPrincipalsRoleNames(principals)
-			if anySliceElementInSlice(principalRoles, resourceRoles) {
-				return nil
+			permissions := w.getPrincipalsPermissions(principals)
+			for _, permission := range permissions {
+				if permission.Implies(resource, action) {
+					return nil
+				}
 			}
 		}
 	}

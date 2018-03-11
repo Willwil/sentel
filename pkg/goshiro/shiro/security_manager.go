@@ -12,6 +12,8 @@
 
 package shiro
 
+type Subject interface{}
+
 type SecurityManager interface {
 	// AddRealm add reams to security manager
 	AddRealm(realm ...Realm)
@@ -27,12 +29,8 @@ type SecurityManager interface {
 	GetAllPolicies() []AuthorizePolicy
 	// Login authenticate current user and return subject
 	Login(AuthenticationToken) (Subject, error)
-	// GetSubject return specified subject by authentication token
-	GetSubject(token AuthenticationToken) (Subject, error)
 	// Authorize check wether the subject request is authorized
-	Authorize(token AuthenticationToken, req Request) error
-	// GetAuthorizeInfo return subject's authorization info
-	GetAuthorizationInfo(token AuthenticationToken) (AuthorizationInfo, error)
+	Authorize(token AuthenticationToken, resource, action string) error
 	// AddRole add role with permission into realm
 	AddRole(r Role)
 	// RemoveRole remove specified role from realm

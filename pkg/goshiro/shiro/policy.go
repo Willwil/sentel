@@ -20,14 +20,14 @@ const (
 )
 
 type AuthorizePolicy struct {
-	Path         string `json:"path" bson:"Path"`
-	Resource     string `json:"resource" bson:"AuthorizePolicy"`
-	Methods      string `json:"method" bson:"Method"`
-	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
+	Path     string `json:"path" bson:"Path"`
+	Resource string `json:"resource" bson:"AuthorizePolicy"`
+	//	Methods      string `json:"method" bson:"Method"`
+	//	AllowedRoles string `json:"allowedRoles" bson:"AllowedRoles"`
 }
 
 func (p AuthorizePolicy) Equal(rhs AuthorizePolicy) bool {
-	return (p.Path == rhs.Path && p.Resource == rhs.Resource && p.Methods == rhs.Methods)
+	return (p.Path == rhs.Path && p.Resource == rhs.Resource)
 }
 
 type PolicyManager interface {

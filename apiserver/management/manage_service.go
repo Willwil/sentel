@@ -12,7 +12,6 @@
 package management
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -42,7 +41,14 @@ type managementService struct {
 
 type ServiceFactory struct{}
 
+var resourceMaps = make(map[string]string)
+
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	// create resource maps
+	for _, res := range mngApiPolicies {
+		resourceMaps[res.Path] = res.Resource
+	}
+
 	// loading customized realm
 	realm, err := base.NewAuthorizeRealm(c)
 	if err != nil {
@@ -135,21 +141,6 @@ func (p *managementService) Stop() {
 	p.waitgroup.Wait()
 }
 
-func (p *managementService) Authenticate(token shiro.AuthenticationToken) error {
-	principal := token.GetPrincipal().(string)
-	crenditals := token.GetCrenditals().(string)
-	r, err := registry.New(p.config)
-	if err != nil {
-		return err
-	}
-	if t, err := r.GetTenant(principal); err == nil {
-		if t.TenantId == principal && t.Password == crenditals {
-			return nil
-		}
-	}
-	return errors.New("invalid user")
-}
-
 func authenticationWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
@@ -169,10 +160,13 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
 			token := web.NewRequestToken(ctx)
-			req, _ := web.NewRequest(securityManager, ctx)
-			if err := securityManager.Authorize(token, req); err != nil {
-				return err
+			resource, action := base.GetRequestInfo(ctx, resourceMaps)
+			if resource != "" {
+				if err := securityManager.Authorize(token, resource, action); err != nil {
+					return err
+				}
 			}
+
 			return next(ctx)
 		}
 	}

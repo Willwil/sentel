@@ -12,6 +12,9 @@
 package base
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	jwt "github.com/dgrijalva/jwt-go"
@@ -31,4 +34,35 @@ type ApiJWTClaims struct {
 
 func GetSecurityManager(ctx echo.Context) shiro.SecurityManager {
 	return ctx.(*ApiContext).SecurityMgr
+}
+
+func GetRequestInfo(ctx echo.Context, resourceMaps map[string]string) (string, string) {
+	action := ""
+	switch ctx.Request().Method {
+	case http.MethodGet:
+		action = shiro.ActionRead
+	default:
+		action = shiro.ActionWrite
+	}
+	if resourceName, found := resourceMaps[ctx.Path()]; found {
+		// generate the requested real resource, using parameter from context to replace identifier in resource field
+		resource := "/"
+		items := strings.Split(resourceName, "/")
+		for _, item := range items {
+			switch item[0] {
+			case '$':
+				val := ctx.Get(item[1:]).(string)
+				resource += val
+				resource += "/"
+			case ':':
+				val := ctx.Param(item[1:])
+				resource += val
+				resource += "/"
+			}
+			strings.TrimRight(resource, "/")
+		}
+
+		return resource, action
+	}
+	return "", action
 }

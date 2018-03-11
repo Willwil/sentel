@@ -12,132 +12,94 @@
 
 package management
 
-import (
-	"net/http"
-
-	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-)
+import "github.com/cloustone/sentel/pkg/goshiro/shiro"
 
 var mngApiPolicies = []shiro.AuthorizePolicy{
 	// v1api.CreateProduct
 	{
-		Path:         "/iot/api/v1/products",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products",
+		Resource: "/products",
 	},
 	// v1api.UpdateProduct
 	{
-		Path:         "/iot/api/v1/products/:productId",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId",
+		Resource: "/products",
 	},
 	// v1api.GetProductDevices
 	{
-		Path:         "/iot/api/v1/products/:productId/devices",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.CreateDevice
 	{
-		Path:         "/iot/api/v1/products/:productId/devices",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.BulkApplyDevices
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/bulk",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/bulk",
+		Resource: "/products/:productId",
 	},
 	// v1api.BulkApplyGetStatus
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/bulk/:deviceId",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/bulk/:deviceId",
+		Resource: "/products/:productId",
 	},
 	// v1api.BulkApplyGetDevices
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/bulk",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/bulk",
+		Resource: "/products/:productId",
 	},
 	// v1api.BulkApplyGetDeviceStatus
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/bulk/status",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/bulk/status",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetDeviceList
 	{
-		Path:         "/iot/api/v1/products/:productId/devices",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetDeviceByName
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/:deviceName",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/:deviceName",
+		Resource: "/products/:productId",
 	},
 
 	// v1api.SaveDevicePropsByName
 	{
-		Path:         "/iot/api/v1/products/:productId/devics/:deviceId/props",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/:productId/devices/:deviceId/props",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devics/:deviceId/props",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetDevicePropsByName
 	{
-		Path:         "/iot/api/v1/products/:productId/devics/:deviceId/props",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/$AccessId/products/:productId/devices/:deviceId/props",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devics/:deviceId/props",
+		Resource: "/products/:productId",
 	},
 	// v1api.RemoveDevicePropsByName
 	{
-		Path:         "/iot/api/v1/products/:productId/devics/:deviceId/props",
-		Methods:      http.MethodDelete,
-		Resource:     "/tenants/$AccessId/products/:productId/devices/:deviceId/props",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devics/:deviceId/props",
+		Resource: "/products/:productId",
 	},
 
 	// v1api.UpdateShadowDevice
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/:deviceId/shadow",
-		Methods:      http.MethodPatch,
-		Resource:     "/tenants/$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/:deviceId/shadow",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetShadowDevice
 	{
-		Path:         "/iot/api/v1/products/:productId/devices/:deviceId/shadow",
-		Methods:      http.MethodGet,
-		Resource:     "/tenants/:$AccessId/products/:productId/devices",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/products/:productId/devices/:deviceId/shadow",
+		Resource: "/products/:productId",
 	},
 	// v1api.SendMessageToDevice
 	{
-		Path:         "/iot/api/v1/message",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/devices/$DeviceId/message",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/message",
+		Resource: "/products/:productId",
 	},
 	// v1api.BroadcastProductMessage
 	{
-		Path:         "/iot/api/v1/message/broadcast",
-		Methods:      http.MethodPost,
-		Resource:     "/tenants/$AccessId/products/$ProductId/message",
-		AllowedRoles: "tenant",
+		Path:     "/iot/api/v1/message/broadcast",
+		Resource: "/products/:productId",
 	},
 }
