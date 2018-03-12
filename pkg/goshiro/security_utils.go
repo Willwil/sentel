@@ -16,7 +16,6 @@ import (
 	"errors"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/goshiro/adaptors"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
@@ -30,11 +29,11 @@ func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
 	val, _ := c.StringWithSection("security_manager", "adatpor")
 	switch val {
 	case "local":
-		return adaptors.NewLocalAdaptor(c)
+		return shiro.NewLocalAdaptor(c)
 	case "mongo":
 	default:
 	}
-	return adaptors.NewLocalAdaptor(c)
+	return shiro.NewLocalAdaptor(c)
 }
 
 func NewRealm(c config.Config, realmName string) (shiro.Realm, error) {

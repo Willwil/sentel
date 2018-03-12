@@ -10,4 +10,15 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package adaptors
+package shiro
+
+func anySliceElementInSlice(slice1, slice2 []string) bool {
+	for _, elem1 := range slice1 {
+		for _, elem2 := range slice2 {
+			if elem1 == elem2 {
+				return true
+			}
+		}
+	}
+	return false
+}

@@ -28,8 +28,9 @@ const (
 )
 
 type Permission struct {
-	Resources []string `json:"resources" bson:"Resources"`
-	Actions   string   `json:"actions" bson:"Actions"`
+	PermissionId string   `json:"permissionId" bson:"PermissionId"`
+	Resources    []string `json:"resources" bson:"Resources"`
+	Actions      string   `json:"actions" bson:"Actions"`
 }
 
 // NewPermission create permission object from string presentation, such as

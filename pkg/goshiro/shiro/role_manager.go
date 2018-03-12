@@ -20,16 +20,18 @@ type RoleManager interface {
 	AddRole(Role)
 	// RemoveRole remove specified role from realm
 	RemoveRole(roleName string)
+	// RemovePrincipalRoles remove principal's roles
+	RemovePrincipalRoles(Principal)
 	// GetRole return role's detail information
 	GetRole(roleName string) *Role
 	// AddRolePermission add permissions to a role
-	AddRolePermissions(roleName string, permissions []Permission)
+	AddRolePermissions(roleName string, permissions []string)
 	// RemoveRolePermissions remove permission from role
-	RemoveRolePermissions(roleName string, permissions []Permission)
+	RemoveRolePermissions(roleName string, permissions []string)
 	// GetRolePermission return specfied role's all permissions
-	GetRolePermissions(roleName string) []Permission
-	// GetRolePermission return specfied role's all permissions
-	GetRolesPermissions(roleNames []string) []Permission
+	GetRolePermissions(roleName string) []string
+	// GetRolePermission return specfied role's all permissions identifier
+	GetRolesPermissions(roleNames []string) []string
 	// GetPrincipalsRoles return principals roles
 	GetPrincipalsRoles(PrincipalCollection) []Role
 	// GetPrincipalRoles return principal's roles
@@ -38,8 +40,6 @@ type RoleManager interface {
 	GetPrincipalsRoleNames(PrincipalCollection) []string
 	// GetPrincipalRoles return principal's role names
 	GetPrincipalRoleNames(Principal) []string
-	// GetPrincipalsPermissions return principals's permissions
-	GetPrincipalsPermissions(PrincipalCollection) []Permission
 }
 
 func NewRoleManager(adaptor Adaptor) RoleManager {
@@ -75,30 +75,30 @@ func (r *roleManager) GetRole(roleName string) *Role {
 }
 
 // AddRolePermission add permissions to a role
-func (r *roleManager) AddRolePermissions(roleName string, permissions []Permission) {
+func (r *roleManager) AddRolePermissions(roleName string, permissions []string) {
 	if r.adaptor != nil {
 		r.adaptor.AddRolePermissions(roleName, permissions)
 	}
 }
 
 // RemoveRolePermissions remove permission from role
-func (r *roleManager) RemoveRolePermissions(roleName string, permissions []Permission) {
+func (r *roleManager) RemoveRolePermissions(roleName string, permissions []string) {
 	if r.adaptor != nil {
 		r.adaptor.RemoveRolePermissions(roleName, permissions)
 	}
 }
 
 // GetRolePermissions return specfied role's all permissions
-func (r *roleManager) GetRolePermissions(roleName string) []Permission {
+func (r *roleManager) GetRolePermissions(roleName string) []string {
 	if r.adaptor != nil {
 		return r.adaptor.GetRolePermissions(roleName)
 	}
-	return []Permission{}
+	return []string{}
 }
 
 // GetRolesPermissions return specfied role's all permissions
-func (r *roleManager) GetRolesPermissions(roleNames []string) []Permission {
-	return []Permission{}
+func (r *roleManager) GetRolesPermissions(roleNames []string) []string {
+	return []string{}
 }
 
 func (r *roleManager) GetPrincipalsRoles(principals PrincipalCollection) []Role {
@@ -117,6 +117,5 @@ func (r *roleManager) GetPrincipalRoleNames(principal Principal) []string {
 	return []string{}
 }
 
-func (r *roleManager) GetPrincipalsPermissions(principals PrincipalCollection) []Permission {
-	return []Permission{}
+func (r *roleManager) RemovePrincipalRoles(Principal) {
 }

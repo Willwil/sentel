@@ -21,27 +21,33 @@ import (
 // defaultSecurityManager is default security manager that manage authorization
 // and authentication
 type defaultSecurityManager struct {
-	realms      []Realm // All backend realms
-	roleManager RoleManager
+	realms            map[string]Realm // All backend realms
+	roleManager       RoleManager
+	permissionManager PermissionManager
 }
 
 func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm) (SecurityManager, error) {
+	realms := make(map[string]Realm)
+	for _, r := range realm {
+		realms[r.GetName()] = r
+	}
 	return &defaultSecurityManager{
-		realms:      realm,
-		roleManager: NewRoleManager(adaptor),
+		realms:            realms,
+		roleManager:       NewRoleManager(adaptor),
+		permissionManager: NewPermissionManager(adaptor),
 	}, nil
 }
 
-func (w *defaultSecurityManager) AddRealm(r ...Realm) {
-	w.realms = append(w.realms, r...)
+func (w *defaultSecurityManager) AddRealm(realm ...Realm) {
+	for _, r := range realm {
+		w.realms[r.GetName()] = r
+	}
 }
 
 // GetRealm return specified realm by realm name
 func (w *defaultSecurityManager) GetRealm(realmName string) Realm {
-	for _, r := range w.realms {
-		if r.GetName() == realmName {
-			return r
-		}
+	if realm, found := w.realms[realmName]; found {
+		return realm
 	}
 	return nil
 }
@@ -77,28 +83,23 @@ func (w *defaultSecurityManager) getPrincipals(token AuthenticationToken) Princi
 	return principals
 }
 
-func anySliceElementInSlice(slice1, slice2 []string) bool {
-	for _, elem1 := range slice1 {
-		for _, elem2 := range slice2 {
-			if elem1 == elem2 {
-				return true
-			}
-		}
-	}
-	return false
+func (w *defaultSecurityManager) RemovePrincipal(principal Principal) {
+	w.roleManager.RemovePrincipalRoles(principal)
+	w.permissionManager.RemovePrincipal(principal)
 }
 
-func (w *defaultSecurityManager) RemovePrincipal(principal Principal) {}
 func (w *defaultSecurityManager) GetPrincipalsPermissions(principals PrincipalCollection) []Permission {
-	return []Permission{}
+	return w.permissionManager.GetPrincipalsPermissions(principals)
 }
 
 // AddPrincipalPermissions add permissions for principals
 func (w *defaultSecurityManager) AddPrincipalPermissions(principal Principal, permissions []Permission) {
+	w.permissionManager.AddPrincipalPermissions(principal, permissions)
 }
 
 // RemovePrincipalPermissions remove principals's permissions
 func (w *defaultSecurityManager) RemovePrincipalPermissions(principal Principal, permissions []Permission) {
+	w.permissionManager.RemovePrincipalPermissions(principal, permissions)
 }
 
 // Authorize check wether the subject is authorized with the request
@@ -120,7 +121,9 @@ func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource, 
 }
 
 // AddRole add role with permission into realm
-func (p *defaultSecurityManager) AddRole(r Role) { p.roleManager.AddRole(r) }
+func (p *defaultSecurityManager) AddRole(r Role) {
+	p.roleManager.AddRole(r)
+}
 
 // RemoveRole remove specified role from realm
 func (p *defaultSecurityManager) RemoveRole(roleName string) {
@@ -134,15 +137,16 @@ func (p *defaultSecurityManager) GetRole(roleName string) *Role {
 
 // AddRolePermission add permissions to a role
 func (p *defaultSecurityManager) AddRolePermissions(roleName string, permissions []Permission) {
-	p.roleManager.AddRolePermissions(roleName, permissions)
+	//p.roleManager.AddRolePermissions(roleName, permissions)
 }
 
 // RemoveRolePermissions remove permission from role
 func (p *defaultSecurityManager) RemoveRolePermissions(roleName string, permissions []Permission) {
-	p.roleManager.RemoveRolePermissions(roleName, permissions)
+	//p.roleManager.RemoveRolePermissions(roleName, permissions)
 }
 
 // GetRolePermission return specfied role's all permissions
 func (p *defaultSecurityManager) GetRolePermissions(roleName string) []Permission {
-	return p.roleManager.GetRolePermissions(roleName)
+	//return p.roleManager.GetRolePermissions(roleName)
+	return nil
 }

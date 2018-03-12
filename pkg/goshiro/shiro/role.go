@@ -14,31 +14,26 @@ package shiro
 
 // Role contains permissions for specified resource
 type Role struct {
-	Name        string       `json:"name" bson:"Name"`
-	Permissions []Permission `json:"permissions" bson:"Permissions"`
+	Name          string   `json:"name" bson:"Name"`
+	PermissionIds []string `json:"permissionIds" bson:"PermissionIds"`
 }
 
 func NewRole(roleName string) *Role {
-	return &Role{Name: roleName, Permissions: []Permission{}}
+	return &Role{Name: roleName, PermissionIds: []string{}}
 }
 
-func NewRoleWithPermissions(roleName string, perms []Permission) *Role {
-	return &Role{Name: roleName, Permissions: perms}
+func NewRoleWithPermissions(roleName string, perms []string) *Role {
+	return &Role{Name: roleName, PermissionIds: perms}
 }
 
 func (r *Role) Implies(action string, resource string) bool {
-	for _, permission := range r.Permissions {
-		if permission.Implies(action, resource) {
-			return true
-		}
-	}
 	return false
 }
 
-func (r *Role) AddPermission(perm Permission) {
-	r.Permissions = append(r.Permissions, perm)
+func (r *Role) AddPermission(permid string) {
+	r.PermissionIds = append(r.PermissionIds, permid)
 }
 
-func (r *Role) AddPermissions(perms []Permission) {
-	r.Permissions = append(r.Permissions, perms...)
+func (r *Role) AddPermissions(permids []string) {
+	r.PermissionIds = append(r.PermissionIds, permids...)
 }
