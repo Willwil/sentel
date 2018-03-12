@@ -10,27 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package shiro
-
-import "github.com/cloustone/sentel/pkg/config"
-
-type CacheManager struct {
-	caches map[string]*Cache
-}
-
-type Cache interface {
-	Add(key interface{}, data interface{})
-	Delete(key interface{})
-	Exists(key interface{}) bool
-	Value(key interface{}) interface{}
-}
-
-func NewCacheManager(c config.Config) CacheManager {
-	return CacheManager{
-		caches: make(map[string]*Cache),
-	}
-}
-
-func (c *CacheManager) NewCache(cacheName string) *Cache {
-	return nil
-}
+package cache

@@ -405,6 +405,12 @@
 			"revisionTime": "2017-05-23T03:00:23Z"
 		},
 		{
+			"checksumSHA1": "RLMP+uQ/we1FYHAFybDLip7MzQU=",
+			"path": "github.com/muesli/cache2go",
+			"revision": "8aa719565ae310a630e37b78c57be63c3c68a617",
+			"revisionTime": "2018-02-21T03:31:37Z"
+		},
+		{
 			"checksumSHA1": "JU+kcMNB8CPi7DJmxK5E3vpNxcg=",
 			"path": "github.com/olivere/elastic",
 			"revision": "eb69fbabfd6151d6c0f6d3d850d4f61edcff3763",

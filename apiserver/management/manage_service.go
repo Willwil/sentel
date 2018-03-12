@@ -58,6 +58,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	securityMgr.Load()
 	return &managementService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
@@ -165,10 +166,8 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			securityManager := base.GetSecurityManager(ctx)
 			token := web.NewRequestToken(ctx)
 			resource, action := base.GetRequestInfo(ctx, resourceMaps)
-			if resource != "" {
-				if err := securityManager.Authorize(token, resource, action); err != nil {
-					return err
-				}
+			if err := securityManager.Authorize(token, resource, action); err != nil {
+				return err
 			}
 
 			return next(ctx)

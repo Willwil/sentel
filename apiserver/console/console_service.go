@@ -55,6 +55,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	securityMgr.Load()
 
 	return &consoleService{
 		config:      c,
@@ -205,10 +206,8 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			accessId := ctx.Get("AccessId").(string)
 			token := web.JWTToken{Username: accessId, Authenticated: true}
 			resource, action := base.GetRequestInfo(ctx, resourceMaps)
-			if resource != "" {
-				if err := securityManager.Authorize(token, resource, action); err != nil {
-					return err
-				}
+			if err := securityManager.Authorize(token, resource, action); err != nil {
+				return err
 			}
 			return next(ctx)
 		}

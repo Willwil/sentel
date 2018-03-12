@@ -26,7 +26,7 @@ type defaultSecurityManager struct {
 	permissionManager PermissionManager
 }
 
-func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, cacheManager CacheManager, realm ...Realm) (SecurityManager, error) {
+func newDefaultSecurityManager(c config.Config, adaptor Adaptor, cacheManager CacheManager, realm ...Realm) (SecurityManager, error) {
 	realms := make(map[string]Realm)
 	for _, r := range realm {
 		realms[r.GetName()] = r
@@ -36,6 +36,9 @@ func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, cacheManager Ca
 		roleManager:       NewRoleManager(adaptor, cacheManager),
 		permissionManager: NewPermissionManager(adaptor, cacheManager),
 	}, nil
+}
+
+func (w *defaultSecurityManager) Load() {
 }
 
 func (w *defaultSecurityManager) AddRealm(realm ...Realm) {
@@ -105,7 +108,11 @@ func (w *defaultSecurityManager) RemovePrincipalPermissions(principal Principal,
 // Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
-func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource, action string) error {
+func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource string, action string) error {
+	// if no resource is requested, the authorization is ok
+	if resource == "" {
+		return nil
+	}
 	if token != nil {
 		if principals := w.getPrincipals(token); !principals.IsEmpty() {
 			permissions := w.GetPrincipalsPermissions(principals)

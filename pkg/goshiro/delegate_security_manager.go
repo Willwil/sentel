@@ -20,11 +20,13 @@ import (
 	"github.com/cloustone/sentel/pkg/message"
 )
 
+// delegateSecurityManager is delegation of security manager to support kafka
 type delegateSecurityManager struct {
 	consumer message.Consumer
 	delegate shiro.SecurityManager
 }
 
+// newDelegateSecurityManager create security manager supporting distributed security managment
 func newDelegateSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.SecurityManager, error) {
 	delegate, err := shiro.NewSecurityManager(c, realm...)
 	if err != nil {
@@ -49,6 +51,7 @@ func newDelegateSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.Se
 
 }
 
+// messageHandlerFunc is callback to message module when message is received
 func messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	securityMgr := ctx.(*delegateSecurityManager)
 	switch msg.Topic() {
@@ -62,6 +65,7 @@ func messageHandlerFunc(msg message.Message, ctx interface{}) error {
 	return nil
 }
 
+// CreateMessage is MessageFacotory interface method to create customized topic
 func (p *delegateSecurityManager) CreateMessage(topicName string) message.Message {
 	switch topicName {
 	case NameOfPrincipalTopic:
@@ -87,11 +91,14 @@ func (p *delegateSecurityManager) handleRoleTopic(topic *RoleTopic) error {
 	return errors.New("not implemented")
 }
 
+func (p *delegateSecurityManager) Load() {
+	p.delegate.Load()
+}
+
 func (p *delegateSecurityManager) AddRealm(realm ...shiro.Realm) {
 	p.delegate.AddRealm(realm...)
 }
 
-// GetRealm return specified realm by realm name
 func (p *delegateSecurityManager) GetRealm(realmName string) shiro.Realm {
 	return p.delegate.GetRealm(realmName)
 }

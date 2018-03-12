@@ -15,6 +15,8 @@ package shiro
 import "github.com/cloustone/sentel/pkg/config"
 
 type SecurityManager interface {
+	// Load load security metadata from backend if execption occurred
+	Load()
 	// AddRealm add reams to security manager
 	AddRealm(realm ...Realm)
 	// GetRealm return specified realm by realm name
@@ -52,9 +54,6 @@ func NewSecurityManager(c config.Config, realm ...Realm) (SecurityManager, error
 	if err != nil {
 		return nil, err
 	}
-	cacheManager, err := NewCacheManager(c)
-	if err != nil {
-		return nil, err
-	}
-	return NewDefaultSecurityManager(c, adaptor, cacheManager, realm...)
+	cacheManager := NewCacheManager(c)
+	return newDefaultSecurityManager(c, adaptor, cacheManager, realm...)
 }
