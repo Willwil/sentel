@@ -15,7 +15,9 @@ package v1api
 import (
 	"time"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/util"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 
@@ -52,6 +54,14 @@ func CreateProduct(ctx echo.Context) error {
 	if err := r.RegisterProduct(p); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
+	// Create resource in security manager
+	principal := shiro.NewPrincipal(accessId)
+	permissions := []shiro.Permission{
+		shiro.NewPermission(shiro.WritePermission, "/products/"+p.ProductId),
+	}
+	securityManager := base.GetSecurityManager(ctx)
+	securityManager.AddPrincipalPermissions(principal, permissions)
+
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		&message.Product{
@@ -64,12 +74,21 @@ func CreateProduct(ctx echo.Context) error {
 
 // removeProduct delete product from registry store
 func RemoveProduct(ctx echo.Context) error {
+	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
 	r := getRegistry(ctx)
 	if err := r.DeleteProduct(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
+	// Remove resource in security manager
+	principal := shiro.NewPrincipal(accessId)
+	permissions := []shiro.Permission{
+		shiro.NewPermission(shiro.WritePermission, "/products/"+productId),
+	}
+	securityManager := base.GetSecurityManager(ctx)
+	securityManager.RemovePrincipalPermissions(principal, permissions)
+
 	asyncProduceMessage(ctx,
 		&message.Product{
 			TopicName: message.TopicNameProduct,

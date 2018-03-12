@@ -27,7 +27,14 @@ type simplePrincipal struct {
 	roles         []string
 }
 
-func NewPrincipal(name string, realmName string) Principal {
+func NewPrincipal(name string) Principal {
+	return &simplePrincipal{
+		principalName: name,
+		roles:         []string{},
+	}
+}
+
+func NewPrincipalWithRealm(name string, realmName string) Principal {
 	return &simplePrincipal{
 		principalName: name,
 		roles:         []string{},

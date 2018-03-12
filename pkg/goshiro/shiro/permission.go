@@ -21,6 +21,12 @@ const (
 	ActionRemove = "remove"
 )
 
+const (
+	ReadPermission  = "r"
+	WritePermission = "w"
+	AllPermission   = "rw"
+)
+
 type Permission struct {
 	Resources []string `json:"resources" bson:"Resources"`
 	Actions   string   `json:"actions" bson:"Actions"`
@@ -28,7 +34,7 @@ type Permission struct {
 
 // NewPermission create permission object from string presentation, such as
 // "resource1:read,write,update"
-func NewPermission(resources []string, action string) Permission {
+func NewPermission(action string, resources ...string) Permission {
 	return Permission{Resources: resources, Actions: action}
 }
 

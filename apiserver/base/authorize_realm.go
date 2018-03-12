@@ -18,13 +18,9 @@ import (
 	"github.com/cloustone/sentel/pkg/registry"
 )
 
-type AuthorizePolicy struct {
+type ResourceAC struct {
 	Path     string
 	Resource string
-}
-
-func (p AuthorizePolicy) Equal(rhs AuthorizePolicy) bool {
-	return (p.Path == rhs.Path && p.Resource == rhs.Resource)
 }
 
 type AuthorizeRealm struct {
@@ -56,13 +52,10 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 		defer r.Close()
 		if tenant, err := r.GetTenant(principalName); err == nil {
 			// construct new principals
-			principal := shiro.NewPrincipal(principalName, p.GetName())
+			principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
 			principal.AddRoles(tenant.Roles)
 			principals.Add(principal, p.GetName())
 		}
 	}
 	return principals
-}
-
-func (p *AuthorizeRealm) AddRoles(principal shiro.Principal, roles []string) {
 }

@@ -29,10 +29,4 @@ type Adaptor interface {
 	RemoveRolePermissions(roleName string, permissions []Permission)
 	// GetRolePermission return specfied role's all permissions
 	GetRolePermissions(roleName string) []Permission
-
-	// Resource
-	AddResource(Resource)
-	RemoveResource(Resource)
-	GetResource(resourceName string) *Resource
-	GetResources() []Resource
 }

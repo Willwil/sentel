@@ -12,16 +12,33 @@
 
 package shiro
 
-type Subject interface{}
-
 type SecurityManager interface {
 	// AddRealm add reams to security manager
 	AddRealm(realm ...Realm)
 	// GetRealm return specified realm by realm name
 	GetRealm(realmName string) Realm
 	// Login authenticate current user and return subject
-	Login(AuthenticationToken) (Subject, error)
+	Login(AuthenticationToken) (Principal, error)
 	// Authorize check wether the subject request is authorized
 	Authorize(token AuthenticationToken, resource, action string) error
+	// RemovePrincipal remove principal from security manager
+	RemovePrincipal(Principal)
+	// GetPriincipalsPermissions return principals permissions
 	GetPrincipalsPermissions(principals PrincipalCollection) []Permission
+	// AddPrincipalPermissions add permissions for principals
+	AddPrincipalPermissions(principal Principal, permissions []Permission)
+	// RemovePrincipalsPermissions remove principals's permissions
+	RemovePrincipalPermissions(principal Principal, permissions []Permission)
+	// AddRole add role with permission into realm
+	AddRole(r Role)
+	// RemoveRole remove specified role from realm
+	RemoveRole(roleName string)
+	// GetRole return role's detail information
+	GetRole(roleName string) *Role
+	// AddRolePermission add permissions to a role
+	AddRolePermissions(roleName string, permissions []Permission)
+	// RemoveRolePermissions remove permission from role
+	RemoveRolePermissions(roleName string, permissions []Permission)
+	// GetRolePermission return specfied role's all permissions
+	GetRolePermissions(roleName string) []Permission
 }

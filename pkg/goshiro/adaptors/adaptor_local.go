@@ -17,19 +17,16 @@ import (
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-	"github.com/golang/glog"
 )
 
 // LocalAdaptor save policy,role and resource objects in local memory in simple context
 type LocalAdaptor struct {
-	roles     map[string]shiro.Role
-	resources map[string]shiro.Resource
+	roles map[string]shiro.Role
 }
 
 func NewLocalAdaptor(c config.Config) (*LocalAdaptor, error) {
 	return &LocalAdaptor{
-		roles:     make(map[string]shiro.Role),
-		resources: make(map[string]shiro.Resource),
+		roles: make(map[string]shiro.Role),
 	}, nil
 }
 
@@ -76,32 +73,4 @@ func (l *LocalAdaptor) GetRolePermissions(roleName string) []shiro.Permission {
 		permissions = append(permissions, r.Permissions...)
 	}
 	return permissions
-}
-
-func (l *LocalAdaptor) AddResource(r shiro.Resource) {
-	if _, found := l.resources[r.Name]; found {
-		glog.Infof("add same resource '%s' twice", r.Name)
-	}
-	l.resources[r.Name] = r
-}
-
-func (l *LocalAdaptor) RemoveResource(r shiro.Resource) {
-	if _, found := l.resources[r.Name]; found {
-		delete(l.resources, r.Name)
-	}
-}
-
-func (l *LocalAdaptor) GetResource(resourceName string) *shiro.Resource {
-	if r, found := l.resources[resourceName]; found {
-		return &r
-	}
-	return nil
-}
-
-func (l *LocalAdaptor) GetResources() []shiro.Resource {
-	resources := []shiro.Resource{}
-	for _, r := range l.resources {
-		resources = append(resources, r)
-	}
-	return resources
 }

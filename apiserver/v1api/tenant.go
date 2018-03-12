@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/apiserver/base"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
@@ -44,6 +45,14 @@ func RegisterTenant(ctx echo.Context) error {
 	if err := r.RegisterTenant(&t); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
+	// Create relative resource in security manager
+	principal := shiro.NewPrincipal(t.TenantId)
+	permissions := []shiro.Permission{
+		shiro.NewPermission(shiro.AllPermission, "/products/", "/topicflavors"),
+	}
+	securityManager := base.GetSecurityManager(ctx)
+	securityManager.AddPrincipalPermissions(principal, permissions)
+
 	// Notify kafka
 	asyncProduceMessage(ctx,
 		&message.Tenant{

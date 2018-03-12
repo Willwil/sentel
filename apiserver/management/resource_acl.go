@@ -14,7 +14,7 @@ package management
 
 import "github.com/cloustone/sentel/apiserver/base"
 
-var mngApiPolicies = []base.AuthorizePolicy{
+var mngApiPolicies = []base.ResourceAC{
 	// v1api.CreateProduct
 	{
 		Path:     "/iot/api/v1/products",

@@ -14,7 +14,7 @@ package console
 
 import "github.com/cloustone/sentel/apiserver/base"
 
-var consoleApiPolicies = []base.AuthorizePolicy{
+var consoleApiPolicies = []base.ResourceAC{
 	// v1api.CreateProduct
 	{
 		Path:     "/iot/api/v1/console/products",
@@ -73,12 +73,12 @@ var consoleApiPolicies = []base.AuthorizePolicy{
 	// v1api.UpdateDevice
 	{
 		Path:     "/iot/api/v1/console/devices",
-		Resource: "/products/$ProductId/devices",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.BulkRegisterDevices
 	{
 		Path:     "/iot/api/v1/console/devices/bulk",
-		Resource: "/products/$ProductId/devices",
+		Resource: "/products/$ProductId",
 	},
 	// v1api.UpdateShadowDevice
 	{
@@ -123,12 +123,12 @@ var consoleApiPolicies = []base.AuthorizePolicy{
 	// v1api.RemoveTopicFlavor
 	{
 		Path:     "/iot/api/v1/console/topicflavors/products/:productId",
-		Resource: "/topicflavors",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetProductTopicFlavor
 	{
 		Path:     "/iot/api/v1/console/topicflavors/products/:productId",
-		Resource: "/topicflavors",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetTenantTopicFlavors
 	{
