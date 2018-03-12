@@ -21,7 +21,8 @@ import (
 
 func NewSecurityManager(c config.Config, realm ...shiro.Realm) shiro.SecurityManager {
 	adaptor, _ := NewAdaptor(c)
-	securityMgr, _ := shiro.NewDefaultSecurityManager(c, adaptor, realm...)
+	cacheManager, _ := shiro.NewCacheManager(c)
+	securityMgr, _ := shiro.NewDefaultSecurityManager(c, adaptor, cacheManager, realm...)
 	return securityMgr
 }
 

@@ -11,3 +11,15 @@
 //  under the License.
 
 package shiro
+
+import (
+	"errors"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
+type CacheManager interface{}
+
+func NewCacheManager(c config.Config) (CacheManager, error) {
+	return nil, errors.New("not implemented")
+}

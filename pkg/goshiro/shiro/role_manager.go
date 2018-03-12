@@ -40,12 +40,13 @@ type RoleManager interface {
 	GetPrincipalRoleNames(Principal) []string
 }
 
-func NewRoleManager(adaptor Adaptor) RoleManager {
-	return &roleManager{adaptor: adaptor}
+func NewRoleManager(adaptor Adaptor, cacheManager CacheManager) RoleManager {
+	return &roleManager{adaptor: adaptor, cacheManager: cacheManager}
 }
 
 type roleManager struct {
-	adaptor Adaptor
+	adaptor      Adaptor
+	cacheManager CacheManager
 }
 
 // AddRole add role with permission into realm

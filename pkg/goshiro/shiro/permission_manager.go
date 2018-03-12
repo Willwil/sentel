@@ -33,12 +33,13 @@ type PermissionManager interface {
 	RemovePrincipalPermissions(principal Principal, permissions []Permission)
 }
 
-func NewPermissionManager(adaptor Adaptor) PermissionManager {
-	return &permissionManager{adaptor: adaptor}
+func NewPermissionManager(adaptor Adaptor, cacheManager CacheManager) PermissionManager {
+	return &permissionManager{adaptor: adaptor, cacheManager: cacheManager}
 }
 
 type permissionManager struct {
-	adaptor Adaptor
+	adaptor      Adaptor
+	cacheManager CacheManager
 }
 
 // AddPermission add a new permission to manager

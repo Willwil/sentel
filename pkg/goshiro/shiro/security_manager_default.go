@@ -26,15 +26,15 @@ type defaultSecurityManager struct {
 	permissionManager PermissionManager
 }
 
-func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, realm ...Realm) (SecurityManager, error) {
+func NewDefaultSecurityManager(c config.Config, adaptor Adaptor, cacheManager CacheManager, realm ...Realm) (SecurityManager, error) {
 	realms := make(map[string]Realm)
 	for _, r := range realm {
 		realms[r.GetName()] = r
 	}
 	return &defaultSecurityManager{
 		realms:            realms,
-		roleManager:       NewRoleManager(adaptor),
-		permissionManager: NewPermissionManager(adaptor),
+		roleManager:       NewRoleManager(adaptor, cacheManager),
+		permissionManager: NewPermissionManager(adaptor, cacheManager),
 	}, nil
 }
 
