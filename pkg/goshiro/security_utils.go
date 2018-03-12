@@ -19,22 +19,12 @@ import (
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 )
 
-func NewSecurityManager(c config.Config, realm ...shiro.Realm) shiro.SecurityManager {
-	adaptor, _ := NewAdaptor(c)
-	cacheManager, _ := shiro.NewCacheManager(c)
-	securityMgr, _ := shiro.NewDefaultSecurityManager(c, adaptor, cacheManager, realm...)
-	return securityMgr
-}
-
-func NewAdaptor(c config.Config) (shiro.Adaptor, error) {
-	val, _ := c.StringWithSection("security_manager", "adatpor")
-	switch val {
-	case "local":
-		return shiro.NewLocalAdaptor(c)
-	case "mongo":
-	default:
+func NewSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.SecurityManager, error) {
+	if kafka, err := c.String("kafka"); err != nil && kafka != "" {
+		return newDelegateSecurityManager(c, realm...)
+	} else {
+		return shiro.NewSecurityManager(c, realm...)
 	}
-	return shiro.NewLocalAdaptor(c)
 }
 
 func NewRealm(c config.Config, realmName string) (shiro.Realm, error) {

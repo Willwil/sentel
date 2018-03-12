@@ -12,6 +12,8 @@
 
 package shiro
 
+import "github.com/cloustone/sentel/pkg/config"
+
 // Adaptor is wraper of policy and roles peristence
 type Adaptor interface {
 	GetName() string
@@ -37,4 +39,15 @@ type Adaptor interface {
 	AddRolePermissions(roleName string, permissons []string)
 	RemoveRolePermissions(roleName string, permissions []string)
 	GetRolePermissions(roleName string) []string
+}
+
+func NewAdaptor(c config.Config) (Adaptor, error) {
+	val, _ := c.StringWithSection("security_manager", "adatpor")
+	switch val {
+	case "local":
+		return NewLocalAdaptor(c)
+	case "mongo":
+	default:
+	}
+	return NewLocalAdaptor(c)
 }

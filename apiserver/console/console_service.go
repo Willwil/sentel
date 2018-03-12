@@ -51,11 +51,16 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	if err != nil {
 		return nil, err
 	}
+	securityMgr, err := goshiro.NewSecurityManager(c, realm)
+	if err != nil {
+		return nil, err
+	}
+
 	return &consoleService{
 		config:      c,
 		waitgroup:   sync.WaitGroup{},
 		echo:        echo.New(),
-		securityMgr: goshiro.NewSecurityManager(c, realm),
+		securityMgr: securityMgr,
 	}, nil
 }
 

@@ -12,6 +12,8 @@
 
 package shiro
 
+import "github.com/cloustone/sentel/pkg/config"
+
 type SecurityManager interface {
 	// AddRealm add reams to security manager
 	AddRealm(realm ...Realm)
@@ -43,4 +45,16 @@ type SecurityManager interface {
 	RemoveRolePermissions(roleName string, permissions []Permission)
 	// GetRolePermission return specfied role's all permissions
 	GetRolePermissions(roleName string) []Permission
+}
+
+func NewSecurityManager(c config.Config, realm ...Realm) (SecurityManager, error) {
+	adaptor, err := NewAdaptor(c)
+	if err != nil {
+		return nil, err
+	}
+	cacheManager, err := NewCacheManager(c)
+	if err != nil {
+		return nil, err
+	}
+	return NewDefaultSecurityManager(c, adaptor, cacheManager, realm...)
 }
