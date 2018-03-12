@@ -34,7 +34,7 @@ type Permission struct {
 }
 
 // NewPermission create permission object from string presentation, such as
-// "resource1:read,write,update"
+// "resource1, resource2:read,write"
 func NewPermission(action string, resources ...string) Permission {
 	return Permission{Resources: resources, Actions: action}
 }

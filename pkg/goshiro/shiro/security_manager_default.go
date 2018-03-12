@@ -107,7 +107,6 @@ func (w *defaultSecurityManager) RemovePrincipalPermissions(principal Principal,
 // authorization policies
 func (w *defaultSecurityManager) Authorize(token AuthenticationToken, resource, action string) error {
 	if token != nil {
-		// get principals and roles
 		if principals := w.getPrincipals(token); !principals.IsEmpty() {
 			permissions := w.GetPrincipalsPermissions(principals)
 			for _, permission := range permissions {
@@ -131,13 +130,18 @@ func (p *defaultSecurityManager) RemoveRole(roleName string) {
 }
 
 // GetRole return role's detail information
-func (p *defaultSecurityManager) GetRole(roleName string) *Role {
+func (p *defaultSecurityManager) GetRole(roleName string) (Role, error) {
 	return p.roleManager.GetRole(roleName)
 }
 
 // AddRolePermission add permissions to a role
 func (p *defaultSecurityManager) AddRolePermissions(roleName string, permissions []Permission) {
-	//p.roleManager.AddRolePermissions(roleName, permissions)
+	permids := []string{}
+	for _, permission := range permissions {
+		permid := p.permissionManager.AddPermission(permission)
+		permids = append(permids, permid)
+	}
+	p.roleManager.AddRolePermissions(roleName, permids)
 }
 
 // RemoveRolePermissions remove permission from role
@@ -145,8 +149,20 @@ func (p *defaultSecurityManager) RemoveRolePermissions(roleName string, permissi
 	//p.roleManager.RemoveRolePermissions(roleName, permissions)
 }
 
+// RemoveRoleAllPermissions remove role's all permissions
+func (p *defaultSecurityManager) RemoveRoleAllPermissions(roleName string) {
+	permissions := p.roleManager.GetRolePermissions(roleName)
+	p.roleManager.RemoveRolePermissions(roleName, permissions)
+}
+
 // GetRolePermission return specfied role's all permissions
 func (p *defaultSecurityManager) GetRolePermissions(roleName string) []Permission {
-	//return p.roleManager.GetRolePermissions(roleName)
-	return nil
+	permissions := []Permission{}
+	permids := p.roleManager.GetRolePermissions(roleName)
+	for _, permid := range permids {
+		if permission, err := p.permissionManager.GetPermission(permid); err == nil {
+			permissions = append(permissions, permission)
+		}
+	}
+	return permissions
 }

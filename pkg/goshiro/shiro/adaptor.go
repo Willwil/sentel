@@ -14,26 +14,20 @@ package shiro
 
 // Adaptor is wraper of policy and roles peristence
 type Adaptor interface {
-	// GetName return adaptor's name
 	GetName() string
-	// RemovePrincipal remove principal from security manager
+	AddPermissions([]Permission) []string
+	RemovePermissions(permIds []string)
+	GetPermissions(permIds []string) []Permission
+	SetPrincipalPermissions(principal Principal, permissions []Permission)
 	RemovePrincipal(Principal)
-	// GetPriincipalsPermissions return principals permissions
+	GetPrincipalPermissions(principal Principal) []Permission
 	GetPrincipalsPermissions(principals PrincipalCollection) []Permission
-	// AddPrincipalPermissions add permissions for principals
 	AddPrincipalPermissions(principal Principal, permissions []Permission)
-	// RemovePrincipalsPermissions remove principals's permissions
 	RemovePrincipalPermissions(principal Principal, permissions []Permission)
-	// AddRole add role with permission into realm
 	AddRole(r Role)
-	// RemoveRole remove specified role from realm
 	RemoveRole(roleName string)
-	// GetRole return role's detail information
 	GetRole(roleName string) (Role, error)
-	// AddRolePermission add permissions to a role
 	AddRolePermissions(roleName string, permissons []string)
-	// RemoveRolePermissions remove permission from role
 	RemoveRolePermissions(roleName string, permissions []string)
-	// GetRolePermission return specfied role's all permissions
 	GetRolePermissions(roleName string) []string
 }

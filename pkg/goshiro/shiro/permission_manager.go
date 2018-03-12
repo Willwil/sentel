@@ -12,6 +12,8 @@
 
 package shiro
 
+import "fmt"
+
 // PermissionManager manage all permissions with permission identifer and
 // which principal have what permissions
 type PermissionManager interface {
@@ -32,5 +34,51 @@ type PermissionManager interface {
 }
 
 func NewPermissionManager(adaptor Adaptor) PermissionManager {
-	return nil
+	return &permissionManager{adaptor: adaptor}
+}
+
+type permissionManager struct {
+	adaptor Adaptor
+}
+
+// AddPermission add a new permission to manager
+func (p *permissionManager) AddPermission(permission Permission) string {
+	if permIds := p.adaptor.AddPermissions([]Permission{permission}); len(permIds) > 0 {
+		return permIds[0]
+	}
+	return ""
+}
+
+// RemovePermission remove a existed permission from manager
+func (p *permissionManager) RemovePermission(permId string) {
+	p.adaptor.RemovePermissions([]string{permId})
+}
+
+// GetPermission return specified permission from manager
+func (p *permissionManager) GetPermission(permId string) (Permission, error) {
+	permissions := p.adaptor.GetPermissions([]string{permId})
+	if len(permissions) > 0 {
+		return permissions[0], nil
+	}
+	return Permission{}, fmt.Errorf("invalid permission id '%s'", permId)
+}
+
+// RemovePrincipal remove principal from security manager
+func (p *permissionManager) RemovePrincipal(principal Principal) {
+	p.adaptor.RemovePrincipal(principal)
+}
+
+// GetPriincipalsPermissions return principals permissions
+func (p *permissionManager) GetPrincipalsPermissions(principals PrincipalCollection) []Permission {
+	return p.adaptor.GetPrincipalsPermissions(principals)
+}
+
+// AddPrincipalPermissions add permissions for principals
+func (p *permissionManager) AddPrincipalPermissions(principal Principal, permissions []Permission) {
+	p.adaptor.AddPrincipalPermissions(principal, permissions)
+}
+
+// RemovePrincipalsPermissions remove principals's permissions
+func (p *permissionManager) RemovePrincipalPermissions(principal Principal, permissions []Permission) {
+	p.adaptor.RemovePrincipalPermissions(principal, permissions)
 }

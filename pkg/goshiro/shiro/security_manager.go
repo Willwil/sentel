@@ -34,9 +34,11 @@ type SecurityManager interface {
 	// RemoveRole remove specified role from realm
 	RemoveRole(roleName string)
 	// GetRole return role's detail information
-	GetRole(roleName string) *Role
+	GetRole(roleName string) (Role, error)
 	// AddRolePermission add permissions to a role
 	AddRolePermissions(roleName string, permissions []Permission)
+	// RemoveRoleAllPermission remove role's all permissions
+	RemoveRoleAllPermissions(roleName string)
 	// RemoveRolePermissions remove permission from role
 	RemoveRolePermissions(roleName string, permissions []Permission)
 	// GetRolePermission return specfied role's all permissions
