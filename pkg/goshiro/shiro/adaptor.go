@@ -18,12 +18,19 @@ type Adaptor interface {
 	AddPermissions([]Permission) []string
 	RemovePermissions(permIds []string)
 	GetPermissions(permIds []string) []Permission
+	// Principal
 	SetPrincipalPermissions(principal Principal, permissions []Permission)
 	RemovePrincipal(Principal)
 	GetPrincipalPermissions(principal Principal) []Permission
 	GetPrincipalsPermissions(principals PrincipalCollection) []Permission
 	AddPrincipalPermissions(principal Principal, permissions []Permission)
 	RemovePrincipalPermissions(principal Principal, permissions []Permission)
+	SetPrincipalRole(principal Principal, roleName ...string) error
+	GetPrincipalRoles(principal Principal) []Role
+	GetPrincipalRoleNames(principal Principal) []string
+	RemovePrincipalRoles(principal Principal)
+
+	// Role
 	AddRole(r Role)
 	RemoveRole(roleName string)
 	GetRole(roleName string) (Role, error)

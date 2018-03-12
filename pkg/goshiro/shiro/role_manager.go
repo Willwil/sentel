@@ -34,12 +34,8 @@ type RoleManager interface {
 	GetRolePermissions(roleName string) []string
 	// GetRolePermission return specfied role's all permissions identifier
 	GetRolesPermissions(roleNames []string) []string
-	// GetPrincipalsRoles return principals roles
-	GetPrincipalsRoles(PrincipalCollection) []Role
 	// GetPrincipalRoles return principal's roles
 	GetPrincipalRoles(Principal) []Role
-	// GetPrincipalsRoles return principals role names
-	GetPrincipalsRoleNames(PrincipalCollection) []string
 	// GetPrincipalRoles return principal's role names
 	GetPrincipalRoleNames(Principal) []string
 }
@@ -87,24 +83,22 @@ func (r *roleManager) GetRolePermissions(roleName string) []string {
 
 // GetRolesPermissions return specfied role's all permissions
 func (r *roleManager) GetRolesPermissions(roleNames []string) []string {
-	return []string{}
-}
-
-func (r *roleManager) GetPrincipalsRoles(principals PrincipalCollection) []Role {
-	return []Role{}
+	permissions := []string{}
+	for _, roleName := range roleNames {
+		perms := r.GetRolePermissions(roleName)
+		permissions = append(permissions, perms...)
+	}
+	return permissions
 }
 
 func (r *roleManager) GetPrincipalRoles(principal Principal) []Role {
-	return []Role{}
-}
-
-func (r *roleManager) GetPrincipalsRoleNames(principals PrincipalCollection) []string {
-	return []string{}
+	return r.adaptor.GetPrincipalRoles(principal)
 }
 
 func (r *roleManager) GetPrincipalRoleNames(principal Principal) []string {
-	return []string{}
+	return r.adaptor.GetPrincipalRoleNames(principal)
 }
 
-func (r *roleManager) RemovePrincipalRoles(Principal) {
+func (r *roleManager) RemovePrincipalRoles(principal Principal) {
+	r.adaptor.RemovePrincipalRoles(principal)
 }

@@ -162,6 +162,44 @@ func (l *localAdaptor) RemovePrincipalPermissions(principal Principal, permissio
 	}
 }
 
+func (l *localAdaptor) SetPrincipalRole(principal Principal, roleNames ...string) error {
+	roles := []Role{}
+	for _, roleName := range roleNames {
+		if role, err := l.GetRole(roleName); err != nil {
+			return err
+		} else {
+			roles = append(roles, role)
+		}
+	}
+	principalName := principal.Name()
+	if _, found := l.principalRoles[principalName]; !found {
+		l.principalRoles[principalName] = []Role{}
+	}
+	l.principalRoles[principalName] = append(l.principalRoles[principalName], roles...)
+	return nil
+}
+
+func (l *localAdaptor) GetPrincipalRoles(principal Principal) []Role {
+	if roles, found := l.principalRoles[principal.Name()]; found {
+		return roles
+	}
+	return []Role{}
+}
+
+func (l *localAdaptor) GetPrincipalRoleNames(principal Principal) []string {
+	roleNames := []string{}
+	if roles, found := l.principalRoles[principal.Name()]; found {
+		for _, role := range roles {
+			roleNames = append(roleNames, role.Name)
+		}
+	}
+	return roleNames
+}
+
+func (l *localAdaptor) RemovePrincipalRoles(principal Principal) {
+	delete(l.principalRoles, principal.Name())
+}
+
 func (l *localAdaptor) AddPermissions(permissions []Permission) []string {
 	permIds := []string{}
 	for _, permission := range permissions {
