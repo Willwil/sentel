@@ -54,6 +54,5 @@ func NewSecurityManager(c config.Config, realm ...Realm) (SecurityManager, error
 	if err != nil {
 		return nil, err
 	}
-	cacheManager := NewCacheManager(c)
-	return newDefaultSecurityManager(c, adaptor, cacheManager, realm...)
+	return newDefaultSecurityManager(c, adaptor, realm...)
 }

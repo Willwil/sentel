@@ -12,29 +12,15 @@
 
 package cache
 
-type Manager struct {
-	caches map[string]*Cache
-}
-
 type Cache interface {
 	Add(key interface{}, data interface{})
 	Delete(key interface{})
 	Exists(key interface{}) bool
-	Value(key interface{}) interface{}
+	Value(key interface{}) (interface{}, error)
+	KeepAlive(key interface{})
+	Flush()
 }
 
-type CacheItem interface {
-	Key() interface{}
-	Data() interface{}
-	KeepAlive()
-}
-
-func NewManager() *CacheManager {
-	return &CacheManager{
-		caches: make(map[string]*Cache),
-	}
-}
-
-func (c *CacheManager) NewCache(cacheName string) *Cache {
-	return nil
+func New(cacheName string) Cache {
+	return newSimpleCache(cacheName)
 }

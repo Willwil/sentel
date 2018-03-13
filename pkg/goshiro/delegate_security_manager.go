@@ -18,12 +18,14 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/message"
+	uuid "github.com/satori/go.uuid"
 )
 
 // delegateSecurityManager is delegation of security manager to support kafka
 type delegateSecurityManager struct {
-	consumer message.Consumer
-	delegate shiro.SecurityManager
+	consumer message.Consumer      // kafka consumer
+	delegate shiro.SecurityManager // backend security manager
+	mgrid    string                // Identifier of current security manager
 }
 
 // newDelegateSecurityManager create security manager supporting distributed security managment
@@ -39,6 +41,7 @@ func newDelegateSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.Se
 	securityMgr := &delegateSecurityManager{
 		delegate: delegate,
 		consumer: consumer,
+		mgrid:    uuid.NewV4().String(),
 	}
 	consumer.SetMessageFactory(securityMgr)
 	err1 := consumer.Subscribe(NameOfPrincipalTopic, messageHandlerFunc, securityMgr)

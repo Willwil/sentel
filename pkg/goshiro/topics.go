@@ -22,6 +22,7 @@ const (
 
 // Principal
 type PrincipalTopic struct {
+	MgrId  string `json:"mgrid"`
 	Action string `json:"action"`
 }
 
@@ -36,6 +37,7 @@ func (p *PrincipalTopic) Deserialize(buf []byte, opt message.SerializeOption) er
 
 // Permission
 type PermissionTopic struct {
+	MgrId  string `json:"mgrid"`
 	Action string `json:"action"`
 }
 
@@ -50,6 +52,7 @@ func (p *PermissionTopic) Deserialize(buf []byte, opt message.SerializeOption) e
 
 // Role
 type RoleTopic struct {
+	MgrId  string `json:"mgrid"`
 	Action string `json:"action"`
 }
 

@@ -12,7 +12,11 @@
 
 package shiro
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/cloustone/sentel/pkg/cache"
+)
 
 // RoleManager managel all roles in shiro, it will do the following things
 // 1. Which roles does the principal have
@@ -40,28 +44,37 @@ type RoleManager interface {
 	GetPrincipalRoleNames(Principal) []string
 }
 
-func NewRoleManager(adaptor Adaptor, cacheManager CacheManager) RoleManager {
-	return &roleManager{adaptor: adaptor, cacheManager: cacheManager}
+func NewRoleManager(adaptor Adaptor) RoleManager {
+	return &roleManager{
+		adaptor: adaptor,
+		cache:   cache.New("roles"),
+	}
 }
 
 type roleManager struct {
-	adaptor      Adaptor
-	cacheManager CacheManager
+	adaptor Adaptor
+	cache   cache.Cache
 }
 
 // AddRole add role with permission into realm
 func (r *roleManager) AddRole(role Role) {
+	r.cache.Add(role.Name, role)
 	r.adaptor.AddRole(role)
 }
 
 // RemoveRole remove specified role from realm
 func (r *roleManager) RemoveRole(roleName string) {
+	r.cache.Delete(roleName)
 	r.adaptor.RemoveRole(roleName)
 }
 
 // GetRole return role's detail information
 func (r *roleManager) GetRole(roleName string) (Role, error) {
+	if val, err := r.cache.Value(roleName); err == nil {
+		return val.(Role), nil
+	}
 	if role, err := r.adaptor.GetRole(roleName); err == nil {
+		r.cache.Add(roleName, role)
 		return role, nil
 	}
 	return Role{}, fmt.Errorf("invalid role name '%s'", roleName)

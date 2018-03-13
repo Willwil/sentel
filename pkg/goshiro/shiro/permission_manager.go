@@ -12,7 +12,11 @@
 
 package shiro
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/cloustone/sentel/pkg/cache"
+)
 
 // PermissionManager manage all permissions with permission identifer and
 // which principal have what permissions
@@ -33,13 +37,16 @@ type PermissionManager interface {
 	RemovePrincipalPermissions(principal Principal, permissions []Permission)
 }
 
-func NewPermissionManager(adaptor Adaptor, cacheManager CacheManager) PermissionManager {
-	return &permissionManager{adaptor: adaptor, cacheManager: cacheManager}
+func NewPermissionManager(adaptor Adaptor) PermissionManager {
+	return &permissionManager{
+		adaptor: adaptor,
+		cache:   cache.New("permissions"),
+	}
 }
 
 type permissionManager struct {
-	adaptor      Adaptor
-	cacheManager CacheManager
+	adaptor Adaptor
+	cache   cache.Cache
 }
 
 // AddPermission add a new permission to manager
@@ -52,13 +59,18 @@ func (p *permissionManager) AddPermission(permission Permission) string {
 
 // RemovePermission remove a existed permission from manager
 func (p *permissionManager) RemovePermission(permId string) {
+	p.cache.Delete(permId)
 	p.adaptor.RemovePermissions([]string{permId})
 }
 
 // GetPermission return specified permission from manager
 func (p *permissionManager) GetPermission(permId string) (Permission, error) {
+	if val, err := p.cache.Value(permId); err == nil {
+		return val.(Permission), nil
+	}
 	permissions := p.adaptor.GetPermissions([]string{permId})
 	if len(permissions) > 0 {
+		p.cache.Add(permId, permissions[0])
 		return permissions[0], nil
 	}
 	return Permission{}, fmt.Errorf("invalid permission id '%s'", permId)
