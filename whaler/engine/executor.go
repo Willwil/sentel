@@ -13,6 +13,7 @@
 package engine
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -133,9 +134,8 @@ func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
 	if r, err := registry.New(p.config); err == nil {
 		defer r.Close()
 		return r.GetRule(rc.ProductId, rc.RuleName)
-	} else {
-		return nil, err
 	}
+	return nil, errors.New("register unreachable")
 }
 
 // createRule add a rule received from apiserver to this engine
@@ -150,11 +150,9 @@ func (p *ruleExecutor) createRule(r RuleContext) error {
 				glog.Infof("rule '%s' is added", r.RuleName)
 				return nil
 			}
-			return fmt.Errorf("rule wrappr '%s' failure", r.RuleName)
 		}
-		return fmt.Errorf("rule '%s' metadata fetch failure", r.RuleName)
 	}
-	return fmt.Errorf("rule '%s' already exist", r.RuleName)
+	return fmt.Errorf("invalid rule name '%s' or status", r.RuleName)
 }
 
 // removeRule remove a rule from current rule engine
@@ -171,10 +169,9 @@ func (p *ruleExecutor) removeRule(r RuleContext) error {
 
 // updateRule update rule in engine
 func (p *ruleExecutor) updateRule(r RuleContext) error {
-
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 	if obj, err := p.getRuleObject(r); err == nil {
-		p.mutex.Lock()
-		defer p.mutex.Unlock()
 		if w, found := p.rules[r.RuleName]; found {
 			w.rule = obj
 			p.rules[r.RuleName] = w
