@@ -165,6 +165,8 @@ func (p *ruleEngine) cleanExecutors() {
 
 // handleRule process incomming rule
 func (p *ruleEngine) handleRule(ctx RuleContext) error {
+	glog.Infof("handing rule... %s", ctx.String())
+
 	productId := ctx.ProductId
 	switch ctx.Action {
 	case RuleActionCreate:
@@ -223,6 +225,8 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) er
 	default:
 		return fmt.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
 	}
+
+	glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
 	rc := RuleContext{
 		Action:    action,
 		ProductId: r.ProductId,

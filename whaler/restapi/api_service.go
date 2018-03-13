@@ -44,7 +44,7 @@ type ServiceFactory struct{}
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	// Create echo instance and setup router
 	e := echo.New()
-
+	e.HideBanner = true
 	// Rule
 	e.POST("whaler/api/v1/rules", createRule)
 	e.DELETE("whaler/api/v1/rules", removeRule)

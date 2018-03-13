@@ -47,6 +47,10 @@ type RuleContext struct {
 	Resp      chan error
 }
 
+func (r RuleContext) String() string {
+	return fmt.Sprintf("productId:'%s', rule:'%s', action:'%s'", r.ProductId, r.RuleName, r.Action)
+}
+
 const (
 	RuleActionCreate = "create"
 	RuleActionRemove = "remove"
@@ -167,6 +171,7 @@ func (p *ruleExecutor) removeRule(r RuleContext) error {
 
 // updateRule update rule in engine
 func (p *ruleExecutor) updateRule(r RuleContext) error {
+
 	if obj, err := p.getRuleObject(r); err == nil {
 		p.mutex.Lock()
 		defer p.mutex.Unlock()
@@ -205,7 +210,7 @@ func (p *ruleExecutor) startRule(r RuleContext) error {
 func (p *ruleExecutor) stopRule(r RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if w, found := p.rules[r.RuleName]; !found { // not found
+	if w, found := p.rules[r.RuleName]; found {
 		w.rule.Status = ruleStatusStoped
 		return nil
 	}
@@ -215,6 +220,7 @@ func (p *ruleExecutor) stopRule(r RuleContext) error {
 // execute rule to process published topic
 // Data recevied from iothub will be processed here and transformed into database
 func (p *ruleExecutor) execute(e event.Event) error {
+	glog.Info("executing rule ...")
 	p.mutex.Lock()
 	rules := p.rules
 	p.mutex.Unlock()
