@@ -21,8 +21,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/v1api"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/goshiro"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/labstack/echo"
 )
@@ -59,9 +62,10 @@ const (
 )
 
 var (
-	localEcho *echo.Echo = echo.New()
-	productId string     = ""
-	token     string     = ""
+	localEcho   *echo.Echo = echo.New()
+	productId   string     = ""
+	token       string     = ""
+	securityMgr shiro.SecurityManager
 )
 
 type apiResponse struct {
@@ -91,6 +95,18 @@ func initializeContext(t *testing.T, method string, url string, reqdata interfac
 	ctx.Set("registry", r)
 	ctx.Set("config", c)
 	ctx.Set("AccessId", accessId)
+	// Initialize security Manager
+	if securityMgr == nil {
+		for _, res := range mngApiPolicies {
+			resourceMaps[res.Path] = res.Resource
+		}
+		realm, _ := base.NewAuthorizeRealm(c)
+		mgr, _ := goshiro.NewSecurityManager(c, realm)
+		securityMgr = mgr
+		securityMgr.Load()
+	}
+	ctx.Set("SecurityManager", securityMgr)
+
 	return ctx
 }
 func closeRegistry(ctx echo.Context) {

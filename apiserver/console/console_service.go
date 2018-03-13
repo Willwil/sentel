@@ -73,13 +73,9 @@ func (p *consoleService) Initialize() error {
 	}
 	p.echo.HideBanner = true
 	p.echo.Use(func(h echo.HandlerFunc) echo.HandlerFunc {
-		return func(e echo.Context) error {
-			cc := &base.ApiContext{
-				Context:     e,
-				Config:      c,
-				SecurityMgr: p.securityMgr,
-			}
-			return h(cc)
+		return func(ctx echo.Context) error {
+			ctx.Set("SecurityManager", p.securityMgr)
+			return h(ctx)
 		}
 	})
 

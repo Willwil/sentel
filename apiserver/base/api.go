@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
@@ -23,7 +22,7 @@ import (
 
 type ApiContext struct {
 	echo.Context
-	Config      config.Config
+	//Config      config.Config
 	SecurityMgr shiro.SecurityManager
 }
 
@@ -33,7 +32,7 @@ type ApiJWTClaims struct {
 }
 
 func GetSecurityManager(ctx echo.Context) shiro.SecurityManager {
-	return ctx.(*ApiContext).SecurityMgr
+	return ctx.Get("SecurityManager").(shiro.SecurityManager)
 }
 
 func GetRequestInfo(ctx echo.Context, resourceMaps map[string]string) (string, string) {
