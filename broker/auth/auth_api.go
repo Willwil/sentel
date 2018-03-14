@@ -29,9 +29,9 @@ var (
 )
 
 type Context struct {
-	ClientId     string
+	ClientID     string
 	DeviceName   string
-	ProductId    string
+	ProductID    string
 	SecurityMode int
 	SignMethod   string
 	Timestamp    string

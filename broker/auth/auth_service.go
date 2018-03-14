@@ -128,7 +128,7 @@ func (p *authService) Stop() {
 
 func (p *authService) handleEvent(e event.Event) {
 	t := e.(*event.AuthChangeEvent)
-	p.updateTopicFlavor(t.ProductId, t.TopicFlavor)
+	p.updateTopicFlavor(t.ProductID, t.TopicFlavor)
 }
 
 func (p *authService) updateTopicFlavor(productId string, flavor registry.TopicFlavor) {
@@ -144,7 +144,7 @@ func (p *authService) updateTopicFlavor(productId string, flavor registry.TopicF
 
 // CheckAcl check client's access control right
 func (p *authService) authorize(ctx Context, clientid string, topic string, access uint8) error {
-	productId := ctx.ProductId
+	productId := ctx.ProductID
 	p.flavorsMutex.Lock()
 	// if no topic flavor exist, just return authorized
 	if _, found := p.flavors[productId]; !found {
@@ -176,7 +176,7 @@ func (p *authService) authenticate(ctx Context) error {
 // getDeviceSecretKey retrieve device secret key from cache or mongo
 func (p *authService) getDeviceSecretKey(ctx Context) (string, error) {
 	// Read from cache at first
-	key := ctx.ProductId + "/" + ctx.DeviceName
+	key := ctx.ProductID + "/" + ctx.DeviceName
 	if p.redis != nil {
 		if val, err := p.redis.Get(key).Result(); err == nil {
 			return val, nil
@@ -188,7 +188,7 @@ func (p *authService) getDeviceSecretKey(ctx Context) (string, error) {
 		return "", err
 	}
 	defer r.Close()
-	device, err := r.GetDeviceByName(ctx.ProductId, ctx.DeviceName)
+	device, err := r.GetDeviceByName(ctx.ProductID, ctx.DeviceName)
 	if err != nil {
 		return "", err
 	}

@@ -175,20 +175,20 @@ func (p *sessionManager) onTopicSubscribe(e event.Event) {
 	t := e.(*event.TopicSubscribeEvent)
 
 	// Add subscription for persistent subsription from other broker
-	if t.BrokerId != base.GetBrokerId() && t.Persistent {
-		glog.Infof("sessionmgr receive topic('%s') subscribe notification from cluster broker'%s'", t.Topic, t.ClientId)
-		if queue := queue.GetQueue(t.ClientId); queue != nil {
+	if t.BrokerID != base.GetBrokerId() && t.Persistent {
+		glog.Infof("sessionmgr receive topic('%s') subscribe notification from cluster broker'%s'", t.Topic, t.ClientID)
+		if queue := queue.GetQueue(t.ClientID); queue != nil {
 			p.tree.addSubscription(&subscription{
-				clientId: t.ClientId,
+				clientID: t.ClientID,
 				topic:    t.Topic,
 				qos:      t.Qos,
 				queue:    queue,
 			})
 		}
-	} else if t.BrokerId == base.GetBrokerId() {
-		if queue := queue.GetQueue(t.ClientId); queue != nil {
+	} else if t.BrokerID == base.GetBrokerId() {
+		if queue := queue.GetQueue(t.ClientID); queue != nil {
 			p.tree.addSubscription(&subscription{
-				clientId: t.ClientId,
+				clientID: t.ClientID,
 				topic:    t.Topic,
 				qos:      t.Qos,
 				queue:    queue,
@@ -200,19 +200,19 @@ func (p *sessionManager) onTopicSubscribe(e event.Event) {
 // onEventTopicUnsubscribe called when EventTopicUnsubscribe received
 func (p *sessionManager) onTopicUnsubscribe(e event.Event) {
 	t := e.(*event.TopicUnsubscribeEvent)
-	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", t.ClientId, t.Topic)
-	if t.BrokerId != base.GetBrokerId() && t.Persistent {
-		p.tree.removeSubscription(t.ClientId, t.Topic)
-	} else if t.BrokerId == base.GetBrokerId() {
-		p.tree.removeSubscription(t.ClientId, t.Topic)
+	glog.Infof("sessionmgr: topic(%s,%s) is unsubscribed", t.ClientID, t.Topic)
+	if t.BrokerID != base.GetBrokerId() && t.Persistent {
+		p.tree.removeSubscription(t.ClientID, t.Topic)
+	} else if t.BrokerID == base.GetBrokerId() {
+		p.tree.removeSubscription(t.ClientID, t.Topic)
 	}
 }
 
 // onEventTopicPublish called when EventTopicPublish received
 func (p *sessionManager) onTopicPublish(e event.Event) {
 	t := e.(*event.TopicPublishEvent)
-	glog.Infof("sessionmgr: topic(%s,%s) is published", t.ClientId, t.Topic)
-	p.tree.addMessage(t.ClientId, &base.Message{
+	glog.Infof("sessionmgr: topic(%s,%s) is published", t.ClientID, t.Topic)
+	p.tree.addMessage(t.ClientID, &base.Message{
 		Topic:   t.Topic,
 		Qos:     t.Qos,
 		Payload: t.Payload,

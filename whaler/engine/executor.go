@@ -130,7 +130,7 @@ func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) 
 	glog.Infof("executor received notification '%s'", msg.Topic())
 	if t, err := event.Decode(msg, event.JSONCodec); err == nil && t.GetType() == event.TopicPublish {
 		pubevent := t.(*event.TopicPublishEvent)
-		if pubevent.ProductId == p.productId {
+		if pubevent.ProductID == p.productId {
 			// we can call p.execute(t) here, but in consider of avoiding to block message receiver
 			// we use datachannel
 			p.dataChan <- pubevent

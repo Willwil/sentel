@@ -159,7 +159,7 @@ func publishTopic(ctx echo.Context) error {
 	payload, _ := json.Marshal(t.Payload)
 	e := event.TopicPublishEvent{
 		Type:     event.TopicPublish,
-		ClientId: t.ClientId,
+		ClientID: t.ClientId,
 		Topic:    t.Topic,
 		Payload:  payload,
 	}

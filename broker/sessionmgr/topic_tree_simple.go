@@ -64,7 +64,7 @@ func (p *simpleTopicTree) addNode(node *topicNode, level string, q queue.Queue) 
 // addSubscription add subsription into topic tree
 func (p *simpleTopicTree) addSubscription(sub *subscription) error {
 	glog.Infof("topictree:addSubscription: clientId is %s, topic is %s, qos is %d",
-		sub.clientId, sub.topic, sub.qos)
+		sub.clientID, sub.topic, sub.qos)
 
 	// Get topic slice
 	topics := strings.Split(sub.topic, "/")
@@ -79,11 +79,11 @@ func (p *simpleTopicTree) addSubscription(sub *subscription) error {
 		node = p.addNode(node, level, sub.queue)
 	}
 
-	node.subs[sub.clientId] = sub
-	if _, found := p.topics[sub.clientId]; !found {
-		p.topics[sub.clientId] = []string{sub.topic}
+	node.subs[sub.clientID] = sub
+	if _, found := p.topics[sub.clientID]; !found {
+		p.topics[sub.clientID] = []string{sub.topic}
 	} else {
-		p.topics[sub.clientId] = append(p.topics[sub.clientId], sub.topic)
+		p.topics[sub.clientID] = append(p.topics[sub.clientID], sub.topic)
 	}
 	return nil
 }

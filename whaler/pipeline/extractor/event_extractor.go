@@ -91,7 +91,7 @@ func (p *eventExtractor) getFunctionValue(name string, e *event.TopicPublishEven
 func (p *eventExtractor) getVariableValue(name string, e *event.TopicPublishEvent) interface{} {
 	switch name {
 	case "deviceId":
-		return e.ClientId
+		return e.ClientID
 	}
 	return nil
 }

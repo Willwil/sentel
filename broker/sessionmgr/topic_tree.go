@@ -19,7 +19,7 @@ import (
 )
 
 type subscription struct {
-	clientId string
+	clientID string
 	topic    string
 	qos      uint8
 	queue    queue.Queue

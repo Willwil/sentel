@@ -15,18 +15,18 @@ package event
 import "github.com/cloustone/sentel/pkg/registry"
 
 type AuthChangeEvent struct {
-	BrokerId    string               `json:"brokerId"`   // Broker identifier where event come from
+	BrokerID    string               `json:"brokerId"`   // Broker identifier where event come from
 	Type        uint32               `json:"type"`       // Event type
-	ClientId    string               `json:"clientId"`   // Client identifier where event come from
+	ClientID    string               `json:"clientId"`   // Client identifier where event come from
 	Persistent  bool                 `json:"persistent"` // Whether the session is persistent
-	ProductId   string               `json:"productId"`
+	ProductID   string               `json:"productId"`
 	TopicFlavor registry.TopicFlavor `json:"topicFlavor"`
 }
 
-func (p *AuthChangeEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
+func (p *AuthChangeEvent) SetBrokerId(brokerId string) { p.BrokerID = brokerId }
 func (p *AuthChangeEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *AuthChangeEvent) SetClientId(clientId string) { p.ClientId = clientId }
-func (p *AuthChangeEvent) GetBrokerId() string         { return p.BrokerId }
+func (p *AuthChangeEvent) SetClientId(clientId string) { p.ClientID = clientId }
+func (p *AuthChangeEvent) GetBrokerId() string         { return p.BrokerID }
 func (p *AuthChangeEvent) GetType() uint32             { return AuthChange }
-func (p *AuthChangeEvent) GetClientId() string         { return p.ClientId }
+func (p *AuthChangeEvent) GetClientId() string         { return p.ClientID }
 func (p *AuthChangeEvent) Serialize() ([]byte, error)  { return nil, nil }
