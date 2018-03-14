@@ -72,6 +72,7 @@ type TopicPublishEvent struct {
 	Type       uint32 `json:"type"`       // Event type
 	ProductId  string `json:"productId"`  // Product Identifier
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
+	ProductId  string `json:"productId"`  // Product identifier where event come from
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	Id         uint16 `json:"id"`         // Message Id
 	Topic      string `json:"topic"`      // Topic
@@ -82,10 +83,12 @@ type TopicPublishEvent struct {
 	Dup        bool   `json:"dup"`
 }
 
-func (p *TopicPublishEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
-func (p *TopicPublishEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *TopicPublishEvent) SetClientId(clientId string) { p.ClientId = clientId }
-func (p *TopicPublishEvent) GetBrokerId() string         { return p.BrokerId }
-func (p *TopicPublishEvent) GetType() uint32             { return TopicPublish }
-func (p *TopicPublishEvent) GetClientId() string         { return p.ClientId }
-func (p *TopicPublishEvent) Serialize() ([]byte, error)  { return nil, nil }
+func (p *TopicPublishEvent) SetBrokerId(brokerId string)   { p.BrokerId = brokerId }
+func (p *TopicPublishEvent) SetType(eventType uint32)      { p.Type = eventType }
+func (p *TopicPublishEvent) SetClientId(clientId string)   { p.ClientId = clientId }
+func (p *TopicPublishEvent) SetProductId(productId string) { p.ProductId = productId }
+func (p *TopicPublishEvent) GetBrokerId() string           { return p.BrokerId }
+func (p *TopicPublishEvent) GetType() uint32               { return TopicPublish }
+func (p *TopicPublishEvent) GetClientId() string           { return p.ClientId }
+func (p *TopicPublishEvent) GetProductId() string          { return p.ProductId }
+func (p *TopicPublishEvent) Serialize() ([]byte, error)    { return nil, nil }

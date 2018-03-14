@@ -66,6 +66,7 @@ type mqttSession struct {
 	authNeed       bool             // Indicate wether authentication is needed
 	metrics        metric.Metric    // Metrics
 	info           sm.SessionInfo   // Session Info
+	productId      string           // Product ID
 }
 
 // newMqttSession create new session  for each client connection
@@ -93,6 +94,7 @@ func newMqttSession(mqtt *mqttService, conn net.Conn) (*mqttSession, error) {
 		pingTime:      nil,
 		nextPacketId:  0,
 		clientId:      "",
+		productId:     "",
 		willMsg:       nil,
 		authNeed:      authNeed,
 		metrics:       metric.NewMetric(ServiceName),
@@ -408,6 +410,7 @@ func (p *mqttSession) handleConnect(packet *mqttPacket) error {
 		}
 	}
 	p.clientId = p.authctx.ClientId
+	p.productId = p.authctx.ProductId
 
 	// Find if the client already has an entry, p must be done after any security check
 	conack := 0
@@ -501,11 +504,12 @@ func (p *mqttSession) disconnect(reason error) {
 		// Publish will message if session is not normoally disconnected
 		if reason != nil && p.willMsg != nil {
 			event.Notify(&event.TopicPublishEvent{
-				ClientId: p.clientId,
-				Topic:    p.willMsg.Topic,
-				Payload:  p.willMsg.Payload,
-				Qos:      p.willMsg.Qos,
-				Retain:   p.willMsg.Retain,
+				ClientId:  p.clientId,
+				ProductId: p.productId,
+				Topic:     p.willMsg.Topic,
+				Payload:   p.willMsg.Payload,
+				Qos:       p.willMsg.Qos,
+				Retain:    p.willMsg.Retain,
 			})
 		}
 		event.Notify(&event.SessionDestroyEvent{
@@ -655,12 +659,13 @@ func (p *mqttSession) handlePublish(packet *mqttPacket) error {
 		dup = 1
 	}
 	e := &event.TopicPublishEvent{
-		ClientId: p.clientId,
-		Topic:    topic,
-		Qos:      qos,
-		Retain:   (retain > 0),
-		Payload:  payload,
-		Dup:      dup == 1,
+		ClientId:  p.clientId,
+		ProductId: p.productId,
+		Topic:     topic,
+		Qos:       qos,
+		Retain:    (retain > 0),
+		Payload:   payload,
+		Dup:       dup == 1,
 	}
 
 	switch qos {
