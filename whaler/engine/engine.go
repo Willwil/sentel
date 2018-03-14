@@ -204,36 +204,34 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
-func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) error {
-	r, ok := msg.(*message.Rule)
-	if !ok || r == nil {
-		return fmt.Errorf("invalid message topic '%s' with rule", msg.Topic())
-	}
+func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
+	if r, ok := msg.(*message.Rule); ok || r != nil {
+		action := ""
+		switch r.Action {
+		case message.ActionCreate:
+			action = RuleActionCreate
+		case message.ActionRemove:
+			action = RuleActionRemove
+		case message.ActionUpdate:
+			action = RuleActionUpdate
+		case message.ActionStart:
+			action = RuleActionStart
+		case message.ActionStop:
+			action = RuleActionStop
+		default:
+			glog.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
+		}
 
-	action := ""
-	switch r.Action {
-	case message.ActionCreate:
-		action = RuleActionCreate
-	case message.ActionRemove:
-		action = RuleActionRemove
-	case message.ActionUpdate:
-		action = RuleActionUpdate
-	case message.ActionStart:
-		action = RuleActionStart
-	case message.ActionStop:
-		action = RuleActionStop
-	default:
-		return fmt.Errorf("invalid rule action '%s' for product '%s'", r.Action, r.ProductId)
+		glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
+		rc := RuleContext{
+			Action:    action,
+			ProductId: r.ProductId,
+			RuleName:  r.RuleName,
+		}
+		p.ruleChan <- rc
+		return
 	}
-
-	glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
-	rc := RuleContext{
-		Action:    action,
-		ProductId: r.ProductId,
-		RuleName:  r.RuleName,
-	}
-	p.ruleChan <- rc
-	return nil
+	glog.Errorf("invalid message topic '%s' with rule", msg.Topic())
 }
 
 func HandleRuleNotification(ctx RuleContext) error {

@@ -13,7 +13,7 @@ package message
 
 import "github.com/cloustone/sentel/pkg/config"
 
-type MessageHandlerFunc func(msg Message, ctx interface{}) error
+type MessageHandlerFunc func(msg Message, ctx interface{})
 
 type MessageFactory interface {
 	CreateMessage(topic string) Message

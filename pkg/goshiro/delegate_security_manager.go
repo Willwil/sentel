@@ -55,17 +55,16 @@ func newDelegateSecurityManager(c config.Config, realm ...shiro.Realm) (shiro.Se
 }
 
 // messageHandlerFunc is callback to message module when message is received
-func messageHandlerFunc(msg message.Message, ctx interface{}) error {
+func messageHandlerFunc(msg message.Message, ctx interface{}) {
 	securityMgr := ctx.(*delegateSecurityManager)
 	switch msg.Topic() {
 	case NameOfPrincipalTopic:
-		return securityMgr.handlePrincipalTopic(msg.(*PrincipalTopic))
+		securityMgr.handlePrincipalTopic(msg.(*PrincipalTopic))
 	case NameOfPermissionTopic:
-		return securityMgr.handlePermissionTopic(msg.(*PermissionTopic))
+		securityMgr.handlePermissionTopic(msg.(*PermissionTopic))
 	case NameOfRoleTopic:
-		return securityMgr.handleRoleTopic(msg.(*RoleTopic))
+		securityMgr.handleRoleTopic(msg.(*RoleTopic))
 	}
-	return nil
 }
 
 // CreateMessage is MessageFacotory interface method to create customized topic

@@ -179,17 +179,17 @@ func (p *conductorService) recoverStartup() {
 	}
 }
 
-func (p *conductorService) messageHandlerFunc(msg message.Message, ctx interface{}) error {
+func (p *conductorService) messageHandlerFunc(msg message.Message, ctx interface{}) {
 	topic := msg.Topic()
 	glog.Infof("receive message from topic '%s'", topic)
 
 	switch topic {
 	case message.TopicNameTenant:
-		return p.handleTenantNotify(msg)
+		p.handleTenantNotify(msg)
 	case message.TopicNameProduct:
-		return p.handleProductNotify(msg)
+		p.handleProductNotify(msg)
 	default:
-		return fmt.Errorf("invalid topic '%s'", topic)
+		glog.Errorf("invalid topic '%s'", topic)
 	}
 }
 

@@ -70,6 +70,7 @@ func (p *TopicUnsubscribeEvent) Serialize() ([]byte, error) { return nil, nil }
 type TopicPublishEvent struct {
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
+	ProductId  string `json:"productId"`  // Product Identifier
 	ClientId   string `json:"clientId"`   // Client identifier where event come from
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	Id         uint16 `json:"id"`         // Message Id

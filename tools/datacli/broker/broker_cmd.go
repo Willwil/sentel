@@ -23,8 +23,7 @@ import (
 )
 
 var (
-	productId string
-	deviceId  string
+	tenantId  string
 	topicName string
 	payload   string
 )
@@ -51,7 +50,7 @@ func handleCommand(cmd *cobra.Command, args []string) {
 		Qos:     1,
 		Retain:  true,
 	}
-	topic := fmt.Sprintf("%s-%s-%s", productId, deviceId, topicName)
+	topic := fmt.Sprintf(event.FmtOfBrokerEventBus, tenantId)
 	value, _ := event.Encode(&e, event.JSONCodec)
 	msg := message.Broker{TopicName: topic, Payload: value}
 	if err := producer.SendMessage(&msg); err != nil {
@@ -61,10 +60,9 @@ func handleCommand(cmd *cobra.Command, args []string) {
 }
 
 func NewCommand() *cobra.Command {
-	command.Flags().StringVarP(&productId, "product", "p", "", "product id")
-	command.Flags().StringVarP(&deviceId, "device", "d", "", "device id")
-	command.Flags().StringVarP(&topicName, "topic", "t", "", "topic name")
-	command.Flags().StringVarP(&payload, "payload", "l", "", "payload")
+	command.Flags().StringVarP(&tenantId, "tenant", "t", "", "tenant")
+	command.Flags().StringVarP(&topicName, "topic", "n", "", "topic name")
+	command.Flags().StringVarP(&payload, "payload", "p", "", "payload")
 
 	return command
 }

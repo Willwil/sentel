@@ -24,9 +24,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// one product has one scpecific topic name
-const fmtOfBrokerEventBus = "iot-%s-%s-event-broker"
-
 // ruleEngine manage product's rules, add, start and stop rule
 type ruleExecutor struct {
 	config    config.Config          // configuration
@@ -67,9 +64,20 @@ const (
 
 // newRuleExecutor create a engine according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
-	clientId := fmt.Sprintf("whaler-%s", productId)
+	// get product's tenant id
+	r, err := registry.New(c)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	product, err := r.GetProduct(productId)
+	if err != nil {
+		return nil, fmt.Errorf("invalid product id '%s'", productId)
+	}
+	clientId := fmt.Sprintf("whaler-rule-executor-%s", productId)
 	consumer, _ := message.NewConsumer(c, clientId)
 	return &ruleExecutor{
+		tenantId:  product.TenantId,
 		productId: productId,
 		config:    c,
 		rules:     make(map[string]*ruleWraper),
@@ -100,7 +108,7 @@ func (p *ruleExecutor) start() error {
 		}
 	}(p)
 
-	topic := fmt.Sprintf(fmtOfBrokerEventBus, p.tenantId, p.productId)
+	topic := fmt.Sprintf(event.FmtOfBrokerEventBus, p.tenantId)
 	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
 		return err
 	}
@@ -118,16 +126,16 @@ func (p *ruleExecutor) stop() {
 }
 
 // messageHandlerFunc handle mqtt event from other service
-func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) error {
+func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) {
 	glog.Infof("executor received notification '%s'", msg.Topic())
-	t, err := event.Decode(msg, event.JSONCodec)
-	if err == nil && t != nil && t.GetType() == event.TopicPublish {
-		p.dataChan <- t
-		// we can call p.execute(t) here, but in consider of avoiding to block message receiver
-		// we use datachannel
-		return nil
+	if t, err := event.Decode(msg, event.JSONCodec); err == nil && t.GetType() == event.TopicPublish {
+		pubevent := t.(*event.TopicPublishEvent)
+		if pubevent.ProductId == p.productId {
+			// we can call p.execute(t) here, but in consider of avoiding to block message receiver
+			// we use datachannel
+			p.dataChan <- pubevent
+		}
 	}
-	return err
 }
 
 // getRuleObject get all rule's information from backend database
