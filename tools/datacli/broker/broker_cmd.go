@@ -10,7 +10,7 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package whaler
+package broker
 
 import (
 	"fmt"
@@ -23,46 +23,48 @@ import (
 )
 
 var (
-	productId string = ""
-	deviceId  string = ""
-	topic     string = ""
-	payload   string = ""
+	productId string
+	deviceId  string
+	topicName string
+	payload   string
 )
 
 var command = &cobra.Command{
-	Use:   "whaler",
-	Short: "send test data to whaler.",
-	Run: func(cmd *cobra.Command, args []string) {
-		c := config.New("datacli")
-		c.AddConfigItem("kafka", "localhost:9092")
-		producer, err := message.NewProducer(c, "datacli", true)
-		if err != nil {
-			glog.Info(err)
-			return
-		}
-		defer producer.Close()
-		e := event.TopicPublishEvent{
-			Type:    event.TopicPublish,
-			Topic:   topic,
-			Payload: []byte(payload),
-			Qos:     1,
-			Retain:  true,
-		}
-		topic := fmt.Sprintf("%s-%s-%s", productId, deviceId, topic)
-		value, _ := event.Encode(&e, event.JSONCodec)
-		msg := message.Broker{TopicName: topic, Payload: value}
-		if err := producer.SendMessage(&msg); err != nil {
-			glog.Info(err)
-		}
+	Use:   "broker",
+	Short: "send test data to kafka as broker.",
+	Run:   handleCommand,
+}
 
-	},
+func handleCommand(cmd *cobra.Command, args []string) {
+	c := config.New("datacli")
+	c.AddConfigItem("kafka", "localhost:9092")
+	producer, err := message.NewProducer(c, "datacli", true)
+	if err != nil {
+		glog.Info(err)
+		return
+	}
+	defer producer.Close()
+	e := event.TopicPublishEvent{
+		Type:    event.TopicPublish,
+		Topic:   topicName,
+		Payload: []byte(payload),
+		Qos:     1,
+		Retain:  true,
+	}
+	topic := fmt.Sprintf("%s-%s-%s", productId, deviceId, topicName)
+	value, _ := event.Encode(&e, event.JSONCodec)
+	msg := message.Broker{TopicName: topic, Payload: value}
+	if err := producer.SendMessage(&msg); err != nil {
+		glog.Info(err)
+	}
+
 }
 
 func NewCommand() *cobra.Command {
 	command.Flags().StringVarP(&productId, "product", "p", "", "product id")
 	command.Flags().StringVarP(&deviceId, "device", "d", "", "device id")
-	command.Flags().StringVarP(&topic, "topic", "t", "", "topic")
-	command.Flags().StringVarP(&payload, "payload", "d", "", "payload")
+	command.Flags().StringVarP(&topicName, "topic", "t", "", "topic name")
+	command.Flags().StringVarP(&payload, "payload", "l", "", "payload")
 
 	return command
 }

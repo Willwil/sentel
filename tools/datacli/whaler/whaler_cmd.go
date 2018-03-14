@@ -10,34 +10,17 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package main
+package whaler
 
-import (
-	"fmt"
-	"os"
+import "github.com/spf13/cobra"
 
-	"github.com/cloustone/sentel/tools/datacli/broker"
-	"github.com/spf13/cobra"
-)
-
-var RootCmd = &cobra.Command{
-	Use:   "datacli",
-	Short: "datacli is used to send data to each kafka consumer for testing, such as whaler",
+var command = &cobra.Command{
+	Use:   "whaler",
+	Short: "send test data to kafka as whaler.",
 	Run: func(cmd *cobra.Command, args []string) {
 	},
 }
 
-func init() {
-	cobra.OnInitialize(initConfig)
-
-	RootCmd.AddCommand(broker.NewCommand())
+func NewCommand() *cobra.Command {
+	return command
 }
-
-func main() {
-	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
-	}
-}
-
-func initConfig() {}

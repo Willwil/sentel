@@ -119,6 +119,7 @@ func (p *ruleExecutor) stop() {
 
 // messageHandlerFunc handle mqtt event from other service
 func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) error {
+	glog.Infof("executor received notification '%s'", msg.Topic())
 	t, err := event.Decode(msg, event.JSONCodec)
 	if err == nil && t != nil && t.GetType() == event.TopicPublish {
 		p.dataChan <- t

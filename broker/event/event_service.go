@@ -27,8 +27,8 @@ import (
 
 const (
 	ServiceName         = "event"
-	fmtOfMqttEventBus   = "iot-%s-event-mqtt"
-	fmtOfBrokerEventBus = "iot-%s-event-broker"
+	FmtOfMqttEventBus   = "iot-%s-event-mqtt"
+	FmtOfBrokerEventBus = "iot-%s-event-broker"
 )
 
 var (
@@ -80,9 +80,9 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 func (p *eventService) nameOfEventBus(e Event) string {
 	switch e.GetType() {
 	case SessionCreate, SessionDestroy, TopicPublish, TopicSubscribe, TopicUnsubscribe:
-		return fmt.Sprintf(fmtOfMqttEventBus, p.tenant)
+		return fmt.Sprintf(FmtOfMqttEventBus, p.tenant)
 	default:
-		return fmt.Sprintf(fmtOfBrokerEventBus, p.tenant)
+		return fmt.Sprintf(FmtOfBrokerEventBus, p.tenant)
 	}
 }
 
@@ -113,8 +113,8 @@ func (p *eventService) messageHandlerFunc(msg message.Message, ctx interface{}) 
 
 // Start
 func (p *eventService) Start() error {
-	err1 := p.consumer.Subscribe(fmt.Sprintf(fmtOfMqttEventBus, p.tenant), p.messageHandlerFunc, nil)
-	err2 := p.consumer.Subscribe(fmt.Sprintf(fmtOfBrokerEventBus, p.tenant), p.messageHandlerFunc, nil)
+	err1 := p.consumer.Subscribe(fmt.Sprintf(FmtOfMqttEventBus, p.tenant), p.messageHandlerFunc, nil)
+	err2 := p.consumer.Subscribe(fmt.Sprintf(FmtOfBrokerEventBus, p.tenant), p.messageHandlerFunc, nil)
 	if err1 != nil || err2 != nil {
 		return errors.New("subscribe topic failed")
 	}
