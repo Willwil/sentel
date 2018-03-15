@@ -13,7 +13,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
@@ -24,45 +23,20 @@ import (
 	"github.com/golang/glog"
 )
 
-// ruleEngine manage product's rules, add, start and stop rule
 type ruleExecutor struct {
-	config    config.Config          // configuration
-	tenantId  string                 // Tenant
-	productId string                 // one product have one rule engine
-	rules     map[string]*ruleWraper // all product's rule
-	mutex     sync.Mutex             // mutex to protext rules list
-	started   bool                   // indicate wether engined is started
-	consumer  message.Consumer
-	dataChan  chan event.Event
-	quitChan  chan interface{}
-	waitgroup sync.WaitGroup
+	config    config.Config                 // Configuration
+	tenantId  string                        // Tenant
+	productId string                        // One product have one rule engine
+	rules     map[string]*ruleWraper        // All product's rule
+	mutex     sync.Mutex                    // Mutex to protext rules list
+	started   bool                          // Indicate wether engined is started
+	consumer  message.Consumer              // Consumer for tenant broker event topic
+	dataChan  chan *event.TopicPublishEvent // Data channel to exchange broker publish event
+	quitChan  chan interface{}              // Quit channel to exit executor safely
+	waitgroup sync.WaitGroup                // Waitgroup for channel exition
 }
 
-type RuleContext struct {
-	Action    string `json:"action"`
-	ProductId string `json:"productId"`
-	RuleName  string `json:"ruleName"`
-	Resp      chan error
-}
-
-func (r RuleContext) String() string {
-	return fmt.Sprintf("productId:'%s', rule:'%s', action:'%s'", r.ProductId, r.RuleName, r.Action)
-}
-
-const (
-	RuleActionCreate = "create"
-	RuleActionRemove = "remove"
-	RuleActionUpdate = "update"
-	RuleActionStart  = "start"
-	RuleActionStop   = "stop"
-)
-const (
-	ruleStatusIdle    = "idle"
-	ruleStatusStarted = "started"
-	ruleStatusStoped  = "stoped"
-)
-
-// newRuleExecutor create a engine according to product id and configuration
+// newRuleExecutor create a rule executor according to product id and configuration
 func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 	// get product's tenant id
 	r, err := registry.New(c)
@@ -84,7 +58,7 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
-		dataChan:  make(chan event.Event, 1),
+		dataChan:  make(chan *event.TopicPublishEvent, 1),
 		quitChan:  make(chan interface{}, 1),
 		waitgroup: sync.WaitGroup{},
 	}, nil
@@ -92,28 +66,27 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 
 // start will start the rule engine, receiving topic and rule
 func (p *ruleExecutor) start() error {
-	if p.started {
-		return fmt.Errorf("rule executor '%s' already started", p.productId)
-	}
-	p.waitgroup.Add(1)
-	go func(p *ruleExecutor) {
-		defer p.waitgroup.Done()
-		for {
-			select {
-			case <-p.quitChan:
-				return
-			case e := <-p.dataChan:
-				p.execute(e)
+	if !p.started {
+		p.waitgroup.Add(1)
+		go func(p *ruleExecutor) {
+			defer p.waitgroup.Done()
+			for {
+				select {
+				case <-p.quitChan:
+					return
+				case e := <-p.dataChan:
+					p.execute(e)
+				}
 			}
-		}
-	}(p)
+		}(p)
 
-	topic := fmt.Sprintf(event.FmtOfBrokerEventBus, p.tenantId)
-	if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
-		return err
+		topic := fmt.Sprintf(event.FmtOfBrokerEventBus, p.tenantId)
+		if err := p.consumer.Subscribe(topic, p.messageHandlerFunc, nil); err != nil {
+			return err
+		}
+		p.consumer.Start()
+		p.started = true
 	}
-	p.consumer.Start()
-	p.started = true
 	return nil
 }
 
@@ -138,65 +111,50 @@ func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) 
 	}
 }
 
-// getRuleObject get all rule's information from backend database
-func (p *ruleExecutor) getRuleObject(rc RuleContext) (*registry.Rule, error) {
-	if r, err := registry.New(p.config); err == nil {
-		defer r.Close()
-		return r.GetRule(rc.ProductId, rc.RuleName)
-	}
-	return nil, errors.New("register unreachable")
-}
-
 // createRule add a rule received from apiserver to this engine
-func (p *ruleExecutor) createRule(r RuleContext) error {
+func (p *ruleExecutor) createRule(ctx *ruleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if _, found := p.rules[r.RuleName]; !found {
-		if obj, err := p.getRuleObject(r); err == nil {
-			if w, err := newRuleWraper(p.config, obj); err == nil {
-				p.rules[r.RuleName] = w
-				glog.Infof("rule '%s' is added", r.RuleName)
-				return nil
-			}
-		}
-	}
-	return fmt.Errorf("invalid rule name '%s' or status", r.RuleName)
-}
-
-// removeRule remove a rule from current rule engine
-func (p *ruleExecutor) removeRule(r RuleContext) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if _, found := p.rules[r.RuleName]; found {
-		delete(p.rules, r.RuleName)
-		glog.Infof("rule '%s' is removed", r.RuleName)
-		return nil
-	}
-	return fmt.Errorf("rule '%s' no exist", r.RuleName)
-}
-
-// updateRule update rule in engine
-func (p *ruleExecutor) updateRule(r RuleContext) error {
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-	if obj, err := p.getRuleObject(r); err == nil {
-		if w, found := p.rules[r.RuleName]; found {
-			w.rule = obj
-			p.rules[r.RuleName] = w
-			glog.Infof("rule '%s' is updated", r.RuleName)
+	if _, found := p.rules[ctx.ruleName]; !found {
+		if w, err := newRuleWraper(p.config, ctx); err == nil {
+			p.rules[ctx.ruleName] = w
 			return nil
 		}
 	}
-	return fmt.Errorf("rule '%s' no exist", r.RuleName)
+	return fmt.Errorf("invalid rule name '%s' or status", ctx.ruleName)
+}
+
+// removeRule remove a rule from current rule engine
+func (p *ruleExecutor) removeRule(r *ruleContext) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if _, found := p.rules[r.ruleName]; found {
+		delete(p.rules, r.ruleName)
+		return nil
+	}
+	return fmt.Errorf("rule '%s' no exist", r.ruleName)
+}
+
+// updateRule update rule in engine
+func (p *ruleExecutor) updateRule(ctx *ruleContext) error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	if r, err := getRule(p.config, ctx); err == nil {
+		if w, found := p.rules[ctx.ruleName]; found {
+			w.rule = r
+			p.rules[ctx.ruleName] = w
+			return nil
+		}
+	}
+	return fmt.Errorf("rule '%s' no exist", ctx.ruleName)
 }
 
 // startRule start rule in engine
-func (p *ruleExecutor) startRule(r RuleContext) error {
+func (p *ruleExecutor) startRule(r *ruleContext) error {
 	// Check wether the rule executor is started
 	if p.started == false {
 		if err := p.start(); err != nil {
-			glog.Errorf("start rule '%s' failed,'%s'", r.RuleName, err.Error())
 			return err
 		}
 		p.started = true
@@ -204,28 +162,27 @@ func (p *ruleExecutor) startRule(r RuleContext) error {
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if w, found := p.rules[r.RuleName]; found {
+	if w, found := p.rules[r.ruleName]; found {
 		w.rule.Status = ruleStatusStarted
-		glog.Infof("rule '%s' is started", r.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
 }
 
 // stopRule stop rule in engine
-func (p *ruleExecutor) stopRule(r RuleContext) error {
+func (p *ruleExecutor) stopRule(r *ruleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if w, found := p.rules[r.RuleName]; found {
+	if w, found := p.rules[r.ruleName]; found {
 		w.rule.Status = ruleStatusStoped
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
+	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
 }
 
-// execute rule to process published topic
-// Data recevied from iothub will be processed here and transformed into database
-func (p *ruleExecutor) execute(e event.Event) error {
+// execute execute rule to process published topic data recevied from
+// broker will be processed here and transformed into database
+func (p *ruleExecutor) execute(e *event.TopicPublishEvent) error {
 	glog.Info("executing rule ...")
 	p.mutex.Lock()
 	rules := p.rules

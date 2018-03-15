@@ -31,7 +31,11 @@ type ruleWraper struct {
 	datach chan interface{}  // Asynchrous data channel
 }
 
-func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
+func newRuleWraper(c config.Config, ctx *ruleContext) (*ruleWraper, error) {
+	r, err := getRule(c, ctx)
+	if err != nil {
+		return nil, err
+	}
 	// construct pipeline builder and add configuration
 	builder := pipeline.NewBuilder()
 	builder.AddConfig("productId", r.ProductId)
@@ -63,16 +67,22 @@ func newRuleWraper(c config.Config, r *registry.Rule) (*ruleWraper, error) {
 	return p, nil
 }
 
-func (p *ruleWraper) handle(e event.Event) error {
+// getRule return real rule object from registry
+func getRule(c config.Config, ctx *ruleContext) (*registry.Rule, error) {
+	if r, err := registry.New(c); err == nil {
+		defer r.Close()
+		return r.GetRule(ctx.productId, ctx.ruleName)
+	}
+	return nil, errors.New("registry unreachable")
+}
+
+func (p *ruleWraper) handle(e *event.TopicPublishEvent) error {
 	glog.Infof("executing rule '%s' for product '%s'...", p.rule.RuleName, p.rule.ProductId)
 	if usingreader {
 		p.datach <- e
 		return nil
 	} else {
-		if pe, ok := e.(*event.TopicPublishEvent); ok {
-			return p.ppline.PushData(pe)
-		}
-		return errors.New("invalid event type")
+		return p.ppline.PushData(e)
 	}
 }
 

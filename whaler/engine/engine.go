@@ -29,12 +29,13 @@ type ruleEngine struct {
 	config       config.Config            // global configuration
 	waitgroup    sync.WaitGroup           // waitigroup for goroutine exit
 	quitChan     chan interface{}         // exit channel
-	ruleChan     chan RuleContext         // rule channel to receive rule notification
+	ruleChan     chan *ruleContext        // rule channel to receive rule notification
 	executors    map[string]*ruleExecutor // all product's executors
 	mutex        sync.Mutex               // mutex
 	consumer     message.Consumer         // message consumer for rule creation...
 	recoveryChan chan interface{}         // recover channle that load started rule at the startup timeing
 	cleanTimer   *time.Timer              // cleantimer that scan all executors in duration time and clean empty executors
+	registry     *registry.Registry
 }
 
 const SERVICE_NAME = "engine"
@@ -44,16 +45,22 @@ type ServiceFactory struct{}
 
 // New create rule engine service factory
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	r, err := registry.New(c)
+	if err != nil {
+		return nil, err
+	}
+
 	consumer, _ := message.NewConsumer(c, "whaler-engine")
 	return &ruleEngine{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
 		quitChan:     make(chan interface{}),
-		ruleChan:     make(chan RuleContext),
+		ruleChan:     make(chan *ruleContext),
 		executors:    make(map[string]*ruleExecutor),
 		mutex:        sync.Mutex{},
 		consumer:     consumer,
 		recoveryChan: make(chan interface{}),
+		registry:     r,
 	}, nil
 }
 
@@ -62,14 +69,8 @@ func (p *ruleEngine) Name() string { return SERVICE_NAME }
 
 // Initialize check all rule's state and recover if rule is started
 func (p *ruleEngine) Initialize() error {
-	// try connect with registry
-	r, err := registry.New(p.config)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
 	// TODO: opening registry twice and read all rules into service is not good here
-	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
+	rules := p.registry.GetRulesWithStatus(registry.RuleStatusStarted)
 	if len(rules) > 0 {
 		p.recoveryChan <- true
 	}
@@ -90,10 +91,7 @@ func (p *ruleEngine) Start() error {
 		for {
 			select {
 			case ctx := <-s.ruleChan:
-				err := s.handleRule(ctx)
-				if ctx.Resp != nil {
-					ctx.Resp <- err
-				}
+				s.handleRule(ctx)
 			case <-s.recoveryChan:
 				s.recovery()
 			case <-s.quitChan:
@@ -134,15 +132,11 @@ func (p *ruleEngine) recovery() {
 	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
-			ctx := RuleContext{
-				Action:    message.ActionCreate,
-				ProductId: r.ProductId,
-				RuleName:  r.RuleName,
-			}
+			ctx := NewRuleContext(r.ProductId, r.RuleName, message.ActionCreate)
 			if err := p.handleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery create failed", r.ProductId, r.RuleName)
 			}
-			ctx.Action = message.ActionStart
+			ctx.action = message.ActionStart
 			if err := p.handleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery start failed", r.ProductId, r.RuleName)
 			}
@@ -164,11 +158,11 @@ func (p *ruleEngine) cleanExecutors() {
 }
 
 // handleRule process incomming rule
-func (p *ruleEngine) handleRule(ctx RuleContext) error {
+func (p *ruleEngine) handleRule(ctx *ruleContext) error {
 	glog.Infof("handing rule... %s", ctx.String())
 
-	productId := ctx.ProductId
-	switch ctx.Action {
+	productId := ctx.productId
+	switch ctx.action {
 	case RuleActionCreate:
 		if _, found := p.executors[productId]; !found {
 			if executor, err := newRuleExecutor(p.config, productId); err != nil {
@@ -201,7 +195,7 @@ func (p *ruleEngine) handleRule(ctx RuleContext) error {
 			return executor.stopRule(ctx)
 		}
 	}
-	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
+	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.ruleName)
 }
 
 func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
@@ -223,22 +217,18 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
 		}
 
 		glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
-		rc := RuleContext{
-			Action:    action,
-			ProductId: r.ProductId,
-			RuleName:  r.RuleName,
-		}
-		p.ruleChan <- rc
+		rctx := NewRuleContext(r.ProductId, r.RuleName, action)
+		p.ruleChan <- rctx
 		return
 	}
 	glog.Errorf("invalid message topic '%s' with rule", msg.Topic())
 }
 
-func HandleRuleNotification(ctx RuleContext) error {
+func HandleRuleNotification(ctx *ruleContext) error {
 	mgr := service.GetServiceManager()
 	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
 	s.ruleChan <- ctx
-	return <-ctx.Resp
+	return nil
 }
 
 func HandleTopicNotification(productId string, msg message.Message) error {

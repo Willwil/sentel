@@ -46,10 +46,10 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	e := echo.New()
 	e.HideBanner = true
 	// Rule
-	e.POST("whaler/api/v1/rules", createRule)
-	e.DELETE("whaler/api/v1/rules", removeRule)
-	e.PUT("whaler/api/v1/rules", controlRule)
-	e.PATCH("whaler/api/v1/rules", updateRule)
+	e.POST("whaler/api/v1/rules/:productId/:ruleName", createRule)
+	e.DELETE("whaler/api/v1/rules/:productId/:ruleName", removeRule)
+	e.PUT("whaler/api/v1/rules/:procutId/:ruleName?a=:action", controlRule)
+	e.PATCH("whaler/api/v1/rules/:productId/:ruleName", updateRule)
 
 	// Data
 	e.POST("whaler/api/v1/topic", publishTopic)
@@ -84,13 +84,7 @@ func (p *restapiService) Stop() {
 }
 
 func createRule(ctx echo.Context) error {
-	r := engine.RuleContext{
-		Action: engine.RuleActionCreate,
-		Resp:   make(chan error),
-	}
-	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
+	r := engine.NewRuleContext(ctx.Param("productId"), ctx.Param("ruleName"), engine.RuleActionCreate)
 	if err := engine.HandleRuleNotification(r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
@@ -98,28 +92,15 @@ func createRule(ctx echo.Context) error {
 }
 
 func updateRule(ctx echo.Context) error {
-	r := engine.RuleContext{
-		Action: engine.RuleActionUpdate,
-		Resp:   make(chan error),
-	}
-	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
+	r := engine.NewRuleContext(ctx.Param("productId"), ctx.Param("ruleName"), engine.RuleActionUpdate)
 	if err := engine.HandleRuleNotification(r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
-
 	return ctx.JSON(http.StatusOK, response{})
 }
 
 func removeRule(ctx echo.Context) error {
-	r := engine.RuleContext{
-		Action: engine.RuleActionRemove,
-		Resp:   make(chan error),
-	}
-	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
+	r := engine.NewRuleContext(ctx.Param("productId"), ctx.Param("ruleName"), engine.RuleActionRemove)
 	if err := engine.HandleRuleNotification(r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
@@ -128,12 +109,8 @@ func removeRule(ctx echo.Context) error {
 }
 
 func controlRule(ctx echo.Context) error {
-	r := engine.RuleContext{
-		Resp: make(chan error),
-	}
-	if err := ctx.Bind(&r); err != nil {
-		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
-	}
+	action := ctx.QueryParam("action")
+	r := engine.NewRuleContext(ctx.Param("productId"), ctx.Param("ruleName"), action)
 	if err := engine.HandleRuleNotification(r); err != nil {
 		return ctx.JSON(http.StatusBadRequest, response{Message: err.Error()})
 	}
