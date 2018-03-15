@@ -31,6 +31,7 @@ type RuleContext struct {
 	ProductId string
 	RuleName  string
 	Action    string
+	Response  chan error
 }
 
 func NewRuleContext(productId string, ruleName string, action string) *RuleContext {

@@ -86,7 +86,10 @@ func (p *ruleEngine) Start() error {
 		for {
 			select {
 			case ctx := <-s.ruleChan:
-				s.HandleRule(ctx)
+				err := s.dispatchRule(ctx)
+				if ctx.Response != nil {
+					ctx.Response <- err
+				}
 			case <-s.quitChan:
 				return
 			case <-s.cleanTimer.C:
@@ -100,9 +103,7 @@ func (p *ruleEngine) Start() error {
 
 // Stop
 func (p *ruleEngine) Stop() {
-	if p.cleanTimer != nil {
-		p.cleanTimer.Stop()
-	}
+	p.cleanTimer.Stop()
 	p.quitChan <- true
 	p.waitgroup.Wait()
 	close(p.quitChan)
@@ -117,7 +118,7 @@ func (p *ruleEngine) Stop() {
 	}
 }
 
-// recovery restart rules after whaler is restarted
+// Recovery restart rules after whaler is restarted
 func (p *ruleEngine) Recovery() error {
 	rules := p.registry.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {
@@ -148,8 +149,8 @@ func (p *ruleEngine) cleanExecutors() {
 	}
 }
 
-// handleRule process incomming rule
-func (p *ruleEngine) HandleRule(ctx *RuleContext) error {
+// dispatchRule process incomming rule according to rule's action
+func (p *ruleEngine) dispatchRule(ctx *RuleContext) error {
 	glog.Infof("handing rule... %s", ctx.String())
 
 	productId := ctx.ProductId
@@ -189,7 +190,7 @@ func (p *ruleEngine) HandleRule(ctx *RuleContext) error {
 	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
-func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
+func (p *ruleEngine) messageHandlerFunc(msg message.Message, param interface{}) {
 	if r, ok := msg.(*message.Rule); ok || r != nil {
 		action := ""
 		switch r.Action {
@@ -208,9 +209,16 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
 		}
 
 		glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
-		rctx := NewRuleContext(r.ProductId, r.RuleName, action)
-		p.ruleChan <- rctx
+		ctx := NewRuleContext(r.ProductId, r.RuleName, action)
+		p.ruleChan <- ctx
 		return
 	}
 	glog.Errorf("invalid message topic '%s' with rule", msg.Topic())
+}
+
+func (p *ruleEngine) HandleRule(ctx *RuleContext) error {
+	ctx.Response = make(chan error)
+	p.ruleChan <- ctx
+	err := <-ctx.Response
+	return err
 }
