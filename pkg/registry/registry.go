@@ -286,6 +286,14 @@ func (r *Registry) GetDevice(productId string, deviceId string) (*Device, error)
 	return device, err
 }
 
+// GetDeviceList retrieve a device list information from registry/
+func (r *Registry) GetDeviceList(productId string) ([]Device, error) {
+	c := r.db.C(dbNameDevices)
+	devices := []Device{}
+	err := c.Find(bson.M{"ProductId": productId}).All(devices)
+	return devices, err
+}
+
 // GetDeviceByName retrieve a device information from registry/
 func (r *Registry) GetDeviceByName(productId string, deviceName string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
