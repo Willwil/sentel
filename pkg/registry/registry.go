@@ -358,37 +358,57 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 	return nil
 }
 
+//save device runlog.
+func (r *Registry) SaveDeviceRunlog(productId string, deviceId string, deviceStatus string) error {	
+	log := Runlog{}
+	log.ProductId = productId
+	log.DeviceId = deviceId
+	log.DeviceStatus = deviceStatus
+	log.TimeCreated = time.Now()
+	log.TimeUpdated = time.Now()
+	log.IsShow = "0"
+	l := r.db.C(dbNameRunlogs)
+	return l.Insert(log)
+}
+
 // Duration 3 second device status, then show it.
 func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, error) {
 	c := r.db.C(dbNameRunlogs)
-	showlog := &Runlog{}
-	unshowlog := &Runlog{}
-	log := &Runlog{}
+	showlog := Runlog{}
+	unshowlogs := []Runlog{}
+	log := Runlog{}
 	//find showing device status.
-	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(showlog)
-	if err == nil {
-		//then try to find next unshowing status.
-		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).One(unshowlog)
-		if err == nil {
-			duration := unshowlog.TimeCreated.Sub(showlog.TimeCreated)
-			s, _ := time.ParseDuration("3s")
-			if duration >= s {
-				unshowlog.IsShow = "1"
-				unshowlog.TimeUpdated = time.Now()
-				c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}, unshowlog)
-				return unshowlog, err
+	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(&showlog)
+	if err == nil{
+		basetime := time.Now()
+		//then try to find all fited from showlog to now .
+		err = c.Find(bson.M{"TimeCreated": bson.M{"&gte": showlog.TimeCreated}}).Select(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).All(unshowlogs)
+		if err == nil{
+			for _,log = range unshowlogs{
+				duration := basetime.Sub(log.TimeCreated)
+				s,_ := time.ParseDuration("3s")
+				if duration >= s{
+					log.IsShow = "1"
+					log.TimeUpdated = time.Now()
+					c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0", "TimeCreated": log.TimeCreated}, log)
+					return &log, err
+				}else{
+					basetime = log.TimeCreated
+				}
 			}
-			return showlog, err
+			return &showlog, err
+		}else{
+			return &showlog, err
 		}
-	} else {
+	}else{
 		//no found,find the first device status,update status.
 		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(log)
-		if err == nil {
+		if err == nil{
 			log.IsShow = "1"
 			c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId}, log)
 		}
 	}
-	return log, err
+	return &log, err
 }
 
 // Rule

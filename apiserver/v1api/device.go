@@ -407,9 +407,20 @@ func BulkRegisterDevices(ctx echo.Context) error {
 }
 
 func GetShadowDevice(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	deviceId := ctx.Param("deviceId")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	// Get device into registry, the created product
+	r := getRegistry(ctx)
+	runlog, err := r.GetShadowDevice(productId, deviceId)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(OK, apiResponse{Result: runlog})
 }
 
 func UpdateShadowDevice(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	return UpdateDevice(ctx)
 }
