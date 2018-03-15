@@ -319,8 +319,8 @@ func (r *Registry) BulkGetDevices(devices []Device) ([]Device, error) {
 	devs := []Device{}
 	for _, dev := range devices {
 		devs, err = r.GetDevicesByName(dev.ProductId, dev.DeviceName)
-		if err != nil{
-			for _, dev := range devs{
+		if err != nil {
+			for _, dev := range devs {
 				rdevs = append(rdevs, dev)
 			}
 		}
@@ -337,7 +337,7 @@ func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 // BulkDeleteDevice delete a lot of devices from registry
 func (r *Registry) BulkDeleteDevice(devices []Device) error {
 	c := r.db.C(dbNameDevices)
-	for _, dev := range devices{
+	for _, dev := range devices {
 		c.Remove(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId})
 	}
 	return nil
@@ -352,11 +352,12 @@ func (r *Registry) UpdateDevice(dev *Device) error {
 // BulkUpdateDevice update a lot of devices in registry
 func (r *Registry) BulkUpdateDevice(devices []Device) error {
 	c := r.db.C(dbNameDevices)
-	for _, dev := range devices{
+	for _, dev := range devices {
 		c.Update(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId}, dev)
 	}
 	return nil
 }
+
 // Duration 3 second device status, then show it.
 func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, error) {
 	c := r.db.C(dbNameRunlogs)
@@ -365,13 +366,13 @@ func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, 
 	log := &Runlog{}
 	//find showing device status.
 	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(showlog)
-	if err == nil{
+	if err == nil {
 		//then try to find next unshowing status.
 		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).One(unshowlog)
-		if err == nil{
+		if err == nil {
 			duration := unshowlog.TimeCreated.Sub(showlog.TimeCreated)
-			s,_ := time.ParseDuration("3s")
-			if duration >= s{
+			s, _ := time.ParseDuration("3s")
+			if duration >= s {
 				unshowlog.IsShow = "1"
 				unshowlog.TimeUpdated = time.Now()
 				c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}, unshowlog)
@@ -379,16 +380,17 @@ func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, 
 			}
 			return showlog, err
 		}
-	}else{
+	} else {
 		//no found,find the first device status,update status.
 		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(log)
-		if err == nil{
+		if err == nil {
 			log.IsShow = "1"
 			c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId}, log)
 		}
 	}
 	return log, err
 }
+
 // Rule
 // GetRulesWithStatus return all rules in registry
 func (r *Registry) GetRulesWithStatus(status string) []Rule {
@@ -410,9 +412,9 @@ func (r *Registry) RegisterRule(rule *Rule) error {
 // GetRule retrieve a rule information from registry/
 func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
-	rule := Rule{}
-	err := c.Find(bson.M{"RuleName": ruleName, "ProductId": productId}).One(&rule)
-	return &rule, err
+	rule := &Rule{}
+	err := c.Find(bson.M{"RuleName": ruleName, "ProductId": productId}).One(rule)
+	return rule, err
 }
 
 // GetProduct retrieve product detail information from registry

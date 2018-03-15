@@ -27,7 +27,7 @@ type ruleExecutor struct {
 	config    config.Config                 // Configuration
 	tenantId  string                        // Tenant
 	productId string                        // One product have one rule engine
-	rules     map[string]*ruleWraper        // All product's rule
+	rules     map[string]*rule              // All product's rule
 	mutex     sync.Mutex                    // Mutex to protext rules list
 	started   bool                          // Indicate wether engined is started
 	consumer  message.Consumer              // Consumer for tenant broker event topic
@@ -54,7 +54,7 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 		tenantId:  product.TenantId,
 		productId: productId,
 		config:    c,
-		rules:     make(map[string]*ruleWraper),
+		rules:     make(map[string]*rule),
 		mutex:     sync.Mutex{},
 		started:   false,
 		consumer:  consumer,
@@ -111,14 +111,24 @@ func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) 
 	}
 }
 
+// getRule return rule according to rule context
+func (p *ruleExecutor) getRule(ctx *ruleContext) (*rule, error) {
+	if r, err := registry.New(p.config); err == nil {
+		if rr, err := r.GetRule(ctx.productId, ctx.ruleName); err == nil {
+			return &rule{Rule: *rr}, nil
+		}
+	}
+	return nil, fmt.Errorf("invalid rule name '%s' or status", ctx.ruleName)
+}
+
 // createRule add a rule received from apiserver to this engine
 func (p *ruleExecutor) createRule(ctx *ruleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
 	if _, found := p.rules[ctx.ruleName]; !found {
-		if w, err := newRuleWraper(p.config, ctx); err == nil {
-			p.rules[ctx.ruleName] = w
+		if rule, err := newRule(p.config, ctx); err == nil {
+			p.rules[ctx.ruleName] = rule
 			return nil
 		}
 	}
@@ -140,10 +150,9 @@ func (p *ruleExecutor) removeRule(r *ruleContext) error {
 func (p *ruleExecutor) updateRule(ctx *ruleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if r, err := getRule(p.config, ctx); err == nil {
-		if w, found := p.rules[ctx.ruleName]; found {
-			w.rule = r
-			p.rules[ctx.ruleName] = w
+	if rule, err := p.getRule(ctx); err == nil {
+		if _, found := p.rules[ctx.ruleName]; found {
+			p.rules[ctx.ruleName] = rule
 			return nil
 		}
 	}
@@ -162,8 +171,8 @@ func (p *ruleExecutor) startRule(r *ruleContext) error {
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if w, found := p.rules[r.ruleName]; found {
-		w.rule.Status = ruleStatusStarted
+	if rule, found := p.rules[r.ruleName]; found {
+		rule.Status = ruleStatusStarted
 		return nil
 	}
 	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
@@ -173,8 +182,8 @@ func (p *ruleExecutor) startRule(r *ruleContext) error {
 func (p *ruleExecutor) stopRule(r *ruleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if w, found := p.rules[r.ruleName]; found {
-		w.rule.Status = ruleStatusStoped
+	if rule, found := p.rules[r.ruleName]; found {
+		rule.Status = ruleStatusStoped
 		return nil
 	}
 	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
@@ -187,10 +196,10 @@ func (p *ruleExecutor) execute(e *event.TopicPublishEvent) error {
 	p.mutex.Lock()
 	rules := p.rules
 	p.mutex.Unlock()
-	for _, w := range rules {
-		if w.rule.Status == ruleStatusStarted {
-			if err := w.handle(e); err != nil {
-				glog.Infof("rule '%s' execution failed,'%s'", w.rule.RuleName, err.Error())
+	for _, rule := range rules {
+		if rule.Status == ruleStatusStarted {
+			if err := rule.handle(e); err != nil {
+				glog.Infof("rule '%s' execution failed,'%s'", rule.RuleName, err.Error())
 			}
 		}
 	}
