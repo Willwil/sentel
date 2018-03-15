@@ -20,31 +20,39 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
-	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
-// ruleEngine manage all rule engine and execute rule
-type ruleEngine struct {
-	config       config.Config            // global configuration
-	waitgroup    sync.WaitGroup           // waitigroup for goroutine exit
-	quitChan     chan interface{}         // exit channel
-	ruleChan     chan *ruleContext        // rule channel to receive rule notification
-	executors    map[string]*ruleExecutor // all product's executors
-	mutex        sync.Mutex               // mutex
-	consumer     message.Consumer         // message consumer for rule creation...
-	recoveryChan chan interface{}         // recover channle that load started rule at the startup timeing
-	cleanTimer   *time.Timer              // cleantimer that scan all executors in duration time and clean empty executors
-	registry     *registry.Registry
+type RuleEngine interface {
+	Start() error
+	Stop()
+	Recovery() error
+	//SetCleanDuration(time.Duration)
+	HandleRule(*RuleContext) error
 }
 
-const SERVICE_NAME = "engine"
+func NewEngine(c config.Config) (RuleEngine, error) {
+	return newRuleEngine(c)
+}
+
+// ruleEngine manage all rule engine and execute rule
+type ruleEngine struct {
+	config        config.Config            // global configuration
+	waitgroup     sync.WaitGroup           // waitigroup for goroutine exit
+	quitChan      chan interface{}         // exit channel
+	ruleChan      chan *RuleContext        // rule channel to receive rule notification
+	executors     map[string]*ruleExecutor // all product's executors
+	mutex         sync.Mutex               // mutex
+	consumer      message.Consumer         // message consumer for rule creation...
+	cleanTimer    *time.Timer              // cleantimer that scan all executors in duration time and clean empty executors
+	registry      *registry.Registry
+	cleanDuration time.Duration
+}
+
 const CLEAN_DURATION = time.Minute * 30
 
-type ServiceFactory struct{}
-
 // New create rule engine service factory
-func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+func newRuleEngine(c config.Config) (RuleEngine, error) {
 	r, err := registry.New(c)
 	if err != nil {
 		return nil, err
@@ -52,29 +60,16 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 
 	consumer, _ := message.NewConsumer(c, "whaler-engine")
 	return &ruleEngine{
-		config:       c,
-		waitgroup:    sync.WaitGroup{},
-		quitChan:     make(chan interface{}),
-		ruleChan:     make(chan *ruleContext),
-		executors:    make(map[string]*ruleExecutor),
-		mutex:        sync.Mutex{},
-		consumer:     consumer,
-		recoveryChan: make(chan interface{}),
-		registry:     r,
+		config:        c,
+		waitgroup:     sync.WaitGroup{},
+		quitChan:      make(chan interface{}),
+		ruleChan:      make(chan *RuleContext),
+		executors:     make(map[string]*ruleExecutor),
+		mutex:         sync.Mutex{},
+		consumer:      consumer,
+		registry:      r,
+		cleanDuration: CLEAN_DURATION,
 	}, nil
-}
-
-// Name
-func (p *ruleEngine) Name() string { return SERVICE_NAME }
-
-// Initialize check all rule's state and recover if rule is started
-func (p *ruleEngine) Initialize() error {
-	// TODO: opening registry twice and read all rules into service is not good here
-	rules := p.registry.GetRulesWithStatus(registry.RuleStatusStarted)
-	if len(rules) > 0 {
-		p.recoveryChan <- true
-	}
-	return nil
 }
 
 // Start
@@ -91,9 +86,10 @@ func (p *ruleEngine) Start() error {
 		for {
 			select {
 			case ctx := <-s.ruleChan:
-				s.handleRule(ctx)
-			case <-s.recoveryChan:
-				s.recovery()
+				err := s.dispatchRule(ctx)
+				if ctx.Response != nil {
+					ctx.Response <- err
+				}
 			case <-s.quitChan:
 				return
 			case <-s.cleanTimer.C:
@@ -107,14 +103,11 @@ func (p *ruleEngine) Start() error {
 
 // Stop
 func (p *ruleEngine) Stop() {
-	if p.cleanTimer != nil {
-		p.cleanTimer.Stop()
-	}
+	p.cleanTimer.Stop()
 	p.quitChan <- true
 	p.waitgroup.Wait()
 	close(p.quitChan)
 	close(p.ruleChan)
-	close(p.recoveryChan)
 	p.consumer.Close()
 
 	// stop all ruleEngine
@@ -125,24 +118,23 @@ func (p *ruleEngine) Stop() {
 	}
 }
 
-// recovery restart rules after whaler is restarted
-func (p *ruleEngine) recovery() {
-	r, _ := registry.New(p.config)
-	defer r.Close()
-	rules := r.GetRulesWithStatus(registry.RuleStatusStarted)
+// Recovery restart rules after whaler is restarted
+func (p *ruleEngine) Recovery() error {
+	rules := p.registry.GetRulesWithStatus(registry.RuleStatusStarted)
 	for _, r := range rules {
 		if r.Status == registry.RuleStatusStarted {
 			ctx := NewRuleContext(r.ProductId, r.RuleName, message.ActionCreate)
-			if err := p.handleRule(ctx); err != nil {
+			if err := p.HandleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery create failed", r.ProductId, r.RuleName)
 			}
-			ctx.action = message.ActionStart
-			if err := p.handleRule(ctx); err != nil {
+			ctx.Action = message.ActionStart
+			if err := p.HandleRule(ctx); err != nil {
 				glog.Errorf("product '%s', rule '%s'recovery start failed", r.ProductId, r.RuleName)
 			}
 
 		}
 	}
+	return nil
 }
 
 // cleanExecutors scan all executors and stop the executor if
@@ -157,12 +149,12 @@ func (p *ruleEngine) cleanExecutors() {
 	}
 }
 
-// handleRule process incomming rule
-func (p *ruleEngine) handleRule(ctx *ruleContext) error {
+// dispatchRule process incomming rule according to rule's action
+func (p *ruleEngine) dispatchRule(ctx *RuleContext) error {
 	glog.Infof("handing rule... %s", ctx.String())
 
-	productId := ctx.productId
-	switch ctx.action {
+	productId := ctx.ProductId
+	switch ctx.Action {
 	case RuleActionCreate:
 		if _, found := p.executors[productId]; !found {
 			if executor, err := newRuleExecutor(p.config, productId); err != nil {
@@ -195,10 +187,10 @@ func (p *ruleEngine) handleRule(ctx *ruleContext) error {
 			return executor.stopRule(ctx)
 		}
 	}
-	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.ruleName)
+	return fmt.Errorf("invalid operation on product '%s' rule '%s'", productId, ctx.RuleName)
 }
 
-func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
+func (p *ruleEngine) messageHandlerFunc(msg message.Message, param interface{}) {
 	if r, ok := msg.(*message.Rule); ok || r != nil {
 		action := ""
 		switch r.Action {
@@ -217,28 +209,16 @@ func (p *ruleEngine) messageHandlerFunc(msg message.Message, ctx interface{}) {
 		}
 
 		glog.Infof("received topic '%s' with action '%s'...", msg.Topic(), action)
-		rctx := NewRuleContext(r.ProductId, r.RuleName, action)
-		p.ruleChan <- rctx
+		ctx := NewRuleContext(r.ProductId, r.RuleName, action)
+		p.ruleChan <- ctx
 		return
 	}
 	glog.Errorf("invalid message topic '%s' with rule", msg.Topic())
 }
 
-func HandleRuleNotification(ctx *ruleContext) error {
-	mgr := service.GetServiceManager()
-	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
-	s.ruleChan <- ctx
-	return nil
-}
-
-func HandleTopicNotification(productId string, msg message.Message) error {
-	mgr := service.GetServiceManager()
-	s := mgr.GetService(SERVICE_NAME).(*ruleEngine)
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-	if executor, found := s.executors[productId]; found {
-		executor.messageHandlerFunc(msg, nil)
-		return nil
-	}
-	return fmt.Errorf("invalid product '%s'", productId)
+func (p *ruleEngine) HandleRule(ctx *RuleContext) error {
+	ctx.Response = make(chan error)
+	p.ruleChan <- ctx
+	err := <-ctx.Response
+	return err
 }

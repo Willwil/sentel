@@ -286,6 +286,14 @@ func (r *Registry) GetDevice(productId string, deviceId string) (*Device, error)
 	return device, err
 }
 
+// GetDeviceList retrieve a device list information from registry/
+func (r *Registry) GetDeviceList(productId string) ([]Device, error) {
+	c := r.db.C(dbNameDevices)
+	devices := []Device{}
+	err := c.Find(bson.M{"ProductId": productId}).All(devices)
+	return devices, err
+}
+
 // GetDeviceByName retrieve a device information from registry/
 func (r *Registry) GetDeviceByName(productId string, deviceName string) (*Device, error) {
 	c := r.db.C(dbNameDevices)
@@ -319,8 +327,8 @@ func (r *Registry) BulkGetDevices(devices []Device) ([]Device, error) {
 	devs := []Device{}
 	for _, dev := range devices {
 		devs, err = r.GetDevicesByName(dev.ProductId, dev.DeviceName)
-		if err != nil{
-			for _, dev := range devs{
+		if err != nil {
+			for _, dev := range devs {
 				rdevs = append(rdevs, dev)
 			}
 		}
@@ -337,7 +345,7 @@ func (r *Registry) DeleteDevice(productId string, deviceId string) error {
 // BulkDeleteDevice delete a lot of devices from registry
 func (r *Registry) BulkDeleteDevice(devices []Device) error {
 	c := r.db.C(dbNameDevices)
-	for _, dev := range devices{
+	for _, dev := range devices {
 		c.Remove(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId})
 	}
 	return nil
@@ -352,32 +360,53 @@ func (r *Registry) UpdateDevice(dev *Device) error {
 // BulkUpdateDevice update a lot of devices in registry
 func (r *Registry) BulkUpdateDevice(devices []Device) error {
 	c := r.db.C(dbNameDevices)
-	for _, dev := range devices{
+	for _, dev := range devices {
 		c.Update(bson.M{"ProductId": dev.ProductId, "DeviceId": dev.DeviceId}, dev)
 	}
 	return nil
 }
+
+//save device runlog.
+func (r *Registry) SaveDeviceRunlog(productId string, deviceId string, deviceStatus string) error {	
+	log := Runlog{}
+	log.ProductId = productId
+	log.DeviceId = deviceId
+	log.DeviceStatus = deviceStatus
+	log.TimeCreated = time.Now()
+	log.TimeUpdated = time.Now()
+	log.IsShow = "0"
+	l := r.db.C(dbNameRunlogs)
+	return l.Insert(log)
+}
+
 // Duration 3 second device status, then show it.
 func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, error) {
 	c := r.db.C(dbNameRunlogs)
-	showlog := &Runlog{}
-	unshowlog := &Runlog{}
-	log := &Runlog{}
+	showlog := Runlog{}
+	unshowlogs := []Runlog{}
+	log := Runlog{}
 	//find showing device status.
-	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(showlog)
+	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(&showlog)
 	if err == nil{
-		//then try to find next unshowing status.
-		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).One(unshowlog)
+		basetime := time.Now()
+		//then try to find all fited from showlog to now .
+		err = c.Find(bson.M{"TimeCreated": bson.M{"&gte": showlog.TimeCreated}}).Select(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).All(unshowlogs)
 		if err == nil{
-			duration := unshowlog.TimeCreated.Sub(showlog.TimeCreated)
-			s,_ := time.ParseDuration("3s")
-			if duration >= s{
-				unshowlog.IsShow = "1"
-				unshowlog.TimeUpdated = time.Now()
-				c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}, unshowlog)
-				return unshowlog, err
+			for _,log = range unshowlogs{
+				duration := basetime.Sub(log.TimeCreated)
+				s,_ := time.ParseDuration("3s")
+				if duration >= s{
+					log.IsShow = "1"
+					log.TimeUpdated = time.Now()
+					c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0", "TimeCreated": log.TimeCreated}, log)
+					return &log, err
+				}else{
+					basetime = log.TimeCreated
+				}
 			}
-			return showlog, err
+			return &showlog, err
+		}else{
+			return &showlog, err
 		}
 	}else{
 		//no found,find the first device status,update status.
@@ -387,8 +416,9 @@ func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, 
 			c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId}, log)
 		}
 	}
-	return log, err
+	return &log, err
 }
+
 // Rule
 // GetRulesWithStatus return all rules in registry
 func (r *Registry) GetRulesWithStatus(status string) []Rule {
@@ -410,9 +440,9 @@ func (r *Registry) RegisterRule(rule *Rule) error {
 // GetRule retrieve a rule information from registry/
 func (r *Registry) GetRule(productId string, ruleName string) (*Rule, error) {
 	c := r.db.C(dbNameRules)
-	rule := Rule{}
-	err := c.Find(bson.M{"RuleName": ruleName, "ProductId": productId}).One(&rule)
-	return &rule, err
+	rule := &Rule{}
+	err := c.Find(bson.M{"RuleName": ruleName, "ProductId": productId}).One(rule)
+	return rule, err
 }
 
 // GetProduct retrieve product detail information from registry

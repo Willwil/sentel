@@ -1,7 +1,7 @@
 FROM centos
 
 # install software
-COPY iotgateway/nginx-mqtt/nginx.repo /etc/yum.repos.d/
+COPY iothub/nginx-mqtt/nginx.repo /etc/yum.repos.d/
 RUN yum -y install python-setuptools \
     && easy_install supervisor \
     && yum -y install nginx \
@@ -9,12 +9,12 @@ RUN yum -y install python-setuptools \
     && yum clean all
 
 # config nginx mqtt
-COPY iotgateway/nginx-mqtt/etc /
+COPY iothub/nginx-mqtt/etc /
 
 # config sentel-gateway
 RUN mkdir /sentel
-COPY iotgateway/etc/template.conf /sentel/
-COPY bin/linux_amd64/iotgateway /sentel/
+COPY iothub/etc/template.conf /sentel/
+COPY bin/linux_amd64/iothub /sentel/
 
 
 EXPOSE 80 1883

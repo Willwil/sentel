@@ -145,7 +145,7 @@ func GetRule(ctx echo.Context) error {
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	return ctx.JSON(OK, apiResponse{Result: &rule})
+	return ctx.JSON(OK, apiResponse{Result: rule})
 }
 
 func GetProductRules(ctx echo.Context) error {

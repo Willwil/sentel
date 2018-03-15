@@ -123,28 +123,42 @@ type BulkDeviceQueryRequest struct {
 }
 
 func BulkApplyDevices(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	return BulkRegisterDevices(ctx)
 }
 
 func BulkApplyGetStatus(ctx echo.Context) error {
-	req := BulkDeviceQueryRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.ProductId == "" {
+	return GetDeviceByName(ctx)
+}
+
+func BulkApplyGetDevices(ctx echo.Context) error {
+	return GetDeviceByName(ctx)
+}
+
+func GetDeviceList(ctx echo.Context) error {
+	productId := ctx.Param("productId")
+	if productId == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
-	rdevices := []registry.Device{}
-	for _, dev := range req.DevicesName {
-		d := registry.Device{
-			ProductId:    req.ProductId,
-			DeviceId:     util.NewObjectId(),
-			DeviceName:   dev,
-		}
-		rdevices = append(rdevices, d)
-	}
 	r := getRegistry(ctx)
-	odevs, err := r.BulkGetDevices(rdevices)
+	devs, err := r.GetDeviceList(productId)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(NotImplemented, apiResponse{Result: devs})
+}
+
+func BulkGetDeviceStatus(ctx echo.Context) error {
+	return GetDeviceByName(ctx)
+}
+func GetDeviceByName(ctx echo.Context) error {
+	deviceName := ctx.Param("deviceName")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceName == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
+	r := getRegistry(ctx)
+	odevs, err := r.GetDevicesByName(productId, deviceName)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -153,47 +167,6 @@ func BulkApplyGetStatus(ctx echo.Context) error {
 		rdevicestatus = append(rdevicestatus, deviceStatus{DeviceId: dev.DeviceId, Status: dev.DeviceStatus})
 	}
 	return ctx.JSON(OK, apiResponse{Result: rdevicestatus})
-}
-
-func BulkApplyGetDevices(ctx echo.Context) error {
-	req := BulkDeviceQueryRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.ProductId == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-	rdevices := []registry.Device{}
-	for _, dev := range req.DevicesName {
-		d := registry.Device{
-			ProductId:    req.ProductId,
-			DeviceId:     util.NewObjectId(),
-			DeviceName:   dev,
-			TimeCreated:  time.Now(),
-			DeviceSecret: util.NewObjectId(),
-		}
-		rdevices = append(rdevices, d)
-	}
-	r := getRegistry(ctx)
-	odevs, err := r.BulkGetDevices(rdevices)
-	if err != nil {
-		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
-	}
-
-	return ctx.JSON(NotImplemented, apiResponse{Result: odevs})
-}
-
-func GetDeviceList(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
-}
-
-
-
-func BulkGetDeviceStatus(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
-}
-func GetDeviceByName(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
 }
 
 type devicePropsRequest struct {
@@ -294,15 +267,13 @@ func SaveDevicePropsByName(ctx echo.Context) error {
 }
 
 func GetDeviceProps(ctx echo.Context) error {
-	req := devicePropsRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.ProductId == "" || req.DeviceId =="" {
+	deviceId := ctx.Param("deviceId")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceId =="" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	r := getRegistry(ctx)
-	device, err := r.GetDevice(req.ProductId, req.DeviceId)
+	device, err := r.GetDevice(productId, deviceId)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -324,15 +295,13 @@ func GetDeviceProps(ctx echo.Context) error {
 }
 
 func GetDevicePropsByName(ctx echo.Context) error {
-	req := devicePropsRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.ProductId == "" {
+	deviceName := ctx.Param("deviceName")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	r := getRegistry(ctx)
-	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
+	devices, err := r.GetDevicesByName(productId, deviceName)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -355,15 +324,13 @@ func GetDevicePropsByName(ctx echo.Context) error {
 	return ctx.JSON(OK, apiResponse{Result: devices})
 }
 func RemoveDevicePropsByName(ctx echo.Context) error {
-	req := devicePropsRequest{}
-	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if req.ProductId == "" {
+	deviceName := ctx.Param("deviceName")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceName == "" {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	r := getRegistry(ctx)
-	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
+	devices, err := r.GetDevicesByName(productId, deviceName)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -407,9 +374,20 @@ func BulkRegisterDevices(ctx echo.Context) error {
 }
 
 func GetShadowDevice(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	deviceId := ctx.Param("deviceId")
+	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+	// Get device into registry, the created product
+	r := getRegistry(ctx)
+	runlog, err := r.GetShadowDevice(productId, deviceId)
+	if err != nil {
+		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
+	}
+	return ctx.JSON(OK, apiResponse{Result: runlog})
 }
 
 func UpdateShadowDevice(ctx echo.Context) error {
-	return ctx.JSON(NotImplemented, apiResponse{})
+	return UpdateDevice(ctx)
 }
