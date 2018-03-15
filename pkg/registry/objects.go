@@ -40,9 +40,20 @@ type Device struct {
 	ProductId    string    `bson:"ProductId" json:"ProductId"`
 	DeviceId     string    `bson:"DeviceId" json:"DeviceId"`
 	DeviceName   string    `bson:"DeviceName" json:"DeviceName"`
-	DeviceStatus string    `bson:"DeviceStatus"`
+	DeviceStatus string    `bson:"DeviceStatus" json:"DeviceStatus"`
 	DeviceSecret string    `bson:"DeviceSecret" json:"DeviceSecret"`
 	Props        string    `bson:"Props" json:"Props"`
+	TimeCreated  time.Time `bson:"TimeCreated" json:"TimeCreated"`
+	TimeUpdated  time.Time `bson:"TimeUpdated" json:"TimeUpdated"`
+}
+// Runlog
+// Only Status duration 3 second, we hold it is valid.
+type Runlog struct {
+	ProductId    string    `bson:"ProductId" json:"ProductId"`
+	DeviceId     string    `bson:"DeviceId" json:"DeviceId"`
+	DeviceName   string    `bson:"DeviceName" json:"DeviceName"`
+	DeviceStatus string    `bson:"DeviceStatus" json:"DeviceStatus"`
+	IsShow       string    `bson:"IsShow" json:"IsShow"`
 	TimeCreated  time.Time `bson:"TimeCreated" json:"TimeCreated"`
 	TimeUpdated  time.Time `bson:"TimeUpdated" json:"TimeUpdated"`
 }

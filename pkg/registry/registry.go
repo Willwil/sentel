@@ -29,6 +29,7 @@ const (
 	dbNameProducts     = "products"
 	dbNameTenants      = "tenants"
 	dbNameRules        = "rules"
+	dbNameRunlogs      = "runlogs"
 	dbNameTopicFlavors = "topicflavors"
 )
 
@@ -356,7 +357,38 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 	}
 	return nil
 }
-
+// Duration 3 second device status, then show it.
+func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, error) {
+	c := r.db.C(dbNameRunlogs)
+	showlog := &Runlog{}
+	unshowlog := &Runlog{}
+	log := &Runlog{}
+	//find showing device status.
+	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(showlog)
+	if err == nil{
+		//then try to find next unshowing status.
+		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).One(unshowlog)
+		if err == nil{
+			duration := unshowlog.TimeCreated.Sub(showlog.TimeCreated)
+			s,_ := time.ParseDuration("3s")
+			if duration >= s{
+				unshowlog.IsShow = "1"
+				unshowlog.TimeUpdated = time.Now()
+				c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}, unshowlog)
+				return unshowlog, err
+			}
+			return showlog, err
+		}
+	}else{
+		//no found,find the first device status,update status.
+		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(log)
+		if err == nil{
+			log.IsShow = "1"
+			c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId}, log)
+		}
+	}
+	return log, err
+}
 // Rule
 // GetRulesWithStatus return all rules in registry
 func (r *Registry) GetRulesWithStatus(status string) []Rule {
