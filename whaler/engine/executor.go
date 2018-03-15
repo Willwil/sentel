@@ -112,55 +112,55 @@ func (p *ruleExecutor) messageHandlerFunc(msg message.Message, ctx interface{}) 
 }
 
 // getRule return rule according to rule context
-func (p *ruleExecutor) getRule(ctx *ruleContext) (*rule, error) {
+func (p *ruleExecutor) getRule(ctx *RuleContext) (*rule, error) {
 	if r, err := registry.New(p.config); err == nil {
-		if rr, err := r.GetRule(ctx.productId, ctx.ruleName); err == nil {
+		if rr, err := r.GetRule(ctx.ProductId, ctx.RuleName); err == nil {
 			return &rule{Rule: *rr}, nil
 		}
 	}
-	return nil, fmt.Errorf("invalid rule name '%s' or status", ctx.ruleName)
+	return nil, fmt.Errorf("invalid rule name '%s' or status", ctx.RuleName)
 }
 
 // createRule add a rule received from apiserver to this engine
-func (p *ruleExecutor) createRule(ctx *ruleContext) error {
+func (p *ruleExecutor) createRule(ctx *RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
-	if _, found := p.rules[ctx.ruleName]; !found {
+	if _, found := p.rules[ctx.RuleName]; !found {
 		if rule, err := newRule(p.config, ctx); err == nil {
-			p.rules[ctx.ruleName] = rule
+			p.rules[ctx.RuleName] = rule
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid rule name '%s' or status", ctx.ruleName)
+	return fmt.Errorf("invalid rule name '%s' or status", ctx.RuleName)
 }
 
 // removeRule remove a rule from current rule engine
-func (p *ruleExecutor) removeRule(r *ruleContext) error {
+func (p *ruleExecutor) removeRule(r *RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, found := p.rules[r.ruleName]; found {
-		delete(p.rules, r.ruleName)
+	if _, found := p.rules[r.RuleName]; found {
+		delete(p.rules, r.RuleName)
 		return nil
 	}
-	return fmt.Errorf("rule '%s' no exist", r.ruleName)
+	return fmt.Errorf("rule '%s' no exist", r.RuleName)
 }
 
 // updateRule update rule in engine
-func (p *ruleExecutor) updateRule(ctx *ruleContext) error {
+func (p *ruleExecutor) updateRule(ctx *RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	if rule, err := p.getRule(ctx); err == nil {
-		if _, found := p.rules[ctx.ruleName]; found {
-			p.rules[ctx.ruleName] = rule
+		if _, found := p.rules[ctx.RuleName]; found {
+			p.rules[ctx.RuleName] = rule
 			return nil
 		}
 	}
-	return fmt.Errorf("rule '%s' no exist", ctx.ruleName)
+	return fmt.Errorf("rule '%s' no exist", ctx.RuleName)
 }
 
 // startRule start rule in engine
-func (p *ruleExecutor) startRule(r *ruleContext) error {
+func (p *ruleExecutor) startRule(r *RuleContext) error {
 	// Check wether the rule executor is started
 	if p.started == false {
 		if err := p.start(); err != nil {
@@ -171,22 +171,22 @@ func (p *ruleExecutor) startRule(r *ruleContext) error {
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if rule, found := p.rules[r.ruleName]; found {
+	if rule, found := p.rules[r.RuleName]; found {
 		rule.Status = ruleStatusStarted
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
+	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
 }
 
 // stopRule stop rule in engine
-func (p *ruleExecutor) stopRule(r *ruleContext) error {
+func (p *ruleExecutor) stopRule(r *RuleContext) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if rule, found := p.rules[r.ruleName]; found {
+	if rule, found := p.rules[r.RuleName]; found {
 		rule.Status = ruleStatusStoped
 		return nil
 	}
-	return fmt.Errorf("rule '%s' doesn't exist", r.ruleName)
+	return fmt.Errorf("rule '%s' doesn't exist", r.RuleName)
 }
 
 // execute execute rule to process published topic data recevied from

@@ -27,20 +27,20 @@ const (
 	ruleStatusStoped  = "stoped"
 )
 
-type ruleContext struct {
-	productId string
-	ruleName  string
-	action    string
+type RuleContext struct {
+	ProductId string
+	RuleName  string
+	Action    string
 }
 
-func NewRuleContext(productId string, ruleName string, action string) *ruleContext {
-	return &ruleContext{
-		productId: productId,
-		ruleName:  ruleName,
-		action:    action,
+func NewRuleContext(productId string, ruleName string, action string) *RuleContext {
+	return &RuleContext{
+		ProductId: productId,
+		RuleName:  ruleName,
+		Action:    action,
 	}
 }
 
-func (r ruleContext) String() string {
-	return fmt.Sprintf("productId:'%s', rule:'%s', action:'%s'", r.productId, r.ruleName, r.action)
+func (r RuleContext) String() string {
+	return fmt.Sprintf("productId:'%s', rule:'%s', action:'%s'", r.ProductId, r.RuleName, r.Action)
 }

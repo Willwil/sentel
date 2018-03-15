@@ -32,10 +32,10 @@ type rule struct {
 	datach        chan interface{}  // Asynchrous data channel
 }
 
-func newRule(c config.Config, ctx *ruleContext) (*rule, error) {
+func newRule(c config.Config, ctx *RuleContext) (*rule, error) {
 	if r, err := registry.New(c); err == nil {
 		defer r.Close()
-		if rr, err := r.GetRule(ctx.productId, ctx.ruleName); err == nil {
+		if rr, err := r.GetRule(ctx.ProductId, ctx.RuleName); err == nil {
 			rule := &rule{Rule: *rr}
 			err := rule.setupPipeline(c)
 			return rule, err
