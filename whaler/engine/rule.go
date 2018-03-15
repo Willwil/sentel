@@ -13,7 +13,6 @@
 package engine
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/cloustone/sentel/broker/event"
@@ -41,7 +40,7 @@ func newRule(c config.Config, ctx *RuleContext) (*rule, error) {
 			return rule, err
 		}
 	}
-	return nil, errors.New("invalid rule context")
+	return nil, fmt.Errorf("invalid rule context for '%s'", ctx.ProductId)
 }
 
 func (p *rule) setupPipeline(c config.Config) error {
