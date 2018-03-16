@@ -55,7 +55,7 @@ func (p *rule) setupPipeline(c config.Config) error {
 	switch p.DataTarget.Type {
 	case registry.DataTargetTypeTopic:
 		builder.AddConfig("mongo", c.MustString("mongo"))
-		builder.AddConfig("message_server", c.MustString("kafka"))
+		builder.AddConfig("kafka", c.MustString("kafka"))
 		builder.AddConfig("topic", p.DataTarget.Topic)
 	default:
 		return fmt.Errorf("unsupported data target type '%s'", p.DataTarget.Type)

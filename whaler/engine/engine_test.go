@@ -59,6 +59,7 @@ var (
 			Topic: "world",
 		},
 	}
+	tenantId = "jenson"
 
 	defaultEngine *ruleEngine
 	defaultConfig config.Config
@@ -69,6 +70,14 @@ func initializeTestData() error {
 	if err != nil {
 		return err
 	}
+	r.RegisterProduct(&registry.Product{
+		TenantId:  tenantId,
+		ProductId: rule1.ProductId,
+	})
+	r.RegisterProduct(&registry.Product{
+		TenantId:  tenantId,
+		ProductId: rule2.ProductId,
+	})
 	r.RegisterRule(&rule1)
 	r.RegisterRule(&rule2)
 	r.Close()
@@ -80,6 +89,14 @@ func removeTestData() {
 		defer r.Close()
 		r.RemoveRule(rule1.ProductId, rule1.RuleName)
 		r.RemoveRule(rule2.ProductId, rule2.RuleName)
+		r.DeleteProduct(&registry.Product{
+			TenantId:  tenantId,
+			ProductId: rule2.ProductId,
+		})
+		r.DeleteProduct(&registry.Product{
+			TenantId:  tenantId,
+			ProductId: rule1.ProductId,
+		})
 	}
 }
 
