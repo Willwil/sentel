@@ -191,14 +191,13 @@ func (p *ruleExecutor) stopRule(ctx *RuleContext) error {
 // execute execute rule to process published topic data recevied from
 // broker will be processed here and transformed into database
 func (p *ruleExecutor) execute(e *event.TopicPublishEvent) error {
-	glog.Info("executing rule ...")
 	p.mutex.RLock()
 	p.mutex.RUnlock()
 	rules := p.rules
 	for _, rule := range rules {
 		if rule.Status == ruleStatusStarted {
 			if err := rule.handle(e); err != nil {
-				glog.Infof("rule '%s' execution failed,'%s'", rule.RuleName, err.Error())
+				glog.Error(err)
 			}
 		}
 	}

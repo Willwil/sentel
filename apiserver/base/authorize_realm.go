@@ -47,12 +47,12 @@ func (p *AuthorizeRealm) Supports(token shiro.AuthenticationToken) bool {
 func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.PrincipalCollection {
 	principals := shiro.NewPrincipalCollection()
 	principalName := token.GetPrincipal().(string)
-	r, err := registry.New(p.config)
-	if err == nil {
+	if r, err := registry.New(p.config); err == nil {
 		defer r.Close()
 		if tenant, err := r.GetTenant(principalName); err == nil {
 			// construct new principals
 			principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
+			principal.SetCrenditals(tenant.Password)
 			principal.AddRoles(tenant.Roles)
 			principals.Add(principal, p.GetName())
 		}

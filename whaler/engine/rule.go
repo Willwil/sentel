@@ -74,7 +74,7 @@ func (p *rule) setupPipeline(c config.Config) error {
 }
 
 func (p *rule) handle(e *event.TopicPublishEvent) error {
-	glog.Infof("executing rule '%s' for product '%s'...", p.RuleName, p.ProductId)
+	glog.Infof("executing rule '%s' on product '%s'...", p.RuleName, p.ProductId)
 	if usingreader {
 		p.datach <- e
 		return nil

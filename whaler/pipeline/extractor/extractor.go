@@ -31,7 +31,7 @@ type Extractor interface {
 func New(c config.Config, name string) (Extractor, error) {
 	switch name {
 	case EventExtractor:
-		return &eventExtractor{config: c}, nil
+		return newEventExtractor(c)
 	default:
 		return nil, fmt.Errorf("invalid extractor '%s'", name)
 	}

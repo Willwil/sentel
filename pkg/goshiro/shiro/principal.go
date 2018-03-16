@@ -17,6 +17,7 @@ type Principal interface {
 	GetRealmName() string
 	GetRoles() []string
 	GetCrenditals() string
+	SetCrenditals(string)
 	AddRoles([]string)
 }
 
@@ -42,10 +43,11 @@ func NewPrincipalWithRealm(name string, realmName string) Principal {
 	}
 }
 
-func (p *simplePrincipal) Name() string          { return p.principalName }
-func (p *simplePrincipal) GetRealmName() string  { return p.realmName }
-func (p *simplePrincipal) GetCrenditals() string { return p.crenditals }
-func (p *simplePrincipal) GetRoles() []string    { return p.roles }
+func (p *simplePrincipal) Name() string                    { return p.principalName }
+func (p *simplePrincipal) GetRealmName() string            { return p.realmName }
+func (p *simplePrincipal) GetCrenditals() string           { return p.crenditals }
+func (p *simplePrincipal) SetCrenditals(crenditals string) { p.crenditals = crenditals }
+func (p *simplePrincipal) GetRoles() []string              { return p.roles }
 func (p *simplePrincipal) AddRoles(roles []string) {
 	p.roles = append(p.roles, roles...)
 }

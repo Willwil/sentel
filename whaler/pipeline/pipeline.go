@@ -95,7 +95,7 @@ func (p *defaultPipeline) PushData(data interface{}) error {
 		return fmt.Errorf("pipeline '%s' extractor or loader is nil", p.name)
 	}
 	// extract data
-	glog.Infof("pipeline '%s' is processing data", p.name)
+	glog.Infof("pipeline '%s' is processing data...", p.name)
 	if frame, err := p.extractor.Extract(data); err == nil {
 		// transfom data
 		for _, transformer := range p.transformers {
