@@ -42,7 +42,7 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	return &engineService{
 		config:       c,
 		waitgroup:    sync.WaitGroup{},
-		recoveryChan: make(chan bool),
+		recoveryChan: make(chan bool, 1),
 		ruleEngine:   ruleEngine,
 	}, nil
 }
