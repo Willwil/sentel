@@ -13,9 +13,13 @@
 package engine
 
 import (
+	"encoding/json"
+	"fmt"
 	"testing"
 
+	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/pkg/registry"
 )
 
@@ -89,14 +93,8 @@ func removeTestData() {
 		defer r.Close()
 		r.RemoveRule(rule1.ProductId, rule1.RuleName)
 		r.RemoveRule(rule2.ProductId, rule2.RuleName)
-		r.DeleteProduct(&registry.Product{
-			TenantId:  tenantId,
-			ProductId: rule2.ProductId,
-		})
-		r.DeleteProduct(&registry.Product{
-			TenantId:  tenantId,
-			ProductId: rule1.ProductId,
-		})
+		r.DeleteProduct(rule2.ProductId)
+		r.DeleteProduct(rule1.ProductId)
 	}
 }
 
@@ -140,6 +138,34 @@ func Test_ruleEngine_disptachRule(t *testing.T) {
 			t.Error(err)
 		}
 	}
+}
+
+func Test_ruleEngine_execute(t *testing.T) {
+	defaultEngine.dispatchRule(NewRuleContext("product1", "rule1", RuleActionCreate))
+	defaultEngine.dispatchRule(NewRuleContext("product1", "rule1", RuleActionStart))
+
+	producer, err := message.NewProducer(defaultConfig, "engine_test", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer producer.Close()
+	payload := "{\"name\":\"jenson\"\n}"
+	e := event.TopicPublishEvent{
+		Type:      event.TopicPublish,
+		ProductID: rule1.ProductId,
+		Topic:     rule1.DataProcess.Topic,
+		Payload:   []byte(payload),
+		Qos:       1,
+		Retain:    true,
+	}
+	topic := fmt.Sprintf(event.FmtOfBrokerEventBus, tenantId)
+	value, _ := json.Marshal(&e)
+	msg := message.Broker{EventType: event.TopicPublish, TopicName: topic, Payload: value}
+	if err := producer.SendMessage(&msg); err != nil {
+		t.Error(err)
+	}
+	//defaultEngine.dispatchRule(NewRuleContext("product1", "rule1", RuleActionStop))
+	//defaultEngine.dispatchRule(NewRuleContext("product1", "rule1", RuleActionRemove))
 }
 
 func Test_ruleEngine_Stop(t *testing.T) {

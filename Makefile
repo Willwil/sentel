@@ -19,7 +19,7 @@ docker: all
 	$Q docker build -f iothub/nginx-mqtt/Dockerfile .
 
 .PHONY: build
-build: .GOPATH/.ok apiserver broker iothub iotmanager whaler datacli
+build: .GOPATH/.ok apiserver broker iothub iotmanager whaler
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
@@ -50,11 +50,6 @@ meter: .GOPATH/.ok
 .PHONY: whaler 
 whaler: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/whaler
-
-.PHONY: datacli 
-datacli: .GOPATH/.ok
-	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/tools/datacli
-
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####
