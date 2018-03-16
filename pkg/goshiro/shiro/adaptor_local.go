@@ -204,7 +204,7 @@ func (l *localAdaptor) AddPermissions(permissions []Permission) []string {
 	permIds := []string{}
 	for _, permission := range permissions {
 		if permission.PermissionId == "" {
-			permission.PermissionId = fmt.Sprintf("%u", l.permIndex)
+			permission.PermissionId = fmt.Sprintf("%d", l.permIndex)
 			l.permIndex += 1
 		}
 		l.permissions[permission.PermissionId] = permission

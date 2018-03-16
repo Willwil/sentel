@@ -52,7 +52,7 @@ type ruleEngine struct {
 const CLEAN_DURATION = time.Minute * 30
 
 // New create rule engine service factory
-func newRuleEngine(c config.Config) (RuleEngine, error) {
+func newRuleEngine(c config.Config) (*ruleEngine, error) {
 	r, err := registry.New(c)
 	if err != nil {
 		return nil, err
