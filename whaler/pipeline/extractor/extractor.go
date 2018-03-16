@@ -13,6 +13,7 @@
 package extractor
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -21,6 +22,10 @@ import (
 
 const (
 	EventExtractor = "event"
+)
+
+var (
+	ErrNoNeededData = errors.New("no rule needed data")
 )
 
 type Extractor interface {

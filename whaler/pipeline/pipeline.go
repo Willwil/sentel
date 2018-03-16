@@ -100,20 +100,23 @@ func (p *defaultPipeline) PushData(data interface{}) error {
 		// transfom data
 		for _, transformer := range p.transformers {
 			if f, err := transformer.Transform(frame); err != nil {
-				return fmt.Errorf("pipeline '%s' transform data failed, %s", p.name, err.Error())
+				return err
 			} else {
 				frame = f
 			}
 		}
 		// load data
 		for _, loader := range p.loaders {
+			glog.Infof("'%s' loader is loading data...", loader.Name())
 			if err := loader.Load(frame); err != nil {
-				return fmt.Errorf("pipeline '%s' loader '%s' failed, %s", p.name, loader.Name(), err.Error())
+				return err
 			}
 		}
 		return nil
+	} else if err != extractor.ErrNoNeededData {
+		return fmt.Errorf("pipeline '%s' extract data failed", p.name)
 	}
-	return fmt.Errorf("pipeline '%s' extract data failed", p.name)
+	return nil
 }
 
 func (p *defaultPipeline) Close() {

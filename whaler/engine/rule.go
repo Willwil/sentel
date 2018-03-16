@@ -29,13 +29,14 @@ type rule struct {
 	registry.Rule                   // Underlay rule object
 	ppline        pipeline.Pipeline // Pipeline for the rule
 	datach        chan interface{}  // Asynchrous data channel
+	tenantId      string
 }
 
-func newRule(c config.Config, ctx *RuleContext) (*rule, error) {
+func newRule(c config.Config, tenantId string, ctx *RuleContext) (*rule, error) {
 	if r, err := registry.New(c); err == nil {
 		defer r.Close()
 		if rr, err := r.GetRule(ctx.ProductId, ctx.RuleName); err == nil {
-			rule := &rule{Rule: *rr}
+			rule := &rule{Rule: *rr, tenantId: tenantId}
 			err := rule.setupPipeline(c)
 			return rule, err
 		}
@@ -46,6 +47,7 @@ func newRule(c config.Config, ctx *RuleContext) (*rule, error) {
 func (p *rule) setupPipeline(c config.Config) error {
 	// construct pipeline builder and add configuration
 	builder := pipeline.NewBuilder()
+	builder.AddConfig("tenantId", p.tenantId)
 	builder.AddConfig("productId", p.ProductId)
 	builder.AddConfig("ruleName", p.RuleName)
 	builder.AddConfig("dataprocess", p.DataProcess)

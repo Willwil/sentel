@@ -126,7 +126,7 @@ func (p *ruleExecutor) createRule(ctx *RuleContext) error {
 	defer p.mutex.Unlock()
 
 	if _, found := p.rules[ctx.RuleName]; !found {
-		if rule, err := newRule(p.config, ctx); err == nil {
+		if rule, err := newRule(p.config, p.tenantId, ctx); err == nil {
 			p.rules[ctx.RuleName] = rule
 			return nil
 		}

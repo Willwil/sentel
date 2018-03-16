@@ -81,7 +81,7 @@ func (p *eventExtractor) Extract(origin interface{}) (*data.DataFrame, error) {
 			}
 		}
 	}
-	return nil, errors.New("data format is invalid to query")
+	return nil, ErrNoNeededData // no data to extract
 }
 
 func (p *eventExtractor) getFunctionValue(name string, e *event.TopicPublishEvent) (interface{}, error) {
