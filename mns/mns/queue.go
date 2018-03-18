@@ -11,3 +11,18 @@
 //  under the License.
 
 package mns
+
+type QueueAttribute struct {
+	DelaySeconds           uint32 `json:"delaySeconds" bson:"DelaySeconds"`
+	MaximumMessageSize     uint32 `json:"maximumMessageSize" bson:"MaximumMessageSize"`
+	MessageRetentionPeriod uint32 `json:"messageRetentionPeriod" bson:"MessageRetentionPeriod"`
+	VisibilityTimeout      uint32 `json:"visibilityTimeout" bson:"VisibilityTimeout"`
+	PollingWaitSeconds     uint8  `json:"pollingWaitSeconds" bson:"PollingWaitSeconds"`
+	LoggingEnabled         bool   `json:"loggingEnabled" bson:"LoggingEnabled"`
+}
+
+type Queue interface {
+	SetAttribute(QueueAttribute)
+	GetAttribute() QueueAttribute
+	SendMessage([]byte) error
+}
