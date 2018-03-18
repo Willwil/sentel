@@ -146,7 +146,7 @@ func (c *config) StringWithSection(section string, key string) (string, error) {
 // Value return element value for key
 func (c *config) ValueWithSection(section string, key string) (interface{}, error) {
 	if err := c.checkItemExist(section, key); err == nil {
-		return c.sections[section][key].(string), nil
+		return c.sections[section][key], nil
 	}
 	return nil, fmt.Errorf("invalid value for key '%s'", key)
 }
@@ -192,7 +192,7 @@ func (c *config) Value(key string) (interface{}, error) { return c.ValueWithSect
 func (c *config) MustBool(key string) bool              { return c.MustBoolWithSection(c.primary, key) }
 func (c *config) MustInt(key string) int                { return c.MustIntWithSection(c.primary, key) }
 func (c *config) MustString(key string) string          { return c.MustStringWithSection(c.primary, key) }
-func (c *config) MustValue(key string) interface{}      { return c.MustStringWithSection(c.primary, key) }
+func (c *config) MustValue(key string) interface{}      { return c.MustValueWithSection(c.primary, key) }
 func (c *config) SetValue(key string, val string)       { c.SetValueWithSection(c.primary, key, val) }
 
 func (c *config) AddConfig(options map[string]map[string]interface{}) Config {

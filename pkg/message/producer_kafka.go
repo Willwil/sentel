@@ -75,7 +75,6 @@ func (p *kafkaProducer) SendMessage(t Message) error {
 
 	if p.sync && p.syncProducer != nil {
 		if _, _, err := p.syncProducer.SendMessage(msg); err != nil {
-			glog.Errorf("Failed to send producer message:%s", err.Error())
 			return err
 		}
 	} else if p.asyncProducer != nil {

@@ -13,17 +13,21 @@
 package loader
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/cloustone/sentel/broker/event"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/message"
 	"github.com/cloustone/sentel/whaler/pipeline/data"
+	"github.com/golang/glog"
 )
 
 type topicLoader struct {
 	config   config.Config
 	producer message.Producer
+	tenantId string
 }
 
 func newTopicLoader(c config.Config) (Loader, error) {
@@ -31,27 +35,28 @@ func newTopicLoader(c config.Config) (Loader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &topicLoader{config: c, producer: producer}, nil
+	return &topicLoader{
+		config:   c,
+		producer: producer,
+		tenantId: c.MustString("tenantId"),
+	}, nil
 }
 
 func (p *topicLoader) Name() string { return "topic" }
 func (p *topicLoader) Close()       { p.producer.Close() }
 
 func (p *topicLoader) Load(f *data.DataFrame) error {
-	topic, ok1 := f.Context("topic").(string)
-	e, ok2 := f.Context("event").(*event.TopicPublishEvent)
-	if !ok1 || !ok2 || topic == "" || e == nil {
-		return errors.New("invalid topic")
-	}
-	if buf, err := f.Serialize(); err != nil {
-		return err
-	} else {
-		e.Payload = buf
-		buf, _ := event.Encode(e, event.JSONCodec)
-		msg := message.Broker{
-			EventType: e.GetType(),
-			Payload:   buf,
+	if e, _ := f.Context("event").(*event.TopicPublishEvent); e != nil {
+		if buf, err := f.Serialize(); err == nil {
+			dstTopic := p.config.MustString("topic")
+			glog.Infof("data from '%s' topic is transfered to '%s' topic", e.Topic, dstTopic)
+			e.Payload = buf
+			e.Topic = dstTopic
+			topic := fmt.Sprintf(event.FmtOfBrokerEventBus, p.tenantId)
+			value, _ := json.Marshal(&e)
+			msg := message.Broker{EventType: event.TopicPublish, TopicName: topic, Payload: value}
+			return p.producer.SendMessage(&msg)
 		}
-		return p.producer.SendMessage(&msg)
 	}
+	return errors.New("invalid data frame")
 }

@@ -126,7 +126,7 @@ func (p *ruleExecutor) createRule(ctx *RuleContext) error {
 	defer p.mutex.Unlock()
 
 	if _, found := p.rules[ctx.RuleName]; !found {
-		if rule, err := newRule(p.config, ctx); err == nil {
+		if rule, err := newRule(p.config, p.tenantId, ctx); err == nil {
 			p.rules[ctx.RuleName] = rule
 			return nil
 		}
@@ -191,14 +191,13 @@ func (p *ruleExecutor) stopRule(ctx *RuleContext) error {
 // execute execute rule to process published topic data recevied from
 // broker will be processed here and transformed into database
 func (p *ruleExecutor) execute(e *event.TopicPublishEvent) error {
-	glog.Info("executing rule ...")
 	p.mutex.RLock()
 	p.mutex.RUnlock()
 	rules := p.rules
 	for _, rule := range rules {
 		if rule.Status == ruleStatusStarted {
 			if err := rule.handle(e); err != nil {
-				glog.Infof("rule '%s' execution failed,'%s'", rule.RuleName, err.Error())
+				glog.Error(err)
 			}
 		}
 	}

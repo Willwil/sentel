@@ -10,34 +10,18 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package extractor
+package main
 
-import (
-	"errors"
-	"fmt"
+import "github.com/cloustone/sentel/pkg/config"
 
-	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/whaler/pipeline/data"
-)
-
-const (
-	EventExtractor = "event"
-)
-
-var (
-	ErrNoNeededData = errors.New("no rule needed data")
-)
-
-type Extractor interface {
-	Extract(data interface{}) (*data.DataFrame, error)
-	Close()
-}
-
-func New(c config.Config, name string) (Extractor, error) {
-	switch name {
-	case EventExtractor:
-		return newEventExtractor(c)
-	default:
-		return nil, fmt.Errorf("invalid extractor '%s'", name)
-	}
+var defaultConfigs = config.M{
+	"mna": {
+		"loglevel":        "debug",
+		"kafka":           "localhost:9092",
+		"mongo":           "localhost:27017",
+		"connect_timeout": 5,
+	},
+	"restapi": {
+		"listen": "localhost:50061",
+	},
 }
