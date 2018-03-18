@@ -10,18 +10,4 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package main
-
-import "github.com/cloustone/sentel/pkg/config"
-
-var defaultConfigs = config.M{
-	"mns": {
-		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
-		"mongo":           "localhost:27017",
-		"connect_timeout": 5,
-	},
-	"restapi": {
-		"listen": "localhost:50061",
-	},
-}
+package mns
