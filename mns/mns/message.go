@@ -13,7 +13,7 @@
 package mns
 
 type Message struct {
-	Body         []byte
-	DelaySeconds uint8
-	Priority     uint8
+	Body         []byte `json:"body" bson:"Body"`
+	DelaySeconds uint8  `json:"delaySeconds" bson:"DelaySeconds"`
+	Priority     uint8  `json:"priority" bson:"Priority"`
 }

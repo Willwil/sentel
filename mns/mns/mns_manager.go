@@ -29,14 +29,14 @@ type MnsManager interface {
 	CreateTopic(accountId string, topicName string) (Topic, error)
 	GetTopic(accountId string, topicName string) (Topic, error)
 	DeleteTopic(accountId string, topicName string) error
-	ListTopics(account string) []string
+	ListTopics(accountId string) []string
 
 	// Subscription API
 	GetSubscription(accountId string, subscriptionId string) (Subscription, error)
-	Subscribe(endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error
-	Unsubscribe(topicName string, subscriptionId string) error
-	ListTopicSubscriptions(topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error)
-	PublishMessage(topicName string, body []byte, tag string, attributes map[string]string) error
+	Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
+	Unsubscribe(accountId, topicName string, subscriptionId string) error
+	ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttr, error)
+	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error
 }
 
 func NewManager(c config.Config) (MnsManager, error) {
@@ -68,18 +68,18 @@ func (m *manager) ListTopics(account string) []string                   { return
 func (m *manager) GetSubscription(accountId string, subscriptionId string) (Subscription, error) {
 	return nil, ErrNotImplemented
 }
-func (m *manager) Subscribe(endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error {
+func (m *manager) Subscribe(accountId, endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error {
 	return ErrNotImplemented
 }
 
-func (m *manager) Unsubscribe(topicName string, subscriptionId string) error {
+func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName string) error {
 	return ErrNotImplemented
 }
 
-func (m *manager) ListTopicSubscriptions(topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error) {
+func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error) {
 	return []SubscriptionAttr{}, ErrNotImplemented
 }
 
-func (m *manager) PublishMessage(topicName string, body []byte, tag string, attributes map[string]string) error {
+func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error {
 	return ErrNotImplemented
 }

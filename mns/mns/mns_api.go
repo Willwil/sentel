@@ -45,22 +45,22 @@ func ListTopics(accountId string) []string {
 }
 
 // Subscription API
+func Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifyContentFormat string) error {
+	return getManager().Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifyContentFormat)
+}
+
+func Unsubscribe(accountId, topicName string, subscriptionId string) error {
+	return getManager().Unsubscribe(accountId, topicName, subscriptionId)
+}
+
 func GetSubscription(accountId string, subscriptionId string) (Subscription, error) {
 	return getManager().GetSubscription(accountId, subscriptionId)
 }
 
-func Subscribe(endpoint string, filterTag string, notifyStrategy string, notifyContentFormat string) error {
-	return getManager().Subscribe(endpoint, filterTag, notifyStrategy, notifyContentFormat)
+func ListTopicSubscriptions(accountId, topicName string, pageNo int, pageSize int, startIndex int) ([]SubscriptionAttr, error) {
+	return getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex)
 }
 
-func Unsubscribe(topicName string, subscriptionId string) error {
-	return getManager().Unsubscribe(topicName, subscriptionId)
-}
-
-func ListTopicSubscriptions(topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error) {
-	return getManager().ListTopicSubscriptions(topicName, pages, pageSize, startIndex)
-}
-
-func PublishMessage(topicName string, body []byte, tag string, attributes map[string]string) error {
-	return getManager().PublishMessage(topicName, body, tag, attributes)
+func PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error {
+	return getManager().PublishMessage(accountId, topicName, body, tag, attributes)
 }

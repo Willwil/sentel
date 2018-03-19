@@ -93,12 +93,12 @@ func (p *consoleService) Initialize() error {
 	p.echo.DELETE("mns/v1/api/queues/:queueName", deleteQueue)
 	p.echo.POST("mns/v1/api/queues/:queueName/messages", sendQueueMessage)
 	p.echo.POST("mns/v1/api/queues/:queueName/messages?batch=true", batchSendQueueMessage)
-	p.echo.GET("mns/v1/api/queues/:queueName/messages?waitSeconds=:ws", receiveQueueMessage)
-	p.echo.GET("mns/v1/api/queues/:queueName/messages?waitSeconds=:ws,batch=true", batchReceiveQueueMessage)
-	p.echo.DELETE("mns/v1/api/queues/:queueName/messages", deleteQueueMessage)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?ws=:ws", receiveQueueMessage)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?ws=:ws&nbr=:numberOfMesssages", batchReceiveQueueMessage)
+	p.echo.DELETE("mns/v1/api/queues/:queueName/messages?msgId=:msgId", deleteQueueMessage)
 	p.echo.DELETE("mns/v1/api/queues/:queueName/messages?batch=true", batchDeleteQueueMessages)
-	p.echo.GET("mns/v1/api/queues/:queueName/messages?peekonly=true", peekQueueMessages)
-	p.echo.GET("mns/v1/api/queues/:queueName/messages?peekonly=true,batch=true", batchPeekQueueMessages)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?ws=:ws&peekonly=true", peekQueueMessages)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?peekonly=true&batch=true", batchPeekQueueMessages)
 
 	// Topics API
 	p.echo.POST("mns/v1/api/topics/:topicName", createTopic)
@@ -112,7 +112,7 @@ func (p *consoleService) Initialize() error {
 	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", setSubscriptionAttr)
 	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", getSubscriptionAttr)
 	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", unsubscribe)
-	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions", listTopicSubscriptions)
+	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions?pagesize=:pageSize&pageno=:pageNo&index=:startIndex", listTopicSubscriptions)
 
 	// Messages API
 	p.echo.POST("mns/v1/api/topics/:topicName/messages", publishMessage)

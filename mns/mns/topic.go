@@ -25,8 +25,8 @@ type TopicAttribute struct {
 
 type Topic interface {
 	Name() string
-	SetTopicAttribute(TopicAttribute)
-	GetTopicAttribute() TopicAttribute
+	SetAttribute(TopicAttribute)
+	GetAttribute() (TopicAttribute, error)
 	Subscribe(filterTag string, notifyStategy string, notifyFmt string) (Subscription, error)
 	Unsubscribe(subscriptionId string) error
 	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttr) error

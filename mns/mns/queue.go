@@ -27,11 +27,11 @@ type Queue interface {
 	GetAttribute() QueueAttribute
 	SendMessage(Message) error
 	BatchSendMessage([]Message) error
-	ReceiveMessage(waitSeconds uint8) (Message, error)
-	BatchReceiveMessages(wailtSeconds uint8, numOfMessages uint8) ([]Message, error)
-	DeleteMessage(handle string)
-	PeekMessage(waitSeconds uint8) (Message, error)
-	BatchPeekMessages(wailtSeconds uint8, numOfMessages uint8) ([]Message, error)
-	SetMessageVisibility(handle string, seconds uint32)
+	ReceiveMessage(waitSeconds int) (Message, error)
+	BatchReceiveMessages(wailtSeconds int, numOfMessages int) ([]Message, error)
+	DeleteMessage(handle string) error
+	PeekMessage(waitSeconds int) (Message, error)
+	BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]Message, error)
+	SetMessageVisibility(handle string, seconds int)
 	Destroy()
 }

@@ -26,4 +26,8 @@ type SubscriptionAttr struct {
 	LastModifiedAt   time.Time
 }
 
-type Subscription interface{}
+type Subscription interface {
+	Name() string
+	GetAttribute() SubscriptionAttr
+	SetAttribute(SubscriptionAttr)
+}
