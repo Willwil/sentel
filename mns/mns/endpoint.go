@@ -11,3 +11,10 @@
 //  under the License.
 
 package mns
+
+type Endpoint interface {
+}
+
+func NewEndpoint(uri string) (Endpoint, error) {
+	return nil, ErrNotImplemented
+}

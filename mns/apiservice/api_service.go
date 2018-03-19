@@ -85,6 +85,39 @@ func (p *consoleService) Initialize() error {
 	p.echo.Use(mw.LoggerWithConfig(mw.LoggerConfig{
 		Format: "${time_unix},method=${method}, uri=${uri}, status=${status}\n",
 	}))
+	// Queue APIs
+	p.echo.POST("mns/v1/api/queues/:queueName", createQueue)
+	p.echo.PUT("mns/v1/api/queues/:queueName", setQueueAttribute)
+	p.echo.GET("mns/v1/api/queues/:queueName", getQueueAttribute)
+	p.echo.GET("mns/v1/api/queues", getQueueList)
+	p.echo.DELETE("mns/v1/api/queues/:queueName", deleteQueue)
+	p.echo.POST("mns/v1/api/queues/:queueName/messages", sendQueueMessage)
+	p.echo.POST("mns/v1/api/queues/:queueName/messages?batch=true", batchSendQueueMessage)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?waitSeconds=:ws", receiveQueueMessage)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?waitSeconds=:ws,batch=true", batchReceiveQueueMessage)
+	p.echo.DELETE("mns/v1/api/queues/:queueName/messages", deleteQueueMessage)
+	p.echo.DELETE("mns/v1/api/queues/:queueName/messages?batch=true", batchDeleteQueueMessages)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?peekonly=true", peekQueueMessages)
+	p.echo.GET("mns/v1/api/queues/:queueName/messages?peekonly=true,batch=true", batchPeekQueueMessages)
+
+	// Topics API
+	p.echo.POST("mns/v1/api/topics/:topicName", createTopic)
+	p.echo.PUT("mns/v1/api/topics/:topicName", setTopicAttribute)
+	p.echo.GET("mns/v1/api/topics/:topicName", getTopicAttribute)
+	p.echo.DELETE("mns/v1/api/topics/:topicName", deleteTopic)
+	p.echo.GET("mns/v1/api/topics", listTopics)
+
+	// Subscriptions API
+	p.echo.POST("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", subscribe)
+	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", setSubscriptionAttr)
+	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", getSubscriptionAttr)
+	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", unsubscribe)
+	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions", listTopicSubscriptions)
+
+	// Messages API
+	p.echo.POST("mns/v1/api/topics/:topicName/messages", publishMessage)
+	p.echo.POST("mns/v1/api/notifications", publishNotification)
+
 	return nil
 
 }

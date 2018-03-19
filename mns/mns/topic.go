@@ -11,3 +11,24 @@
 //  under the License.
 
 package mns
+
+import "time"
+
+type TopicAttribute struct {
+	TopicName              string
+	CreatedAt              time.Time
+	LastModifiedAt         time.Time
+	MaximumMessageSize     uint32
+	MessageRetentionPeriod uint32
+	LogginEnabled          bool
+}
+
+type Topic interface {
+	Name() string
+	SetTopicAttribute(TopicAttribute)
+	GetTopicAttribute() TopicAttribute
+	Subscribe(filterTag string, notifyStategy string, notifyFmt string) (Subscription, error)
+	Unsubscribe(subscriptionId string) error
+	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttr) error
+	GetSubscriptionAttribute(topicName string, subscriptionId string) (SubscriptionAttr, error)
+}

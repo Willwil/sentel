@@ -12,18 +12,8 @@
 
 package mns
 
-import "time"
-
-type SubscriptionAttr struct {
-	SubscriptionName string
-	Subscriber       string
-	TopicOwner       string
-	TopicName        string
-	Endpont          string
-	NotifyStrategy   string
-	FilterTag        string
-	CreatedAt        time.Time
-	LastModifiedAt   time.Time
+type Message struct {
+	Body         []byte
+	DelaySeconds uint8
+	Priority     uint8
 }
-
-type Subscription interface{}

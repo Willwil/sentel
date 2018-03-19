@@ -11,3 +11,19 @@
 //  under the License.
 
 package mns
+
+import "errors"
+
+var (
+	ErrNotImplemented  = errors.New("not implemented")
+	ErrInvalidArgument = errors.New("invalid argument")
+
+	ErrQueueNotExist   = errors.New("queue not exist")
+	ErrMalformed       = errors.New("malformed")
+	ErrMessageNotExist = errors.New("message not exist")
+	ErrTopicNotExist   = errors.New("topic not exist")
+
+	ErrSubscriptionNameLengthError = errors.New("subscription name length error")
+	ErrSubscriptionInvalidName     = errors.New("subscription name is invalid")
+	ErrSubscriptionAlreadyExist    = errors.New("sbuscription already exist")
+)

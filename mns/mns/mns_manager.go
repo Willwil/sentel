@@ -13,36 +13,73 @@
 package mns
 
 import (
-	"sync"
+	"errors"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/service"
 )
 
-type manageService struct {
-	config    config.Config
-	waitgroup sync.WaitGroup
-}
-type ServiceFactory struct{}
+type MnsManager interface {
+	// Queue API
+	CreateQueue(accountId string, queueName string) (Queue, error)
+	GetQueue(accountId string, queueName string) (Queue, error)
+	DeleteQueue(accountId string, queueName string) error
+	GetQueueList(accountId string) ([]string, error)
 
-func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	return &manageService{
-		config:    c,
-		waitgroup: sync.WaitGroup{},
-	}, nil
-}
+	// Topic API
+	CreateTopic(accountId string, topicName string) (Topic, error)
+	GetTopic(accountId string, topicName string) (Topic, error)
+	DeleteTopic(accountId string, topicName string) error
+	ListTopics(account string) []string
 
-func (p *manageService) Name() string      { return "management" }
-func (p *manageService) Initialize() error { return nil }
-
-func (p *manageService) Start() error {
-	p.waitgroup.Add(1)
-	go func(s *manageService) {
-		defer s.waitgroup.Done()
-	}(p)
-	return nil
+	// Subscription API
+	GetSubscription(accountId string, subscriptionId string) (Subscription, error)
+	Subscribe(endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error
+	Unsubscribe(topicName string, subscriptionId string) error
+	ListTopicSubscriptions(topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error)
+	PublishMessage(topicName string, body []byte, tag string, attributes map[string]string) error
 }
 
-func (p *manageService) Stop() {
-	p.waitgroup.Wait()
+func NewManager(c config.Config) (MnsManager, error) {
+	return nil, ErrNotImplemented
+}
+
+type manager struct {
+}
+
+func (m *manager) CreateQueue(accountId string, queueName string) (Queue, error) {
+	return nil, ErrNotImplemented
+}
+func (m *manager) GetQueue(accountId string, queueName string) (Queue, error) {
+	return nil, ErrNotImplemented
+}
+func (m *manager) DeleteQueue(accountId string, queueName string) error { return ErrNotImplemented }
+
+// Topic API
+func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error) {
+	return nil, errors.New("Not implmented")
+}
+func (m *manager) GetTopic(accountId string, topicName string) (Topic, error) {
+	return nil, errors.New("Not implmented")
+}
+func (m *manager) DeleteTopic(accountId string, topicName string) error { return nil }
+func (m *manager) ListTopics(account string) []string                   { return []string{} }
+
+// Subscription API
+func (m *manager) GetSubscription(accountId string, subscriptionId string) (Subscription, error) {
+	return nil, ErrNotImplemented
+}
+func (m *manager) Subscribe(endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error {
+	return ErrNotImplemented
+}
+
+func (m *manager) Unsubscribe(topicName string, subscriptionId string) error {
+	return ErrNotImplemented
+}
+
+func (m *manager) ListTopicSubscriptions(topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error) {
+	return []SubscriptionAttr{}, ErrNotImplemented
+}
+
+func (m *manager) PublishMessage(topicName string, body []byte, tag string, attributes map[string]string) error {
+	return ErrNotImplemented
 }

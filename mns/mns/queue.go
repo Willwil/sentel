@@ -22,7 +22,16 @@ type QueueAttribute struct {
 }
 
 type Queue interface {
+	Name() string
 	SetAttribute(QueueAttribute)
 	GetAttribute() QueueAttribute
-	SendMessage([]byte) error
+	SendMessage(Message) error
+	BatchSendMessage([]Message) error
+	ReceiveMessage(waitSeconds uint8) (Message, error)
+	BatchReceiveMessages(wailtSeconds uint8, numOfMessages uint8) ([]Message, error)
+	DeleteMessage(handle string)
+	PeekMessage(waitSeconds uint8) (Message, error)
+	BatchPeekMessages(wailtSeconds uint8, numOfMessages uint8) ([]Message, error)
+	SetMessageVisibility(handle string, seconds uint32)
+	Destroy()
 }
