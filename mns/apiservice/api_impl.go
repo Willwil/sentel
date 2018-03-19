@@ -361,9 +361,21 @@ func listTopicSubscriptions(ctx echo.Context) error {
 }
 
 func publishMessage(ctx echo.Context) error {
+	req := struct {
+		Body       []byte            `json:"body" bson:"Body"`
+		Tag        string            `json:"tag" bson:"Tag"`
+		Attributes map[string]string `json:"attributes" bson:"Attributes"`
+	}{}
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	return mns.ErrNotImplemented
+
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, err)
+	}
+	if err := mns.PublishMessage(accountId, topicName, req.Body, req.Tag, req.Attributes); err != nil {
+		return ctx.JSON(ServerError, err)
+	}
+	return ctx.JSON(OK, nil)
 }
 
 func publishNotification(ctx echo.Context) error {
