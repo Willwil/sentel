@@ -19,7 +19,7 @@ docker: all
 	$Q docker build -f iothub/nginx-mqtt/Dockerfile .
 
 .PHONY: build
-build: .GOPATH/.ok apiserver broker iothub iotmanager whaler mns
+build: .GOPATH/.ok apiserver broker iothub iotmanager whaler mns mns-example
 
 ### Code not in the repository root? Another binary? Add to the path like this.
 # .PHONY: otherbin
@@ -50,6 +50,11 @@ whaler: .GOPATH/.ok
 .PHONY: mns 
 mns: .GOPATH/.ok
 	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/mns
+
+.PHONY: mns-example
+mns-example: .GOPATH/.ok
+	$Q go install  $(GCFLAGS) $(if $V,-v) $(VERSION_FLAGS) $(IMPORT_PATH)/mns/client/example
+
 
 
 ##### ^^^^^^ EDIT ABOVE ^^^^^^ #####

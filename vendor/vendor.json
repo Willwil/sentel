@@ -201,6 +201,24 @@
 			"revisionTime": "2018-02-05T13:46:42Z"
 		},
 		{
+			"checksumSHA1": "xQB1ffLIPTQfsEuHLLjGTP14HW4=",
+			"path": "github.com/gogap/errors",
+			"revision": "149c546090d0ac947ee5f6772d431e30cf0f6f3b",
+			"revisionTime": "2016-05-23T10:23:34Z"
+		},
+		{
+			"checksumSHA1": "9XkOqtkJJL8NVQWPwJH/iZNSwWI=",
+			"path": "github.com/gogap/logs",
+			"revision": "31c6d1e28b2c124efcce7234fc397d2121ab5a1d",
+			"revisionTime": "2015-03-29T04:40:33Z"
+		},
+		{
+			"checksumSHA1": "tZQx/YVC62zwRXUr4CJYUFAWBQA=",
+			"path": "github.com/gogap/stack",
+			"revision": "fef68dddd4f8092a1be1acacb121f847315e5c94",
+			"revisionTime": "2015-01-31T03:46:35Z"
+		},
+		{
 			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",
 			"path": "github.com/golang/glog",
 			"revision": "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
