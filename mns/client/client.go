@@ -180,44 +180,40 @@ func (p *mnsClient) Send(method Method, headers map[string]string, message inter
 }
 
 func initMNSErrors() {
-	/*
-		errMapping = map[string]errors.ErrCodeTemplate{
-			"AccessDenied":               ERR_MNS_ACCESS_DENIED,
-			"InvalidAccessKeyId":         ERR_MNS_INVALID_ACCESS_KEY_ID,
-			"InternalError":              ERR_MNS_INTERNAL_ERROR,
-			"InvalidAuthorizationHeader": ERR_MNS_INVALID_AUTHORIZATION_HEADER,
-			"InvalidDateHeader":          ERR_MNS_INVALID_DATE_HEADER,
-			"InvalidArgument":            ERR_MNS_INVALID_ARGUMENT,
-			"InvalidDegist":              ERR_MNS_INVALID_DEGIST,
-			"InvalidRequestURL":          ERR_MNS_INVALID_REQUEST_URL,
-			"InvalidQueryString":         ERR_MNS_INVALID_QUERY_STRING,
-			"MalformedXML":               ERR_MNS_MALFORMED_XML,
-			"MissingAuthorizationHeader": ERR_MNS_MISSING_AUTHORIZATION_HEADER,
-			"MissingDateHeader":          ERR_MNS_MISSING_DATE_HEADER,
-			"MissingVersionHeader":       ERR_MNS_MISSING_VERSION_HEADER,
-			"MissingReceiptHandle":       ERR_MNS_MISSING_RECEIPT_HANDLE,
-			"MissingVisibilityTimeout":   ERR_MNS_MISSING_VISIBILITY_TIMEOUT,
-			"MessageNotExist":            ERR_MNS_MESSAGE_NOT_EXIST,
-			"QueueAlreadyExist":          ERR_MNS_QUEUE_ALREADY_EXIST,
-			"QueueDeletedRecently":       ERR_MNS_QUEUE_DELETED_RECENTLY,
-			"InvalidQueueName":           ERR_MNS_INVALID_QUEUE_NAME,
-			"QueueNameLengthError":       ERR_MNS_QUEUE_NAME_LENGTH_ERROR,
-			"QueueNotExist":              ERR_MNS_QUEUE_NOT_EXIST,
-			"ReceiptHandleError":         ERR_MNS_RECEIPT_HANDLE_ERROR,
-			"SignatureDoesNotMatch":      ERR_MNS_SIGNATURE_DOES_NOT_MATCH,
-			"TimeExpired":                ERR_MNS_TIME_EXPIRED,
-			"QpsLimitExceeded":           ERR_MNS_QPS_LIMIT_EXCEEDED,
-		}
-	*/
+	errMapping = map[string]errors.ErrCodeTemplate{
+		"AccessDenied":               ERR_MNS_ACCESS_DENIED,
+		"InvalidAccessKeyId":         ERR_MNS_INVALID_ACCESS_KEY_ID,
+		"InternalError":              ERR_MNS_INTERNAL_ERROR,
+		"InvalidAuthorizationHeader": ERR_MNS_INVALID_AUTHORIZATION_HEADER,
+		"InvalidDateHeader":          ERR_MNS_INVALID_DATE_HEADER,
+		"InvalidArgument":            ERR_MNS_INVALID_ARGUMENT,
+		"InvalidDegist":              ERR_MNS_INVALID_DEGIST,
+		"InvalidRequestURL":          ERR_MNS_INVALID_REQUEST_URL,
+		"InvalidQueryString":         ERR_MNS_INVALID_QUERY_STRING,
+		"MalformedXML":               ERR_MNS_MALFORMED_XML,
+		"MissingAuthorizationHeader": ERR_MNS_MISSING_AUTHORIZATION_HEADER,
+		"MissingDateHeader":          ERR_MNS_MISSING_DATE_HEADER,
+		"MissingVersionHeader":       ERR_MNS_MISSING_VERSION_HEADER,
+		"MissingReceiptHandle":       ERR_MNS_MISSING_RECEIPT_HANDLE,
+		"MissingVisibilityTimeout":   ERR_MNS_MISSING_VISIBILITY_TIMEOUT,
+		"MessageNotExist":            ERR_MNS_MESSAGE_NOT_EXIST,
+		"QueueAlreadyExist":          ERR_MNS_QUEUE_ALREADY_EXIST,
+		"QueueDeletedRecently":       ERR_MNS_QUEUE_DELETED_RECENTLY,
+		"InvalidQueueName":           ERR_MNS_INVALID_QUEUE_NAME,
+		"QueueNameLengthError":       ERR_MNS_QUEUE_NAME_LENGTH_ERROR,
+		"QueueNotExist":              ERR_MNS_QUEUE_NOT_EXIST,
+		"ReceiptHandleError":         ERR_MNS_RECEIPT_HANDLE_ERROR,
+		"SignatureDoesNotMatch":      ERR_MNS_SIGNATURE_DOES_NOT_MATCH,
+		"TimeExpired":                ERR_MNS_TIME_EXPIRED,
+		"QpsLimitExceeded":           ERR_MNS_QPS_LIMIT_EXCEEDED,
+	}
 }
 
 func ParseError(resp ErrorMessageResponse, resource string) (err error) {
-	/*
-		if errCodeTemplate, exist := errMapping[resp.Code]; exist {
-			err = errCodeTemplate.New(errors.Params{"resp": resp, "resource": resource})
-		} else {
-			err = ERR_MNS_UNKNOWN_CODE.New(errors.Params{"resp": resp, "resource": resource})
-		}
-	*/
+	if errCodeTemplate, exist := errMapping[resp.Code]; exist {
+		err = errCodeTemplate.New(errors.Params{"resp": resp, "resource": resource})
+	} else {
+		err = ERR_MNS_UNKNOWN_CODE.New(errors.Params{"resp": resp, "resource": resource})
+	}
 	return nil
 }
