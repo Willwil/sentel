@@ -602,7 +602,7 @@ func (p *mqttSession) handleUnsubscribe(packet *mqttPacket) error {
 		})
 	}
 
-	return p.sendCommandWithPacketId(UNSUBACK, pid, false)
+	return p.sendCommandWithPacketID(UNSUBACK, pid, false)
 }
 
 // handlePublish handle publish packet
@@ -764,8 +764,8 @@ func (p *mqttSession) sendSubAck(pid uint16, payload []uint8) error {
 	return p.writePacket(packet)
 }
 
-// sendCommandWithPacketId send command with message identifier
-func (p *mqttSession) sendCommandWithPacketId(command uint8, pid uint16, dup bool) error {
+// sendCommandWithPacketID send command with message identifier
+func (p *mqttSession) sendCommandWithPacketID(command uint8, pid uint16, dup bool) error {
 	packet := &mqttPacket{
 		command:         command,
 		remainingLength: 2,
@@ -782,24 +782,24 @@ func (p *mqttSession) sendCommandWithPacketId(command uint8, pid uint16, dup boo
 // sendPubAck
 func (p *mqttSession) sendPubAck(pid uint16) error {
 	glog.Infof("Sending PUBACK to %s with MID:%d", p.clientID, pid)
-	return p.sendCommandWithPacketId(PUBACK, pid, false)
+	return p.sendCommandWithPacketID(PUBACK, pid, false)
 }
 
 // sendPubRec
 func (p *mqttSession) sendPubRec(pid uint16) error {
 	glog.Infof("Sending PUBRREC to %s with MID:%d", p.clientID, pid)
-	return p.sendCommandWithPacketId(PUBREC, pid, false)
+	return p.sendCommandWithPacketID(PUBREC, pid, false)
 }
 
 func (p *mqttSession) sendPubComp(pid uint16) error {
 	glog.Infof("Sending PUBCOMP to %s with MID:%d", p.clientID, pid)
-	return p.sendCommandWithPacketId(PUBCOMP, pid, false)
+	return p.sendCommandWithPacketID(PUBCOMP, pid, false)
 }
 
-func (p *mqttSession) makePacketId() uint16 {
+func (p *mqttSession) makePacketID() uint16 {
 	if p.nextPacketID < math.MaxUint16 {
 		pid := p.nextPacketID
-		p.nextPacketID += 1
+		p.nextPacketID++
 		return pid
 	}
 	p.nextPacketID = 0
@@ -810,9 +810,8 @@ func (p *mqttSession) sendPublish(msg *base.Message) error {
 	qos := msg.Qos
 	pid := uint16(0)
 
-	// TODO:upgrade qos
 	if qos > 0 {
-		pid = p.makePacketId()
+		pid = p.makePacketID()
 	}
 
 	packet := newMqttPacket()
