@@ -12,18 +12,49 @@
 
 package mns
 
-import "errors"
+type MnsError struct {
+	StatusCode int    `json:"-"`
+	Message    string `json:"message"`
+}
+
+func (e MnsError) Error() string { return e.Message }
+
+func NewError(status int, message string) *MnsError {
+	return &MnsError{StatusCode: status, Message: message}
+}
 
 var (
-	ErrNotImplemented  = errors.New("not implemented")
-	ErrInvalidArgument = errors.New("invalid argument")
-
-	ErrQueueNotExist   = errors.New("queue not exist")
-	ErrMalformed       = errors.New("malformed")
-	ErrMessageNotExist = errors.New("message not exist")
-	ErrTopicNotExist   = errors.New("topic not exist")
-
-	ErrSubscriptionNameLengthError = errors.New("subscription name length error")
-	ErrSubscriptionInvalidName     = errors.New("subscription name is invalid")
-	ErrSubscriptionAlreadyExist    = errors.New("sbuscription already exist")
+	ErrAccesDenied                 = NewError(403, "AccessDenied")
+	ErrInvalidAccessId             = NewError(403, "InvalidAccessKeyId")
+	ErrInternalError               = NewError(500, "InternalError")
+	ErrInvalidAuthorizationHeader  = NewError(400, "InvalidAuthorizationHeader")
+	ErrInvalidDateHeader           = NewError(400, "InvalidDateHeader")
+	ErrInvalidArgument             = NewError(400, "InvalidArgument")
+	ErrInvalidDegist               = NewError(400, "InvalidDegist")
+	ErrInvalidRequestUrl           = NewError(400, "InvalidRequestURL")
+	ErrInvalidQueryString          = NewError(400, "InvalidQueryString")
+	ErrMissingAuthorizationHeader  = NewError(400, "MissingAuthorizationHeader")
+	ErrMissingDateHeader           = NewError(400, "MissingDateHeader")
+	ErrMissingVersionHeader        = NewError(400, "MissingVersionHeader")
+	ErrMissingReceiptHandle        = NewError(400, "MissingReceiptHandle")
+	ErrMissingVisiibilityTimeout   = NewError(400, "MissingVisibilityTimeout")
+	ErrMessageNotExist             = NewError(409, "MessageNotExist")
+	ErrQueueAlreadyExist           = NewError(400, "QueueAlreadyExist")
+	ErrQueueDeletedRecently        = NewError(400, "QueueDeletedRecently")
+	ErrInvalidQueueName            = NewError(400, "InvalidQueueName")
+	ErrQueueNameLengthError        = NewError(400, "QueueNameLengthError")
+	ErrQueueNotExist               = NewError(404, "QueueNotExist")
+	ErrReceiptHandlerError         = NewError(400, "ReceiptHandleError")
+	ErrSignatureDoesNotMatch       = NewError(400, "SignatureDoesNotMatch")
+	ErrTimeExpired                 = NewError(408, "TimeExpired")
+	ErrQpsLimitExceeded            = NewError(400, "QpsLimitExceeded")
+	ErrTopicAlreadyExit            = NewError(400, "TopicAlreadyExist")
+	ErrTopicNameInvalid            = NewError(400, "TopicNameInvalid")
+	ErrTopicNameLengthError        = NewError(400, "TopicNameLengthError")
+	ErrTopicNotExist               = NewError(404, "TopicNotExist")
+	ErrSubscriptionNameInvalid     = NewError(400, "SubscriptionNameInvalid")
+	ErrSubscriptionNameLengthError = NewError(400, "SubscriptionNameLengthError")
+	ErrSubscriptionNotExist        = NewError(404, "SubscriptionNotExist")
+	ErrSubscriptionAlreadyExist    = NewError(409, "SubscriptionAlreadyExist")
+	ErrEndpointInvalid             = NewError(400, "EndpointInvalid")
 )

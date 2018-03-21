@@ -26,12 +26,6 @@ type MessageResponse struct {
 	RequestId string `json:"request_id,omitempty"`
 }
 
-type ErrorMessageResponse struct {
-	Code      string `json:"code,omitempty"`
-	Message   string `json:"message,omitempty"`
-	RequestId string `json:"request_id,omitempty"`
-}
-
 type MessageSendRequest struct {
 	MessageBody  Base64Bytes `json:"message_body"`
 	DelaySeconds int64       `json:"delay_seconds"`

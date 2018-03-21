@@ -12,11 +12,7 @@
 
 package mns
 
-import (
-	"errors"
-
-	"github.com/cloustone/sentel/pkg/config"
-)
+import "github.com/cloustone/sentel/pkg/config"
 
 type MnsManager interface {
 	// Queue API
@@ -40,46 +36,46 @@ type MnsManager interface {
 }
 
 func NewManager(c config.Config) (MnsManager, error) {
-	return nil, ErrNotImplemented
+	return nil, ErrInternalError
 }
 
 type manager struct {
 }
 
 func (m *manager) CreateQueue(accountId string, queueName string) (Queue, error) {
-	return nil, ErrNotImplemented
+	return nil, ErrInternalError
 }
 func (m *manager) GetQueue(accountId string, queueName string) (Queue, error) {
-	return nil, ErrNotImplemented
+	return nil, ErrInternalError
 }
-func (m *manager) DeleteQueue(accountId string, queueName string) error { return ErrNotImplemented }
+func (m *manager) DeleteQueue(accountId string, queueName string) error { return ErrInternalError }
 
 // Topic API
 func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error) {
-	return nil, errors.New("Not implmented")
+	return nil, ErrInternalError
 }
 func (m *manager) GetTopic(accountId string, topicName string) (Topic, error) {
-	return nil, errors.New("Not implmented")
+	return nil, ErrInternalError
 }
 func (m *manager) DeleteTopic(accountId string, topicName string) error { return nil }
 func (m *manager) ListTopics(account string) []string                   { return []string{} }
 
 // Subscription API
 func (m *manager) GetSubscription(accountId string, subscriptionId string) (Subscription, error) {
-	return nil, ErrNotImplemented
+	return nil, ErrInternalError
 }
 func (m *manager) Subscribe(accountId, endpoint string, filterTag string, notifyStrategy string, notifiyContentFormat string) error {
-	return ErrNotImplemented
+	return ErrInternalError
 }
 
 func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName string) error {
-	return ErrNotImplemented
+	return ErrInternalError
 }
 
 func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages uint32, pageSize uint32, startIndex uint32) ([]SubscriptionAttr, error) {
-	return []SubscriptionAttr{}, ErrNotImplemented
+	return []SubscriptionAttr{}, ErrInternalError
 }
 
 func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error {
-	return ErrNotImplemented
+	return ErrInternalError
 }
