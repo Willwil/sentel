@@ -125,8 +125,8 @@ func (p *delegateSecurityManager) RemovePrincipalPermissions(principal shiro.Pri
 	p.delegate.RemovePrincipalPermissions(principal, permissions)
 }
 
-func (p *delegateSecurityManager) Authorize(principals shiro.PrincipalCollection, resource, action string) error {
-	return p.delegate.Authorize(principals, resource, action)
+func (p *delegateSecurityManager) Authorize(principal shiro.Principal, resource, action string) error {
+	return p.delegate.Authorize(principal, resource, action)
 }
 
 func (p *delegateSecurityManager) AuthorizeWithToken(token shiro.AuthenticationToken, resource, action string) error {

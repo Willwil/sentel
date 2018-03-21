@@ -108,11 +108,9 @@ func (w *defaultSecurityManager) RemovePrincipalPermissions(principal Principal,
 // Authorize check wether the subject is authorized with the request
 // It will iterate all realms to get principals and roles, comparied with saved
 // authorization policies
-func (w *defaultSecurityManager) Authorize(principals PrincipalCollection, resource string, action string) error {
-	// if no resource is requested, the authorization is ok
-	if resource == "" {
-		return nil
-	}
+func (w *defaultSecurityManager) Authorize(principal Principal, resource string, action string) error {
+	principals := NewPrincipalCollection()
+	principals.Add(principal)
 	permissions := w.GetPrincipalsPermissions(principals)
 	for _, permission := range permissions {
 		if permission.Implies(resource, action) {
@@ -122,8 +120,9 @@ func (w *defaultSecurityManager) Authorize(principals PrincipalCollection, resou
 	return errors.New("not authorized")
 }
 
-func (w *defaultSecurityManager) AuthorizeWithToken(token AuthenticationToken, resource string, action string) error {
-	return w.Authorize(w.getPrincipals(token), resource, action)
+func (w *defaultSecurityManager) AuthorizeWithToken(token AuthenticationToken, resource string, action string) (err error) {
+	principals := w.getPrincipals(token)
+	return w.Authorize(principals.GetPrimaryPrincipal(), resource, action)
 }
 
 // AddRole add role with permission into realm

@@ -13,7 +13,7 @@
 package shiro
 
 type PrincipalCollection interface {
-	Add(principal Principal, realmName string)
+	Add(principal Principal)
 	AddAll(principals PrincipalCollection)
 	GetPrimaryPrincipal() Principal
 	GetRealmPrincipals(realmName string) []Principal
@@ -38,7 +38,8 @@ type principalCollection struct {
 	index         int
 }
 
-func (p *principalCollection) Add(principal Principal, realmName string) {
+func (p *principalCollection) Add(principal Principal) {
+	realmName := principal.GetRealmName()
 	if _, found := p.principals[realmName]; !found {
 		p.principals[realmName] = []Principal{}
 	}
@@ -51,7 +52,7 @@ func (p *principalCollection) AddAll(r PrincipalCollection) {
 	for _, realmName := range realmNames {
 		principals := r.GetRealmPrincipals(realmName)
 		for _, principal := range principals {
-			p.Add(principal, realmName)
+			p.Add(principal)
 		}
 	}
 }

@@ -154,7 +154,6 @@ func authenticationWithConfig(c config.Config) echo.MiddlewareFunc {
 			if err != nil {
 				return err
 			}
-			ctx.Set("AccountId", token.accessId)
 			ctx.Set("Principal", principal)
 			return next(ctx)
 		}
@@ -165,10 +164,9 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			accessId := ctx.Get("AccountId").(string)
-			token := shiro.UserAndPasswordToken{Username: accessId, Authenticated: true}
+			principal := ctx.Get("Principal").(shiro.Principal)
 			resource, action := base.GetRequestInfo(ctx, resourceMaps)
-			if err := securityManager.AuthorizeWithToken(token, resource, action); err != nil {
+			if err := securityManager.Authorize(principal, resource, action); err != nil {
 				return err
 			}
 			return next(ctx)

@@ -16,14 +16,12 @@ type MessageResponse struct {
 	Code      string `json:"code,omitempty"`
 	Message   string `json:"message,omitempty"`
 	RequestId string `json:"request_id,omitempty"`
-	HostId    string `json:"host_id,omitempty"`
 }
 
 type ErrorMessageResponse struct {
 	Code      string `json:"code,omitempty"`
 	Message   string `json:"message,omitempty"`
 	RequestId string `json:"request_id,omitempty"`
-	HostId    string `json:"host_id,omitempty"`
 }
 
 type MessageSendRequest struct {

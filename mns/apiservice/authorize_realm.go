@@ -60,7 +60,7 @@ func (p *authorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 				principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
 				principal.SetCrenditals(token.(apiToken).signature)
 				principal.AddRoles(tenant.Roles)
-				principals.Add(principal, p.GetName())
+				principals.Add(principal)
 			}
 		}
 	}
