@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/cloustone/sentel/mns/mns"
+	"github.com/cloustone/sentel/pkg/goshiro/shiro"
 	"github.com/labstack/echo"
 )
 
@@ -37,7 +38,8 @@ type response struct {
 }
 
 func getAccount(ctx echo.Context) string {
-	return "" // AccountId will be extracted from commaon request body
+	principal := ctx.Get("Principal").(shiro.Principal)
+	return principal.Name()
 }
 
 // Queue APIs

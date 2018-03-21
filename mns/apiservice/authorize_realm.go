@@ -12,9 +12,14 @@
 package apiservice
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
+	"errors"
+	"strings"
+
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/registry"
 )
 
@@ -35,10 +40,10 @@ func newAuthorizeRealm(c config.Config) (shiro.Realm, error) {
 }
 func (p *authorizeRealm) GetName() string { return "iot_api_server" }
 func (p *authorizeRealm) Supports(token shiro.AuthenticationToken) bool {
-	if _, ok := token.(*web.JWTToken); ok {
+	if _, ok := token.(*apiToken); ok {
 		return true
 	}
-	if _, ok := token.(*web.RequestToken); ok {
+	if _, ok := token.(*shiro.UserAndPasswordToken); ok {
 		return ok
 	}
 	return false
@@ -51,11 +56,33 @@ func (p *authorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 		defer r.Close()
 		if tenant, err := r.GetTenant(principalName); err == nil {
 			// construct new principals
-			principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
-			principal.SetCrenditals(tenant.Password)
-			principal.AddRoles(tenant.Roles)
-			principals.Add(principal, p.GetName())
+			if err := signAccess(token.(apiToken), tenant.SecretKey); err == nil {
+				principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
+				principal.SetCrenditals(token.(apiToken).signature)
+				principal.AddRoles(tenant.Roles)
+				principals.Add(principal)
+			}
 		}
 	}
 	return principals
+}
+
+func signAccess(token apiToken, secretKey string) error {
+	//sort.Sort(sort.StringSlice(param.headers))
+	stringToSign := string(token.method) + "\n" +
+		token.contentMD5 + "\n" +
+		token.contentType + "\n" +
+		token.date + "\n" +
+		strings.Join(token.headers, "\n") + "\n" +
+		token.resource
+
+	sha1Hash := hmac.New(sha1.New, []byte(secretKey))
+	if _, err := sha1Hash.Write([]byte(stringToSign)); err != nil {
+		return errors.New("not authorized")
+	}
+	signature := base64.StdEncoding.EncodeToString(sha1Hash.Sum(nil))
+	if token.signature == signature {
+		return nil
+	}
+	return errors.New("not authorized")
 }

@@ -62,7 +62,7 @@ func NewMnsQueue(name string, client MnsClient, qps ...int32) MnsQueue {
 	queue.name = name
 	queue.stopChan = make(chan bool)
 	queue.qpsLimit = DefaultQPSLimit
-	queue.decoder = NewMnsDecoder()
+	queue.decoder = NewDecoder()
 
 	if qps != nil && len(qps) == 1 && qps[0] > 0 {
 		queue.qpsLimit = qps[0]

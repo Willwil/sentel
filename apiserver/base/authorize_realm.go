@@ -54,7 +54,7 @@ func (p *AuthorizeRealm) GetPrincipals(token shiro.AuthenticationToken) shiro.Pr
 			principal := shiro.NewPrincipalWithRealm(principalName, p.GetName())
 			principal.SetCrenditals(tenant.Password)
 			principal.AddRoles(tenant.Roles)
-			principals.Add(principal, p.GetName())
+			principals.Add(principal)
 		}
 	}
 	return principals

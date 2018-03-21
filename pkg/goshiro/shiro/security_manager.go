@@ -24,7 +24,9 @@ type SecurityManager interface {
 	// Login authenticate current user and return subject
 	Login(AuthenticationToken) (Principal, error)
 	// Authorize check wether the subject request is authorized
-	Authorize(token AuthenticationToken, resource, action string) error
+	Authorize(principal Principal, resource, action string) error
+	// AuthorizeWithToken check wether the subject request is authorized
+	AuthorizeWithToken(token AuthenticationToken, resource, action string) error
 	// RemovePrincipal remove principal from security manager
 	RemovePrincipal(Principal)
 	// GetPriincipalsPermissions return principals permissions

@@ -21,21 +21,12 @@ import (
 	"github.com/gogap/errors"
 )
 
-type MnsLocation string
-
-const (
-	Beijing   MnsLocation = "cn-beijing"
-	Hangzhou  MnsLocation = "cn-hangzhou"
-	Qingdao   MnsLocation = "cn-qingdao"
-	Singapore MnsLocation = "ap-southeast-1"
-)
-
 type QueueManager interface {
-	CreateQueue(location MnsLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
-	SetQueueAttributes(location MnsLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
-	GetQueueAttributes(location MnsLocation, queueName string) (attr QueueAttribute, err error)
-	DeleteQueue(location MnsLocation, queueName string) (err error)
-	ListQueue(location MnsLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error)
+	CreateQueue(queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
+	SetQueueAttributes(queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error)
+	GetQueueAttributes(queueName string) (attr QueueAttribute, err error)
+	DeleteQueue(queueName string) (err error)
+	ListQueue(nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error)
 }
 
 type queueManager struct {
@@ -43,13 +34,12 @@ type queueManager struct {
 	credential      Credential
 	accessKeyId     string
 	accessKeySecret string
-
-	decoder MnsDecoder
+	decoder         MnsDecoder
 }
 
 // makeMnsUrl generate url for queue service in mns
 // ownerId and location will be used in future
-func makeMnsUrl(ownerId string, location string) string {
+func makeMnsUrl(ownerId string) string {
 	formatOfMnsServer := "http://localhost:9091/mns/api/v1"
 	return formatOfMnsServer
 }
@@ -107,7 +97,7 @@ func NewqueueManager(ownerId, accessKeyId, accessKeySecret string) QueueManager 
 		ownerId:         ownerId,
 		accessKeyId:     accessKeyId,
 		accessKeySecret: accessKeySecret,
-		decoder:         NewMnsDecoder(),
+		decoder:         NewDecoder(),
 	}
 }
 
@@ -130,7 +120,7 @@ func checkAttributes(delaySeconds int32, maxMessageSize int32, messageRetentionP
 	return
 }
 
-func (p *queueManager) CreateQueue(location MnsLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
+func (p *queueManager) CreateQueue(queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
@@ -153,11 +143,11 @@ func (p *queueManager) CreateQueue(location MnsLocation, queueName string, delay
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := makeMnsUrl(p.ownerId, string(location))
+	url := makeMnsUrl(p.ownerId)
 	cli := NewMnsClient(url, p.accessKeyId, p.accessKeySecret)
 
 	var code int
-	code, err = send(cli, p.decoder, PUT, nil, &message, "queues/"+queueName, nil)
+	code, err = send(cli, p.decoder, POST, nil, &message, "queues/"+queueName, nil)
 
 	if code == http.StatusNoContent {
 		err = ERR_MNS_QUEUE_ALREADY_EXIST_AND_HAVE_SAME_ATTR.New(errors.Params{"name": queueName})
@@ -167,7 +157,7 @@ func (p *queueManager) CreateQueue(location MnsLocation, queueName string, delay
 	return
 }
 
-func (p *queueManager) SetQueueAttributes(location MnsLocation, queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
+func (p *queueManager) SetQueueAttributes(queueName string, delaySeconds int32, maxMessageSize int32, messageRetentionPeriod int32, visibilityTimeout int32, pollingWaitSeconds int32) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
@@ -190,21 +180,21 @@ func (p *queueManager) SetQueueAttributes(location MnsLocation, queueName string
 		PollingWaitSeconds:     pollingWaitSeconds,
 	}
 
-	url := makeMnsUrl(p.ownerId, string(location))
+	url := makeMnsUrl(p.ownerId)
 	cli := NewMnsClient(url, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, PUT, nil, &message, fmt.Sprintf("queues/%s?metaoverride=true", queueName), nil)
 	return
 }
 
-func (p *queueManager) GetQueueAttributes(location MnsLocation, queueName string) (attr QueueAttribute, err error) {
+func (p *queueManager) GetQueueAttributes(queueName string) (attr QueueAttribute, err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
 		return
 	}
 
-	url := makeMnsUrl(p.ownerId, string(location))
+	url := makeMnsUrl(p.ownerId)
 	cli := NewMnsClient(url, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, GET, nil, nil, "queues/"+queueName, &attr)
@@ -212,14 +202,14 @@ func (p *queueManager) GetQueueAttributes(location MnsLocation, queueName string
 	return
 }
 
-func (p *queueManager) DeleteQueue(location MnsLocation, queueName string) (err error) {
+func (p *queueManager) DeleteQueue(queueName string) (err error) {
 	queueName = strings.TrimSpace(queueName)
 
 	if err = checkQueueName(queueName); err != nil {
 		return
 	}
 
-	url := makeMnsUrl(p.ownerId, string(location))
+	url := makeMnsUrl(p.ownerId)
 	cli := NewMnsClient(url, p.accessKeyId, p.accessKeySecret)
 
 	_, err = send(cli, p.decoder, DELETE, nil, nil, "queues/"+queueName, nil)
@@ -227,8 +217,8 @@ func (p *queueManager) DeleteQueue(location MnsLocation, queueName string) (err 
 	return
 }
 
-func (p *queueManager) ListQueue(location MnsLocation, nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error) {
-	url := makeMnsUrl(p.ownerId, string(location))
+func (p *queueManager) ListQueue(nextMarker Base64Bytes, retNumber int32, prefix string) (queues Queues, err error) {
+	url := makeMnsUrl(p.ownerId)
 	cli := NewMnsClient(url, p.accessKeyId, p.accessKeySecret)
 
 	header := map[string]string{}

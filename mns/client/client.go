@@ -15,7 +15,7 @@ package client
 import (
 	"crypto/md5"
 	"encoding/base64"
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -118,35 +118,35 @@ func (p *mnsClient) authorization(method Method, headers map[string]string, reso
 }
 
 func (p *mnsClient) Send(method Method, headers map[string]string, message interface{}, resource string) (resp *http.Response, err error) {
-	var xmlContent []byte
+	var content []byte
 
 	if message == nil {
-		xmlContent = []byte{}
+		content = []byte{}
 	} else {
 		switch m := message.(type) {
 		case []byte:
 			{
-				xmlContent = m
+				content = m
 			}
 		default:
-			if bXml, e := xml.Marshal(message); e != nil {
+			if jsonContent, e := json.Marshal(message); e != nil {
 				err = ERR_MARSHAL_MESSAGE_FAILED.New(errors.Params{"err": e})
 				return
 			} else {
-				xmlContent = bXml
+				content = jsonContent
 			}
 		}
 	}
 
-	xmlMD5 := md5.Sum(xmlContent)
-	strMd5 := fmt.Sprintf("%x", xmlMD5)
+	jsonMD5 := md5.Sum(content)
+	strMd5 := fmt.Sprintf("%x", jsonMD5)
 
 	if headers == nil {
 		headers = make(map[string]string)
 	}
 
 	headers[MQ_VERSION] = version
-	headers[CONTENT_TYPE] = "application/xml"
+	headers[CONTENT_TYPE] = "application/json"
 	headers[CONTENT_MD5] = base64.StdEncoding.EncodeToString([]byte(strMd5))
 	headers[DATE] = time.Now().UTC().Format(http.TimeFormat)
 
@@ -159,7 +159,7 @@ func (p *mnsClient) Send(method Method, headers map[string]string, message inter
 
 	url := p.url + "/" + resource
 
-	postBodyReader := strings.NewReader(string(xmlContent))
+	postBodyReader := strings.NewReader(string(content))
 
 	var req *http.Request
 	if req, err = http.NewRequest(string(method), url, postBodyReader); err != nil {
