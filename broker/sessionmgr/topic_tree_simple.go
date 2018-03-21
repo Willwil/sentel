@@ -63,7 +63,7 @@ func (p *simpleTopicTree) addNode(node *topicNode, level string, q queue.Queue) 
 
 // addSubscription add subsription into topic tree
 func (p *simpleTopicTree) addSubscription(sub *subscription) error {
-	glog.Infof("topictree:addSubscription: clientId is %s, topic is %s, qos is %d",
+	glog.Infof("topictree:addSubscription: clientID is %s, topic is %s, qos is %d",
 		sub.clientID, sub.topic, sub.qos)
 
 	// Get topic slice
@@ -89,7 +89,7 @@ func (p *simpleTopicTree) addSubscription(sub *subscription) error {
 }
 
 // retainSubscription retain the subscription
-func (p *simpleTopicTree) retainSubscription(clientId string, topic string) error {
+func (p *simpleTopicTree) retainSubscription(clientID string, topic string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -101,15 +101,15 @@ func (p *simpleTopicTree) retainSubscription(clientId string, topic string) erro
 			return fmt.Errorf("topic tree: invalid topic '%s'", topic)
 		}
 	}
-	if sub, found := node.subs[clientId]; found {
+	if sub, found := node.subs[clientID]; found {
 		sub.retain = true
 		return nil
 	}
-	return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+	return fmt.Errorf("topic tree: invalid client id '%s'", clientID)
 }
 
 // removeSubscription remove subscription from topic tree
-func (p *simpleTopicTree) removeSubscription(clientId string, topic string) error {
+func (p *simpleTopicTree) removeSubscription(clientID string, topic string) error {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -121,14 +121,14 @@ func (p *simpleTopicTree) removeSubscription(clientId string, topic string) erro
 			return fmt.Errorf("topic tree: invalid subscription '%s'", topic)
 		}
 	}
-	if _, ok := node.subs[clientId]; !ok {
-		return fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+	if _, ok := node.subs[clientID]; !ok {
+		return fmt.Errorf("topic tree: invalid client id '%s'", clientID)
 	}
-	delete(node.subs, clientId)
+	delete(node.subs, clientID)
 
 	// Remove the topic
-	if _, found := p.topics[clientId]; found {
-		list := p.topics[clientId]
+	if _, found := p.topics[clientID]; found {
+		list := p.topics[clientID]
 		for i, t := range list {
 			if t == topic {
 				list = append(list[:i], list[i+1:]...)
@@ -160,21 +160,32 @@ func (p *simpleTopicTree) searchNode(node *topicNode, levels []string, setRetain
 }
 
 // addMessage publish a message on topic tree
-func (p *simpleTopicTree) addMessage(clientId string, msg *base.Message) {
+func (p *simpleTopicTree) addMessage(clientID string, msg *base.Message) {
 	levels := strings.Split(msg.Topic, "/")
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	node := p.searchNode(&p.root, levels, true)
 	if node != nil {
 		for _, sub := range node.subs {
-			glog.Infof("topic tree: publishing message with client id '%s'", clientId)
-			sub.queue.Pushback(msg)
+			glog.Infof("topic tree: publishing message with client id '%s'", clientID)
+			newMsg := &base.Message{
+				Topic:     msg.Topic,
+				PacketId:  msg.PacketId,
+				Direction: msg.Direction,
+				State:     msg.State,
+				Qos:       sub.qos,
+				Dup:       false,
+				Retain:    msg.Retain,
+				Time:      msg.Time,
+				Payload:   msg.Payload,
+			}
+			sub.queue.Pushback(newMsg)
 		}
 	}
 }
 
 // retainMessage retain message on specified topic
-func (p *simpleTopicTree) retainMessage(clientId string, msg *base.Message) {
+func (p *simpleTopicTree) retainMessage(clientID string, msg *base.Message) {
 	levels := strings.Split(msg.Topic, "/")
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -182,15 +193,15 @@ func (p *simpleTopicTree) retainMessage(clientId string, msg *base.Message) {
 	if node != nil {
 		node.msgs = append(node.msgs, msg)
 	} else {
-		glog.Errorf("topic tree: Failed to retain message for '%s'", clientId)
+		glog.Errorf("topic tree: Failed to retain message for '%s'", clientID)
 	}
 }
 
 // deleteMessageWithValidator delete message in subdata with condition
-func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
+func (p *simpleTopicTree) deleteMessageWithValidator(clientID string, validator func(*base.Message) bool) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	for _, topic := range p.topics[clientId] {
+	for _, topic := range p.topics[clientID] {
 		levels := strings.Split(topic, "/")
 		node := p.searchNode(&p.root, levels, true)
 		for index, msg := range node.msgs {
@@ -202,14 +213,14 @@ func (p *simpleTopicTree) deleteMessageWithValidator(clientId string, validator 
 }
 
 // getSubscriptions return client's all subscription topics
-func (p *simpleTopicTree) getSubscriptionTopics(clientId string) []string {
+func (p *simpleTopicTree) getSubscriptionTopics(clientID string) []string {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	return p.topics[clientId]
+	return p.topics[clientID]
 }
 
 // getSubscription return client's subscription by topic
-func (p *simpleTopicTree) getSubscription(clientId, topic string) (*subscription, error) {
+func (p *simpleTopicTree) getSubscription(clientID, topic string) (*subscription, error) {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 	node := &p.root
@@ -220,10 +231,10 @@ func (p *simpleTopicTree) getSubscription(clientId, topic string) (*subscription
 			return nil, fmt.Errorf("topic tree: invalid subscription '%s'", topic)
 		}
 	}
-	if _, ok := node.subs[clientId]; !ok {
-		return nil, fmt.Errorf("topic tree: invalid client id '%s'", clientId)
+	if _, ok := node.subs[clientID]; !ok {
+		return nil, fmt.Errorf("topic tree: invalid client id '%s'", clientID)
 	}
-	return node.subs[clientId], nil
+	return node.subs[clientID], nil
 }
 
 func newSimpleTopicTree(c config.Config) (topicTree, error) {

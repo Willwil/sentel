@@ -19,13 +19,13 @@ import (
 )
 
 const (
-	TopicNameNode         = "/cluster/nodes"
-	TopicNameClient       = "/cluster/clients"
-	TopicNameSession      = "/cluster/sessions"
-	TopicNameSubscription = "/cluster/subscriptions"
-	TopicNamePublish      = "/cluster/publish"
-	TopicNameMetric       = "/cluster/metrics"
-	TopicNameStats        = "/cluster/stats"
+	TopicNameNode         = "cluster-nodes"
+	TopicNameClient       = "cluster-clients"
+	TopicNameSession      = "cluster-sessions"
+	TopicNameSubscription = "cluster-subscriptions"
+	TopicNamePublish      = "cluster-publish"
+	TopicNameMetric       = "cluster-metrics"
+	TopicNameStats        = "cluster-stats"
 )
 
 const (

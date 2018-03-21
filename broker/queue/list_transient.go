@@ -57,8 +57,8 @@ func (p *transientList) Get(index int) *base.Message {
 
 // Remove
 func (p *transientList) Remove(pktID uint16) {
-	for i, v := range p.buf {
-		if v.PacketId == pktID {
+	for i := 0; i < p.count; i++ {
+		if p.buf[i].PacketId == pktID {
 			p.buf = append(p.buf[:i], p.buf[i+1:]...)
 			p.count--
 			break
