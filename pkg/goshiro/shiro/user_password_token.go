@@ -10,24 +10,21 @@
 //  License for the specific language governing permissions and limitations
 //  under the License.
 
-package client
+package shiro
 
-import (
-	"encoding/json"
-	"io"
-)
-
-type MnsDecoder interface {
-	Decode(reader io.Reader, v interface{}) error
+type UserAndPasswordToken struct {
+	Username      string
+	Password      string
+	Authenticated bool
 }
 
-type mnsDecoder struct{}
-
-func NewDecoder() MnsDecoder {
-	return &mnsDecoder{}
+func (p UserAndPasswordToken) GetPrincipal() interface{} {
+	return p.Username
+}
+func (p UserAndPasswordToken) GetCrenditals() interface{} {
+	return p.Password
 }
 
-func (p *mnsDecoder) Decode(reader io.Reader, v interface{}) error {
-	decoder := json.NewDecoder(reader)
-	return decoder.Decode(&v)
+func (p UserAndPasswordToken) IsAuthenticated() bool {
+	return p.Authenticated
 }

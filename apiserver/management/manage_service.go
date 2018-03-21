@@ -162,7 +162,7 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			securityManager := base.GetSecurityManager(ctx)
 			token := web.NewRequestToken(ctx)
 			resource, action := base.GetRequestInfo(ctx, resourceMaps)
-			if err := securityManager.Authorize(token, resource, action); err != nil {
+			if err := securityManager.AuthorizeWithToken(token, resource, action); err != nil {
 				return err
 			}
 

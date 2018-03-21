@@ -13,12 +13,17 @@
 package mns
 
 type QueueAttribute struct {
-	DelaySeconds           uint32 `json:"delaySeconds" bson:"DelaySeconds"`
-	MaximumMessageSize     uint32 `json:"maximumMessageSize" bson:"MaximumMessageSize"`
-	MessageRetentionPeriod uint32 `json:"messageRetentionPeriod" bson:"MessageRetentionPeriod"`
-	VisibilityTimeout      uint32 `json:"visibilityTimeout" bson:"VisibilityTimeout"`
-	PollingWaitSeconds     uint8  `json:"pollingWaitSeconds" bson:"PollingWaitSeconds"`
-	LoggingEnabled         bool   `json:"loggingEnabled" bson:"LoggingEnabled"`
+	QueueName              string `bson:"QueueName,omitempty" json:"queue_name,omitempty"`
+	DelaySeconds           int32  `bson:"DelaySenconds,omitempty" json:"delay_senconds,omitempty"`
+	MaxMessageSize         int32  `bson:"MaximumMessageSize,omitempty" json:"maximum_message_size,omitempty"`
+	MessageRetentionPeriod int32  `bson:"MessageRetentionPeriod,omitempty" json:"message_retention_period,omitempty"`
+	VisibilityTimeout      int32  `bson:"VisibilityTimeout,omitempty" json:"visibility_timeout,omitempty"`
+	PollingWaitSeconds     int32  `bson:"PollingWaitSeconds,omitempty" json:"polling_wait_secods,omitempty"`
+	ActiveMessages         int64  `bson:"ActiveMessages,omitempty" json:"active_messages,omitempty"`
+	InactiveMessages       int64  `bson:"InactiveMessages,omitempty" json:"inactive_messages,omitempty"`
+	DelayMessages          int64  `bson:"DelayMessages,omitempty" json:"delay_messages,omitempty"`
+	CreateTime             int64  `bson:"CreateTime,omitempty" json:"create_time,omitempty"`
+	LastModifyTime         int64  `bson:"LastModifyTime,omitempty" json:"last_modify_time,omitempty"`
 }
 
 type Queue interface {

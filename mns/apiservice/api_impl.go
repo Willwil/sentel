@@ -37,7 +37,7 @@ type response struct {
 }
 
 func getAccount(ctx echo.Context) string {
-	return "" // AccountId will be extracted from commaon request body
+	return ctx.Get("AccountId").(string)
 }
 
 // Queue APIs

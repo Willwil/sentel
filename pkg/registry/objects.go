@@ -18,6 +18,7 @@ import "time"
 type Tenant struct {
 	TenantId  string    `bson:"TenantId"`
 	Password  string    `bson:"Password"`
+	SecretKey string    `bson:"secretKey"`
 	CreatedAt time.Time `bson:"CreatedAt"`
 	UpdatedAt time.Time `bson:"UpdatedAt"`
 	Roles     []string  `bons:"Roles"`
@@ -46,6 +47,7 @@ type Device struct {
 	TimeCreated  time.Time `bson:"TimeCreated" json:"TimeCreated"`
 	TimeUpdated  time.Time `bson:"TimeUpdated" json:"TimeUpdated"`
 }
+
 // Runlog
 // Only Status duration 3 second, we hold it is valid.
 type Runlog struct {

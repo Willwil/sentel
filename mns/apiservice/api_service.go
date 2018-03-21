@@ -20,10 +20,8 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
-	"github.com/cloustone/sentel/pkg/goshiro/web"
 	"github.com/cloustone/sentel/pkg/registry"
 	"github.com/cloustone/sentel/pkg/service"
-	jwt "github.com/dgrijalva/jwt-go"
 
 	echo "github.com/labstack/echo"
 	mw "github.com/labstack/echo/middleware"
@@ -141,31 +139,23 @@ func (p *consoleService) Stop() {
 
 // setAuth setup api group 's authentication method
 func (p *consoleService) setAuth(c config.Config, g *echo.Group) {
-	auth := util.StringConfigWithDefaultValue(c, "auth", "jwt")
-	switch auth {
-	case "jwt":
-		// Authentication config
-		config := mw.JWTConfig{
-			Claims:     &base.ApiJWTClaims{},
-			SigningKey: []byte("secret"),
-		}
-		g.Use(mw.JWTWithConfig(config))
-		g.Use(accessIdWithConfig(c))
-		if util.AuthNeed(c) {
-			g.Use(authorizeWithConfig(c))
-		}
-	default:
+	if util.AuthNeed(c) {
+		g.Use(authenticationWithConfig(c))
+		g.Use(authorizeWithConfig(c))
 	}
 }
 
-func accessIdWithConfig(config config.Config) echo.MiddlewareFunc {
+func authenticationWithConfig(c config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
-			// After authenticated by gateway,the authentication paramters must bevalid
-			if user, ok := ctx.Get("user").(*jwt.Token); ok {
-				claims := user.Claims.(*base.ApiJWTClaims)
-				ctx.Set("AccessId", claims.AccessId)
+			securityManager := base.GetSecurityManager(ctx)
+			token := newApiToken(ctx)
+			principal, err := securityManager.Login(token)
+			if err != nil {
+				return err
 			}
+			ctx.Set("AccountId", token.accessId)
+			ctx.Set("Principal", principal)
 			return next(ctx)
 		}
 	}
@@ -175,10 +165,10 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx echo.Context) error {
 			securityManager := base.GetSecurityManager(ctx)
-			accessId := ctx.Get("AccessId").(string)
-			token := web.JWTToken{Username: accessId, Authenticated: true}
+			accessId := ctx.Get("AccountId").(string)
+			token := shiro.UserAndPasswordToken{Username: accessId, Authenticated: true}
 			resource, action := base.GetRequestInfo(ctx, resourceMaps)
-			if err := securityManager.Authorize(token, resource, action); err != nil {
+			if err := securityManager.AuthorizeWithToken(token, resource, action); err != nil {
 				return err
 			}
 			return next(ctx)
