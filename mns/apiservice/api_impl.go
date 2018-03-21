@@ -31,10 +31,10 @@ const (
 	NotImplemented = http.StatusNotImplemented
 )
 
-type response struct {
-	RequestId string      `json:"requestId"`
-	Message   string      `json:"message"`
-	Result    interface{} `json:"result"`
+type ErrorMessageResponse struct {
+	Code      string `json:"code,omitempty"`
+	Message   string `json:"message,omitempty"`
+	RequestId string `json:"request_id,omitempty"`
 }
 
 func getAccount(ctx echo.Context) string {
@@ -42,28 +42,45 @@ func getAccount(ctx echo.Context) string {
 	return principal.Name()
 }
 
+func reply(ctx echo.Context, val interface{}) error {
+	if val != nil {
+		switch val.(type) {
+		case *mns.MnsError:
+			err := val.(*mns.MnsError)
+			resp := ErrorMessageResponse{
+				Code:      err.Message,
+				RequestId: ctx.Request().Header.Get(echo.HeaderXRequestID),
+			}
+			return ctx.JSON(err.StatusCode, resp)
+		default:
+			return ctx.JSON(http.StatusOK, val)
+		}
+	}
+	return ctx.JSON(http.StatusOK, nil)
+}
+
 // Queue APIs
 func createQueue(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if _, err := mns.CreateQueue(accountId, queueName); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func setQueueAttribute(ctx echo.Context) error {
 	attr := mns.QueueAttribute{}
 	if err := ctx.Bind(&attr); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	} else {
 		queue.SetAttribute(attr)
-		return ctx.JSON(OK, nil)
+		return reply(ctx, nil)
 	}
 }
 
@@ -71,10 +88,10 @@ func getQueueAttribute(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	} else {
 		attr := queue.GetAttribute()
-		return ctx.JSON(OK, attr)
+		return reply(ctx, attr)
 	}
 
 }
@@ -83,52 +100,52 @@ func deleteQueue(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if err := mns.DeleteQueue(accountId, queueName); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func getQueueList(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	if queues, err := mns.GetQueueList(accountId); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	} else {
-		return ctx.JSON(OK, queues)
+		return reply(ctx, queues)
 	}
 }
 
 func sendQueueMessage(ctx echo.Context) error {
 	msg := mns.Message{}
 	if err := ctx.Bind(&msg); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if err := queue.SendMessage(msg); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		}
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func batchSendQueueMessage(ctx echo.Context) error {
 	msgs := []mns.Message{}
 	if err := ctx.Bind(&msgs); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if err := queue.BatchSendMessage(msgs); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		}
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 
 }
 func receiveQueueMessage(ctx echo.Context) error {
@@ -136,15 +153,15 @@ func receiveQueueMessage(ctx echo.Context) error {
 	queueName := ctx.Param("queueName")
 	ws, err := strconv.Atoi(ctx.QueryParam("ws"))
 	if err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if msgs, err := queue.ReceiveMessage(ws); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		} else {
-			return ctx.JSON(OK, msgs)
+			return reply(ctx, msgs)
 		}
 	}
 }
@@ -153,17 +170,17 @@ func batchReceiveQueueMessage(ctx echo.Context) error {
 	numberOfMessages, err1 := strconv.Atoi(ctx.QueryParam("numberOfMessages"))
 	ws, err2 := strconv.Atoi(ctx.QueryParam("ws"))
 	if err1 != nil || err2 != nil {
-		return ctx.JSON(BadRequest, errors.New("invalid parameter"))
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if msgs, err := queue.BatchReceiveMessages(ws, numberOfMessages); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		} else {
-			return ctx.JSON(OK, msgs)
+			return reply(ctx, msgs)
 		}
 	}
 }
@@ -173,13 +190,13 @@ func deleteQueueMessage(ctx echo.Context) error {
 	queueName := ctx.Param("queueName")
 	msgId := ctx.QueryParam("msgId")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if err := queue.DeleteMessage(msgId); err != nil {
-			return ctx.JSON(BadRequest, err)
+			return reply(ctx, err)
 		}
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func batchDeleteQueueMessages(ctx echo.Context) error {
@@ -187,18 +204,18 @@ func batchDeleteQueueMessages(ctx echo.Context) error {
 		MessageIds []string `json:"messageIds"`
 	}{}
 	if err := ctx.Bind(req); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		for _, msgId := range req.MessageIds {
 			queue.DeleteMessage(msgId)
 		}
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func peekQueueMessages(ctx echo.Context) error {
@@ -208,12 +225,12 @@ func peekQueueMessages(ctx echo.Context) error {
 	queue, err2 := mns.GetQueue(accountId, queueName)
 
 	if err1 != nil || err2 != nil {
-		return ctx.JSON(BadRequest, errors.New("invalid parameter"))
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	if msg, err := queue.PeekMessage(ws); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	} else {
-		return ctx.JSON(OK, msg)
+		return reply(ctx, msg)
 	}
 }
 
@@ -221,17 +238,17 @@ func batchPeekQueueMessages(ctx echo.Context) error {
 	numberOfMessages, err1 := strconv.Atoi(ctx.QueryParam("numberOfMessages"))
 	ws, err2 := strconv.Atoi(ctx.QueryParam("ws"))
 	if err1 != nil || err2 != nil {
-		return ctx.JSON(BadRequest, errors.New("invalid parameter"))
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		if msgs, err := queue.BatchPeekMessages(ws, numberOfMessages); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		} else {
-			return ctx.JSON(OK, msgs)
+			return reply(ctx, msgs)
 		}
 	}
 }
@@ -241,9 +258,9 @@ func createTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	if _, err := mns.CreateTopic(accountId, topicName); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func setTopicAttribute(ctx echo.Context) error {
@@ -251,26 +268,26 @@ func setTopicAttribute(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 	topicAttr := mns.TopicAttribute{}
 	if err := ctx.Bind(&topicAttr); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	if topic, err := mns.GetTopic(accountId, topicName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		topic.SetAttribute(topicAttr)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func getTopicAttribute(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	if topic, err := mns.GetTopic(accountId, topicName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument)
 	} else {
 		if attr, err := topic.GetAttribute(); err != nil {
-			return ctx.JSON(ServerError, err)
+			return reply(ctx, err)
 		} else {
-			return ctx.JSON(OK, attr)
+			return reply(ctx, attr)
 		}
 	}
 }
@@ -279,15 +296,15 @@ func deleteTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	if err := mns.DeleteTopic(accountId, topicName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func listTopics(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topics := mns.ListTopics(accountId)
-	return ctx.JSON(OK, topics)
+	return reply(ctx, topics)
 }
 
 // Subscription API
@@ -301,12 +318,12 @@ func subscribe(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	subscriptionName := ctx.Param("subscriptionName")
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
 	if err := mns.Subscribe(accountId, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	} else {
-		return ctx.JSON(ServerError, map[string]string{"subscriptionId": subscriptionName})
+		return reply(ctx, map[string]string{"subscriptionId": subscriptionName})
 	}
 }
 
@@ -315,16 +332,16 @@ func unsubscribe(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
 	if err := mns.Unsubscribe(accountId, topicName, subscriptionName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	}
-	return ctx.JSON(OK, nil)
+	return reply(ctx, nil)
 }
 
 func getSubscriptionAttr(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	subscriptionName := ctx.Param("subscriptionName")
 	if subscription, err := mns.GetSubscription(accountId, subscriptionName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		attr := subscription.GetAttribute()
 		return ctx.JSON(OK, attr)
@@ -339,7 +356,7 @@ func setSubscriptionAttr(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, err)
 	}
 	if subscription, err := mns.GetSubscription(accountId, subscriptionName); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		subscription.SetAttribute(attr)
 		return ctx.JSON(OK, nil)
@@ -356,7 +373,7 @@ func listTopicSubscriptions(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, errors.New("invalid parameter"))
 	}
 	if attrs, err := mns.ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, err)
 	} else {
 		return ctx.JSON(OK, attrs)
 	}
@@ -375,11 +392,11 @@ func publishMessage(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, err)
 	}
 	if err := mns.PublishMessage(accountId, topicName, req.Body, req.Tag, req.Attributes); err != nil {
-		return ctx.JSON(ServerError, err)
+		return reply(ctx, err)
 	}
 	return ctx.JSON(OK, nil)
 }
 
 func publishNotification(ctx echo.Context) error {
-	return mns.ErrNotImplemented
+	return mns.ErrInternalError
 }

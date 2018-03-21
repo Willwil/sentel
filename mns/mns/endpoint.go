@@ -16,5 +16,5 @@ type Endpoint interface {
 }
 
 func NewEndpoint(uri string) (Endpoint, error) {
-	return nil, ErrNotImplemented
+	return nil, ErrInternalError
 }
