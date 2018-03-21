@@ -166,6 +166,10 @@ func (p *sessionManager) onSessionDestroy(e event.Event) {
 		return
 	}
 	// For transient session, just remove it from session manager
+	topics := p.tree.getSubscriptionTopics(clientId)
+	for _, topic := range topics {
+		p.tree.removeSubscription(clientId, topic)
+	}
 	p.removeSession(clientId)
 	queue.DestroyQueue(clientId)
 }
