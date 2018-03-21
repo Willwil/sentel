@@ -81,14 +81,12 @@ func (p *kafkaProducer) SendMessage(t Message) error {
 		go func(p sarama.AsyncProducer) {
 			errors := p.Errors()
 			success := p.Successes()
-			for {
-				select {
-				case err := <-errors:
-					if err != nil {
-						glog.Error(err)
-					}
-				case <-success:
+			select {
+			case err := <-errors:
+				if err != nil {
+					glog.Error(err)
 				}
+			case <-success:
 			}
 		}(p.asyncProducer)
 		p.asyncProducer.Input() <- msg

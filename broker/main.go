@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"os"
 
+	// "net/http"
+	// _ "net/http/pprof"
+
 	"github.com/cloustone/sentel/broker/auth"
 	"github.com/cloustone/sentel/broker/base"
 	"github.com/cloustone/sentel/broker/commands"
@@ -46,6 +49,10 @@ var (
 
 func main() {
 	flag.Parse()
+
+	// go func() {
+	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
+	// }()
 
 	config, err := createConfig(*configFile, *daemon)
 	if err != nil {
