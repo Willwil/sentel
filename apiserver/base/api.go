@@ -48,6 +48,7 @@ func GetRequestInfo(ctx echo.Context, resourceMaps map[string]string) (string, s
 		resource := "/"
 		items := strings.Split(resourceName, "/")
 		for _, item := range items {
+			if item == ""{continue}
 			switch item[0] {
 			case '$':
 				val := ctx.Get(item[1:]).(string)

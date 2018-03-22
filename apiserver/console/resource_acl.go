@@ -62,7 +62,7 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.GetOneDevice
 	{
-		Path:     "/iot/api/v1/console/products/:productId/devics/:deviceId",
+		Path:     "/iot/api/v1/console/products/:productId/devices/:deviceId",
 		Resource: "/products/:productId",
 	},
 	// v1api.RemoveDevice
