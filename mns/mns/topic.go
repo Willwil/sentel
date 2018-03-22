@@ -15,12 +15,12 @@ package mns
 import "time"
 
 type TopicAttribute struct {
-	TopicName              string
-	CreatedAt              time.Time
-	LastModifiedAt         time.Time
-	MaximumMessageSize     uint32
-	MessageRetentionPeriod uint32
-	LogginEnabled          bool
+	TopicName              string    `json:"topic_name" bson:"TopicName"`
+	CreatedAt              time.Time `json:"created_at" bson:"CreatedAt"`
+	LastModifiedAt         time.Time `json:"last_modified_at" bson:"LastModifiedAt"`
+	MaximumMessageSize     uint32    `json:"maximum_message_size" bson:"MaximumMessageSize"`
+	MessageRetentionPeriod uint32    `json:"message_retention_period" bson:"MessageRetentionPeriod"`
+	LogginEnabled          bool      `json:"loggin_enabled" bson:"LogginEnabled"`
 }
 
 type Topic interface {
@@ -29,6 +29,6 @@ type Topic interface {
 	GetAttribute() (TopicAttribute, error)
 	Subscribe(filterTag string, notifyStategy string, notifyFmt string) (Subscription, error)
 	Unsubscribe(subscriptionId string) error
-	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttr) error
-	GetSubscriptionAttribute(topicName string, subscriptionId string) (SubscriptionAttr, error)
+	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttribute) error
+	GetSubscriptionAttribute(topicName string, subscriptionId string) (SubscriptionAttribute, error)
 }

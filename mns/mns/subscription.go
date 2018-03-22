@@ -14,20 +14,20 @@ package mns
 
 import "time"
 
-type SubscriptionAttr struct {
-	SubscriptionName string
-	Subscriber       string
-	TopicOwner       string
-	TopicName        string
-	Endpont          string
-	NotifyStrategy   string
-	FilterTag        string
-	CreatedAt        time.Time
-	LastModifiedAt   time.Time
+type SubscriptionAttribute struct {
+	SubscriptionName string    `json:"subscription_name" bson:"SubscriptionName"`
+	Subscriber       string    `json:"subscriber" bson:"Subscriber"`
+	TopicOwner       string    `json:"topic_owner" bson:"TopicOwner"`
+	TopicName        string    `json:"topic_name" bson:"TopicName"`
+	Endpoint         string    `json:"endpoint" bson:"Endpoint"`
+	NotifyStrategy   string    `json:"notify_strategy" bson:"NotifyStrategy"`
+	FilterTag        string    `json:"filter_tag" bson:"FilterTag"`
+	CreatedAt        time.Time `json:"created_at" bson:"CreatedAt"`
+	LastModifiedAt   time.Time `json:"last_modified_at" bson:"LastModifiedAt"`
 }
 
 type Subscription interface {
 	Name() string
-	GetAttribute() SubscriptionAttr
-	SetAttribute(SubscriptionAttr)
+	GetAttribute() SubscriptionAttribute
+	SetAttribute(SubscriptionAttribute)
 }

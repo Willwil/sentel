@@ -13,7 +13,7 @@
 package mns
 
 // Queue API
-func CreateQueue(accountId string, queueName string) (Queue, error) {
+func CreateQueue(accountId string, queueName string) (QueueAttribute, error) {
 	return getManager().CreateQueue(accountId, queueName)
 }
 func GetQueue(accountId string, queueName string) (Queue, error) {
@@ -24,7 +24,7 @@ func DeleteQueue(accountId string, queueName string) error {
 }
 
 func GetQueueList(accountId string) ([]string, error) {
-	return getManager().GetQueueList(accountId)
+	return getManager().GetQueues(accountId)
 }
 
 // Topic API
@@ -57,7 +57,7 @@ func GetSubscription(accountId string, subscriptionId string) (Subscription, err
 	return getManager().GetSubscription(accountId, subscriptionId)
 }
 
-func ListTopicSubscriptions(accountId, topicName string, pageNo int, pageSize int, startIndex int) ([]SubscriptionAttr, error) {
+func ListTopicSubscriptions(accountId, topicName string, pageNo int, pageSize int, startIndex int) ([]SubscriptionAttribute, error) {
 	return getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex)
 }
 

@@ -355,7 +355,7 @@ func getSubscriptionAttr(ctx echo.Context) error {
 func setSubscriptionAttr(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	subscriptionName := ctx.Param("subscriptionName")
-	attr := mns.SubscriptionAttr{}
+	attr := mns.SubscriptionAttribute{}
 	if err := ctx.Bind(&attr); err != nil {
 		return ctx.JSON(BadRequest, err)
 	}
