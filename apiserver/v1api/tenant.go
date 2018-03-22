@@ -72,7 +72,7 @@ func LoginTenant(ctx echo.Context) error {
 	// combined with goshiro
 	securityManager := base.GetSecurityManager(ctx)
 	authToken := web.JWTToken{Username: req.TenantId, Password: req.Password}
-	if _, err := securityManager.Login(&authToken); err != nil {
+	if _, err := securityManager.Login(authToken); err != nil {
 		return ctx.JSON(Unauthorized, apiResponse{Message: err.Error()})
 	}
 	// Authorized

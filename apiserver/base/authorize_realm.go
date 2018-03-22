@@ -35,10 +35,10 @@ func NewAuthorizeRealm(c config.Config) (shiro.Realm, error) {
 }
 func (p *AuthorizeRealm) GetName() string { return "iot_api_server" }
 func (p *AuthorizeRealm) Supports(token shiro.AuthenticationToken) bool {
-	if _, ok := token.(*web.JWTToken); ok {
+	if _, ok := token.(web.JWTToken); ok {
 		return true
 	}
-	if _, ok := token.(*web.RequestToken); ok {
+	if _, ok := token.(web.RequestToken); ok {
 		return ok
 	}
 	return false

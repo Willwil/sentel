@@ -25,12 +25,12 @@ type RequestToken struct {
 	Authenticated bool
 }
 
-func (r *RequestToken) GetPrincipal() interface{}  { return r.AccessId }
-func (r *RequestToken) GetCrenditals() interface{} { return nil }
+func (r RequestToken) GetPrincipal() interface{}  { return r.AccessId }
+func (r RequestToken) GetCrenditals() interface{} { return nil }
 
-func NewRequestToken(ctx echo.Context) *RequestToken {
-	token := &RequestToken{}
-	ctx.Bind(token)
+func NewRequestToken(ctx echo.Context) RequestToken {
+	token := RequestToken{}
+	ctx.Bind(&token)
 	return token
 }
 
