@@ -13,7 +13,6 @@
 package apiservice
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -63,11 +62,19 @@ func reply(ctx echo.Context, val ...interface{}) error {
 	return ctx.JSON(http.StatusOK, nil)
 }
 
+func replyObject(ctx echo.Context, obj interface{}, err error) error {
+	if err == nil {
+		return reply(ctx, obj)
+	} else {
+		return reply(ctx, err)
+	}
+}
+
 // Queue APIs
 func createQueue(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if _, err := mns.CreateQueue(accountId, queueName); err != nil {
+	if _, err := getManager().CreateQueue(accountId, queueName); err != nil {
 		return reply(ctx, err)
 	}
 	return reply(ctx)
@@ -80,42 +87,28 @@ func setQueueAttribute(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		queue.SetAttribute(attr)
-		return reply(ctx)
-	}
+	err := getManager().SetQueueAttribute(accountId, queueName, attr)
+	return reply(ctx, err)
 }
 
 func getQueueAttribute(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		attr := queue.GetAttribute()
-		return reply(ctx, attr)
-	}
-
+	attr, err := getManager().GetQueueAttribute(accountId, queueName)
+	return replyObject(ctx, attr, err)
 }
 
 func deleteQueue(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if err := mns.DeleteQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	}
-	return reply(ctx)
+	err := getManager().DeleteQueue(accountId, queueName)
+	return reply(ctx, err)
 }
 
 func getQueueList(ctx echo.Context) error {
 	accountId := getAccount(ctx)
-	if queues, err := mns.GetQueueList(accountId); err != nil {
-		return reply(ctx, err)
-	} else {
-		return reply(ctx, queues)
-	}
+	queues := getManager().GetQueues(accountId)
+	return replyObject(ctx, queues, nil)
 }
 
 func sendQueueMessage(ctx echo.Context) error {
@@ -125,14 +118,8 @@ func sendQueueMessage(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if err := queue.SendMessage(msg); err != nil {
-			return reply(ctx, err)
-		}
-	}
-	return reply(ctx)
+	err := getManager().SendQueueMessage(accountId, queueName, msg)
+	return reply(ctx, err)
 }
 
 func batchSendQueueMessage(ctx echo.Context) error {
@@ -142,14 +129,8 @@ func batchSendQueueMessage(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if err := queue.BatchSendMessage(msgs); err != nil {
-			return reply(ctx, err)
-		}
-	}
-	return reply(ctx)
+	err := getManager().BatchSendQueueMessage(accountId, queueName, msgs)
+	return reply(ctx, err)
 
 }
 func receiveQueueMessage(ctx echo.Context) error {
@@ -159,15 +140,8 @@ func receiveQueueMessage(ctx echo.Context) error {
 	if err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if msgs, err := queue.ReceiveMessage(ws); err != nil {
-			return reply(ctx, err)
-		} else {
-			return reply(ctx, msgs)
-		}
-	}
+	msgs, err := getManager().ReceiveQueueMessage(accountId, queueName, ws)
+	return replyObject(ctx, msgs, err)
 }
 
 func batchReceiveQueueMessage(ctx echo.Context) error {
@@ -178,29 +152,16 @@ func batchReceiveQueueMessage(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if msgs, err := queue.BatchReceiveMessages(ws, numberOfMessages); err != nil {
-			return reply(ctx, err)
-		} else {
-			return reply(ctx, msgs)
-		}
-	}
+	msgs, err := getManager().BatchReceiveQueueMessages(accountId, queueName, ws, numberOfMessages)
+	return replyObject(ctx, msgs, err)
 }
 
 func deleteQueueMessage(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
 	msgId := ctx.QueryParam("msgId")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if err := queue.DeleteMessage(msgId); err != nil {
-			return reply(ctx, err)
-		}
-	}
-	return reply(ctx)
+	err := getManager().DeleteQueueMessage(accountId, queueName, msgId)
+	return reply(ctx, err)
 }
 
 func batchDeleteQueueMessages(ctx echo.Context) error {
@@ -212,30 +173,19 @@ func batchDeleteQueueMessages(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		for _, msgId := range req.MessageIds {
-			queue.DeleteMessage(msgId)
-		}
-	}
-	return reply(ctx)
+	err := getManager().BatchDeleteQueueMessages(accountId, queueName, req.MessageIds)
+	return reply(ctx, err)
 }
 
 func peekQueueMessages(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	ws, err1 := strconv.Atoi(ctx.QueryParam("ws"))
-	queue, err2 := mns.GetQueue(accountId, queueName)
-
-	if err1 != nil || err2 != nil {
+	ws, err := strconv.Atoi(ctx.QueryParam("ws"))
+	if err != nil {
 		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	if msg, err := queue.PeekMessage(ws); err != nil {
-		return reply(ctx, err)
-	} else {
-		return reply(ctx, msg)
-	}
+	msg, err := getManager().PeekQueueMessage(accountId, queueName, ws)
+	return reply(ctx, msg, err)
 }
 
 func batchPeekQueueMessages(ctx echo.Context) error {
@@ -246,25 +196,21 @@ func batchPeekQueueMessages(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	if queue, err := mns.GetQueue(accountId, queueName); err != nil {
-		return reply(ctx, err)
-	} else {
-		if msgs, err := queue.BatchPeekMessages(ws, numberOfMessages); err != nil {
-			return reply(ctx, err)
-		} else {
-			return reply(ctx, msgs)
-		}
-	}
+	msgs, err := getManager().BatchPeekQueueMessages(accountId, queueName, ws, numberOfMessages)
+	return replyObject(ctx, msgs, err)
 }
 
 // Topic API
 func createTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	if _, err := mns.CreateTopic(accountId, topicName); err != nil {
+	topic, err := getManager().CreateTopic(accountId, topicName)
+	if err != nil {
 		return reply(ctx, err)
+	} else {
+		attr := topic.GetAttribute()
+		return reply(ctx, attr)
 	}
-	return reply(ctx)
 }
 
 func setTopicAttribute(ctx echo.Context) error {
@@ -274,40 +220,27 @@ func setTopicAttribute(ctx echo.Context) error {
 	if err := ctx.Bind(&topicAttr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	if topic, err := mns.GetTopic(accountId, topicName); err != nil {
-		return reply(ctx, err)
-	} else {
-		topic.SetAttribute(topicAttr)
-	}
-	return reply(ctx)
+	err := getManager().SetTopicAttribute(accountId, topicName, topicAttr)
+	return reply(ctx, err)
 }
 
 func getTopicAttribute(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	if topic, err := mns.GetTopic(accountId, topicName); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
-	} else {
-		if attr, err := topic.GetAttribute(); err != nil {
-			return reply(ctx, err)
-		} else {
-			return reply(ctx, attr)
-		}
-	}
+	attr, err := getManager().GetTopicAttribute(accountId, topicName)
+	return reply(ctx, attr, err)
 }
 
 func deleteTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	if err := mns.DeleteTopic(accountId, topicName); err != nil {
-		return reply(ctx, err)
-	}
-	return reply(ctx)
+	err := getManager().DeleteTopic(accountId, topicName)
+	return reply(ctx, err)
 }
 
 func listTopics(ctx echo.Context) error {
 	accountId := getAccount(ctx)
-	topics := mns.ListTopics(accountId)
+	topics := getManager().ListTopics(accountId)
 	return reply(ctx, topics)
 }
 
@@ -324,47 +257,35 @@ func subscribe(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	if err := mns.Subscribe(accountId, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat); err != nil {
-		return reply(ctx, err)
-	} else {
-		return reply(ctx, map[string]string{"subscriptionId": subscriptionName})
-	}
+	err := getManager().Subscribe(accountId, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat)
+	return replyObject(ctx, map[string]string{"subscriptionId": subscriptionName}, err)
 }
 
 func unsubscribe(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
-	if err := mns.Unsubscribe(accountId, topicName, subscriptionName); err != nil {
-		return reply(ctx, err)
-	}
-	return reply(ctx)
+	err := getManager().Unsubscribe(accountId, topicName, subscriptionName)
+	return reply(ctx, err)
 }
 
 func getSubscriptionAttr(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	subscriptionName := ctx.Param("subscriptionName")
-	if subscription, err := mns.GetSubscription(accountId, subscriptionName); err != nil {
-		return reply(ctx, err)
-	} else {
-		attr := subscription.GetAttribute()
-		return ctx.JSON(OK, attr)
-	}
+	attr, err := getManager().GetSubscription(accountId, subscriptionName)
+	return replyObject(ctx, attr, err)
 }
 
 func setSubscriptionAttr(ctx echo.Context) error {
 	accountId := getAccount(ctx)
+	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
 	attr := mns.SubscriptionAttribute{}
 	if err := ctx.Bind(&attr); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	if subscription, err := mns.GetSubscription(accountId, subscriptionName); err != nil {
-		return reply(ctx, err)
-	} else {
-		subscription.SetAttribute(attr)
-		return ctx.JSON(OK, nil)
-	}
+	err := getManager().SetSubscriptionAttribute(accountId, topicName, subscriptionName, attr)
+	return reply(ctx, err)
 }
 
 func listTopicSubscriptions(ctx echo.Context) error {
@@ -374,13 +295,10 @@ func listTopicSubscriptions(ctx echo.Context) error {
 	pageNo, err2 := strconv.Atoi(ctx.QueryParam("pageNo"))
 	startIndex, err3 := strconv.Atoi(ctx.QueryParam("startIndex"))
 	if err1 != nil || err2 != nil || err3 != nil {
-		return ctx.JSON(BadRequest, errors.New("invalid parameter"))
+		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	if attrs, err := mns.ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex); err != nil {
-		return reply(ctx, err)
-	} else {
-		return ctx.JSON(OK, attrs)
-	}
+	attrs, err := getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex)
+	return replyObject(ctx, attrs, err)
 }
 
 func publishMessage(ctx echo.Context) error {
@@ -393,12 +311,10 @@ func publishMessage(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 
 	if err := ctx.Bind(&req); err != nil {
-		return ctx.JSON(BadRequest, err)
+		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	if err := mns.PublishMessage(accountId, topicName, req.Body, req.Tag, req.Attributes); err != nil {
-		return reply(ctx, err)
-	}
-	return ctx.JSON(OK, nil)
+	err := getManager().PublishMessage(accountId, topicName, req.Body, req.Tag, req.Attributes)
+	return reply(ctx, err)
 }
 
 func publishNotification(ctx echo.Context) error {

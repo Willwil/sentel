@@ -12,7 +12,11 @@
 
 package mns
 
-import "time"
+import (
+	"time"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type QueueAttribute struct {
 	QueueName              string    `bson:"QueueName,omitempty" json:"queue_name,omitempty"`
@@ -41,4 +45,8 @@ type Queue interface {
 	BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]Message, error)
 	SetMessageVisibility(handle string, seconds int)
 	Destroy()
+}
+
+func NewQueue(c config.Config, attr QueueAttribute, adaptor Adaptor) (Queue, error) {
+	return nil, nil
 }

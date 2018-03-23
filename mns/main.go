@@ -17,7 +17,6 @@ import (
 	"os"
 
 	"github.com/cloustone/sentel/mns/apiservice"
-	"github.com/cloustone/sentel/mns/mns"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
@@ -34,7 +33,6 @@ func main() {
 	config, _ := createConfig(*configFile)
 	mgr, _ := service.NewServiceManager("mns", config)
 	mgr.AddService(apiservice.ServiceFactory{})
-	mgr.AddService(mns.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
 }
 

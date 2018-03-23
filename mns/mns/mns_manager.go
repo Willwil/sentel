@@ -18,35 +18,6 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type MnsManager interface {
-	// Queue API
-	CreateQueue(accountId string, queueName string) (QueueAttribute, error)
-	GetQueue(accountId string, queueName string) (Queue, error)
-	DeleteQueue(accountId string, queueName string) error
-	GetQueues(accountId string) ([]string, error)
-
-	// Topic API
-	CreateTopic(accountId string, topicName string) (Topic, error)
-	GetTopic(accountId string, topicName string) (Topic, error)
-	DeleteTopic(accountId string, topicName string) error
-	ListTopics(accountId string) []string
-
-	// Subscription API
-	GetSubscription(accountId string, subscriptionId string) (Subscription, error)
-	Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
-	Unsubscribe(accountId, topicName string, subscriptionId string) error
-	ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error)
-	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error
-}
-
-func NewManager(c config.Config) (MnsManager, error) {
-	adaptor, err := NewAdaptor(c)
-	return &manager{
-		config:  c,
-		adaptor: adaptor,
-	}, err
-}
-
 type manager struct {
 	config  config.Config
 	adaptor Adaptor
@@ -63,14 +34,52 @@ func (m *manager) CreateQueue(accountId string, queueName string) (QueueAttribut
 }
 
 func (m *manager) GetQueue(accountId string, queueName string) (Queue, error) {
-	return nil, ErrInternalError
+	if attr, err := m.adaptor.GetQueue(accountId, queueName); err == nil {
+		return NewQueue(m.config, attr, m.adaptor)
+	}
+	return nil, ErrQueueNotExist
 }
 
-func (m *manager) DeleteQueue(accountId string, queueName string) error { return ErrInternalError }
-
-func (m *manager) GetQueues(accountId string) ([]string, error) {
-	return []string{}, nil
+func (m *manager) DeleteQueue(accountId string, queueName string) error {
+	return m.adaptor.RemoveQueue(accountId, queueName)
 }
+
+func (m *manager) GetQueues(accountId string) []string {
+	return m.adaptor.GetAccountQueues(accountId)
+}
+
+func (m *manager) SetQueueAttribute(accountId, queueName string, attr QueueAttribute) error {
+	return nil
+}
+func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute, error) {
+	return QueueAttribute{}, nil
+}
+func (m *manager) SendQueueMessage(accountId, queueName string, msg Message) error {
+	return nil
+}
+func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []Message) error {
+	return nil
+}
+func (m *manager) ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (Message, error) {
+	return Message{}, nil
+}
+func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error) {
+	return nil, nil
+}
+
+func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) error {
+	return nil
+}
+func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) error {
+	return nil
+}
+func (m *manager) PeekQueueMessage(accountId, queueName string, waitSeconds int) (Message, error) {
+	return Message{}, nil
+}
+func (m *manager) BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error) {
+	return nil, nil
+}
+func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) {}
 
 // Topic API
 func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error) {
@@ -83,6 +92,18 @@ func (m *manager) GetTopic(accountId string, topicName string) (Topic, error) {
 
 func (m *manager) DeleteTopic(accountId string, topicName string) error { return nil }
 func (m *manager) ListTopics(account string) []string                   { return []string{} }
+func (m *manager) SetTopicAttribute(accountId, topicName string, attr TopicAttribute) error {
+	return nil
+}
+func (m *manager) GetTopicAttribute(accountId, topicName string) (TopicAttribute, error) {
+	return TopicAttribute{}, nil
+}
+func (m *manager) SetSubscriptionAttribute(accountId, topicName string, subscriptionId string, attr SubscriptionAttribute) error {
+	return nil
+}
+func (m *manager) GetSubscriptionAttribute(accountId, topicName string, subscriptionId string) (SubscriptionAttribute, error) {
+	return SubscriptionAttribute{}, nil
+}
 
 // Subscription API
 func (m *manager) GetSubscription(accountId string, subscriptionId string) (Subscription, error) {

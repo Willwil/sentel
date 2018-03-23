@@ -17,6 +17,7 @@ import (
 
 	"github.com/cloustone/sentel/apiserver/base"
 	"github.com/cloustone/sentel/apiserver/util"
+	"github.com/cloustone/sentel/mns/mns"
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/goshiro"
 	"github.com/cloustone/sentel/pkg/goshiro/shiro"
@@ -27,6 +28,10 @@ import (
 	mw "github.com/labstack/echo/middleware"
 )
 
+const (
+	SERVICE_NAME = "apiservice"
+)
+
 var resourceMaps = make(map[string]string)
 
 type consoleService struct {
@@ -35,14 +40,21 @@ type consoleService struct {
 	version     string
 	echo        *echo.Echo
 	securityMgr shiro.SecurityManager
+	mnsManager  mns.MnsManager
 }
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
+	manager, err := mns.NewManager(c)
+	if err != nil {
+		return nil, err
+	}
+
 	// create resource maps
 	for _, res := range apiPolicies {
 		resourceMaps[res.Path] = res.Resource
 	}
+
 	realm, err := base.NewAuthorizeRealm(c)
 	if err != nil {
 		return nil, err
@@ -58,10 +70,11 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 		waitgroup:   sync.WaitGroup{},
 		echo:        echo.New(),
 		securityMgr: securityMgr,
+		mnsManager:  manager,
 	}, nil
 }
 
-func (p *consoleService) Name() string { return "apiservice" }
+func (p *consoleService) Name() string { return SERVICE_NAME }
 func (p *consoleService) Initialize() error {
 	c := p.config
 	if err := registry.Initialize(c); err != nil {
@@ -172,4 +185,10 @@ func authorizeWithConfig(config config.Config) echo.MiddlewareFunc {
 			return next(ctx)
 		}
 	}
+}
+
+func getManager() mns.MnsManager {
+	serviceMgr := service.GetServiceManager()
+	service := serviceMgr.GetService(SERVICE_NAME).(*consoleService)
+	return service.mnsManager
 }
