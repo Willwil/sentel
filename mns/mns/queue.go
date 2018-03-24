@@ -41,9 +41,10 @@ type Queue interface {
 	ReceiveMessage(waitSeconds int) (Message, error)
 	BatchReceiveMessages(wailtSeconds int, numOfMessages int) ([]Message, error)
 	DeleteMessage(handle string) error
+	BatchDeleteMessages(handles []string) error
 	PeekMessage(waitSeconds int) (Message, error)
 	BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]Message, error)
-	SetMessageVisibility(handle string, seconds int)
+	SetMessageVisibility(handle string, seconds int) error
 	Destroy()
 }
 

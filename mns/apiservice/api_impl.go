@@ -204,13 +204,8 @@ func batchPeekQueueMessages(ctx echo.Context) error {
 func createTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	topic, err := getManager().CreateTopic(accountId, topicName)
-	if err != nil {
-		return reply(ctx, err)
-	} else {
-		attr := topic.GetAttribute()
-		return reply(ctx, attr)
-	}
+	attr, err := getManager().CreateTopic(accountId, topicName)
+	return replyObject(ctx, attr, err)
 }
 
 func setTopicAttribute(ctx echo.Context) error {
@@ -271,8 +266,9 @@ func unsubscribe(ctx echo.Context) error {
 
 func getSubscriptionAttr(ctx echo.Context) error {
 	accountId := getAccount(ctx)
+	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
-	attr, err := getManager().GetSubscription(accountId, subscriptionName)
+	attr, err := getManager().GetSubscription(accountId, topicName, subscriptionName)
 	return replyObject(ctx, attr, err)
 }
 

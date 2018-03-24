@@ -49,65 +49,126 @@ func (m *manager) GetQueues(accountId string) []string {
 }
 
 func (m *manager) SetQueueAttribute(accountId, queueName string, attr QueueAttribute) error {
-	return nil
-}
-func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute, error) {
-	return QueueAttribute{}, nil
-}
-func (m *manager) SendQueueMessage(accountId, queueName string, msg Message) error {
-	return nil
-}
-func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []Message) error {
-	return nil
-}
-func (m *manager) ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (Message, error) {
-	return Message{}, nil
-}
-func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error) {
-	return nil, nil
+	return m.adaptor.UpdateQueue(accountId, queueName, attr)
 }
 
-func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) error {
-	return nil
+func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute, error) {
+	return m.adaptor.GetQueue(accountId, queueName)
 }
-func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) error {
-	return nil
+
+func (m *manager) SendQueueMessage(accountId, queueName string, msg Message) (err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.SendMessage(msg)
+	}
+	return
 }
-func (m *manager) PeekQueueMessage(accountId, queueName string, waitSeconds int) (Message, error) {
-	return Message{}, nil
+
+func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []Message) (err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.BatchSendMessage(msgs)
+	}
+	return
 }
-func (m *manager) BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error) {
-	return nil, nil
+
+func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (msg Message, err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.ReceiveMessage(ws)
+	}
+	return Message{}, err
 }
-func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) {}
+
+func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []Message, err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.BatchReceiveMessages(ws, numOfMessages)
+	}
+	return []Message{}, err
+}
+
+func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) (err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.DeleteMessage(handle)
+	}
+	return
+}
+
+func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) (err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.BatchDeleteMessages(handles)
+	}
+	return
+}
+
+func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (msg Message, err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.PeekMessage(ws)
+	}
+	return Message{}, err
+}
+
+func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []Message, err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.BatchPeekMessages(ws, numOfMessages)
+	}
+	return []Message{}, err
+}
+
+func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) (err error) {
+	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+		return queue.SetMessageVisibility(handle, seconds)
+	}
+	return
+}
 
 // Topic API
-func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error) {
-	return nil, ErrInternalError
+func (m *manager) CreateTopic(accountId string, topicName string) (TopicAttribute, error) {
+	topicAttr := TopicAttribute{
+		TopicName:          topicName,
+		CreatedAt:          time.Now(),
+		LastModifiedAt:     time.Now(),
+		LogginEnabled:      false,
+		MaximumMessageSize: 256,
+	}
+	err := m.adaptor.AddTopic(accountId, topicName, topicAttr)
+	return topicAttr, err
 }
 
-func (m *manager) GetTopic(accountId string, topicName string) (Topic, error) {
-	return nil, ErrInternalError
+func (m *manager) GetTopic(accountId string, topicName string) (topic Topic, err error) {
+	if topicAttr, err := m.adaptor.GetTopic(accountId, topicName); err == nil {
+		return NewTopic(m.config, topicAttr)
+	}
+	return nil, err
 }
 
-func (m *manager) DeleteTopic(accountId string, topicName string) error { return nil }
-func (m *manager) ListTopics(account string) []string                   { return []string{} }
+func (m *manager) DeleteTopic(accountId string, topicName string) error {
+	return m.adaptor.RemoveTopic(accountId, topicName)
+}
+
+func (m *manager) ListTopics(account string) []string {
+	return m.adaptor.GetAccountTopics(account)
+}
+
 func (m *manager) SetTopicAttribute(accountId, topicName string, attr TopicAttribute) error {
-	return nil
+	return m.adaptor.UpdateTopic(accountId, topicName, attr)
 }
+
 func (m *manager) GetTopicAttribute(accountId, topicName string) (TopicAttribute, error) {
-	return TopicAttribute{}, nil
-}
-func (m *manager) SetSubscriptionAttribute(accountId, topicName string, subscriptionId string, attr SubscriptionAttribute) error {
-	return nil
-}
-func (m *manager) GetSubscriptionAttribute(accountId, topicName string, subscriptionId string) (SubscriptionAttribute, error) {
-	return SubscriptionAttribute{}, nil
+	return m.adaptor.GetTopic(accountId, topicName)
 }
 
 // Subscription API
-func (m *manager) GetSubscription(accountId string, subscriptionId string) (Subscription, error) {
-	return nil, ErrInternalError
+func (m *manager) GetSubscription(accountId, topicName, subscriptionName string) (subscription Subscription, err error) {
+	if attr, err := m.adaptor.GetSubscription(accountId, topicName, subscriptionName); err == nil {
+		return NewSubscription(m.config, attr)
+	}
+	return nil, err
+}
+
+func (m *manager) SetSubscriptionAttribute(accountId, topicName, subscriptionName string, attr SubscriptionAttribute) error {
+	return m.adaptor.UpdateSubscription(accountId, topicName, subscriptionName, attr)
+}
+
+func (m *manager) GetSubscriptionAttribute(accountId, topicName string, subscriptionName string) (SubscriptionAttribute, error) {
+	return m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
 }
 
 func (m *manager) Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error {

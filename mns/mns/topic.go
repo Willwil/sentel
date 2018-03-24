@@ -12,7 +12,11 @@
 
 package mns
 
-import "time"
+import (
+	"time"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
 
 type TopicAttribute struct {
 	TopicName              string    `json:"topic_name" bson:"TopicName"`
@@ -31,4 +35,8 @@ type Topic interface {
 	Unsubscribe(subscriptionId string) error
 	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttribute) error
 	GetSubscriptionAttribute(topicName string, subscriptionId string) (SubscriptionAttribute, error)
+}
+
+func NewTopic(c config.Config, attr TopicAttribute) (Topic, error) {
+	return nil, nil
 }

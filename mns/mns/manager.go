@@ -30,20 +30,20 @@ type MnsManager interface {
 	BatchDeleteQueueMessages(accountId, queueName string, handles []string) error
 	PeekQueueMessage(accountId, queueName string, waitSeconds int) (Message, error)
 	BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error)
-	SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int)
+	SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error
 
 	// Topic API
-	CreateTopic(accountId string, topicName string) (Topic, error)
+	CreateTopic(accountId string, topicName string) (TopicAttribute, error)
 	GetTopic(accountId string, topicName string) (Topic, error)
 	GetTopicAttribute(accountId string, topicName string) (TopicAttribute, error)
 	SetTopicAttribute(accountId string, topicName string, attr TopicAttribute) error
 	DeleteTopic(accountId string, topicName string) error
 	ListTopics(accountId string) []string
-	SetSubscriptionAttribute(accountId, topicName string, subscriptionId string, attr SubscriptionAttribute) error
-	GetSubscriptionAttribute(accountId, topicName string, subscriptionId string) (SubscriptionAttribute, error)
 
 	// Subscription API
-	GetSubscription(accountId string, subscriptionId string) (Subscription, error)
+	GetSubscription(accountId, topicName, subscriptionName string) (Subscription, error)
+	SetSubscriptionAttribute(accountId, topicName string, subscriptionId string, attr SubscriptionAttribute) error
+	GetSubscriptionAttribute(accountId, topicName string, subscriptionId string) (SubscriptionAttribute, error)
 	Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
 	Unsubscribe(accountId, topicName string, subscriptionId string) error
 	ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error)
