@@ -42,12 +42,12 @@ type MnsManager interface {
 
 	// Subscription API
 	GetSubscription(accountId, topicName, subscriptionName string) (Subscription, error)
-	SetSubscriptionAttribute(accountId, topicName string, subscriptionId string, attr SubscriptionAttribute) error
-	GetSubscriptionAttribute(accountId, topicName string, subscriptionId string) (SubscriptionAttribute, error)
-	Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
-	Unsubscribe(accountId, topicName string, subscriptionId string) error
+	SetSubscriptionAttribute(accountId, topicName string, subscriptionName string, attr SubscriptionAttribute) error
+	GetSubscriptionAttribute(accountId, topicName string, subscriptionName string) (SubscriptionAttribute, error)
+	Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
+	Unsubscribe(accountId, topicName string, subscriptionName string) error
 	ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error)
-	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error
+	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error
 }
 
 func NewManager(c config.Config) (MnsManager, error) {

@@ -19,15 +19,16 @@ import (
 )
 
 type SubscriptionAttribute struct {
-	SubscriptionName string    `json:"subscription_name" bson:"SubscriptionName"`
-	Subscriber       string    `json:"subscriber" bson:"Subscriber"`
-	TopicOwner       string    `json:"topic_owner" bson:"TopicOwner"`
-	TopicName        string    `json:"topic_name" bson:"TopicName"`
-	Endpoint         string    `json:"endpoint" bson:"Endpoint"`
-	NotifyStrategy   string    `json:"notify_strategy" bson:"NotifyStrategy"`
-	FilterTag        string    `json:"filter_tag" bson:"FilterTag"`
-	CreatedAt        time.Time `json:"created_at" bson:"CreatedAt"`
-	LastModifiedAt   time.Time `json:"last_modified_at" bson:"LastModifiedAt"`
+	SubscriptionName    string    `json:"subscription_name" bson:"SubscriptionName"`
+	Subscriber          string    `json:"subscriber" bson:"Subscriber"`
+	TopicOwner          string    `json:"topic_owner" bson:"TopicOwner"`
+	TopicName           string    `json:"topic_name" bson:"TopicName"`
+	Endpoint            string    `json:"endpoint" bson:"Endpoint"`
+	NotifyStrategy      string    `json:"notify_strategy" bson:"NotifyStrategy"`
+	NotifyContentFormat string    `json:"notify_content_format" bson:"NotifyContentFormat"`
+	FilterTag           string    `json:"filter_tag" bson:"FilterTag"`
+	CreatedAt           time.Time `json:"created_at" bson:"CreatedAt"`
+	LastModifiedAt      time.Time `json:"last_modified_at" bson:"LastModifiedAt"`
 }
 
 type Subscription interface {

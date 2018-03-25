@@ -248,11 +248,12 @@ func subscribe(ctx echo.Context) error {
 		NotifyContentFormat string `json:"notifyContentFormat" bson:"NotifyContentFormat"`
 	}{}
 	accountId := getAccount(ctx)
+	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
 	if err := ctx.Bind(&req); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	err := getManager().Subscribe(accountId, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat)
+	err := getManager().Subscribe(accountId, topicName, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat)
 	return replyObject(ctx, map[string]string{"subscriptionId": subscriptionName}, err)
 }
 
@@ -299,9 +300,9 @@ func listTopicSubscriptions(ctx echo.Context) error {
 
 func publishMessage(ctx echo.Context) error {
 	req := struct {
-		Body       []byte            `json:"body" bson:"Body"`
-		Tag        string            `json:"tag" bson:"Tag"`
-		Attributes map[string]string `json:"attributes" bson:"Attributes"`
+		Body       []byte                 `json:"body" bson:"Body"`
+		Tag        string                 `json:"tag" bson:"Tag"`
+		Attributes map[string]interface{} `json:"attributes" bson:"Attributes"`
 	}{}
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
@@ -314,5 +315,5 @@ func publishMessage(ctx echo.Context) error {
 }
 
 func publishNotification(ctx echo.Context) error {
-	return mns.ErrInternalError
+	return mns.ErrNotImplemented
 }

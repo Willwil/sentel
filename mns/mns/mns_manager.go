@@ -171,18 +171,49 @@ func (m *manager) GetSubscriptionAttribute(accountId, topicName string, subscrip
 	return m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
 }
 
-func (m *manager) Subscribe(accountId, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error {
-	return ErrInternalError
+func (m *manager) Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifyContentFormat string) error {
+	attr := SubscriptionAttribute{
+		TopicName:           topicName,
+		SubscriptionName:    subscriptionName,
+		Endpoint:            endpoint,
+		FilterTag:           filterTag,
+		NotifyStrategy:      notifyStrategy,
+		NotifyContentFormat: notifyContentFormat,
+		CreatedAt:           time.Now(),
+		LastModifiedAt:      time.Now(),
+	}
+	return m.adaptor.AddSubscription(accountId, topicName, attr)
 }
 
 func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName string) error {
-	return ErrInternalError
+	return m.adaptor.RemoveSubscription(accountId, topicName, subscriptionName)
 }
 
 func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error) {
-	return []SubscriptionAttribute{}, ErrInternalError
+	subscriptionNames, err := m.adaptor.GetAccountSubscriptions(accountId, topicName, pages, pageSize, startIndex)
+	subscriptions := []SubscriptionAttribute{}
+	for _, subscriptionName := range subscriptionNames {
+		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
+		subscriptions = append(subscriptions, attr)
+	}
+	return subscriptions, err
 }
 
-func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]string) error {
-	return ErrInternalError
+// PublishMessage publish message to all subscribers on the topic
+// Another message service should be constructed because of performance(TODO)
+func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error {
+	// Format message and get subscriptions for the topic
+	msg := Message{
+		Body:       body,
+		Tag:        tag,
+		Attributes: attributes,
+	}
+	subscriptionAttrs, err := m.ListTopicSubscriptions(accountId, topicName, 0, 100, 0) // TODO:improve later
+	for _, subscriptionAttr := range subscriptionAttrs {
+		endpoint, err := NewEndpoint(m.config, subscriptionAttr.Endpoint)
+		if err != nil {
+			endpoint.PushMessage(msg)
+		}
+	}
+	return err
 }

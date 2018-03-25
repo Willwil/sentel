@@ -24,6 +24,7 @@ func NewError(status int, message string) *MnsError {
 }
 
 var (
+	ErrNotImplemented              = NewError(501, "NotImplemented")
 	ErrAccesDenied                 = NewError(403, "AccessDenied")
 	ErrInvalidAccessId             = NewError(403, "InvalidAccessKeyId")
 	ErrInternalError               = NewError(500, "InternalError")

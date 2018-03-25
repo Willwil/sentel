@@ -15,9 +15,11 @@ package mns
 type Base64Bytes []byte
 
 type Message struct {
-	Body         []byte `json:"body" bson:"Body"`
-	DelaySeconds uint8  `json:"delaySeconds" bson:"DelaySeconds"`
-	Priority     uint8  `json:"priority" bson:"Priority"`
+	Body         []byte                 `json:"body" bson:"Body"`
+	Tag          string                 `json:"tag" bson:"Tag"`
+	DelaySeconds uint8                  `json:"delaySeconds" bson:"DelaySeconds"`
+	Priority     uint8                  `json:"priority" bson:"Priority"`
+	Attributes   map[string]interface{} `json:"attributes" bson:"Attributes"`
 }
 
 type MessageResponse struct {

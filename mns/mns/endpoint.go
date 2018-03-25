@@ -12,9 +12,25 @@
 
 package mns
 
+import (
+	"time"
+
+	"github.com/cloustone/sentel/pkg/config"
+)
+
 type Endpoint interface {
+	GetAttribute() EndpointAttribute
+	PushMessage(msg Message) error
 }
 
-func NewEndpoint(uri string) (Endpoint, error) {
-	return nil, ErrInternalError
+type EndpointAttribute struct {
+	Name           string    `json:"endpoint_name" bson"EndpointName"`
+	Type           string    `json:"endpoint_type" bson:"EndpointType"`
+	URI            string    `json:"endpoint_uri" bson:"EndpointURI"`
+	CreateTime     time.Time `json:"create_time,omitempty" bson:"CreateTime,omitempty"`
+	LastModifyTime time.Time `json:"last_modify_time,omitempty" bson:"LastModifyTime,omitempty"`
+}
+
+func NewEndpoint(c config.Config, uri string) (Endpoint, error) {
+	return nil, ErrNotImplemented
 }
