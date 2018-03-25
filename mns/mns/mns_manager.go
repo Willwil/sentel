@@ -190,7 +190,7 @@ func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName stri
 }
 
 func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error) {
-	subscriptionNames, err := m.adaptor.GetAccountSubscriptions(accountId, topicName, pages, pageSize, startIndex)
+	subscriptionNames, err := m.adaptor.GetAccountSubscriptionsWithPage(accountId, topicName, pages, pageSize, startIndex)
 	subscriptions := []SubscriptionAttribute{}
 	for _, subscriptionName := range subscriptionNames {
 		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
@@ -200,7 +200,6 @@ func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages int,
 }
 
 // PublishMessage publish message to all subscribers on the topic
-// Another message service should be constructed because of performance(TODO)
 func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error {
 	// Format message and get subscriptions for the topic
 	msg := Message{
@@ -208,10 +207,10 @@ func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag s
 		Tag:        tag,
 		Attributes: attributes,
 	}
-	subscriptionAttrs, err := m.ListTopicSubscriptions(accountId, topicName, 0, 100, 0) // TODO:improve later
-	for _, subscriptionAttr := range subscriptionAttrs {
-		endpoint, err := NewEndpoint(m.config, subscriptionAttr.Endpoint)
-		if err != nil {
+	subscriptionNames, err := m.adaptor.GetAccountSubscriptions(accountId, topicName)
+	for _, subscriptionName := range subscriptionNames {
+		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
+		if endpoint, err := NewEndpoint(m.config, attr.Endpoint); err == nil {
 			endpoint.PushMessage(msg)
 		}
 	}

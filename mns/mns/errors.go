@@ -12,12 +12,25 @@
 
 package mns
 
+import "fmt"
+
 type MnsError struct {
 	StatusCode int    `json:"-"`
 	Message    string `json:"message"`
+	Content    string `json:"content"`
 }
 
-func (e MnsError) Error() string { return e.Message }
+func (e *MnsError) Error() string {
+	if e.Content == "" {
+		return e.Message
+	} else {
+		return fmt.Sprintf("%s:%s", e.Message, e.Content)
+	}
+}
+func (e *MnsError) With(fmtstr string, val ...interface{}) *MnsError {
+	e.Content = fmt.Sprintf(fmtstr, val...)
+	return e
+}
 
 func NewError(status int, message string) *MnsError {
 	return &MnsError{StatusCode: status, Message: message}

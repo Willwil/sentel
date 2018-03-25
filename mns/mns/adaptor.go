@@ -36,7 +36,8 @@ type Adaptor interface {
 	AddSubscription(accountId string, topicName string, attr SubscriptionAttribute) error
 	UpdateSubscription(accountId string, topicName string, subscriptionName string, attr SubscriptionAttribute) error
 	RemoveSubscription(accountId string, topicName string, subscriptionName string) error
-	GetAccountSubscriptions(accountId string, topicName string, pages int, pageSize int, startIndex int) ([]string, error)
+	GetAccountSubscriptions(accountId string, topicName string) ([]string, error)
+	GetAccountSubscriptionsWithPage(accountId string, topicName string, pages int, pageSize int, startIndex int) ([]string, error)
 	RemoveAccountSubscriptions(accountId string, topicName string)
 }
 

@@ -13,6 +13,7 @@
 package mns
 
 import (
+	"strings"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -27,10 +28,20 @@ type EndpointAttribute struct {
 	Name           string    `json:"endpoint_name" bson"EndpointName"`
 	Type           string    `json:"endpoint_type" bson:"EndpointType"`
 	URI            string    `json:"endpoint_uri" bson:"EndpointURI"`
-	CreateTime     time.Time `json:"create_time,omitempty" bson:"CreateTime,omitempty"`
-	LastModifyTime time.Time `json:"last_modify_time,omitempty" bson:"LastModifyTime,omitempty"`
+	CreatedAt      time.Time `json:"created_at,omitempty" bson:"CreatedAt,omitempty"`
+	LastModifiedAt time.Time `json:"last_modified_at,omitempty" bson:"LastModifiedAt,omitempty"`
 }
 
 func NewEndpoint(c config.Config, uri string) (Endpoint, error) {
-	return nil, ErrNotImplemented
+	if names := strings.Split(uri, ":"); len(names) > 0 {
+		switch names[0] {
+		case "http":
+			return newHttpEndpoint(c, uri)
+		case "mns":
+			return newQueueEndpoint(c, uri)
+		case "mail":
+			return newMailEndpoint(c, uri)
+		}
+	}
+	return nil, ErrInvalidArgument
 }
