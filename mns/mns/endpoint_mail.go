@@ -16,11 +16,13 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/mail"
 )
 
 type mailEndpoint struct {
 	attribute EndpointAttribute
 	mailaddr  string
+	email     *mail.Email
 }
 
 func newMailEndpoint(c config.Config, uri string) (endpoint Endpoint, err error) {
