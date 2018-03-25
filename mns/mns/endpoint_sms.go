@@ -18,19 +18,19 @@ import (
 	"github.com/cloustone/sentel/pkg/config"
 )
 
-type httpEndpoint struct {
+type smsEndpoint struct {
 	attribute EndpointAttribute
-	uri       string
+	smsaddr   string
 }
 
-func newHttpEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	uri, err := parseHttpScheme(attr.Endpoint)
-	endpoint = &httpEndpoint{
-		uri: uri,
+func newSMSEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
+	addr, err := parseSMSScheme(attr.Endpoint)
+	endpoint = &smsEndpoint{
+		smsaddr: addr,
 		attribute: EndpointAttribute{
-			Name:           uri,
-			Type:           "http",
-			URI:            uri,
+			Name:           attr.Endpoint,
+			Type:           "sms",
+			URI:            attr.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},
@@ -38,11 +38,11 @@ func newHttpEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endp
 	return
 }
 
-func parseHttpScheme(uri string) (string, error) {
+func parseSMSScheme(uri string) (string, error) {
 	return uri, nil
 }
 
-func (h httpEndpoint) GetAttribute() EndpointAttribute { return h.attribute }
-func (h httpEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
+func (s smsEndpoint) GetAttribute() EndpointAttribute { return s.attribute }
+func (s smsEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
 	return nil
 }

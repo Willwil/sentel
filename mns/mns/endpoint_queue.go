@@ -13,28 +13,32 @@
 package mns
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
+	"github.com/cloustone/sentel/pkg/message"
 )
 
 // queueEndpoint has scheme "mns:AccountId:queues/queueName"
 type queueEndpoint struct {
+	config    config.Config
 	accountId string
 	queueName string
 	attribute EndpointAttribute
 }
 
-func newQueueEndpoint(c config.Config, uri string) (endpoint Endpoint, err error) {
-	accountId, queueName, err := parseQueueScheme(uri)
+func newQueueEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
+	accountId, queueName, err := parseQueueScheme(attr.Endpoint)
 	endpoint = &queueEndpoint{
+		config:    c,
 		accountId: accountId,
 		queueName: queueName,
 		attribute: EndpointAttribute{
-			Name:           uri,
+			Name:           attr.Endpoint,
 			Type:           "mns",
-			URI:            uri,
+			URI:            attr.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},
@@ -57,4 +61,12 @@ func parseQueueScheme(uri string) (string, string, error) {
 }
 
 func (q queueEndpoint) GetAttribute() EndpointAttribute { return q.attribute }
-func (q queueEndpoint) PushMessage(msg Message) error   { return nil }
+func (q queueEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
+	msg := QueueMessage{
+		TopicName:   fmt.Sprintf(FormatOfQueueName, q.accountId, q.queueName),
+		MessageBody: body,
+		MessageTag:  tag,
+		Attributes:  attrs,
+	}
+	return message.PostMessage(q.config, msg)
+}

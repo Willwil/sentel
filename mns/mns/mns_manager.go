@@ -56,32 +56,32 @@ func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute
 	return m.adaptor.GetQueue(accountId, queueName)
 }
 
-func (m *manager) SendQueueMessage(accountId, queueName string, msg Message) (err error) {
+func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage) (err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.SendMessage(msg)
 	}
 	return
 }
 
-func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []Message) (err error) {
+func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) (err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchSendMessage(msgs)
 	}
 	return
 }
 
-func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (msg Message, err error) {
+func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (msg QueueMessage, err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.ReceiveMessage(ws)
 	}
-	return Message{}, err
+	return QueueMessage{}, err
 }
 
-func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []Message, err error) {
+func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []QueueMessage, err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchReceiveMessages(ws, numOfMessages)
 	}
-	return []Message{}, err
+	return []QueueMessage{}, err
 }
 
 func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) (err error) {
@@ -98,18 +98,18 @@ func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles 
 	return
 }
 
-func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (msg Message, err error) {
+func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (msg QueueMessage, err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.PeekMessage(ws)
 	}
-	return Message{}, err
+	return QueueMessage{}, err
 }
 
-func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []Message, err error) {
+func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []QueueMessage, err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchPeekMessages(ws, numOfMessages)
 	}
-	return []Message{}, err
+	return []QueueMessage{}, err
 }
 
 func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) (err error) {
@@ -201,17 +201,11 @@ func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages int,
 
 // PublishMessage publish message to all subscribers on the topic
 func (m *manager) PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error {
-	// Format message and get subscriptions for the topic
-	msg := Message{
-		Body:       body,
-		Tag:        tag,
-		Attributes: attributes,
-	}
 	subscriptionNames, err := m.adaptor.GetAccountSubscriptions(accountId, topicName)
 	for _, subscriptionName := range subscriptionNames {
 		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
-		if endpoint, err := NewEndpoint(m.config, attr.Endpoint); err == nil {
-			endpoint.PushMessage(msg)
+		if endpoint, err := NewEndpoint(m.config, attr); err == nil {
+			endpoint.PushMessage(body, tag, attributes)
 		}
 	}
 	return err

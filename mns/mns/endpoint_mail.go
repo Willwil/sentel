@@ -25,14 +25,14 @@ type mailEndpoint struct {
 	email     *mail.Email
 }
 
-func newMailEndpoint(c config.Config, uri string) (endpoint Endpoint, err error) {
-	mailaddr, err := parseMailScheme(uri)
+func newMailEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
+	mailaddr, err := parseMailScheme(attr.Endpoint)
 	endpoint = &mailEndpoint{
 		mailaddr: mailaddr,
 		attribute: EndpointAttribute{
-			Name:           uri,
+			Name:           attr.Endpoint,
 			Type:           "mail",
-			URI:            uri,
+			URI:            attr.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},
@@ -45,4 +45,6 @@ func parseMailScheme(uri string) (string, error) {
 }
 
 func (m mailEndpoint) GetAttribute() EndpointAttribute { return m.attribute }
-func (m mailEndpoint) PushMessage(msg Message) error   { return nil }
+func (m mailEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
+	return nil
+}

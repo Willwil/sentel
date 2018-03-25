@@ -22,14 +22,14 @@ type MnsManager interface {
 	GetQueues(accountId string) []string
 	SetQueueAttribute(accountId, queueName string, attr QueueAttribute) (err error)
 	GetQueueAttribute(accountId, queueName string) (QueueAttribute, error)
-	SendQueueMessage(accountId, queueName string, msg Message) error
-	BatchSendQueueMessage(accountId, queueName string, msgs []Message) error
-	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (Message, error)
-	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error)
+	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
+	BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) error
+	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
+	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
 	DeleteQueueMessage(accountId, queueName string, handle string) error
 	BatchDeleteQueueMessages(accountId, queueName string, handles []string) error
-	PeekQueueMessage(accountId, queueName string, waitSeconds int) (Message, error)
-	BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]Message, error)
+	PeekQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
+	BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
 	SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error
 
 	// Topic API

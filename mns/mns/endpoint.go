@@ -21,7 +21,7 @@ import (
 
 type Endpoint interface {
 	GetAttribute() EndpointAttribute
-	PushMessage(msg Message) error
+	PushMessage(body []byte, tag string, attrs map[string]interface{}) error
 }
 
 type EndpointAttribute struct {
@@ -32,15 +32,17 @@ type EndpointAttribute struct {
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty" bson:"LastModifiedAt,omitempty"`
 }
 
-func NewEndpoint(c config.Config, uri string) (Endpoint, error) {
-	if names := strings.Split(uri, ":"); len(names) > 0 {
+func NewEndpoint(c config.Config, attr SubscriptionAttribute) (Endpoint, error) {
+	if names := strings.Split(attr.Endpoint, ":"); len(names) > 0 {
 		switch names[0] {
 		case "http":
-			return newHttpEndpoint(c, uri)
+			return newHttpEndpoint(c, attr)
 		case "mns":
-			return newQueueEndpoint(c, uri)
+			return newQueueEndpoint(c, attr)
 		case "mail":
-			return newMailEndpoint(c, uri)
+			return newMailEndpoint(c, attr)
+		case "sms":
+			return newSMSEndpoint(c, attr)
 		}
 	}
 	return nil, ErrInvalidArgument
