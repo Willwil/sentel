@@ -57,8 +57,8 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.CreateDevice
 	{
-		Path:     "/iot/api/v1/console/devices",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/productrs/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetOneDevice
 	{
@@ -72,13 +72,13 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.UpdateDevice
 	{
-		Path:     "/iot/api/v1/console/devices",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/devices",
+		Resource: "/products/:productId",
 	},
 	// v1api.BulkRegisterDevices
 	{
-		Path:     "/iot/api/v1/console/devices/bulk",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/devices/bulk",
+		Resource: "/products/:productId",
 	},
 	// v1api.UpdateShadowDevice
 	{
@@ -92,8 +92,8 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.CreateRule
 	{
-		Path:     "/iot/api/v1/console/rules",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/rules",
+		Resource: "/products/:productId",
 	},
 	// v1api.RemoveRule
 	{
@@ -102,18 +102,18 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.UpdateRule
 	{
-		Path:     "/iot/api/v1/console/rules",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/rules",
+		Resource: "/products/:productId",
 	},
 	// v1api.StopRule
 	{
-		Path:     "/iot/api/v1/console/rules/stop",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/rules/:ruleName?action=stop",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetRule
 	{
 		Path:     "/iot/api/v1/console/products/:productId/rules/:ruleName",
-		Resource: "/products/$ProductId",
+		Resource: "/products/:productId",
 	},
 	// v1api.CreateTopicFlavor
 	{
@@ -147,13 +147,13 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.SendMessageToDevice
 	{
-		Path:     "/iot/api/v1/console/message",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/devices/:device/message",
+		Resource: "/products/:productId",
 	},
 	// v1api.BroadcastProductMessage
 	{
-		Path:     "/iot/api/v1/console/message/broadcast",
-		Resource: "/products/$ProductId",
+		Path:     "/iot/api/v1/console/products/:productId/message?scope=broadcast",
+		Resource: "/products/:productId",
 	},
 	// v1api.GetServiceStatics
 	{

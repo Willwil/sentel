@@ -112,7 +112,7 @@ func (p *managementService) Initialize() error {
 	g.GET("/products/:productId/devices", v1api.GetDeviceList)
 	g.GET("/products/:productId/devices/:deviceName", v1api.GetDeviceByName)
 
-	g.POST("/products/:productId/devices/:deviceId/props", v1api.SaveDevicePropsByName)
+	g.POST("/products/:productId/devices/:deviceName/props", v1api.SaveDevicePropsByName)
 	g.GET("/products/:productId/devices/:deviceId/props/:props", v1api.GetDevicePropsByName)
 	g.DELETE("/products/:productId/devices/:deviceId/props/:props", v1api.RemoveDevicePropsByName)
 

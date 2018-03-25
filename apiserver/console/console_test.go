@@ -319,7 +319,7 @@ func Test_createDevice(t *testing.T) {
 		ProductId:  productId,
 	}
 
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/devices", req)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/devices", req)
 	defer closeRegistry(ctx)
 	v1api.CreateDevice(ctx)
 	if rsp, err := getApiResponse(ctx); err != nil {
@@ -355,7 +355,7 @@ func Test_updateDevice(t *testing.T) {
 		ProductId:  productId,
 		DeviceId:   deviceId,
 	}
-	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/devices", req)
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/products/:productId/devices", req)
 	defer closeRegistry(ctx)
 	v1api.UpdateDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -373,7 +373,7 @@ func Test_bulkRegisterDevices(t *testing.T) {
 		ProductId:  productId,
 		Number:     "10",
 	}
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/devices/bulk", req)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/devices/bulk", req)
 	defer closeRegistry(ctx)
 	v1api.BulkRegisterDevices(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -382,7 +382,7 @@ func Test_bulkRegisterDevices(t *testing.T) {
 }
 
 func Test_updateShadowDevice(t *testing.T) {
-	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/device/shadow", nil)
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/products/:productId/device/shadow", nil)
 	defer closeRegistry(ctx)
 	v1api.UpdateShadowDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -419,7 +419,7 @@ func Test_createRule(t *testing.T) {
 		},
 	}
 
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/rules", rule1)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/rules", rule1)
 	defer closeRegistry(ctx)
 	v1api.CreateRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -443,7 +443,7 @@ func Test_updateRule(t *testing.T) {
 			Topic: "world",
 		},
 	}
-	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/rules", rule1)
+	ctx := initializeContext(t, http.MethodPatch, "/iot/api/v1/console/products/:productId/rules", rule1)
 	defer closeRegistry(ctx)
 	v1api.RemoveRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -457,7 +457,7 @@ func Test_startRule(t *testing.T) {
 		RuleName:  ruleName,
 	}
 
-	ctx := initializeContext(t, http.MethodPut, "/iot/api/v1/console/rules/start", rule1)
+	ctx := initializeContext(t, http.MethodPut, "/iot/api/v1/console/products/:product/rules/:ruleName?action=start", rule1)
 	defer closeRegistry(ctx)
 	v1api.StartRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -471,7 +471,7 @@ func Test_stopRule(t *testing.T) {
 		RuleName:  ruleName,
 	}
 
-	ctx := initializeContext(t, http.MethodPut, "/iot/api/v1/console/rules/stop", rule1)
+	ctx := initializeContext(t, http.MethodPut, "/iot/api/v1/console/products/:productId/rules/:ruleName?action=stop", rule1)
 	defer closeRegistry(ctx)
 	v1api.StopRule(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -567,7 +567,7 @@ func Test_sendMessageToDevice(t *testing.T) {
 		Payload:   []byte("world"),
 	}
 
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/message", req)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/message", req)
 	defer closeRegistry(ctx)
 	v1api.SendMessageToDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {
@@ -576,7 +576,7 @@ func Test_sendMessageToDevice(t *testing.T) {
 }
 
 func Test_broadcastProductMessage(t *testing.T) {
-	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/message/broadcast", nil)
+	ctx := initializeContext(t, http.MethodPost, "/iot/api/v1/console/products/:productId/message?scope=broadcast", nil)
 	defer closeRegistry(ctx)
 	v1api.SendMessageToDevice(ctx)
 	if _, err := getApiResponse(ctx); err != nil {

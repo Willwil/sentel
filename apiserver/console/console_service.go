@@ -103,7 +103,7 @@ func (p *consoleService) Initialize() error {
 	// Product
 	g.POST("/products", v1api.CreateProduct)
 	g.DELETE("/products/:productId", v1api.RemoveProduct)
-	g.PATCH("/products", v1api.UpdateProduct)
+	g.PATCH("/products/:productId", v1api.UpdateProduct)
 	g.GET("/products", v1api.GetProductList)
 	g.GET("/products/:productId", v1api.GetProduct)
 	g.GET("/products/:productId/devices", v1api.GetProductDevices)
@@ -111,21 +111,21 @@ func (p *consoleService) Initialize() error {
 	g.GET("/products/:productId/devices/statics", v1api.GetDeviceStatics)
 
 	// Device
-	g.POST("/devices", v1api.CreateDevice)
+	g.POST("/products/:productId/devices/:deviceId", v1api.CreateDevice)
 	g.GET("/products/:productId/devices/:deviceId", v1api.GetOneDevice)
 	g.DELETE("/products/:productId/devices/:deviceId", v1api.RemoveDevice)
-	g.PATCH("/devices", v1api.UpdateDevice)
-	g.POST("/devices/bulk", v1api.BulkRegisterDevices)
-	g.POST("/devices/props", v1api.SaveDeviceProps)
+	g.PATCH("/products/:productId/devices/:deviceId", v1api.UpdateDevice)
+	g.POST("/products/:productId/devices/bulk", v1api.BulkRegisterDevices)
+	g.POST("/products/:productId/devices/:deviceId/props", v1api.SaveDeviceProps)
 	g.GET("/products/:productId/devices/:deviceId/shardow", v1api.GetShadowDevice)
 	g.PATCH("/products/:productId/devices/:deviceId/shadow", v1api.UpdateShadowDevice)
 
 	// Rules
-	g.POST("/rules", v1api.CreateRule)
+	g.POST("/products/:productId/rules/:ruleName", v1api.CreateRule)
 	g.DELETE("/products/:productId/rules/:ruleName", v1api.RemoveRule)
-	g.PATCH("/rules", v1api.UpdateRule)
-	g.PUT("/rules/start", v1api.StartRule)
-	g.PUT("/rules/stop", v1api.StopRule)
+	g.PATCH("/products/:productId/rules/:ruleName", v1api.UpdateRule)
+	g.PUT("/products/:productId/rules/:ruleName?action=start", v1api.StartRule)
+	g.PUT("/products/:productId/rules/:ruleName?action=stop", v1api.StopRule)
 	g.GET("/products/:productId/rules/:ruleName", v1api.GetRule)
 
 	// Topic Flavor
@@ -137,8 +137,8 @@ func (p *consoleService) Initialize() error {
 	g.PUT("/topicflavors/:productId?flavor=:topicflavor", v1api.SetProductTopicFlavor)
 
 	// Runtime
-	g.POST("/message", v1api.SendMessageToDevice)
-	g.POST("/message/broadcast", v1api.BroadcastProductMessage)
+	g.POST("/products/:productId/devices/:deviceId/message", v1api.SendMessageToDevice)
+	g.POST("/products/:productId/message?scope=broadcast", v1api.BroadcastProductMessage)
 
 	g.GET("/service", v1api.GetServiceStatics)
 

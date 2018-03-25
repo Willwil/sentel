@@ -23,11 +23,11 @@ import (
 // createRule add new rule for product
 func CreateRule(ctx echo.Context) error {
 	rule := registry.Rule{}
-
 	if err := ctx.Bind(&rule); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	if rule.ProductId == "" || rule.RuleName == "" {
+	if rule.ProductId != ctx.Param("productId") ||
+		rule.RuleName != ctx.Param("ruleName") {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 	rule.TimeCreated = time.Now()
@@ -51,10 +51,6 @@ func CreateRule(ctx echo.Context) error {
 func RemoveRule(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
-	if productId == "" || ruleName == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-
 	r := getRegistry(ctx)
 	if err := r.RemoveRule(productId, ruleName); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -73,13 +69,14 @@ func RemoveRule(ctx echo.Context) error {
 // UpdateRule update existed rule
 func UpdateRule(ctx echo.Context) error {
 	rule := registry.Rule{}
-
 	if err := ctx.Bind(&rule); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
-	if rule.ProductId == "" || rule.RuleName == "" {
+	if rule.ProductId != ctx.Param("productId") ||
+		rule.RuleName != ctx.Param("ruleName") {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
+
 	r := getRegistry(ctx)
 	if err := r.UpdateRule(&rule); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -95,38 +92,26 @@ func UpdateRule(ctx echo.Context) error {
 }
 
 func StartRule(ctx echo.Context) error {
-	rule := registry.Rule{}
-
-	if err := ctx.Bind(&rule); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if rule.ProductId == "" || rule.RuleName == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
+	productId := ctx.Param("productId")
+	ruleName := ctx.Param("ruleName")
 	asyncProduceMessage(ctx,
 		&message.Rule{
 			TopicName: message.TopicNameRule,
-			RuleName:  rule.RuleName,
-			ProductId: rule.ProductId,
+			RuleName:  ruleName,
+			ProductId: productId,
 			Action:    message.ActionStart,
 		})
 	return ctx.JSON(OK, apiResponse{})
 }
 
 func StopRule(ctx echo.Context) error {
-	rule := registry.Rule{}
-
-	if err := ctx.Bind(&rule); err != nil {
-		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
-	}
-	if rule.ProductId == "" || rule.RuleName == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
+	productId := ctx.Param("productId")
+	ruleName := ctx.Param("ruleName")
 	asyncProduceMessage(ctx,
 		&message.Rule{
 			TopicName: message.TopicNameRule,
-			RuleName:  rule.RuleName,
-			ProductId: rule.ProductId,
+			RuleName:  ruleName,
+			ProductId: productId,
 			Action:    message.ActionStop,
 		})
 	return ctx.JSON(OK, apiResponse{})
@@ -136,10 +121,6 @@ func StopRule(ctx echo.Context) error {
 func GetRule(ctx echo.Context) error {
 	productId := ctx.Param("productId")
 	ruleName := ctx.Param("ruleName")
-	if productId == "" || ruleName == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
-
 	r := getRegistry(ctx)
 	rule, err := r.GetRule(productId, ruleName)
 	if err != nil {
@@ -150,9 +131,6 @@ func GetRule(ctx echo.Context) error {
 
 func GetProductRules(ctx echo.Context) error {
 	productId := ctx.Param("productId")
-	if productId == "" {
-		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
-	}
 	r := getRegistry(ctx)
 	if names, err := r.GetProductRuleNames(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
