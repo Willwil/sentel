@@ -15,8 +15,9 @@ package sms
 import (
 	"errors"
 
+	"submail"
+
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/sms/submail"
 )
 
 type submailSms struct {
