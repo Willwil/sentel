@@ -12,33 +12,10 @@
 
 package sms
 
-type Message struct {
-	to        []string
-	project   string
-	variables map[string]string
-}
-
 type Dialer interface {
 	DialAndSend(*Message) error
 }
 
-func NewMessage() *Message {
-	return &Message{
-		to:        []string{},
-		variables: make(map[string]string),
-	}
-}
-
 func NewDialer(configs map[string]string) Dialer {
 	return newSubmailDialer(configs)
-}
-
-func (m *Message) AddTo(to ...string) {
-	m.to = append(m.to, to...)
-}
-func (m *Message) SetProject(project string) {
-	m.project = project
-}
-func (m *Message) AddVariable(key string, val string) {
-	m.variables[key] = val
 }
