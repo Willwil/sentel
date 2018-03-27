@@ -12,24 +12,33 @@
 
 package sms
 
-import (
-	"fmt"
-
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type SMS interface {
-	AddTo(string)
-	SetProject(string)
-	AddVariable(key string, val string)
-	Send() error
+type Message struct {
+	to        []string
+	project   string
+	variables map[string]string
 }
 
-func New(c config.Config) (SMS, error) {
-	vendor, _ := c.StringWithSection("sms", "vendor")
-	switch vendor {
-	case "submail":
-		return newSubmailSms(c)
+type Dialer interface {
+	DialAndSend(*Message) error
+}
+
+func NewMessage() *Message {
+	return &Message{
+		to:        []string{},
+		variables: make(map[string]string),
 	}
-	return nil, fmt.Errorf("invalid sms vendor '%s'", vendor)
+}
+
+func NewDialer(configs map[string]string) Dialer {
+	return newSubmailDialer(configs)
+}
+
+func (m *Message) AddTo(to ...string) {
+	m.to = append(m.to, to...)
+}
+func (m *Message) SetProject(project string) {
+	m.project = project
+}
+func (m *Message) AddVariable(key string, val string) {
+	m.variables[key] = val
 }

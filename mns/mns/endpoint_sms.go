@@ -13,6 +13,8 @@
 package mns
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -22,15 +24,16 @@ import (
 )
 
 type smsEndpoint struct {
+	config    config.Config
 	attribute EndpointAttribute
-	smsaddr   string
-	sms       sms.SMS
+	to        string
 }
 
 func newSMSEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	addr, err := parseSMSScheme(attr.Endpoint)
+	to, err := parseSMSScheme(attr.Endpoint)
 	endpoint = &smsEndpoint{
-		smsaddr: addr,
+		config: c,
+		to:     to,
 		attribute: EndpointAttribute{
 			Name:           attr.Endpoint,
 			Type:           "sms",
@@ -57,17 +60,42 @@ type smsAttribute struct {
 func (s smsEndpoint) GetAttribute() EndpointAttribute { return s.attribute }
 
 func (s smsEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
-	sms := smsAttribute{}
-	if err := mapstructure.Decode(attrs, &sms); err != nil {
+	attr := smsAttribute{}
+	if err := mapstructure.Decode(attrs, &attr); err != nil {
 		return ErrInvalidArgument.With(err.Error())
 	}
-	if sms.FreeSignName == "" ||
-		sms.TemplateCode == "" ||
-		(sms.Type != "singleContent" && sms.Type != "multiContent") ||
-		sms.Params == "" {
+	if attr.FreeSignName == "" ||
+		attr.TemplateCode == "" ||
+		(attr.Type != "singleContent" && attr.Type != "multiContent") ||
+		attr.Params == "" {
 		return ErrInvalidArgument
 	}
 
-	return nil
+	return sendSMS(s.config, s.to, attr)
+}
 
+func sendSMS(c config.Config, to string, attr smsAttribute) error {
+	appid, _ := c.StringWithSection("sms", "appid")
+	appkey, _ := c.StringWithSection("sms", "appkey")
+	signtype, _ := c.StringWithSection("sms", "signtype")
+	project, _ := c.StringWithSection("sms", "project")
+	if appid == "" || appkey == "" || signtype == "" {
+		return errors.New("invalid submail configs setting")
+	}
+	configs := make(map[string]string)
+	configs["appid"] = appid
+	configs["appkey"] = appkey
+	configs["signtype"] = signtype
+	dialer := sms.NewDialer(configs)
+	msg := sms.NewMessage()
+	msg.AddTo(to)
+	msg.SetProject(project)
+	values := make(map[string]string)
+	if err := json.Unmarshal([]byte(attr.Params), values); err != nil {
+		return ErrInvalidArgument.With(err.Error())
+	}
+	for k, v := range values {
+		msg.AddVariable(k, v)
+	}
+	return dialer.DialAndSend(msg)
 }
