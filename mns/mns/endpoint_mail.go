@@ -16,34 +16,22 @@ import (
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/mail"
 
 	"github.com/goinggo/mapstructure"
+	"gopkg.in/gomail.v2"
 )
 
 type mailEndpoint struct {
 	config    config.Config
 	attribute EndpointAttribute
-	fromaddr  string
 	toaddr    string
-	mailpwd   string
-	host      string
 }
 
 func newMailEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	fromaddr, err1 := c.StringWithSection("mail", "from_address")
-	mailpwd, err2 := c.StringWithSection("mail", "password")
-	host, err3 := c.StringWithSection("mail", "host")
-	if err1 != nil || err2 != nil || err3 != nil {
-		return nil, ErrInvalidArgument
-	}
 	toaddr, err := parseMailScheme(attr.Endpoint)
 	endpoint = &mailEndpoint{
-		config:   c,
-		fromaddr: fromaddr,
-		toaddr:   toaddr,
-		mailpwd:  mailpwd,
-		host:     host,
+		config: c,
+		toaddr: toaddr,
 		attribute: EndpointAttribute{
 			Name:           attr.Endpoint,
 			Type:           "mail",
@@ -80,5 +68,26 @@ func (m mailEndpoint) PushMessage(body []byte, tag string, attrs map[string]inte
 		attr.ReplyToAddress > 1 {
 		return ErrInvalidArgument
 	}
-	return mail.SendMail(m.fromaddr, m.toaddr, m.mailpwd, attr.Subject, string(body), "", "", m.host)
+	return sendMail(m.config, m.toaddr, attr.Subject, string(body), "html")
+}
+
+func sendMail(c config.Config, to, subject, content, contentType string, attachments ...string) error {
+	host, _ := c.StringWithSection("email", "host")
+	port, _ := c.IntWithSection("email", "port")
+	account, _ := c.StringWithSection("email", "account")
+	pwd, _ := c.StringWithSection("email", "pwd")
+	from, _ := c.StringWithSection("email", "from")
+	if host == "" || port < 0 || account == "" || pwd == "" || from == "" {
+		return ErrInvalidArgument
+	}
+	dialer := gomail.NewDialer(host, port, account, pwd)
+	msg := gomail.NewMessage()
+	msg.SetHeader("From", from)
+	msg.SetHeader("To", to)
+	msg.SetHeader("Subject", subject)
+	msg.SetBody(contentType, content)
+	for _, attachment := range attachments {
+		msg.Attach(attachment)
+	}
+	return dialer.DialAndSend(msg)
 }
