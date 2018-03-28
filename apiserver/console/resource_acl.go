@@ -47,7 +47,7 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.GetProductRules
 	{
-		Path:     "/iot/api/v1/console/procuts/:productId/rules",
+		Path:     "/iot/api/v1/console/products/:productId/rules",
 		Resource: "/products/:productId/rules",
 	},
 	// v1api.GetDeviceStatics
@@ -57,7 +57,7 @@ var consoleApiPolicies = []base.ResourceAC{
 	},
 	// v1api.CreateDevice
 	{
-		Path:     "/iot/api/v1/console/productrs/:productId/devices",
+		Path:     "/iot/api/v1/console/products/:productId/devices",
 		Resource: "/products/:productId",
 	},
 	// v1api.GetOneDevice

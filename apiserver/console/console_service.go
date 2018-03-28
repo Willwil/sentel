@@ -111,7 +111,7 @@ func (p *consoleService) Initialize() error {
 	g.GET("/products/:productId/devices/statics", v1api.GetDeviceStatics)
 
 	// Device
-	g.POST("/products/:productId/devices/:deviceId", v1api.CreateDevice)
+	g.POST("/products/:productId/devices", v1api.CreateDevice)
 	g.GET("/products/:productId/devices/:deviceId", v1api.GetOneDevice)
 	g.DELETE("/products/:productId/devices/:deviceId", v1api.RemoveDevice)
 	g.PATCH("/products/:productId/devices/:deviceId", v1api.UpdateDevice)
