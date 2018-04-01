@@ -13,7 +13,6 @@
 package mns
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -175,8 +174,15 @@ func (m *mongoAdaptor) GetAccountSubscriptions(accountId string, topicName strin
 	return subscriptions, err
 }
 
-func (m *mongoAdaptor) GetAccountSubscriptionsWithPage(accountId string, topicName string, pages int, pageSize int, startIndex int) ([]string, error) {
-	return []string{}, errors.New("Not implemented")
+func (m *mongoAdaptor) GetAccountSubscriptionsWithPage(accountId string, topicName string, pageno int, pageSize int) ([]string, error) {
+	c := m.session.C(collectionSubscriptions)
+	attrs := []SubscriptionAttribute{}
+	subscriptions := []string{}
+	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).Skip(pageno * pageSize).Limit(pageSize).All(&attrs)
+	for _, attr := range attrs {
+		subscriptions = append(subscriptions, attr.SubscriptionName)
+	}
+	return subscriptions, err
 }
 
 func (m *mongoAdaptor) RemoveAccountSubscriptions(accountId string, topicName string) {

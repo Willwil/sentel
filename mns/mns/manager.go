@@ -46,7 +46,7 @@ type MnsManager interface {
 	GetSubscriptionAttribute(accountId, topicName string, subscriptionName string) (SubscriptionAttribute, error)
 	Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
 	Unsubscribe(accountId, topicName string, subscriptionName string) error
-	ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error)
+	ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]SubscriptionAttribute, error)
 	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error
 }
 

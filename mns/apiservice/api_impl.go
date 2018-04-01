@@ -350,11 +350,10 @@ func listTopicSubscriptions(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 	pageSize, err1 := strconv.Atoi(ctx.QueryParam("pageSize"))
 	pageNo, err2 := strconv.Atoi(ctx.QueryParam("pageNo"))
-	startIndex, err3 := strconv.Atoi(ctx.QueryParam("startIndex"))
-	if err1 != nil || err2 != nil || err3 != nil {
+	if err1 != nil || err2 != nil {
 		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	attrs, err := getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize, startIndex)
+	attrs, err := getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize)
 	return replyObject(ctx, attrs, err)
 }
 

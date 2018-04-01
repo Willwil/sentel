@@ -189,8 +189,8 @@ func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName stri
 	return m.adaptor.RemoveSubscription(accountId, topicName, subscriptionName)
 }
 
-func (m *manager) ListTopicSubscriptions(accountId, topicName string, pages int, pageSize int, startIndex int) ([]SubscriptionAttribute, error) {
-	subscriptionNames, err := m.adaptor.GetAccountSubscriptionsWithPage(accountId, topicName, pages, pageSize, startIndex)
+func (m *manager) ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]SubscriptionAttribute, error) {
+	subscriptionNames, err := m.adaptor.GetAccountSubscriptionsWithPage(accountId, topicName, pageno, pageSize)
 	subscriptions := []SubscriptionAttribute{}
 	for _, subscriptionName := range subscriptionNames {
 		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
