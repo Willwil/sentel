@@ -48,25 +48,25 @@ func newMongoAdaptor(c config.Config) (Adaptor, error) {
 	}, nil
 }
 
-func (m *mongoAdaptor) GetQueue(accountId string, queueName string) (Queue, error) {
+func (m *mongoAdaptor) GetQueueAttribute(accountId string, queueName string) (QueueAttribute, error) {
 	c := m.session.C(collectionQueues)
-	queue := Queue{}
-	err := c.Find(bson.M{"AccountId": accountId, "QueueName": queueName}).One(&queue)
-	return queue, err
+	attr := QueueAttribute{}
+	err := c.Find(bson.M{"AccountId": accountId, "QueueName": queueName}).One(&attr)
+	return attr, err
 }
 
-func (m *mongoAdaptor) AddQueue(accountId string, queueName string, queue Queue) error {
+func (m *mongoAdaptor) AddQueue(accountId string, queueName string, attr QueueAttribute) error {
 	c := m.session.C(collectionQueues)
-	queue.AccountId = accountId
-	queue.QueueName = queueName
-	return c.Insert(queue)
+	attr.AccountId = accountId
+	attr.QueueName = queueName
+	return c.Insert(attr)
 }
 
-func (m *mongoAdaptor) UpdateQueue(accountId string, queueName string, queue Queue) error {
+func (m *mongoAdaptor) UpdateQueue(accountId string, queueName string, attr QueueAttribute) error {
 	c := m.session.C(collectionQueues)
-	queue.AccountId = accountId
-	queue.QueueName = queueName
-	return c.Update(bson.M{"AccountId": accountId, "QueueName": queueName}, queue)
+	attr.AccountId = accountId
+	attr.QueueName = queueName
+	return c.Update(bson.M{"AccountId": accountId, "QueueName": queueName}, attr)
 }
 
 func (m *mongoAdaptor) RemoveQueue(accountId string, queueName string) error {
@@ -75,12 +75,12 @@ func (m *mongoAdaptor) RemoveQueue(accountId string, queueName string) error {
 }
 
 func (m *mongoAdaptor) GetAccountQueues(accountId string) []string {
-	queues := []Queue{}
+	attrs := []QueueAttribute{}
 	queueNames := []string{}
 	c := m.session.C(collectionQueues)
-	if err := c.Find(bson.M{"AccountId": accountId}).All(queues); err == nil {
-		for _, queue := range queues {
-			queueNames = append(queueNames, queue.QueueName)
+	if err := c.Find(bson.M{"AccountId": accountId}).All(&attrs); err == nil {
+		for _, attr := range attrs {
+			queueNames = append(queueNames, attr.QueueName)
 		}
 	}
 	return queueNames

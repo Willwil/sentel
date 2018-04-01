@@ -23,8 +23,15 @@ type manager struct {
 	adaptor Adaptor
 }
 
-func (m *manager) CreateQueue(accountId string, queueName string) (Queue, error) {
-	attr := Queue{
+func (m *manager) GetQueue(accountId, queueName string) (queue Queue, err error) {
+	if attr, err := m.adaptor.GetQueueAttribute(accountId, queueName); err == nil {
+		return NewQueue(m.config, attr, m.adaptor)
+	}
+	return nil, err
+}
+
+func (m *manager) CreateQueue(accountId string, queueName string) (QueueAttribute, error) {
+	attr := QueueAttribute{
 		QueueName:      queueName,
 		CreateTime:     time.Now(),
 		LastModifyTime: time.Now(),
@@ -41,12 +48,12 @@ func (m *manager) GetQueues(accountId string) []string {
 	return m.adaptor.GetAccountQueues(accountId)
 }
 
-func (m *manager) SetQueue(accountId, queueName string, attr Queue) error {
+func (m *manager) SetQueueAttribute(accountId, queueName string, attr QueueAttribute) error {
 	return m.adaptor.UpdateQueue(accountId, queueName, attr)
 }
 
-func (m *manager) GetQueue(accountId, queueName string) (Queue, error) {
-	return m.adaptor.GetQueue(accountId, queueName)
+func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute, error) {
+	return m.adaptor.GetQueueAttribute(accountId, queueName)
 }
 
 func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage) (err error) {

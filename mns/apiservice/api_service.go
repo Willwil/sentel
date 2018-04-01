@@ -98,8 +98,8 @@ func (p *consoleService) Initialize() error {
 	}))
 	// Queue APIs
 	p.echo.POST("mns/v1/api/queues/:queueName", createQueue)
-	p.echo.PUT("mns/v1/api/queues/:queueName", setQueue)
-	p.echo.GET("mns/v1/api/queues/:queueName", getQueue)
+	p.echo.PUT("mns/v1/api/queues/:queueName", setQueueAttribute)
+	p.echo.GET("mns/v1/api/queues/:queueName", getQueueAttribute)
 	p.echo.GET("mns/v1/api/queues", getQueueList)
 	p.echo.DELETE("mns/v1/api/queues/:queueName", deleteQueue)
 	p.echo.POST("mns/v1/api/queues/:queueName/messages", sendQueueMessage)

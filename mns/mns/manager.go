@@ -16,11 +16,11 @@ import "github.com/cloustone/sentel/pkg/config"
 
 type MnsManager interface {
 	// Queue API
-	CreateQueue(accountId string, queueName string) (Queue, error)
-	GetQueue(accountId string, queueName string) (Queue, error)
+	CreateQueue(accountId string, queueName string) (QueueAttribute, error)
+	GetQueueAttribute(accountId string, queueName string) (QueueAttribute, error)
+	SetQueueAttribute(accountId string, queueName string, attr QueueAttribute) error
 	DeleteQueue(accountId string, queueName string) error
 	GetQueues(accountId string) []string
-	SetQueue(accountId, queueName string, attr Queue) (err error)
 	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
 	BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) error
 	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)

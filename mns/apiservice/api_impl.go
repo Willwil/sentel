@@ -140,22 +140,22 @@ func createQueue(ctx echo.Context) error {
 	return reply(ctx)
 }
 
-func setQueue(ctx echo.Context) error {
-	attr := mns.Queue{}
+func setQueueAttribute(ctx echo.Context) error {
+	attr := mns.QueueAttribute{}
 	if err := ctx.Bind(&attr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	err := getManager().SetQueue(accountId, queueName, attr)
+	err := getManager().SetQueueAttribute(accountId, queueName, attr)
 	return reply(ctx, err)
 }
 
-func getQueue(ctx echo.Context) error {
+func getQueueAttribute(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	queue, err := getManager().GetQueue(accountId, queueName)
-	return replyObject(ctx, queue, err)
+	attr, err := getManager().GetQueueAttribute(accountId, queueName)
+	return replyObject(ctx, attr, err)
 }
 
 func deleteQueue(ctx echo.Context) error {

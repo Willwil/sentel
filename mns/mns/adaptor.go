@@ -18,9 +18,9 @@ import (
 
 type Adaptor interface {
 	// Queue Object
-	GetQueue(accountId string, queueName string) (Queue, error)
-	AddQueue(accountId string, queueName string, queue Queue) error
-	UpdateQueue(accountId string, queueName string, queue Queue) error
+	GetQueueAttribute(accountId string, queueName string) (QueueAttribute, error)
+	AddQueue(accountId string, queueName string, attr QueueAttribute) error
+	UpdateQueue(accountId string, queueName string, attr QueueAttribute) error
 	RemoveQueue(accountId string, queueName string) error
 	GetAccountQueues(accountId string) []string
 	RemoveAccountQueues(accountId string)
@@ -42,5 +42,6 @@ type Adaptor interface {
 }
 
 func NewAdaptor(c config.Config) (Adaptor, error) {
-	return &mongoAdaptor{config: c}, ErrInternalError
+	//return &mongoAdaptor{config: c}, ErrInternalError
+	return nil, nil
 }
