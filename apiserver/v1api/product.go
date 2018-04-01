@@ -112,6 +112,10 @@ func UpdateProduct(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
+	productId := ctx.Param("productId")
+	if (productId == "" || productId != req.ProductId){
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 
 	p := &registry.Product{
 		ProductId:   req.ProductId,
@@ -157,6 +161,9 @@ func GetProductList(ctx echo.Context) error {
 // getProduct retrieve production information from registry store
 func GetProduct(ctx echo.Context) error {
 	productId := ctx.Param("productId")
+	if productId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 
 	r := getRegistry(ctx)
 	p, err := r.GetProduct(productId)
@@ -169,6 +176,10 @@ func GetProduct(ctx echo.Context) error {
 // getProductDevices retrieve product devices list from registry store
 func GetProductDevices(ctx echo.Context) error {
 	productId := ctx.Param("productId")
+	if productId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
 	pdevices, err := r.GetProductDevices(productId)
 	if err != nil {

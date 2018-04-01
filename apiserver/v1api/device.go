@@ -22,13 +22,26 @@ import (
 
 	"github.com/labstack/echo"
 )
-
+type deviceRequest struct {
+	DeviceName string `json:"DeviceName"`
+	ProductId  string `json:"ProductId"`
+	DeviceId   string `json:"DeviceId"`
+}
 // RegisterDevice register a new device in IoT hub
 func CreateDevice(ctx echo.Context) error {
+	req := deviceRequest{}
+	if err := ctx.Bind(&req); err != nil {
+		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
+	}
+	if req.ProductId == "" || req.ProductId != ctx.Param("productId") {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
 	device := registry.Device{}
-	device.ProductId = ctx.Param("productId")
-	device.DeviceId = ctx.Param("deviceId")
+	device.ProductId = req.ProductId
+	device.DeviceId = util.NewObjectId()
+	device.DeviceName = req.DeviceName
 	device.TimeCreated = time.Now()
 	device.TimeUpdated = time.Now()
 	device.DeviceSecret = util.NewObjectId()
@@ -42,6 +55,9 @@ func CreateDevice(ctx echo.Context) error {
 func RemoveDevice(ctx echo.Context) error {
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 	r := getRegistry(ctx)
 	if err := r.DeleteDevice(productId, deviceId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -58,6 +74,10 @@ type deviceStatus struct {
 func GetOneDevice(ctx echo.Context) error {
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
 	dev, err := r.GetDevice(productId, deviceId)
 	if err != nil {
@@ -68,15 +88,18 @@ func GetOneDevice(ctx echo.Context) error {
 
 // updateDevice update the identity of a device in the identity registry of an IoT Hub
 func UpdateDevice(ctx echo.Context) error {
-	req := struct {
-		DeviceName string `json:"DeviceName"`
-	}{}
+	req := deviceRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
+	if req.ProductId == "" || req.ProductId != ctx.Param("productId") ||
+		req.DeviceId == "" || req.DeviceId != ctx.Param("deviceId") {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	device := registry.Device{}
-	device.ProductId = ctx.Param("productId")
-	device.DeviceId = ctx.Param("deviceId")
+	device.ProductId = req.ProductId
+	device.DeviceId = req.DeviceId
 	device.DeviceName = req.DeviceName
 	device.TimeUpdated = time.Now()
 	r := getRegistry(ctx)
@@ -112,6 +135,9 @@ func BulkApplyGetDevices(ctx echo.Context) error {
 
 func GetDeviceList(ctx echo.Context) error {
 	productId := ctx.Param("productId")
+	if productId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 	r := getRegistry(ctx)
 	devs, err := r.GetDeviceList(productId)
 	if err != nil {
@@ -126,6 +152,9 @@ func BulkGetDeviceStatus(ctx echo.Context) error {
 func GetDeviceByName(ctx echo.Context) error {
 	deviceName := ctx.Param("deviceName")
 	productId := ctx.Param("productId")
+	if productId == "" || deviceName == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 	r := getRegistry(ctx)
 	odevs, err := r.GetDevicesByName(productId, deviceName)
 	if err != nil {
@@ -139,18 +168,24 @@ func GetDeviceByName(ctx echo.Context) error {
 }
 
 type devicePropsRequest struct {
-	Props []map[string]string `json:"props"`
+	DeviceName string `json:"DeviceName"`
+	ProductId  string `json:"ProductId"`
+	DeviceId   string `json:"DeviceId"`
+	Props      []map[string]string `json:"Props"`
 }
 
 func SaveDeviceProps(ctx echo.Context) error {
-	productId := ctx.Param("productId")
-	deviceId := ctx.Param("deviceId")
 	req := devicePropsRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
+	if req.ProductId == "" || req.ProductId != ctx.Param("productId") ||
+		req.DeviceId == "" || req.DeviceId != ctx.Param("deviceId") {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
-	device, err := r.GetDevice(productId, deviceId)
+	device, err := r.GetDevice(req.ProductId, req.DeviceId)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -185,14 +220,17 @@ func SaveDeviceProps(ctx echo.Context) error {
 }
 
 func SaveDevicePropsByName(ctx echo.Context) error {
-	productId := ctx.Param("productId")
-	deviceName := ctx.Param("deviceName")
 	req := devicePropsRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
+	if req.ProductId == "" || req.ProductId != ctx.Param("productId") ||
+		req.DeviceName == "" || req.DeviceName != ctx.Param("deviceName") {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
-	devices, err := r.GetDevicesByName(productId, deviceName)
+	devices, err := r.GetDevicesByName(req.ProductId, req.DeviceName)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
@@ -232,6 +270,9 @@ func SaveDevicePropsByName(ctx echo.Context) error {
 func GetDeviceProps(ctx echo.Context) error {
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
 	device, err := getRegistry(ctx).GetDevice(productId, deviceId)
 	if err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
@@ -303,11 +344,14 @@ func RemoveDevicePropsByName(ctx echo.Context) error {
 }
 
 func BulkRegisterDevices(ctx echo.Context) error {
-	productId := ctx.Param("productId")
 	req := BulkDeviceRegisterRequest{}
 	if err := ctx.Bind(&req); err != nil {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
+	if req.ProductId == "" || req.ProductId != ctx.Param("productId") {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	n, err := strconv.Atoi(req.Number)
 	if err != nil || n < 1 {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
@@ -315,7 +359,7 @@ func BulkRegisterDevices(ctx echo.Context) error {
 	rdevices := []registry.Device{}
 	for i := 0; i < n; i++ {
 		d := registry.Device{
-			ProductId:    productId,
+			ProductId:    req.ProductId,
 			DeviceId:     util.NewObjectId(),
 			DeviceName:   req.DeviceName,
 			TimeCreated:  time.Now(),
@@ -333,6 +377,10 @@ func BulkRegisterDevices(ctx echo.Context) error {
 func GetShadowDevice(ctx echo.Context) error {
 	deviceId := ctx.Param("deviceId")
 	productId := ctx.Param("productId")
+	if productId == "" || deviceId == "" {
+		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
+	}
+
 	r := getRegistry(ctx)
 	runlog, err := r.GetShadowDevice(productId, deviceId)
 	if err != nil {
