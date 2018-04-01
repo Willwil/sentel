@@ -19,6 +19,7 @@ import (
 )
 
 type TopicAttribute struct {
+	AccountId              string    `json:"-" bson:"AccountId"`
 	TopicName              string    `json:"topic_name" bson:"TopicName"`
 	CreatedAt              time.Time `json:"created_at" bson:"CreatedAt"`
 	LastModifiedAt         time.Time `json:"last_modified_at" bson:"LastModifiedAt"`

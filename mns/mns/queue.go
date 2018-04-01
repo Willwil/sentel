@@ -21,6 +21,7 @@ import (
 const FormatOfQueueName = "mns-queues-%s-%s"
 
 type QueueAttribute struct {
+	AccountId              string    `bson:"_" json:"account_id"`
 	QueueName              string    `bson:"QueueName,omitempty" json:"queue_name,omitempty"`
 	DelaySeconds           int32     `bson:"DelaySenconds,omitempty" json:"delay_senconds,omitempty"`
 	MaxMessageSize         int32     `bson:"MaximumMessageSize,omitempty" json:"maximum_message_size,omitempty"`

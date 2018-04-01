@@ -19,6 +19,7 @@ import (
 )
 
 type SubscriptionAttribute struct {
+	AccountId           string    `json:"-" bson:"AccountId"`
 	SubscriptionName    string    `json:"subscription_name" bson:"SubscriptionName"`
 	Subscriber          string    `json:"subscriber" bson:"Subscriber"`
 	TopicOwner          string    `json:"topic_owner" bson:"TopicOwner"`

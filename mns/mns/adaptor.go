@@ -42,5 +42,5 @@ type Adaptor interface {
 }
 
 func NewAdaptor(c config.Config) (Adaptor, error) {
-	return nil, ErrInternalError
+	return &mongoAdaptor{config: c}, ErrInternalError
 }
