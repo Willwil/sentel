@@ -15,6 +15,7 @@ import "github.com/cloustone/sentel/pkg/config"
 
 type Producer interface {
 	SendMessage(msg Message) error
+	SendMessages(msgs []Message) error
 	Close()
 }
 
@@ -22,20 +23,34 @@ func NewProducer(c config.Config, clientId string, sync bool) (Producer, error) 
 	return newKafkaProducer(c, clientId, sync)
 }
 
-func PostMessage(c config.Config, msg Message) error {
-	if producer, err := NewProducer(c, "", false); err != nil {
-		return err
-	} else {
+func PostMessage(c config.Config, msg Message) (err error) {
+	if producer, err := NewProducer(c, "", false); err == nil {
 		defer producer.Close()
 		return producer.SendMessage(msg)
 	}
+	return
 }
 
-func SendMessage(c config.Config, msg Message) error {
-	if producer, err := NewProducer(c, "", true); err != nil {
-		return err
-	} else {
+func PostMessages(c config.Config, msgs []Message) (err error) {
+	if producer, err := NewProducer(c, "", false); err == nil {
+		defer producer.Close()
+		return producer.SendMessages(msgs)
+	}
+	return
+}
+
+func SendMessage(c config.Config, msg Message) (err error) {
+	if producer, err := NewProducer(c, "", true); err == nil {
 		defer producer.Close()
 		return producer.SendMessage(msg)
 	}
+	return
+}
+
+func SendMessages(c config.Config, msgs []Message) (err error) {
+	if producer, err := NewProducer(c, "", true); err == nil {
+		defer producer.Close()
+		return producer.SendMessages(msgs)
+	}
+	return
 }

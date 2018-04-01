@@ -96,6 +96,44 @@ func (p *kafkaProducer) SendMessage(t Message) error {
 	return nil
 }
 
+func (p *kafkaProducer) SendMessages(msgs []Message) error {
+	kmsgs := []*sarama.ProducerMessage{}
+	for _, msg := range msgs {
+		value, err := msg.Serialize(JSONSerialization)
+		if err != nil {
+			return err
+		}
+		topic := msg.Topic()
+		msg := &sarama.ProducerMessage{
+			Topic: topic,
+			Value: sarama.ByteEncoder(value),
+		}
+		kmsgs = append(kmsgs, msg)
+	}
+
+	if p.sync && p.syncProducer != nil {
+		return p.syncProducer.SendMessages(kmsgs)
+	} else if p.asyncProducer != nil {
+		go func(p sarama.AsyncProducer) {
+			errors := p.Errors()
+			success := p.Successes()
+			select {
+			case err := <-errors:
+				if err != nil {
+					glog.Error(err)
+				}
+			case <-success:
+			}
+		}(p.asyncProducer)
+		for _, msg := range kmsgs {
+			p.asyncProducer.Input() <- msg
+		}
+	} else {
+		return errors.New("invalid producer")
+	}
+	return nil
+}
+
 func (p *kafkaProducer) Close() {
 	if p.asyncProducer != nil {
 		p.asyncProducer.Close()
