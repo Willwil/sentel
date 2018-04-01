@@ -12,13 +12,9 @@
 
 package mns
 
-import (
-	"time"
+import "time"
 
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type SubscriptionAttribute struct {
+type Subscription struct {
 	AccountId           string    `json:"-" bson:"AccountId"`
 	SubscriptionName    string    `json:"subscription_name" bson:"SubscriptionName"`
 	Subscriber          string    `json:"subscriber" bson:"Subscriber"`
@@ -30,14 +26,4 @@ type SubscriptionAttribute struct {
 	FilterTag           string    `json:"filter_tag" bson:"FilterTag"`
 	CreatedAt           time.Time `json:"created_at" bson:"CreatedAt"`
 	LastModifiedAt      time.Time `json:"last_modified_at" bson:"LastModifiedAt"`
-}
-
-type Subscription interface {
-	Name() string
-	GetAttribute() SubscriptionAttribute
-	SetAttribute(SubscriptionAttribute)
-}
-
-func NewSubscription(c config.Config, attr SubscriptionAttribute) (Subscription, error) {
-	return nil, nil
 }

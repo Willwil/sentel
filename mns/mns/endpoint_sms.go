@@ -29,15 +29,15 @@ type smsEndpoint struct {
 	to        string
 }
 
-func newSMSEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	to, err := parseSMSScheme(attr.Endpoint)
+func newSMSEndpoint(c config.Config, subscription Subscription) (endpoint Endpoint, err error) {
+	to, err := parseSMSScheme(subscription.Endpoint)
 	endpoint = &smsEndpoint{
 		config: c,
 		to:     to,
 		attribute: EndpointAttribute{
-			Name:           attr.Endpoint,
+			Name:           subscription.Endpoint,
 			Type:           "sms",
-			URI:            attr.Endpoint,
+			URI:            subscription.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},

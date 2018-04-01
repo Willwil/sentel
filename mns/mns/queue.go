@@ -20,7 +20,7 @@ import (
 
 const FormatOfQueueName = "mns-queues-%s-%s"
 
-type QueueAttribute struct {
+type Queue struct {
 	AccountId              string    `bson:"_" json:"account_id"`
 	QueueName              string    `bson:"QueueName,omitempty" json:"queue_name,omitempty"`
 	DelaySeconds           int32     `bson:"DelaySenconds,omitempty" json:"delay_senconds,omitempty"`
@@ -35,22 +35,45 @@ type QueueAttribute struct {
 	LastModifyTime         time.Time `bson:"LastModifyTime,omitempty" json:"last_modify_time,omitempty"`
 }
 
-type Queue interface {
-	Name() string
-	SetAttribute(QueueAttribute)
-	GetAttribute() QueueAttribute
-	SendMessage(QueueMessage) error
-	BatchSendMessage([]QueueMessage) error
-	ReceiveMessage(waitSeconds int) (QueueMessage, error)
-	BatchReceiveMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
-	DeleteMessage(handle string) error
-	BatchDeleteMessages(handles []string) error
-	PeekMessage(waitSeconds int) (QueueMessage, error)
-	BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
-	SetMessageVisibility(handle string, seconds int) error
-	Destroy()
+func NewQueue(c config.Config, attr Queue, adaptor Adaptor) (*Queue, error) {
+	return &Queue{}, nil
 }
 
-func NewQueue(c config.Config, attr QueueAttribute, adaptor Adaptor) (Queue, error) {
-	return nil, nil
+func (q *Queue) SendMessage(QueueMessage) error {
+	return nil
+}
+
+func (q *Queue) BatchSendMessage([]QueueMessage) error {
+	return nil
+}
+
+func (q *Queue) ReceiveMessage(waitSeconds int) (QueueMessage, error) {
+	return QueueMessage{}, nil
+}
+
+func (q *Queue) BatchReceiveMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error) {
+	return []QueueMessage{}, nil
+}
+
+func (q *Queue) DeleteMessage(handle string) error {
+	return nil
+}
+
+func (q *Queue) BatchDeleteMessages(handles []string) error {
+	return nil
+}
+
+func (q *Queue) PeekMessage(waitSeconds int) (QueueMessage, error) {
+	return QueueMessage{}, nil
+}
+
+func (q *Queue) BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error) {
+	return []QueueMessage{}, nil
+}
+
+func (q *Queue) SetMessageVisibility(handle string, seconds int) error {
+	return nil
+}
+
+func (q *Queue) Destroy() {
 }

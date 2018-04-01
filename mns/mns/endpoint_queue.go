@@ -29,16 +29,16 @@ type queueEndpoint struct {
 	attribute EndpointAttribute
 }
 
-func newQueueEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	accountId, queueName, err := parseQueueScheme(attr.Endpoint)
+func newQueueEndpoint(c config.Config, subscription Subscription) (endpoint Endpoint, err error) {
+	accountId, queueName, err := parseQueueScheme(subscription.Endpoint)
 	endpoint = &queueEndpoint{
 		config:    c,
 		accountId: accountId,
 		queueName: queueName,
 		attribute: EndpointAttribute{
-			Name:           attr.Endpoint,
+			Name:           subscription.Endpoint,
 			Type:           "mns",
-			URI:            attr.Endpoint,
+			URI:            subscription.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},

@@ -27,15 +27,15 @@ type mailEndpoint struct {
 	toaddr    string
 }
 
-func newMailEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	toaddr, err := parseMailScheme(attr.Endpoint)
+func newMailEndpoint(c config.Config, subscription Subscription) (endpoint Endpoint, err error) {
+	toaddr, err := parseMailScheme(subscription.Endpoint)
 	endpoint = &mailEndpoint{
 		config: c,
 		toaddr: toaddr,
 		attribute: EndpointAttribute{
-			Name:           attr.Endpoint,
+			Name:           subscription.Endpoint,
 			Type:           "mail",
-			URI:            attr.Endpoint,
+			URI:            subscription.Endpoint,
 			CreatedAt:      time.Now(),
 			LastModifiedAt: time.Now(),
 		},

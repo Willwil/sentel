@@ -18,23 +18,23 @@ import (
 
 type Adaptor interface {
 	// Queue Object
-	GetQueue(accountId string, queueName string) (QueueAttribute, error)
-	AddQueue(accountId string, queueName string, attr QueueAttribute) error
-	UpdateQueue(accountId string, queueName string, attr QueueAttribute) error
+	GetQueue(accountId string, queueName string) (Queue, error)
+	AddQueue(accountId string, queueName string, queue Queue) error
+	UpdateQueue(accountId string, queueName string, queue Queue) error
 	RemoveQueue(accountId string, queueName string) error
 	GetAccountQueues(accountId string) []string
 	RemoveAccountQueues(accountId string)
 	// Topic Object
-	GetTopic(accountId string, topicName string) (TopicAttribute, error)
-	AddTopic(accountId string, topicName string, attr TopicAttribute) error
-	UpdateTopic(accountId string, topicName string, attr TopicAttribute) error
+	GetTopic(accountId string, topicName string) (Topic, error)
+	AddTopic(accountId string, topicName string, topic Topic) error
+	UpdateTopic(accountId string, topicName string, topic Topic) error
 	RemoveTopic(accountId string, topicName string) error
 	GetAccountTopics(accountId string) []string
 	RemoveAccountTopics(accountId string)
 	// Subscription Object
-	GetSubscription(accountId string, topicName string, subscriptionName string) (SubscriptionAttribute, error)
-	AddSubscription(accountId string, topicName string, attr SubscriptionAttribute) error
-	UpdateSubscription(accountId string, topicName string, subscriptionName string, attr SubscriptionAttribute) error
+	GetSubscription(accountId string, topicName string, subscriptionName string) (Subscription, error)
+	AddSubscription(accountId string, topicName string, subscription Subscription) error
+	UpdateSubscription(accountId string, topicName string, subscriptionName string, subscription Subscription) error
 	RemoveSubscription(accountId string, topicName string, subscriptionName string) error
 	GetAccountSubscriptions(accountId string, topicName string) ([]string, error)
 	GetAccountSubscriptionsWithPage(accountId string, topicName string, pageno int, pageSize int) ([]string, error)

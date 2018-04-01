@@ -16,12 +16,11 @@ import "github.com/cloustone/sentel/pkg/config"
 
 type MnsManager interface {
 	// Queue API
-	CreateQueue(accountId string, queueName string) (QueueAttribute, error)
+	CreateQueue(accountId string, queueName string) (Queue, error)
 	GetQueue(accountId string, queueName string) (Queue, error)
 	DeleteQueue(accountId string, queueName string) error
 	GetQueues(accountId string) []string
-	SetQueueAttribute(accountId, queueName string, attr QueueAttribute) (err error)
-	GetQueueAttribute(accountId, queueName string) (QueueAttribute, error)
+	SetQueue(accountId, queueName string, attr Queue) (err error)
 	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
 	BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) error
 	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
@@ -33,20 +32,18 @@ type MnsManager interface {
 	SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error
 
 	// Topic API
-	CreateTopic(accountId string, topicName string) (TopicAttribute, error)
+	CreateTopic(accountId string, topicName string) (Topic, error)
 	GetTopic(accountId string, topicName string) (Topic, error)
-	GetTopicAttribute(accountId string, topicName string) (TopicAttribute, error)
-	SetTopicAttribute(accountId string, topicName string, attr TopicAttribute) error
+	SetTopic(accountId string, topicName string, topic Topic) error
 	DeleteTopic(accountId string, topicName string) error
 	ListTopics(accountId string) []string
 
 	// Subscription API
-	GetSubscription(accountId, topicName, subscriptionName string) (Subscription, error)
-	SetSubscriptionAttribute(accountId, topicName string, subscriptionName string, attr SubscriptionAttribute) error
-	GetSubscriptionAttribute(accountId, topicName string, subscriptionName string) (SubscriptionAttribute, error)
+	SetSubscription(accountId, topicName string, subscriptionName string, subscription Subscription) error
+	GetSubscription(accountId, topicName string, subscriptionName string) (Subscription, error)
 	Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
 	Unsubscribe(accountId, topicName string, subscriptionName string) error
-	ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]SubscriptionAttribute, error)
+	ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]Subscription, error)
 	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error
 }
 

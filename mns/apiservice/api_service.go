@@ -98,8 +98,8 @@ func (p *consoleService) Initialize() error {
 	}))
 	// Queue APIs
 	p.echo.POST("mns/v1/api/queues/:queueName", createQueue)
-	p.echo.PUT("mns/v1/api/queues/:queueName", setQueueAttribute)
-	p.echo.GET("mns/v1/api/queues/:queueName", getQueueAttribute)
+	p.echo.PUT("mns/v1/api/queues/:queueName", setQueue)
+	p.echo.GET("mns/v1/api/queues/:queueName", getQueue)
 	p.echo.GET("mns/v1/api/queues", getQueueList)
 	p.echo.DELETE("mns/v1/api/queues/:queueName", deleteQueue)
 	p.echo.POST("mns/v1/api/queues/:queueName/messages", sendQueueMessage)
@@ -113,17 +113,17 @@ func (p *consoleService) Initialize() error {
 
 	// Topics API
 	p.echo.POST("mns/v1/api/topics/:topicName", createTopic)
-	p.echo.PUT("mns/v1/api/topics/:topicName", setTopicAttribute)
-	p.echo.GET("mns/v1/api/topics/:topicName", getTopicAttribute)
+	p.echo.PUT("mns/v1/api/topics/:topicName", setTopic)
+	p.echo.GET("mns/v1/api/topics/:topicName", getTopic)
 	p.echo.DELETE("mns/v1/api/topics/:topicName", deleteTopic)
 	p.echo.GET("mns/v1/api/topics", listTopics)
 
 	// Subscriptions API
 	p.echo.POST("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", subscribe)
-	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", setSubscriptionAttr)
-	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", getSubscriptionAttr)
+	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", setSubscription)
+	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", getSubscription)
 	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", unsubscribe)
-	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions?pagesize=:pageSize&pageno=:pageNo&index=:startIndex", listTopicSubscriptions)
+	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions?pagesize=:pageSize&pageno=:pageNo", listTopicSubscriptions)
 
 	// Messages API
 	p.echo.POST("mns/v1/api/topics/:topicName/messages", publishMessage)

@@ -23,21 +23,14 @@ type manager struct {
 	adaptor Adaptor
 }
 
-func (m *manager) CreateQueue(accountId string, queueName string) (QueueAttribute, error) {
-	attr := QueueAttribute{
+func (m *manager) CreateQueue(accountId string, queueName string) (Queue, error) {
+	attr := Queue{
 		QueueName:      queueName,
 		CreateTime:     time.Now(),
 		LastModifyTime: time.Now(),
 	}
 	err := m.adaptor.AddQueue(accountId, queueName, attr)
 	return attr, err
-}
-
-func (m *manager) GetQueue(accountId string, queueName string) (Queue, error) {
-	if attr, err := m.adaptor.GetQueue(accountId, queueName); err == nil {
-		return NewQueue(m.config, attr, m.adaptor)
-	}
-	return nil, ErrQueueNotExist
 }
 
 func (m *manager) DeleteQueue(accountId string, queueName string) error {
@@ -48,11 +41,11 @@ func (m *manager) GetQueues(accountId string) []string {
 	return m.adaptor.GetAccountQueues(accountId)
 }
 
-func (m *manager) SetQueueAttribute(accountId, queueName string, attr QueueAttribute) error {
+func (m *manager) SetQueue(accountId, queueName string, attr Queue) error {
 	return m.adaptor.UpdateQueue(accountId, queueName, attr)
 }
 
-func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute, error) {
+func (m *manager) GetQueue(accountId, queueName string) (Queue, error) {
 	return m.adaptor.GetQueue(accountId, queueName)
 }
 
@@ -120,8 +113,8 @@ func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle 
 }
 
 // Topic API
-func (m *manager) CreateTopic(accountId string, topicName string) (TopicAttribute, error) {
-	topicAttr := TopicAttribute{
+func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error) {
+	topicAttr := Topic{
 		TopicName:          topicName,
 		CreatedAt:          time.Now(),
 		LastModifiedAt:     time.Now(),
@@ -133,10 +126,7 @@ func (m *manager) CreateTopic(accountId string, topicName string) (TopicAttribut
 }
 
 func (m *manager) GetTopic(accountId string, topicName string) (topic Topic, err error) {
-	if topicAttr, err := m.adaptor.GetTopic(accountId, topicName); err == nil {
-		return NewTopic(m.config, topicAttr)
-	}
-	return nil, err
+	return m.adaptor.GetTopic(accountId, topicName)
 }
 
 func (m *manager) DeleteTopic(accountId string, topicName string) error {
@@ -147,32 +137,21 @@ func (m *manager) ListTopics(account string) []string {
 	return m.adaptor.GetAccountTopics(account)
 }
 
-func (m *manager) SetTopicAttribute(accountId, topicName string, attr TopicAttribute) error {
-	return m.adaptor.UpdateTopic(accountId, topicName, attr)
-}
-
-func (m *manager) GetTopicAttribute(accountId, topicName string) (TopicAttribute, error) {
-	return m.adaptor.GetTopic(accountId, topicName)
+func (m *manager) SetTopic(accountId, topicName string, topic Topic) error {
+	return m.adaptor.UpdateTopic(accountId, topicName, topic)
 }
 
 // Subscription API
-func (m *manager) GetSubscription(accountId, topicName, subscriptionName string) (subscription Subscription, err error) {
-	if attr, err := m.adaptor.GetSubscription(accountId, topicName, subscriptionName); err == nil {
-		return NewSubscription(m.config, attr)
-	}
-	return nil, err
+func (m *manager) SetSubscription(accountId, topicName, subscriptionName string, subscription Subscription) error {
+	return m.adaptor.UpdateSubscription(accountId, topicName, subscriptionName, subscription)
 }
 
-func (m *manager) SetSubscriptionAttribute(accountId, topicName, subscriptionName string, attr SubscriptionAttribute) error {
-	return m.adaptor.UpdateSubscription(accountId, topicName, subscriptionName, attr)
-}
-
-func (m *manager) GetSubscriptionAttribute(accountId, topicName string, subscriptionName string) (SubscriptionAttribute, error) {
+func (m *manager) GetSubscription(accountId, topicName string, subscriptionName string) (Subscription, error) {
 	return m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
 }
 
 func (m *manager) Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifyContentFormat string) error {
-	attr := SubscriptionAttribute{
+	attr := Subscription{
 		TopicName:           topicName,
 		SubscriptionName:    subscriptionName,
 		Endpoint:            endpoint,
@@ -189,9 +168,9 @@ func (m *manager) Unsubscribe(accountId, topicName string, subscriptionName stri
 	return m.adaptor.RemoveSubscription(accountId, topicName, subscriptionName)
 }
 
-func (m *manager) ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]SubscriptionAttribute, error) {
+func (m *manager) ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]Subscription, error) {
 	subscriptionNames, err := m.adaptor.GetAccountSubscriptionsWithPage(accountId, topicName, pageno, pageSize)
-	subscriptions := []SubscriptionAttribute{}
+	subscriptions := []Subscription{}
 	for _, subscriptionName := range subscriptionNames {
 		attr, _ := m.adaptor.GetSubscription(accountId, topicName, subscriptionName)
 		subscriptions = append(subscriptions, attr)

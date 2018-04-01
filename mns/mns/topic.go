@@ -12,13 +12,9 @@
 
 package mns
 
-import (
-	"time"
+import "time"
 
-	"github.com/cloustone/sentel/pkg/config"
-)
-
-type TopicAttribute struct {
+type Topic struct {
 	AccountId              string    `json:"-" bson:"AccountId"`
 	TopicName              string    `json:"topic_name" bson:"TopicName"`
 	CreatedAt              time.Time `json:"created_at" bson:"CreatedAt"`
@@ -26,18 +22,4 @@ type TopicAttribute struct {
 	MaximumMessageSize     uint32    `json:"maximum_message_size" bson:"MaximumMessageSize"`
 	MessageRetentionPeriod uint32    `json:"message_retention_period" bson:"MessageRetentionPeriod"`
 	LogginEnabled          bool      `json:"loggin_enabled" bson:"LogginEnabled"`
-}
-
-type Topic interface {
-	Name() string
-	SetAttribute(TopicAttribute)
-	GetAttribute() TopicAttribute
-	Subscribe(filterTag string, notifyStategy string, notifyFmt string) (Subscription, error)
-	Unsubscribe(subscriptionId string) error
-	SetSubscriptionAttribute(topicName string, subscriptionId string, attr SubscriptionAttribute) error
-	GetSubscriptionAttribute(topicName string, subscriptionId string) (SubscriptionAttribute, error)
-}
-
-func NewTopic(c config.Config, attr TopicAttribute) (Topic, error) {
-	return nil, nil
 }

@@ -32,17 +32,17 @@ type EndpointAttribute struct {
 	LastModifiedAt time.Time `json:"last_modified_at,omitempty" bson:"LastModifiedAt,omitempty"`
 }
 
-func NewEndpoint(c config.Config, attr SubscriptionAttribute) (Endpoint, error) {
-	if names := strings.Split(attr.Endpoint, ":"); len(names) > 0 {
+func NewEndpoint(c config.Config, subscription Subscription) (Endpoint, error) {
+	if names := strings.Split(subscription.Endpoint, ":"); len(names) > 0 {
 		switch names[0] {
 		case "http":
-			return newHttpEndpoint(c, attr)
+			return newHttpEndpoint(c, subscription)
 		case "mns":
-			return newQueueEndpoint(c, attr)
+			return newQueueEndpoint(c, subscription)
 		case "mail":
-			return newMailEndpoint(c, attr)
+			return newMailEndpoint(c, subscription)
 		case "sms":
-			return newSMSEndpoint(c, attr)
+			return newSMSEndpoint(c, subscription)
 		}
 	}
 	return nil, ErrInvalidArgument

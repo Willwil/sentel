@@ -140,22 +140,22 @@ func createQueue(ctx echo.Context) error {
 	return reply(ctx)
 }
 
-func setQueueAttribute(ctx echo.Context) error {
-	attr := mns.QueueAttribute{}
+func setQueue(ctx echo.Context) error {
+	attr := mns.Queue{}
 	if err := ctx.Bind(&attr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	err := getManager().SetQueueAttribute(accountId, queueName, attr)
+	err := getManager().SetQueue(accountId, queueName, attr)
 	return reply(ctx, err)
 }
 
-func getQueueAttribute(ctx echo.Context) error {
+func getQueue(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	attr, err := getManager().GetQueueAttribute(accountId, queueName)
-	return replyObject(ctx, attr, err)
+	queue, err := getManager().GetQueue(accountId, queueName)
+	return replyObject(ctx, queue, err)
 }
 
 func deleteQueue(ctx echo.Context) error {
@@ -268,21 +268,21 @@ func createTopic(ctx echo.Context) error {
 	return replyObject(ctx, attr, err)
 }
 
-func setTopicAttribute(ctx echo.Context) error {
+func setTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	topicAttr := mns.TopicAttribute{}
+	topicAttr := mns.Topic{}
 	if err := ctx.Bind(&topicAttr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	err := getManager().SetTopicAttribute(accountId, topicName, topicAttr)
+	err := getManager().SetTopic(accountId, topicName, topicAttr)
 	return reply(ctx, err)
 }
 
-func getTopicAttribute(ctx echo.Context) error {
+func getTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
-	attr, err := getManager().GetTopicAttribute(accountId, topicName)
+	attr, err := getManager().GetTopic(accountId, topicName)
 	return reply(ctx, attr, err)
 }
 
@@ -325,7 +325,7 @@ func unsubscribe(ctx echo.Context) error {
 	return reply(ctx, err)
 }
 
-func getSubscriptionAttr(ctx echo.Context) error {
+func getSubscription(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
@@ -333,15 +333,15 @@ func getSubscriptionAttr(ctx echo.Context) error {
 	return replyObject(ctx, attr, err)
 }
 
-func setSubscriptionAttr(ctx echo.Context) error {
+func setSubscription(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
-	attr := mns.SubscriptionAttribute{}
+	attr := mns.Subscription{}
 	if err := ctx.Bind(&attr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	err := getManager().SetSubscriptionAttribute(accountId, topicName, subscriptionName, attr)
+	err := getManager().SetSubscription(accountId, topicName, subscriptionName, attr)
 	return reply(ctx, err)
 }
 

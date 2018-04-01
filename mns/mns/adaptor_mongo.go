@@ -48,25 +48,25 @@ func newMongoAdaptor(c config.Config) (Adaptor, error) {
 	}, nil
 }
 
-func (m *mongoAdaptor) GetQueue(accountId string, queueName string) (QueueAttribute, error) {
+func (m *mongoAdaptor) GetQueue(accountId string, queueName string) (Queue, error) {
 	c := m.session.C(collectionQueues)
-	attr := QueueAttribute{}
-	err := c.Find(bson.M{"AccountId": accountId, "QueueName": queueName}).One(&attr)
-	return attr, err
+	queue := Queue{}
+	err := c.Find(bson.M{"AccountId": accountId, "QueueName": queueName}).One(&queue)
+	return queue, err
 }
 
-func (m *mongoAdaptor) AddQueue(accountId string, queueName string, attr QueueAttribute) error {
+func (m *mongoAdaptor) AddQueue(accountId string, queueName string, queue Queue) error {
 	c := m.session.C(collectionQueues)
-	attr.AccountId = accountId
-	attr.QueueName = queueName
-	return c.Insert(attr)
+	queue.AccountId = accountId
+	queue.QueueName = queueName
+	return c.Insert(queue)
 }
 
-func (m *mongoAdaptor) UpdateQueue(accountId string, queueName string, attr QueueAttribute) error {
+func (m *mongoAdaptor) UpdateQueue(accountId string, queueName string, queue Queue) error {
 	c := m.session.C(collectionQueues)
-	attr.AccountId = accountId
-	attr.QueueName = queueName
-	return c.Update(bson.M{"AccountId": accountId, "QueueName": queueName}, attr)
+	queue.AccountId = accountId
+	queue.QueueName = queueName
+	return c.Update(bson.M{"AccountId": accountId, "QueueName": queueName}, queue)
 }
 
 func (m *mongoAdaptor) RemoveQueue(accountId string, queueName string) error {
@@ -75,15 +75,15 @@ func (m *mongoAdaptor) RemoveQueue(accountId string, queueName string) error {
 }
 
 func (m *mongoAdaptor) GetAccountQueues(accountId string) []string {
-	attrs := []QueueAttribute{}
-	queues := []string{}
+	queues := []Queue{}
+	queueNames := []string{}
 	c := m.session.C(collectionQueues)
-	if err := c.Find(bson.M{"AccountId": accountId}).All(attrs); err == nil {
-		for _, attr := range attrs {
-			queues = append(queues, attr.QueueName)
+	if err := c.Find(bson.M{"AccountId": accountId}).All(queues); err == nil {
+		for _, queue := range queues {
+			queueNames = append(queueNames, queue.QueueName)
 		}
 	}
-	return queues
+	return queueNames
 }
 
 func (m *mongoAdaptor) RemoveAccountQueues(accountId string) {
@@ -92,25 +92,25 @@ func (m *mongoAdaptor) RemoveAccountQueues(accountId string) {
 }
 
 // Topic Object
-func (m *mongoAdaptor) GetTopic(accountId string, topicName string) (TopicAttribute, error) {
+func (m *mongoAdaptor) GetTopic(accountId string, topicName string) (Topic, error) {
 	c := m.session.C(collectionTopics)
-	attr := TopicAttribute{}
+	attr := Topic{}
 	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).One(&attr)
 	return attr, err
 }
 
-func (m *mongoAdaptor) AddTopic(accountId string, topicName string, attr TopicAttribute) error {
+func (m *mongoAdaptor) AddTopic(accountId string, topicName string, topic Topic) error {
 	c := m.session.C(collectionTopics)
-	attr.AccountId = accountId
-	attr.TopicName = topicName
-	return c.Insert(attr)
+	topic.AccountId = accountId
+	topic.TopicName = topicName
+	return c.Insert(topic)
 }
 
-func (m *mongoAdaptor) UpdateTopic(accountId string, topicName string, attr TopicAttribute) error {
+func (m *mongoAdaptor) UpdateTopic(accountId string, topicName string, topic Topic) error {
 	c := m.session.C(collectionTopics)
-	attr.AccountId = accountId
-	attr.TopicName = topicName
-	return c.Update(bson.M{"AccountId": accountId, "TopicName": topicName}, attr)
+	topic.AccountId = accountId
+	topic.TopicName = topicName
+	return c.Update(bson.M{"AccountId": accountId, "TopicName": topicName}, topic)
 }
 
 func (m *mongoAdaptor) RemoveTopic(accountId string, topicName string) error {
@@ -120,14 +120,14 @@ func (m *mongoAdaptor) RemoveTopic(accountId string, topicName string) error {
 
 func (m *mongoAdaptor) GetAccountTopics(accountId string) []string {
 	c := m.session.C(collectionTopics)
-	attrs := []TopicAttribute{}
-	topics := []string{}
-	if err := c.Find(bson.M{"AccountId": accountId}).All(&attrs); err == nil {
-		for _, attr := range attrs {
-			topics = append(topics, attr.TopicName)
+	topics := []Topic{}
+	topicNames := []string{}
+	if err := c.Find(bson.M{"AccountId": accountId}).All(&topics); err == nil {
+		for _, topic := range topics {
+			topicNames = append(topicNames, topic.TopicName)
 		}
 	}
-	return topics
+	return topicNames
 }
 
 func (m *mongoAdaptor) RemoveAccountTopics(accountId string) {
@@ -136,26 +136,26 @@ func (m *mongoAdaptor) RemoveAccountTopics(accountId string) {
 }
 
 // Subscription Object
-func (m *mongoAdaptor) GetSubscription(accountId string, topicName string, subscriptionName string) (SubscriptionAttribute, error) {
+func (m *mongoAdaptor) GetSubscription(accountId string, topicName string, subscriptionName string) (Subscription, error) {
 	c := m.session.C(collectionSubscriptions)
-	attr := SubscriptionAttribute{}
+	attr := Subscription{}
 	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName, "SubscriptionName": subscriptionName}).One(&attr)
 	return attr, err
 }
 
-func (m *mongoAdaptor) AddSubscription(accountId string, topicName string, attr SubscriptionAttribute) error {
+func (m *mongoAdaptor) AddSubscription(accountId string, topicName string, subscription Subscription) error {
 	c := m.session.C(collectionSubscriptions)
-	attr.TopicName = topicName
-	attr.AccountId = accountId
-	return c.Insert(attr)
+	subscription.TopicName = topicName
+	subscription.AccountId = accountId
+	return c.Insert(subscription)
 }
 
-func (m *mongoAdaptor) UpdateSubscription(accountId string, topicName string, subscriptionName string, attr SubscriptionAttribute) error {
+func (m *mongoAdaptor) UpdateSubscription(accountId string, topicName string, subscriptionName string, subscription Subscription) error {
 	c := m.session.C(collectionSubscriptions)
-	attr.TopicName = topicName
-	attr.AccountId = accountId
-	attr.SubscriptionName = subscriptionName
-	return c.Update(bson.M{"AccountId": accountId, "TopicName": topicName, "SubscriptionName": subscriptionName}, attr)
+	subscription.TopicName = topicName
+	subscription.AccountId = accountId
+	subscription.SubscriptionName = subscriptionName
+	return c.Update(bson.M{"AccountId": accountId, "TopicName": topicName, "SubscriptionName": subscriptionName}, subscription)
 }
 
 func (m *mongoAdaptor) RemoveSubscription(accountId string, topicName string, subscriptionName string) error {
@@ -165,24 +165,24 @@ func (m *mongoAdaptor) RemoveSubscription(accountId string, topicName string, su
 
 func (m *mongoAdaptor) GetAccountSubscriptions(accountId string, topicName string) ([]string, error) {
 	c := m.session.C(collectionSubscriptions)
-	attrs := []SubscriptionAttribute{}
-	subscriptions := []string{}
-	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).All(&attrs)
-	for _, attr := range attrs {
-		subscriptions = append(subscriptions, attr.SubscriptionName)
+	subscriptions := []Subscription{}
+	subscriptionNames := []string{}
+	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).All(&subscriptions)
+	for _, subscription := range subscriptions {
+		subscriptionNames = append(subscriptionNames, subscription.SubscriptionName)
 	}
-	return subscriptions, err
+	return subscriptionNames, err
 }
 
 func (m *mongoAdaptor) GetAccountSubscriptionsWithPage(accountId string, topicName string, pageno int, pageSize int) ([]string, error) {
 	c := m.session.C(collectionSubscriptions)
-	attrs := []SubscriptionAttribute{}
-	subscriptions := []string{}
-	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).Skip(pageno * pageSize).Limit(pageSize).All(&attrs)
-	for _, attr := range attrs {
-		subscriptions = append(subscriptions, attr.SubscriptionName)
+	subscriptions := []Subscription{}
+	subscriptionNames := []string{}
+	err := c.Find(bson.M{"AccountId": accountId, "TopicName": topicName}).Skip(pageno * pageSize).Limit(pageSize).All(&subscriptions)
+	for _, subscription := range subscriptions {
+		subscriptionNames = append(subscriptionNames, subscription.SubscriptionName)
 	}
-	return subscriptions, err
+	return subscriptionNames, err
 }
 
 func (m *mongoAdaptor) RemoveAccountSubscriptions(accountId string, topicName string) {

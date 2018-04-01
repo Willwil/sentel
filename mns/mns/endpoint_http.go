@@ -23,8 +23,8 @@ type httpEndpoint struct {
 	uri       string
 }
 
-func newHttpEndpoint(c config.Config, attr SubscriptionAttribute) (endpoint Endpoint, err error) {
-	uri, err := parseHttpScheme(attr.Endpoint)
+func newHttpEndpoint(c config.Config, subscription Subscription) (endpoint Endpoint, err error) {
+	uri, err := parseHttpScheme(subscription.Endpoint)
 	endpoint = &httpEndpoint{
 		uri: uri,
 		attribute: EndpointAttribute{
