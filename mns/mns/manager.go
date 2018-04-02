@@ -66,7 +66,7 @@ type manager struct {
 
 func (m *manager) GetQueue(accountId, queueName string) (queue Queue, err error) {
 	if attr, err := m.adaptor.GetQueueAttribute(accountId, queueName); err == nil {
-		return NewQueue(m.config, attr, m.adaptor)
+		return NewQueue(m.config, attr)
 	}
 	return nil, err
 }

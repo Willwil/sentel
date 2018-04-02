@@ -25,15 +25,13 @@ type kafkaQueue struct {
 	queueName string
 	config    config.Config
 	attribute QueueAttribute
-	adaptor   Adaptor
 }
 
-func newKafkaQueue(c config.Config, attr QueueAttribute, adaptor Adaptor) (Queue, error) {
+func newKafkaQueue(c config.Config, attr QueueAttribute) (Queue, error) {
 	return &kafkaQueue{
 		queueName: fmt.Sprintf(FormatOfQueueName, attr.AccountId, attr.QueueName),
 		config:    c,
 		attribute: attr,
-		adaptor:   adaptor,
 	}, nil
 }
 

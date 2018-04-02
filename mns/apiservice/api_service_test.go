@@ -91,7 +91,7 @@ func initializeContext(t *testing.T, method string, url string, reqdata interfac
 	ctx.Set("AccessId", accessId)
 	// Initialize security Manager
 	if securityMgr == nil {
-		for _, res := range consoleApiPolicies {
+		for _, res := range apiPolicies {
 			resourceMaps[res.Path] = res.Resource
 		}
 		realm, _ := base.NewAuthorizeRealm(c)

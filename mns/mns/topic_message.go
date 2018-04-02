@@ -25,7 +25,7 @@ type TopicMessage struct {
 	MessageBodyMd5 string                 `json:"message_body_md5" bson:"MessageBodyMD5"`
 	MessageTag     string                 `json:"message_tag,omitempty" bson:"MessageTag,omitempty"`
 	Attributes     map[string]interface{} `json:"attributes,omitempty" bson:"Attributes,omitempty"`
-	PublishTime    time.Time              `json:"publish_time",omitempty" bson:"PublishTime,omitempty"`
+	PublishTime    time.Time              `json:"publish_time,omitempty" bson:"PublishTime,omitempty"`
 }
 
 func (t TopicMessage) Topic() string        { return t.TopicName }

@@ -25,7 +25,7 @@ type Endpoint interface {
 }
 
 type EndpointAttribute struct {
-	Name           string    `json:"endpoint_name" bson"EndpointName"`
+	Name           string    `json:"endpoint_name" bson:"EndpointName"`
 	Type           string    `json:"endpoint_type" bson:"EndpointType"`
 	URI            string    `json:"endpoint_uri" bson:"EndpointURI"`
 	CreatedAt      time.Time `json:"created_at,omitempty" bson:"CreatedAt,omitempty"`

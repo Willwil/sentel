@@ -48,6 +48,6 @@ type Queue interface {
 	Destroy()
 }
 
-func NewQueue(c config.Config, attr QueueAttribute, adaptor Adaptor) (Queue, error) {
-	return newKafkaQueue(c, attr, adaptor)
+func NewQueue(c config.Config, attr QueueAttribute) (Queue, error) {
+	return newKafkaQueue(c, attr)
 }

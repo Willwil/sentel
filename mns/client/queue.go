@@ -139,8 +139,6 @@ func (p *mnsQueue) ReceiveMessage(respChan chan MessageReceiveResponse, errChan 
 		default:
 		}
 	}
-
-	return
 }
 
 func (p *mnsQueue) BatchReceiveMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32, waitseconds ...int64) {
@@ -172,8 +170,6 @@ func (p *mnsQueue) BatchReceiveMessage(respChan chan BatchMessageReceiveResponse
 		default:
 		}
 	}
-
-	return
 }
 
 func (p *mnsQueue) PeekMessage(respChan chan MessageReceiveResponse, errChan chan error) {
@@ -188,7 +184,6 @@ func (p *mnsQueue) PeekMessage(respChan chan MessageReceiveResponse, errChan cha
 
 		p.checkQPS()
 	}
-	return
 }
 
 func (p *mnsQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, errChan chan error, numOfMessages int32) {
@@ -207,7 +202,6 @@ func (p *mnsQueue) BatchPeekMessage(respChan chan BatchMessageReceiveResponse, e
 
 		p.checkQPS()
 	}
-	return
 }
 
 func (p *mnsQueue) DeleteMessage(receiptHandle string) (err error) {
