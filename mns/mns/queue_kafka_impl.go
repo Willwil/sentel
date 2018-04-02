@@ -14,6 +14,7 @@ package mns
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -24,19 +25,27 @@ type kafkaQueue struct {
 	queueName string
 	config    config.Config
 	attribute QueueAttribute
+	adaptor   Adaptor
 }
 
 func newKafkaQueue(c config.Config, attr QueueAttribute, adaptor Adaptor) (Queue, error) {
-	return &kafkaQueue{}, nil
+	return &kafkaQueue{
+		queueName: fmt.Sprintf(FormatOfQueueName, attr.AccountId, attr.QueueName),
+		config:    c,
+		attribute: attr,
+		adaptor:   adaptor,
+	}, nil
 }
 
 func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
+	msg.TopicName = q.queueName
 	return message.PostMessage(q.config, msg)
 }
 
 func (q *kafkaQueue) BatchSendMessage(msgs []QueueMessage) error {
 	kmsgs := []message.Message{}
 	for _, msg := range msgs {
+		msg.SetTopic(q.queueName)
 		kmsgs = append(kmsgs, msg)
 	}
 	return message.PostMessages(q.config, kmsgs)
@@ -51,16 +60,18 @@ func (q *kafkaQueue) CreateMessage(topic string) message.Message {
 	}
 }
 
-func queueMessageHandlerFunc(msg message.Message, ctx interface{}) {
-
-}
-
 func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 	if consumer, err := message.NewConsumer(q.config, "kafkaQueue"); err == nil {
 		defer consumer.Close()
 		consumer.SetMessageFactory(q)
 		msgChan := make(chan QueueMessage)
-		consumer.Subscribe(q.queueName, queueMessageHandlerFunc, msgChan)
+		consumer.Subscribe(q.queueName,
+			func(msg message.Message, ctx interface{}) {
+				msgChan := ctx.(chan QueueMessage)
+				if _, ok := <-msgChan; ok {
+					msgChan <- msg.(QueueMessage)
+				}
+			}, msgChan)
 		consumer.Start()
 		timeout := time.NewTimer(time.Second * time.Duration(ws))
 		select {
@@ -74,12 +85,20 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 }
 
 type batchMessageContext struct {
-	msgChan       chan []QueueMessage
+	fullChan      chan bool
 	nbrofMessages int
+	msgs          []QueueMessage
 }
 
 func batchQueueMessageHandlerFunc(msg message.Message, ctx interface{}) {
-
+	batch := ctx.(batchMessageContext)
+	if len(batch.msgs) < batch.nbrofMessages {
+		batch.msgs = append(batch.msgs, msg.(QueueMessage))
+		return
+	}
+	if _, ok := <-batch.fullChan; ok {
+		batch.fullChan <- true
+	}
 }
 
 func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []QueueMessage, err error) {
@@ -87,41 +106,34 @@ func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []Que
 		defer consumer.Close()
 		consumer.SetMessageFactory(q)
 		ctx := batchMessageContext{
-			msgChan:       make(chan []QueueMessage),
+			fullChan:      make(chan bool),
 			nbrofMessages: numOfMessages,
+			msgs:          []QueueMessage{},
 		}
-		consumer.Subscribe(q.queueName, queueMessageHandlerFunc, ctx)
+		consumer.Subscribe(q.queueName, batchQueueMessageHandlerFunc, ctx)
 		consumer.Start()
 		timeout := time.NewTimer(time.Second * time.Duration(ws))
 		select {
 		case <-timeout.C:
 			err = errors.New("kafaka queue receive message timeout")
-		case v := <-ctx.msgChan:
-			msgs = v
+		case <-ctx.fullChan:
+			msgs = ctx.msgs
 		}
+		close(ctx.fullChan)
 	}
 	return
 }
 
-func (q *kafkaQueue) DeleteMessage(handle string) error {
-	return nil
-}
-
-func (q *kafkaQueue) BatchDeleteMessages(handles []string) error {
-	return nil
-}
+func (q *kafkaQueue) DeleteMessage(handle string) error          { return ErrNotImplemented }
+func (q *kafkaQueue) BatchDeleteMessages(handles []string) error { return ErrNotImplemented }
 
 func (q *kafkaQueue) PeekMessage(waitSeconds int) (QueueMessage, error) {
-	return QueueMessage{}, nil
+	return QueueMessage{}, ErrNotImplemented
 }
 
 func (q *kafkaQueue) BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error) {
-	return []QueueMessage{}, nil
+	return []QueueMessage{}, ErrNotImplemented
 }
 
-func (q *kafkaQueue) SetMessageVisibility(handle string, seconds int) error {
-	return nil
-}
-
-func (q *kafkaQueue) Destroy() {
-}
+func (q *kafkaQueue) SetMessageVisibility(handle string, seconds int) error { return ErrNotImplemented }
+func (q *kafkaQueue) Destroy()                                              {}
