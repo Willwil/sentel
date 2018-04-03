@@ -189,7 +189,7 @@ func batchSendQueueMessage(ctx echo.Context) error {
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
-	err := getManager().BatchSendQueueMessage(accountId, queueName, msgs)
+	err := getManager().BatchSendQueueMessages(accountId, queueName, msgs)
 	return reply(ctx, err)
 
 }
@@ -268,14 +268,14 @@ func createTopic(ctx echo.Context) error {
 	return replyObject(ctx, attr, err)
 }
 
-func setTopic(ctx echo.Context) error {
+func updateTopic(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	topicAttr := mns.Topic{}
 	if err := ctx.Bind(&topicAttr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument)
 	}
-	err := getManager().SetTopic(accountId, topicName, topicAttr)
+	err := getManager().UpdateTopic(accountId, topicName, topicAttr)
 	return reply(ctx, err)
 }
 
@@ -333,7 +333,7 @@ func getSubscription(ctx echo.Context) error {
 	return replyObject(ctx, attr, err)
 }
 
-func setSubscription(ctx echo.Context) error {
+func updateSubscription(ctx echo.Context) error {
 	accountId := getAccount(ctx)
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
@@ -341,7 +341,7 @@ func setSubscription(ctx echo.Context) error {
 	if err := ctx.Bind(&attr); err != nil {
 		return reply(ctx, mns.ErrInvalidArgument, err)
 	}
-	err := getManager().SetSubscription(accountId, topicName, subscriptionName, attr)
+	err := getManager().UpdateSubscription(accountId, topicName, subscriptionName, attr)
 	return reply(ctx, err)
 }
 

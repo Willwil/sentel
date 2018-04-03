@@ -113,14 +113,14 @@ func (p *consoleService) Initialize() error {
 
 	// Topics API
 	p.echo.POST("mns/v1/api/topics/:topicName", createTopic)
-	p.echo.PUT("mns/v1/api/topics/:topicName", setTopic)
+	p.echo.PUT("mns/v1/api/topics/:topicName", updateTopic)
 	p.echo.GET("mns/v1/api/topics/:topicName", getTopic)
 	p.echo.DELETE("mns/v1/api/topics/:topicName", deleteTopic)
 	p.echo.GET("mns/v1/api/topics", listTopics)
 
 	// Subscriptions API
 	p.echo.POST("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", subscribe)
-	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", setSubscription)
+	p.echo.PUT("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", updateSubscription)
 	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", getSubscription)
 	p.echo.DELETE("mns/v1/api/topics/:topicName/subscriptions/:subscriptionName", unsubscribe)
 	p.echo.GET("mns/v1/api/topics/:topicName/subscriptions?pagesize=:pageSize&pageno=:pageNo", listTopicSubscriptions)

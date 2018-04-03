@@ -13,6 +13,8 @@
 package mns
 
 import (
+	"bytes"
+	"net/http"
 	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
@@ -44,5 +46,8 @@ func parseHttpScheme(uri string) (string, error) {
 
 func (h httpEndpoint) GetAttribute() EndpointAttribute { return h.attribute }
 func (h httpEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
-	return nil
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", h.uri, bytes.NewReader(body))
+	_, err := client.Do(req)
+	return err
 }

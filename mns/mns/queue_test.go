@@ -25,18 +25,16 @@ var (
 	}
 	defaultQueueConfigs = config.M{
 		"test": {
-			"mongo": "localhost:27817",
+			"mongo": "localhost:27017",
 			"kafka": "localhost:9092",
 		},
 	}
-	queueConfig  config.Config
-	defaultQueue Queue
 )
 
 func newQueue(t *testing.T) Queue {
-	queueConfigs := config.New("test")
-	queueConfigs.AddConfig(defaultQueueConfigs)
-	queue, err := NewQueue(queueConfigs, queueAttribute)
+	c := config.New("test")
+	c.AddConfig(defaultQueueConfigs)
+	queue, err := NewQueue(c, queueAttribute)
 	if err != nil {
 		t.Error(err)
 		panic("nil queue")
@@ -74,7 +72,7 @@ func TestQueue_BatchSendMessage(t *testing.T) {
 	}
 	queue := newQueue(t)
 	defer queue.Destroy()
-	if err := queue.BatchSendMessage(msgs); err != nil {
+	if err := queue.BatchSendMessages(msgs); err != nil {
 		t.Error(err)
 	}
 }

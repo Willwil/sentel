@@ -26,7 +26,7 @@ type MnsManager interface {
 	DeleteQueue(accountId string, queueName string) error
 	GetQueues(accountId string) []string
 	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
-	BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) error
+	BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) error
 	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
 	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
 	DeleteQueueMessage(accountId, queueName string, handle string) error
@@ -38,15 +38,15 @@ type MnsManager interface {
 	// Topic API
 	CreateTopic(accountId string, topicName string) (Topic, error)
 	GetTopic(accountId string, topicName string) (Topic, error)
-	SetTopic(accountId string, topicName string, topic Topic) error
+	UpdateTopic(accountId string, topicName string, topic Topic) error
 	DeleteTopic(accountId string, topicName string) error
 	ListTopics(accountId string) []string
 
 	// Subscription API
-	SetSubscription(accountId, topicName string, subscriptionName string, subscription Subscription) error
-	GetSubscription(accountId, topicName string, subscriptionName string) (Subscription, error)
 	Subscribe(accountId, topicName, subscriptionName, endpoint, filterTag, notifyStrategy, notifiyContentFormat string) error
 	Unsubscribe(accountId, topicName string, subscriptionName string) error
+	UpdateSubscription(accountId, topicName string, subscriptionName string, subscription Subscription) error
+	GetSubscription(accountId, topicName string, subscriptionName string) (Subscription, error)
 	ListTopicSubscriptions(accountId, topicName string, pageno int, pageSize int) ([]Subscription, error)
 	PublishMessage(accountId, topicName string, body []byte, tag string, attributes map[string]interface{}) error
 }
@@ -64,11 +64,11 @@ type manager struct {
 	adaptor Adaptor
 }
 
-func (m *manager) GetQueue(accountId, queueName string) (queue Queue, err error) {
+func (m *manager) GetQueue(accountId, queueName string) (Queue, error) {
 	if attr, err := m.adaptor.GetQueueAttribute(accountId, queueName); err == nil {
 		return NewQueue(m.config, attr)
 	}
-	return nil, err
+	return nil, ErrInvalidArgument
 }
 
 func (m *manager) CreateQueue(accountId string, queueName string) (QueueAttribute, error) {
@@ -104,9 +104,9 @@ func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage
 	return
 }
 
-func (m *manager) BatchSendQueueMessage(accountId, queueName string, msgs []QueueMessage) (err error) {
+func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) (err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
-		return queue.BatchSendMessage(msgs)
+		return queue.BatchSendMessages(msgs)
 	}
 	return
 }
@@ -185,12 +185,12 @@ func (m *manager) ListTopics(account string) []string {
 	return m.adaptor.GetAccountTopics(account)
 }
 
-func (m *manager) SetTopic(accountId, topicName string, topic Topic) error {
+func (m *manager) UpdateTopic(accountId, topicName string, topic Topic) error {
 	return m.adaptor.UpdateTopic(accountId, topicName, topic)
 }
 
 // Subscription API
-func (m *manager) SetSubscription(accountId, topicName, subscriptionName string, subscription Subscription) error {
+func (m *manager) UpdateSubscription(accountId, topicName, subscriptionName string, subscription Subscription) error {
 	return m.adaptor.UpdateSubscription(accountId, topicName, subscriptionName, subscription)
 }
 

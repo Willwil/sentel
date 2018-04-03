@@ -40,7 +40,7 @@ func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
 	return message.PostMessage(q.config, msg)
 }
 
-func (q *kafkaQueue) BatchSendMessage(msgs []QueueMessage) error {
+func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
 	kmsgs := []message.Message{}
 	for _, msg := range msgs {
 		msg.SetTopic(q.queueName)
@@ -60,7 +60,6 @@ func (q *kafkaQueue) CreateMessage(topic string) message.Message {
 
 func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 	if consumer, err := message.NewConsumer(q.config, "kafkaQueue"); err == nil {
-		defer consumer.Close()
 		consumer.SetMessageFactory(q)
 		msgChan := make(chan QueueMessage)
 		consumer.Subscribe(q.queueName,
@@ -78,6 +77,7 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 		case v := <-msgChan:
 			msg = v
 		}
+		consumer.Close()
 	}
 	return
 }
@@ -101,7 +101,6 @@ func batchQueueMessageHandlerFunc(msg message.Message, ctx interface{}) {
 
 func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []QueueMessage, err error) {
 	if consumer, err := message.NewConsumer(q.config, "kafkaQueue"); err == nil {
-		defer consumer.Close()
 		consumer.SetMessageFactory(q)
 		ctx := batchMessageContext{
 			fullChan:      make(chan bool),
@@ -117,6 +116,7 @@ func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []Que
 		case <-ctx.fullChan:
 			msgs = ctx.msgs
 		}
+		consumer.Close()
 		close(ctx.fullChan)
 	}
 	return
