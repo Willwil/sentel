@@ -511,6 +511,8 @@ func (p *mqttSession) disconnect(reason error) {
 				Qos:       p.willMsg.Qos,
 				Retain:    p.willMsg.Retain,
 			})
+			metadata.DeleteMessage(p.clientID, p.willMsg.PacketId, 0)
+			p.willMsg = nil
 		}
 		event.Notify(&event.SessionDestroyEvent{
 			ClientId: p.clientID,
