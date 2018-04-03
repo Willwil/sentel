@@ -25,7 +25,7 @@ var (
 	}
 	defaultQueueConfigs = config.M{
 		"test": {
-			"mongo": "localhost:27817",
+			"mongo": "localhost:27017",
 			"kafka": "localhost:9092",
 		},
 	}
@@ -72,7 +72,7 @@ func TestQueue_BatchSendMessage(t *testing.T) {
 	}
 	queue := newQueue(t)
 	defer queue.Destroy()
-	if err := queue.BatchSendMessage(msgs); err != nil {
+	if err := queue.BatchSendMessages(msgs); err != nil {
 		t.Error(err)
 	}
 }
