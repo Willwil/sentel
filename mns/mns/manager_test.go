@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	accountId = "cloustone"
+	accountID = "cloustone"
 	queueName = "test"
 	topicName = "test"
 	configs   = config.M{
@@ -35,6 +35,7 @@ func Test_NewManager(t *testing.T) {
 	c := config.New("test")
 	c.AddConfig(configs)
 	var err error
+	//sarama.Logger = log.New(os.Stdout, "[mns] ", log.LstdFlags)
 	testmgr, err = NewManager(c)
 	if err != nil {
 		panic(err)
@@ -42,28 +43,28 @@ func Test_NewManager(t *testing.T) {
 }
 
 func Test_CreateQueue(t *testing.T) {
-	if _, err := testmgr.CreateQueue(accountId, queueName); err != nil {
+	if _, err := testmgr.CreateQueue(accountID, queueName); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_GetQueueAttribute(t *testing.T) {
-	if _, err := testmgr.GetQueueAttribute(accountId, queueName); err != nil {
+	if _, err := testmgr.GetQueueAttribute(accountID, queueName); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_SetQueueAttribute(t *testing.T) {
 	attr := QueueAttribute{}
-	if err := testmgr.SetQueueAttribute(accountId, queueName, attr); err != nil {
+	if err := testmgr.SetQueueAttribute(accountID, queueName, attr); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_GetQueues(t *testing.T) {
-	queues := testmgr.GetQueues(accountId)
+	queues := testmgr.GetQueues(accountID)
 	if len(queues) != 1 {
-		t.Error("can not retrieve queues")
+		t.Errorf("queues length is %d", len(queues))
 	}
 }
 
@@ -71,17 +72,17 @@ func Test_SendQueueMessage(t *testing.T) {
 	msg := QueueMessage{
 		MessageBody: []byte("hello, world"),
 	}
-	if err := testmgr.SendQueueMessage(accountId, queueName, msg); err != nil {
+	if err := testmgr.SendQueueMessage(accountID, queueName, msg); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_ReceiveQueueMessage(t *testing.T) {
-	if msg, err := testmgr.ReceiveQueueMessage(accountId, queueName, 3); err != nil {
+	if msg, err := testmgr.ReceiveQueueMessage(accountID, queueName, 3); err != nil {
 		t.Error(err)
 	} else {
 		if string(msg.MessageBody) != "hello, world" {
-			t.Error("receive message failed")
+			t.Errorf("receive message failed, Message Body is: %s", msg.MessageBody)
 		}
 	}
 }
@@ -95,13 +96,13 @@ func Test_BatchSendQueueMessages(t *testing.T) {
 			MessageBody: []byte("hello, world2"),
 		},
 	}
-	if err := testmgr.BatchSendQueueMessages(accountId, queueName, msgs); err != nil {
+	if err := testmgr.BatchSendQueueMessages(accountID, queueName, msgs); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_BatchReceiveMessages(t *testing.T) {
-	if msgs, err := testmgr.BatchReceiveQueueMessages(accountId, queueName, 3, 2); err != nil {
+	if msgs, err := testmgr.BatchReceiveQueueMessages(accountID, queueName, 3, 2); err != nil {
 		t.Error(err)
 	} else {
 		if len(msgs) != 2 {
@@ -111,13 +112,13 @@ func Test_BatchReceiveMessages(t *testing.T) {
 }
 
 func Test_CreateTopic(t *testing.T) {
-	if _, err := testmgr.CreateTopic(accountId, topicName); err != nil {
+	if _, err := testmgr.CreateTopic(accountID, topicName); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_GetTopic(t *testing.T) {
-	if _, err := testmgr.GetTopic(accountId, topicName); err != nil {
+	if _, err := testmgr.GetTopic(accountID, topicName); err != nil {
 		t.Error(err)
 	}
 }
@@ -125,28 +126,28 @@ func Test_GetTopic(t *testing.T) {
 func Test_UpdateTopic(t *testing.T) {
 	topic := Topic{
 		TopicName: topicName,
-		AccountId: accountId,
+		AccountId: accountID,
 	}
-	if err := testmgr.UpdateTopic(accountId, topicName, topic); err != nil {
+	if err := testmgr.UpdateTopic(accountID, topicName, topic); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_ListTopics(t *testing.T) {
-	topics := testmgr.ListTopics(accountId)
+	topics := testmgr.ListTopics(accountID)
 	if len(topics) != 1 {
 		t.Error("topics count is wrong")
 	}
 }
 
 func Test_DeleteTopic(t *testing.T) {
-	if err := testmgr.DeleteTopic(accountId, topicName); err != nil {
+	if err := testmgr.DeleteTopic(accountID, topicName); err != nil {
 		t.Error(err)
 	}
 }
 
 func Test_DeleteQueue(t *testing.T) {
-	if err := testmgr.DeleteQueue(accountId, queueName); err != nil {
+	if err := testmgr.DeleteQueue(accountID, queueName); err != nil {
 		t.Error(err)
 	}
 }
