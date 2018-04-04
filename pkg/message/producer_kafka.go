@@ -43,6 +43,7 @@ func newKafkaProducer(c config.Config, clientId string, sync bool) (Producer, er
 	config.Producer.Compression = sarama.CompressionSnappy
 	config.Producer.Partitioner = sarama.NewRandomPartitioner
 	config.Producer.Return.Successes = true
+	config.ClientID = "sentel"
 
 	if sync {
 		producer, err := sarama.NewSyncProducer(strings.Split(khosts, ","), config)
@@ -104,11 +105,11 @@ func (p *kafkaProducer) SendMessages(msgs []Message) error {
 			return err
 		}
 		topic := msg.Topic()
-		msg := &sarama.ProducerMessage{
+		kmsg := &sarama.ProducerMessage{
 			Topic: topic,
 			Value: sarama.ByteEncoder(value),
 		}
-		kmsgs = append(kmsgs, msg)
+		kmsgs = append(kmsgs, kmsg)
 	}
 
 	if p.sync && p.syncProducer != nil {
