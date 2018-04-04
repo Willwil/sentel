@@ -37,7 +37,7 @@ func newKafkaQueue(c config.Config, attr QueueAttribute) (Queue, error) {
 
 func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
 	msg.TopicName = q.queueName
-	return message.PostMessage(q.config, msg)
+	return message.SendMessage(q.config, msg)
 }
 
 func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
@@ -46,7 +46,7 @@ func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
 		msg.SetTopic(q.queueName)
 		kmsgs = append(kmsgs, msg)
 	}
-	return message.PostMessages(q.config, kmsgs)
+	return message.SendMessages(q.config, kmsgs)
 }
 
 func (q *kafkaQueue) CreateMessage(topic string) message.Message {
