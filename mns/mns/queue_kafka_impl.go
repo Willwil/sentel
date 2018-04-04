@@ -43,7 +43,7 @@ func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
 func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
 	kmsgs := []message.Message{}
 	for _, msg := range msgs {
-		msg.SetTopic(q.queueName)
+		msg.TopicName = q.queueName
 		kmsgs = append(kmsgs, msg)
 	}
 	return message.SendMessages(q.config, kmsgs)
