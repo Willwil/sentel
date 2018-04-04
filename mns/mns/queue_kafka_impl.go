@@ -59,7 +59,8 @@ func (q *kafkaQueue) CreateMessage(topic string) message.Message {
 }
 
 func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
-	if consumer, err := message.NewConsumer(q.config, "kafkaQueue"); err == nil {
+	var consumer message.Consumer
+	if consumer, err = message.NewConsumer(q.config, "kafkaQueue"); err == nil {
 		consumer.SetMessageFactory(q)
 		msgChan := make(chan QueueMessage)
 		consumer.Subscribe(q.queueName,
