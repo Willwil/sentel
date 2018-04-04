@@ -106,7 +106,7 @@ func Test_BatchReceiveMessages(t *testing.T) {
 		t.Error(err)
 	} else {
 		if len(msgs) != 2 {
-			t.Error("message count is wrong")
+			t.Errorf("message count is wrong: %d", len(msgs))
 		}
 	}
 }
