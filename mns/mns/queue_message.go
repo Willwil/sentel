@@ -30,12 +30,12 @@ type QueueMessage struct {
 	Attributes       map[string]interface{} `json:"attributes,omitempty" bson:"Attributes,omitempty"`
 }
 
-func (m QueueMessage) Topic() string        { return m.TopicName }
-func (m QueueMessage) SetTopic(name string) { m.TopicName = name }
-func (m QueueMessage) Serialize(opt message.SerializeOption) ([]byte, error) {
+func (m *QueueMessage) Topic() string        { return m.TopicName }
+func (m *QueueMessage) SetTopic(name string) { m.TopicName = name }
+func (m *QueueMessage) Serialize(opt message.SerializeOption) ([]byte, error) {
 	return message.Serialize(m, opt)
 }
 
-func (m QueueMessage) Deserialize(buf []byte, opt message.SerializeOption) error {
+func (m *QueueMessage) Deserialize(buf []byte, opt message.SerializeOption) error {
 	return message.Deserialize(buf, opt, &m)
 }

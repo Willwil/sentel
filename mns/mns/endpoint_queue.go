@@ -62,7 +62,7 @@ func parseQueueScheme(uri string) (string, string, error) {
 
 func (q queueEndpoint) GetAttribute() EndpointAttribute { return q.attribute }
 func (q queueEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
-	msg := QueueMessage{
+	msg := &QueueMessage{
 		TopicName:   fmt.Sprintf(FormatOfQueueName, q.accountId, q.queueName),
 		MessageBody: body,
 		MessageTag:  tag,

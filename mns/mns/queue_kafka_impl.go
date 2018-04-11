@@ -37,14 +37,14 @@ func newKafkaQueue(c config.Config, attr QueueAttribute) (Queue, error) {
 
 func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
 	msg.TopicName = q.queueName
-	return message.SendMessage(q.config, msg)
+	return message.SendMessage(q.config, &msg)
 }
 
 func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
 	kmsgs := []message.Message{}
 	for _, msg := range msgs {
 		msg.TopicName = q.queueName
-		kmsgs = append(kmsgs, msg)
+		kmsgs = append(kmsgs, &msg)
 	}
 	return message.SendMessages(q.config, kmsgs)
 }
@@ -62,12 +62,12 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 	var consumer message.Consumer
 	if consumer, err = message.NewConsumer(q.config, "kafkaQueue"); err == nil {
 		consumer.SetMessageFactory(q)
-		msgChan := make(chan QueueMessage)
+		msgChan := make(chan *QueueMessage)
 		consumer.Subscribe(q.queueName,
 			func(msg message.Message, ctx interface{}) {
-				msgChan := ctx.(chan QueueMessage)
+				msgChan := ctx.(chan *QueueMessage)
 				if _, ok := <-msgChan; ok {
-					msgChan <- msg.(QueueMessage)
+					msgChan <- msg.(*QueueMessage)
 				}
 			}, msgChan)
 		consumer.Start()
@@ -76,7 +76,7 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 		case <-timeout.C:
 			err = errors.New("kafaka queue receive message timeout")
 		case v := <-msgChan:
-			msg = v
+			msg = *v
 		}
 		consumer.Close()
 	}
@@ -86,13 +86,13 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 type batchMessageContext struct {
 	fullChan      chan bool
 	nbrofMessages int
-	msgs          []QueueMessage
+	msgs          []*QueueMessage
 }
 
 func batchQueueMessageHandlerFunc(msg message.Message, ctx interface{}) {
 	batch := ctx.(batchMessageContext)
 	if len(batch.msgs) < batch.nbrofMessages {
-		batch.msgs = append(batch.msgs, msg.(QueueMessage))
+		batch.msgs = append(batch.msgs, msg.(*QueueMessage))
 		return
 	}
 	if _, ok := <-batch.fullChan; ok {
@@ -100,13 +100,13 @@ func batchQueueMessageHandlerFunc(msg message.Message, ctx interface{}) {
 	}
 }
 
-func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []QueueMessage, err error) {
+func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []*QueueMessage, err error) {
 	if consumer, err := message.NewConsumer(q.config, "kafkaQueue"); err == nil {
 		consumer.SetMessageFactory(q)
 		ctx := batchMessageContext{
 			fullChan:      make(chan bool),
 			nbrofMessages: numOfMessages,
-			msgs:          []QueueMessage{},
+			msgs:          []*QueueMessage{},
 		}
 		consumer.Subscribe(q.queueName, batchQueueMessageHandlerFunc, ctx)
 		consumer.Start()

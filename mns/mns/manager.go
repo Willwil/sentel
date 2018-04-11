@@ -28,7 +28,7 @@ type MnsManager interface {
 	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
 	BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) error
 	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
-	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
+	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]*QueueMessage, error)
 	DeleteQueueMessage(accountId, queueName string, handle string) error
 	BatchDeleteQueueMessages(accountId, queueName string, handles []string) error
 	PeekQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
@@ -118,11 +118,11 @@ func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (msg 
 	return QueueMessage{}, err
 }
 
-func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []QueueMessage, err error) {
+func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []*QueueMessage, err error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchReceiveMessages(ws, numOfMessages)
 	}
-	return []QueueMessage{}, err
+	return []*QueueMessage{}, err
 }
 
 func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) (err error) {
