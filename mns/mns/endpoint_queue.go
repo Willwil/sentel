@@ -49,7 +49,7 @@ func newQueueEndpoint(c config.Config, subscription Subscription) (endpoint Endp
 func parseQueueScheme(uri string) (string, string, error) {
 	accountId := ""
 	queueName := ""
-	err := ErrInvalidArgument
+	err := ErrInvalidParameter
 	if names := strings.Split(uri, ":"); len(names) == 3 {
 		if items := strings.Split(names[2], "/"); len(items) == 2 {
 			accountId = names[1]

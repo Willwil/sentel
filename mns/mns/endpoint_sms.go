@@ -62,13 +62,13 @@ func (s smsEndpoint) GetAttribute() EndpointAttribute { return s.attribute }
 func (s smsEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
 	attr := smsAttribute{}
 	if err := mapstructure.Decode(attrs, &attr); err != nil {
-		return ErrInvalidArgument.With(err.Error())
+		return ErrInvalidParameter.With(err.Error())
 	}
 	if attr.FreeSignName == "" ||
 		attr.TemplateCode == "" ||
 		(attr.Type != "singleContent" && attr.Type != "multiContent") ||
 		attr.Params == "" {
-		return ErrInvalidArgument
+		return ErrInvalidParameter
 	}
 
 	return sendSMS(s.config, s.to, attr)
@@ -92,7 +92,7 @@ func sendSMS(c config.Config, to string, attr smsAttribute) error {
 	msg.SetProject(project)
 	values := make(map[string]string)
 	if err := json.Unmarshal([]byte(attr.Params), values); err != nil {
-		return ErrInvalidArgument.With(err.Error())
+		return ErrInvalidParameter.With(err.Error())
 	}
 	for k, v := range values {
 		msg.AddVariable(k, v)

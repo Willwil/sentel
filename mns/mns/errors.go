@@ -43,7 +43,7 @@ var (
 	ErrInternalError               = NewError(500, "InternalError")
 	ErrInvalidAuthorizationHeader  = NewError(400, "InvalidAuthorizationHeader")
 	ErrInvalidDateHeader           = NewError(400, "InvalidDateHeader")
-	ErrInvalidArgument             = NewError(400, "InvalidArgument")
+	ErrInvalidParameter            = NewError(400, "InvalidParameter")
 	ErrInvalidDegist               = NewError(400, "InvalidDegist")
 	ErrInvalidRequestUrl           = NewError(400, "InvalidRequestURL")
 	ErrInvalidQueryString          = NewError(400, "InvalidQueryString")

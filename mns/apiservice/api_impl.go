@@ -143,7 +143,7 @@ func createQueue(ctx echo.Context) error {
 func setQueueAttribute(ctx echo.Context) error {
 	attr := mns.QueueAttribute{}
 	if err := ctx.Bind(&attr); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -174,7 +174,7 @@ func getQueueList(ctx echo.Context) error {
 func sendQueueMessage(ctx echo.Context) error {
 	msg := mns.QueueMessage{}
 	if err := ctx.Bind(&msg); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -185,7 +185,7 @@ func sendQueueMessage(ctx echo.Context) error {
 func batchSendQueueMessage(ctx echo.Context) error {
 	msgs := []mns.QueueMessage{}
 	if err := ctx.Bind(&msgs); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -198,7 +198,7 @@ func receiveQueueMessage(ctx echo.Context) error {
 	queueName := ctx.Param("queueName")
 	ws, err := strconv.Atoi(ctx.QueryParam("ws"))
 	if err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	msgs, err := getManager().ReceiveQueueMessage(accountId, queueName, ws)
 	return replyObject(ctx, msgs, err)
@@ -208,7 +208,7 @@ func batchReceiveQueueMessage(ctx echo.Context) error {
 	numberOfMessages, err1 := strconv.Atoi(ctx.QueryParam("numberOfMessages"))
 	ws, err2 := strconv.Atoi(ctx.QueryParam("ws"))
 	if err1 != nil || err2 != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
+		return reply(ctx, mns.ErrInvalidParameter)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -229,7 +229,7 @@ func batchDeleteQueueMessages(ctx echo.Context) error {
 		MessageIds []string `json:"messageIds"`
 	}{}
 	if err := ctx.Bind(req); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -242,7 +242,7 @@ func peekQueueMessages(ctx echo.Context) error {
 	queueName := ctx.Param("queueName")
 	ws, err := strconv.Atoi(ctx.QueryParam("ws"))
 	if err != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
+		return reply(ctx, mns.ErrInvalidParameter)
 	}
 	msg, err := getManager().PeekQueueMessage(accountId, queueName, ws)
 	return reply(ctx, msg, err)
@@ -252,7 +252,7 @@ func batchPeekQueueMessages(ctx echo.Context) error {
 	numberOfMessages, err1 := strconv.Atoi(ctx.QueryParam("numberOfMessages"))
 	ws, err2 := strconv.Atoi(ctx.QueryParam("ws"))
 	if err1 != nil || err2 != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
+		return reply(ctx, mns.ErrInvalidParameter)
 	}
 	accountId := getAccount(ctx)
 	queueName := ctx.Param("queueName")
@@ -273,7 +273,7 @@ func updateTopic(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 	topicAttr := mns.Topic{}
 	if err := ctx.Bind(&topicAttr); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
+		return reply(ctx, mns.ErrInvalidParameter)
 	}
 	err := getManager().UpdateTopic(accountId, topicName, topicAttr)
 	return reply(ctx, err)
@@ -311,7 +311,7 @@ func subscribe(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 	subscriptionName := ctx.Param("subscriptionName")
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	err := getManager().Subscribe(accountId, topicName, subscriptionName, req.Endpoint, req.FilterTag, req.NotifyStrategy, req.NotifyContentFormat)
 	return replyObject(ctx, map[string]string{"subscriptionId": subscriptionName}, err)
@@ -339,7 +339,7 @@ func updateSubscription(ctx echo.Context) error {
 	subscriptionName := ctx.Param("subscriptionName")
 	attr := mns.Subscription{}
 	if err := ctx.Bind(&attr); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	err := getManager().UpdateSubscription(accountId, topicName, subscriptionName, attr)
 	return reply(ctx, err)
@@ -351,7 +351,7 @@ func listTopicSubscriptions(ctx echo.Context) error {
 	pageSize, err1 := strconv.Atoi(ctx.QueryParam("pageSize"))
 	pageNo, err2 := strconv.Atoi(ctx.QueryParam("pageNo"))
 	if err1 != nil || err2 != nil {
-		return reply(ctx, mns.ErrInvalidArgument)
+		return reply(ctx, mns.ErrInvalidParameter)
 	}
 	attrs, err := getManager().ListTopicSubscriptions(accountId, topicName, pageNo, pageSize)
 	return replyObject(ctx, attrs, err)
@@ -367,7 +367,7 @@ func publishMessage(ctx echo.Context) error {
 	topicName := ctx.Param("topicName")
 
 	if err := ctx.Bind(&req); err != nil {
-		return reply(ctx, mns.ErrInvalidArgument, err)
+		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
 	err := getManager().PublishMessage(accountId, topicName, req.Body, req.Tag, req.Attributes)
 	return reply(ctx, err)

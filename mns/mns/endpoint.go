@@ -45,5 +45,5 @@ func NewEndpoint(c config.Config, subscription Subscription) (Endpoint, error) {
 			return newSMSEndpoint(c, subscription)
 		}
 	}
-	return nil, ErrInvalidArgument
+	return nil, ErrInvalidParameter
 }
