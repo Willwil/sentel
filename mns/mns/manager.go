@@ -68,7 +68,7 @@ func (m *manager) GetQueue(accountId, queueName string) (Queue, error) {
 	if attr, err := m.adaptor.GetQueueAttribute(accountId, queueName); err == nil {
 		return NewQueue(m.config, attr)
 	}
-	return nil, ErrInvalidArgument
+	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) CreateQueue(accountId string, queueName string) (QueueAttribute, error) {
@@ -97,67 +97,67 @@ func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute
 	return m.adaptor.GetQueueAttribute(accountId, queueName)
 }
 
-func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage) (err error) {
+func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.SendMessage(msg)
 	}
-	return
+	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) (err error) {
+func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchSendMessages(msgs)
 	}
-	return
+	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (msg QueueMessage, err error) {
+func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.ReceiveMessage(ws)
 	}
-	return QueueMessage{}, err
+	return QueueMessage{}, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []*QueueMessage, err error) {
+func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]*QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchReceiveMessages(ws, numOfMessages)
 	}
-	return []*QueueMessage{}, err
+	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) (err error) {
+func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.DeleteMessage(handle)
 	}
-	return
+	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) (err error) {
+func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchDeleteMessages(handles)
 	}
-	return
+	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (msg QueueMessage, err error) {
+func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.PeekMessage(ws)
 	}
-	return QueueMessage{}, err
+	return QueueMessage{}, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) (msgs []QueueMessage, err error) {
+func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchPeekMessages(ws, numOfMessages)
 	}
-	return []QueueMessage{}, err
+	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) (err error) {
+func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.SetMessageVisibility(handle, seconds)
 	}
-	return
+	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 // Topic API
@@ -173,7 +173,7 @@ func (m *manager) CreateTopic(accountId string, topicName string) (Topic, error)
 	return topicAttr, err
 }
 
-func (m *manager) GetTopic(accountId string, topicName string) (topic Topic, err error) {
+func (m *manager) GetTopic(accountId string, topicName string) (Topic, error) {
 	return m.adaptor.GetTopic(accountId, topicName)
 }
 

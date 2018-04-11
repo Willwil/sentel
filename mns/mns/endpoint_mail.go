@@ -59,14 +59,14 @@ func (m mailEndpoint) GetAttribute() EndpointAttribute { return m.attribute }
 func (m mailEndpoint) PushMessage(body []byte, tag string, attrs map[string]interface{}) error {
 	attr := mailAttribute{}
 	if err := mapstructure.Decode(attrs, &attr); err != nil {
-		return ErrInvalidArgument.With(err.Error())
+		return ErrInvalidParameter.With(err.Error())
 	}
 	if attr.AccountName == "" ||
 		attr.Subject == "" ||
 		attr.AddressType > 1 ||
 		attr.IsHtml > 1 ||
 		attr.ReplyToAddress > 1 {
-		return ErrInvalidArgument
+		return ErrInvalidParameter
 	}
 	return sendMail(m.config, m.toaddr, attr.Subject, string(body), "html")
 }
@@ -78,7 +78,7 @@ func sendMail(c config.Config, to, subject, content, contentType string, attachm
 	pwd, _ := c.StringWithSection("email", "pwd")
 	from, _ := c.StringWithSection("email", "from")
 	if host == "" || port < 0 || account == "" || pwd == "" || from == "" {
-		return ErrInvalidArgument
+		return ErrInvalidParameter
 	}
 	dialer := gomail.NewDialer(host, port, account, pwd)
 	msg := gomail.NewMessage()
