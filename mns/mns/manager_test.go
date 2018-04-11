@@ -14,6 +14,7 @@ package mns
 
 import (
 	"testing"
+	"time"
 
 	"github.com/cloustone/sentel/pkg/config"
 )
@@ -68,8 +69,19 @@ func Test_GetQueues(t *testing.T) {
 	}
 }
 
-func Test_SendQueueMessage(t *testing.T) {
-	msg := QueueMessage{
+func Test_MessageSendAndReceive(t *testing.T) {
+	go func() {
+		if msg, err := testmgr.ReceiveQueueMessage(accountID, queueName, 5); err != nil {
+			t.Error(err)
+		} else {
+			if string(msg.MessageBody) != "hello, world" {
+				t.Errorf("receive message failed, Message Body is: %s", msg.MessageBody)
+			}
+		}
+	}()
+
+	time.Sleep(2 * time.Second)
+	msg := &QueueMessage{
 		MessageBody: []byte("hello, world"),
 	}
 	if err := testmgr.SendQueueMessage(accountID, queueName, msg); err != nil {
@@ -77,18 +89,18 @@ func Test_SendQueueMessage(t *testing.T) {
 	}
 }
 
-func Test_ReceiveQueueMessage(t *testing.T) {
-	if msg, err := testmgr.ReceiveQueueMessage(accountID, queueName, 3); err != nil {
-		t.Error(err)
-	} else {
-		if string(msg.MessageBody) != "hello, world" {
-			t.Errorf("receive message failed, Message Body is: %s", msg.MessageBody)
+func Test_BatchSendAndReceiveQueueMessages(t *testing.T) {
+	go func() {
+		if msgs, err := testmgr.BatchReceiveQueueMessages(accountID, queueName, 5, 2); err != nil {
+			t.Error(err)
+		} else {
+			if len(msgs) != 2 {
+				t.Errorf("message count is wrong: %d", len(msgs))
+			}
 		}
-	}
-}
+	}()
 
-func Test_BatchSendQueueMessages(t *testing.T) {
-	msgs := []QueueMessage{
+	msgs := []*QueueMessage{
 		{
 			MessageBody: []byte("hello, world1"),
 		},
@@ -98,16 +110,6 @@ func Test_BatchSendQueueMessages(t *testing.T) {
 	}
 	if err := testmgr.BatchSendQueueMessages(accountID, queueName, msgs); err != nil {
 		t.Error(err)
-	}
-}
-
-func Test_BatchReceiveMessages(t *testing.T) {
-	if msgs, err := testmgr.BatchReceiveQueueMessages(accountID, queueName, 3, 2); err != nil {
-		t.Error(err)
-	} else {
-		if len(msgs) != 2 {
-			t.Errorf("message count is wrong: %d", len(msgs))
-		}
 	}
 }
 

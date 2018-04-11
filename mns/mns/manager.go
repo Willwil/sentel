@@ -98,66 +98,75 @@ func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute
 }
 
 func (m *manager) SendQueueMessage(accountId, queueName string, msg *QueueMessage) error {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return err
+	} else {
 		return queue.SendMessage(msg)
 	}
-	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []*QueueMessage) error {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return err
+	} else {
 		return queue.BatchSendMessages(msgs)
 	}
-	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (*QueueMessage, error) {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return nil, err
+	} else {
 		return queue.ReceiveMessage(ws)
 	}
-	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]*QueueMessage, error) {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return nil, err
+	} else {
 		return queue.BatchReceiveMessages(ws, numOfMessages)
 	}
-	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) DeleteQueueMessage(accountId, queueName string, handle string) error {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return err
+	} else {
 		return queue.DeleteMessage(handle)
 	}
-	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles []string) error {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return err
+	} else {
 		return queue.BatchDeleteMessages(handles)
 	}
-	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (*QueueMessage, error) {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return nil, err
+	} else {
 		return queue.PeekMessage(ws)
 	}
-	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]*QueueMessage, error) {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return nil, err
+	} else {
 		return queue.BatchPeekMessages(ws, numOfMessages)
 	}
-	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error {
-	if queue, err := m.GetQueue(accountId, queueName); err == nil {
+	if queue, err := m.GetQueue(accountId, queueName); err != nil {
+		return err
+	} else {
 		return queue.SetMessageVisibility(handle, seconds)
 	}
-	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 // Topic API

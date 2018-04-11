@@ -71,7 +71,7 @@ func (m *mongoAdaptor) UpdateQueue(accountId string, queueName string, attr Queu
 
 func (m *mongoAdaptor) RemoveQueue(accountId string, queueName string) error {
 	c := m.session.C(collectionQueues)
-	return c.Remove(bson.M{"AccountId": accountId, "queueName": queueName})
+	return c.Remove(bson.M{"AccountId": accountId, "QueueName": queueName})
 }
 
 func (m *mongoAdaptor) GetAccountQueues(accountId string) []string {
@@ -160,7 +160,7 @@ func (m *mongoAdaptor) UpdateSubscription(accountId string, topicName string, su
 
 func (m *mongoAdaptor) RemoveSubscription(accountId string, topicName string, subscriptionName string) error {
 	c := m.session.C(collectionSubscriptions)
-	return c.Remove(bson.M{"AccountId": accountId, "TopicName": topicName, "subscriptionName": subscriptionName})
+	return c.Remove(bson.M{"AccountId": accountId, "TopicName": topicName, "SubscriptionName": subscriptionName})
 }
 
 func (m *mongoAdaptor) GetAccountSubscriptions(accountId string, topicName string) ([]string, error) {
