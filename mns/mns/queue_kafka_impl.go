@@ -35,16 +35,16 @@ func newKafkaQueue(c config.Config, attr QueueAttribute) (Queue, error) {
 	}, nil
 }
 
-func (q *kafkaQueue) SendMessage(msg QueueMessage) error {
+func (q *kafkaQueue) SendMessage(msg *QueueMessage) error {
 	msg.TopicName = q.queueName
-	return message.SendMessage(q.config, &msg)
+	return message.SendMessage(q.config, msg)
 }
 
-func (q *kafkaQueue) BatchSendMessages(msgs []QueueMessage) error {
+func (q *kafkaQueue) BatchSendMessages(msgs []*QueueMessage) error {
 	kmsgs := []message.Message{}
 	for _, msg := range msgs {
 		msg.TopicName = q.queueName
-		kmsgs = append(kmsgs, &msg)
+		kmsgs = append(kmsgs, msg)
 	}
 	return message.SendMessages(q.config, kmsgs)
 }
@@ -58,7 +58,7 @@ func (q *kafkaQueue) CreateMessage(topic string) message.Message {
 	}
 }
 
-func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
+func (q *kafkaQueue) ReceiveMessage(ws int) (msg *QueueMessage, err error) {
 	var consumer message.Consumer
 	if consumer, err = message.NewConsumer(q.config, "kafkaQueue"); err == nil {
 		consumer.SetMessageFactory(q)
@@ -76,7 +76,7 @@ func (q *kafkaQueue) ReceiveMessage(ws int) (msg QueueMessage, err error) {
 		case <-timeout.C:
 			err = errors.New("kafaka queue receive message timeout")
 		case v := <-msgChan:
-			msg = *v
+			msg = v
 		}
 		consumer.Close()
 	}
@@ -126,12 +126,12 @@ func (q *kafkaQueue) BatchReceiveMessages(ws int, numOfMessages int) (msgs []*Qu
 func (q *kafkaQueue) DeleteMessage(handle string) error          { return ErrNotImplemented }
 func (q *kafkaQueue) BatchDeleteMessages(handles []string) error { return ErrNotImplemented }
 
-func (q *kafkaQueue) PeekMessage(waitSeconds int) (QueueMessage, error) {
-	return QueueMessage{}, ErrNotImplemented
+func (q *kafkaQueue) PeekMessage(waitSeconds int) (*QueueMessage, error) {
+	return nil, ErrNotImplemented
 }
 
-func (q *kafkaQueue) BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]QueueMessage, error) {
-	return []QueueMessage{}, ErrNotImplemented
+func (q *kafkaQueue) BatchPeekMessages(wailtSeconds int, numOfMessages int) ([]*QueueMessage, error) {
+	return nil, ErrNotImplemented
 }
 
 func (q *kafkaQueue) SetMessageVisibility(handle string, seconds int) error { return ErrNotImplemented }

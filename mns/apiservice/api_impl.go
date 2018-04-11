@@ -172,7 +172,7 @@ func getQueueList(ctx echo.Context) error {
 }
 
 func sendQueueMessage(ctx echo.Context) error {
-	msg := mns.QueueMessage{}
+	msg := &mns.QueueMessage{}
 	if err := ctx.Bind(&msg); err != nil {
 		return reply(ctx, mns.ErrInvalidParameter, err)
 	}
@@ -183,7 +183,7 @@ func sendQueueMessage(ctx echo.Context) error {
 }
 
 func batchSendQueueMessage(ctx echo.Context) error {
-	msgs := []mns.QueueMessage{}
+	msgs := []*mns.QueueMessage{}
 	if err := ctx.Bind(&msgs); err != nil {
 		return reply(ctx, mns.ErrInvalidParameter, err)
 	}

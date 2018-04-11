@@ -36,14 +36,14 @@ type QueueAttribute struct {
 }
 
 type Queue interface {
-	SendMessage(QueueMessage) error
-	BatchSendMessages([]QueueMessage) error
-	ReceiveMessage(ws int) (QueueMessage, error)
+	SendMessage(*QueueMessage) error
+	BatchSendMessages([]*QueueMessage) error
+	ReceiveMessage(ws int) (*QueueMessage, error)
 	BatchReceiveMessages(ws int, numOfMessages int) ([]*QueueMessage, error)
 	DeleteMessage(handle string) error
 	BatchDeleteMessages(handles []string) error
-	PeekMessage(waitSeconds int) (QueueMessage, error)
-	BatchPeekMessages(ws int, numOfMessages int) ([]QueueMessage, error)
+	PeekMessage(waitSeconds int) (*QueueMessage, error)
+	BatchPeekMessages(ws int, numOfMessages int) ([]*QueueMessage, error)
 	SetMessageVisibility(handle string, seconds int) error
 	Destroy()
 }

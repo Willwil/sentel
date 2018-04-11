@@ -25,14 +25,14 @@ type MnsManager interface {
 	SetQueueAttribute(accountId string, queueName string, attr QueueAttribute) error
 	DeleteQueue(accountId string, queueName string) error
 	GetQueues(accountId string) []string
-	SendQueueMessage(accountId, queueName string, msg QueueMessage) error
-	BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) error
-	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
+	SendQueueMessage(accountId, queueName string, msg *QueueMessage) error
+	BatchSendQueueMessages(accountId, queueName string, msgs []*QueueMessage) error
+	ReceiveQueueMessage(accountId, queueName string, waitSeconds int) (*QueueMessage, error)
 	BatchReceiveQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]*QueueMessage, error)
 	DeleteQueueMessage(accountId, queueName string, handle string) error
 	BatchDeleteQueueMessages(accountId, queueName string, handles []string) error
-	PeekQueueMessage(accountId, queueName string, waitSeconds int) (QueueMessage, error)
-	BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]QueueMessage, error)
+	PeekQueueMessage(accountId, queueName string, waitSeconds int) (*QueueMessage, error)
+	BatchPeekQueueMessages(accountId, queueName string, wailtSeconds int, numOfMessages int) ([]*QueueMessage, error)
 	SetQueueMessageVisibility(accountId, queueName string, handle string, seconds int) error
 
 	// Topic API
@@ -97,25 +97,25 @@ func (m *manager) GetQueueAttribute(accountId, queueName string) (QueueAttribute
 	return m.adaptor.GetQueueAttribute(accountId, queueName)
 }
 
-func (m *manager) SendQueueMessage(accountId, queueName string, msg QueueMessage) error {
+func (m *manager) SendQueueMessage(accountId, queueName string, msg *QueueMessage) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.SendMessage(msg)
 	}
 	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []QueueMessage) error {
+func (m *manager) BatchSendQueueMessages(accountId, queueName string, msgs []*QueueMessage) error {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchSendMessages(msgs)
 	}
 	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (QueueMessage, error) {
+func (m *manager) ReceiveQueueMessage(accountId, queueName string, ws int) (*QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.ReceiveMessage(ws)
 	}
-	return QueueMessage{}, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
+	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
 func (m *manager) BatchReceiveQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]*QueueMessage, error) {
@@ -139,14 +139,14 @@ func (m *manager) BatchDeleteQueueMessages(accountId, queueName string, handles 
 	return ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (QueueMessage, error) {
+func (m *manager) PeekQueueMessage(accountId, queueName string, ws int) (*QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.PeekMessage(ws)
 	}
-	return QueueMessage{}, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
+	return nil, ErrQueueNotExist.With("accountId = %s, queueName = %s", accountId, queueName)
 }
 
-func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]QueueMessage, error) {
+func (m *manager) BatchPeekQueueMessages(accountId, queueName string, ws int, numOfMessages int) ([]*QueueMessage, error) {
 	if queue, err := m.GetQueue(accountId, queueName); err == nil {
 		return queue.BatchPeekMessages(ws, numOfMessages)
 	}
