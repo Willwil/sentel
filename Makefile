@@ -15,8 +15,12 @@ all: build
 
 .PHONY: docker
 docker: all
-	$Q docker build -f broker/Dockerfile .
-	$Q docker build -f iothub/nginx-mqtt/Dockerfile .
+	$Q docker build -t sentel/broker --force-rm -f broker/Dockerfile .
+	$Q docker build -t sentel/nginx-mqtt --force-rm -f iothub/nginx-mqtt/Dockerfile .
+	$Q docker build -t sentel/iotmanager --force-rm -f iotmanager/Dockerfile .
+	$Q docker build -t sentel/apiserver --force-rm -f apiserver/Dockerfile .
+	$Q docker build -t sentel/mns --force-rm -f mns/Dockerfile .
+	$Q docker build -t sentel/whaler --force-rm -f whaler/Dockerfile .
 
 .PHONY: build
 build: .GOPATH/.ok apiserver broker iothub iotmanager whaler mns mns-example
