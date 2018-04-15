@@ -14,6 +14,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/cloustone/sentel/apiserver/console"
@@ -52,8 +53,11 @@ func createConfig(fileName string) (config.Config, error) {
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
 
-	kafka := os.Getenv("KAFKA_HOST")
-	mongo := os.Getenv("MONGO_HOST")
+	for _, e := range os.Environ() {
+		fmt.Println(e)
+	}
+	kafka := os.Getenv("KAFKA_PORT")
+	mongo := os.Getenv("MONGO_PORT")
 	if kafka != "" && mongo != "" {
 		config.AddConfigItem("kafka", kafka)
 		config.AddConfigItem("mongo", mongo)

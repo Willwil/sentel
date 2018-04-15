@@ -1,0 +1,61 @@
+version: '2'
+services:
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  elasticsearch:
+    image: elasticsearch 
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+  apiserver:
+    image: sentel/apiserver
+    user: 777:777
+    ports:
+      - "4145:4145"
+      - "4146:4146"
+    links:
+        - mongo:mongo
+        - kafka:kafka
+  iotmanager:
+    image: sentel/iotmanager
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    links:
+        - mongo:mongo
+        - kafka:kafka
+  mns:
+    image: sentel/mns
+    ports:
+      - "50061:50061"
+    links:
+        - mongo:mongo
+        - kafka:kafka
+  whaler:
+    image: sentel/whaler
+    ports:
+      - "50060:50060"
+    links:
+        - mongo:mongo
+        - kafka:kafka
+
+
+
+
+
+ 

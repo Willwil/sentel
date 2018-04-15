@@ -24,7 +24,7 @@ var defaultConfigs = config.M{
 		"swagger":  "0.0.0.0:53384",
 	},
 	"registry": {
-		"hosts":    "localhost:27017",
+		"hosts":    ":27017",
 		"loglevel": "debug",
 	},
 	"security": {
@@ -39,9 +39,6 @@ var defaultConfigs = config.M{
 	},
 	"management": {
 		"listen": "0.0.0.0:4146",
-	},
-	"keystone": {
-		"hosts": "localhost:4147",
 	},
 	"swagger": {
 		"open_browser": true,

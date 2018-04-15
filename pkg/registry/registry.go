@@ -49,7 +49,7 @@ type Registry struct {
 // InitializeRegistry try to connect with background database
 // to confirm wether it is normal
 func Initialize(c config.Config) error {
-	hosts := c.MustStringWithSection("registry", "hosts")
+	hosts := c.MustString("mongo")
 	glog.Infof("Initializing registry:%s...", hosts)
 	session, err := mgo.Dial(hosts)
 	if err != nil {
@@ -367,7 +367,7 @@ func (r *Registry) BulkUpdateDevice(devices []Device) error {
 }
 
 //save device runlog.
-func (r *Registry) SaveDeviceRunlog(productId string, deviceId string, deviceStatus string) error {	
+func (r *Registry) SaveDeviceRunlog(productId string, deviceId string, deviceStatus string) error {
 	log := Runlog{}
 	log.ProductId = productId
 	log.DeviceId = deviceId
@@ -387,31 +387,31 @@ func (r *Registry) GetShadowDevice(productId string, deviceId string) (*Runlog, 
 	log := Runlog{}
 	//find showing device status.
 	err := c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "1"}).One(&showlog)
-	if err == nil{
+	if err == nil {
 		basetime := time.Now()
 		//then try to find all fited from showlog to now .
 		err = c.Find(bson.M{"TimeCreated": bson.M{"&gte": showlog.TimeCreated}}).Select(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0"}).All(unshowlogs)
-		if err == nil{
-			for _,log = range unshowlogs{
+		if err == nil {
+			for _, log = range unshowlogs {
 				duration := basetime.Sub(log.TimeCreated)
-				s,_ := time.ParseDuration("3s")
-				if duration >= s{
+				s, _ := time.ParseDuration("3s")
+				if duration >= s {
 					log.IsShow = "1"
 					log.TimeUpdated = time.Now()
 					c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId, "IsShow": "0", "TimeCreated": log.TimeCreated}, log)
 					return &log, err
-				}else{
+				} else {
 					basetime = log.TimeCreated
 				}
 			}
 			return &showlog, err
-		}else{
+		} else {
 			return &showlog, err
 		}
-	}else{
+	} else {
 		//no found,find the first device status,update status.
 		err = c.Find(bson.M{"ProductId": productId, "DeviceId": deviceId}).One(log)
-		if err == nil{
+		if err == nil {
 			log.IsShow = "1"
 			c.Update(bson.M{"ProductId": productId, "DeviceId": deviceId}, log)
 		}

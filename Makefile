@@ -17,6 +17,7 @@ all: build
 docker: all
 	$Q docker build -t sentel/broker --force-rm -f broker/Dockerfile .
 	$Q docker build -t sentel/nginx-mqtt --force-rm -f iothub/nginx-mqtt/Dockerfile .
+	$Q docker build -t sentel/iothub --force-rm -f iothub/Dockerfile .
 	$Q docker build -t sentel/iotmanager --force-rm -f iotmanager/Dockerfile .
 	$Q docker build -t sentel/apiserver --force-rm -f apiserver/Dockerfile .
 	$Q docker build -t sentel/mns --force-rm -f mns/Dockerfile .
