@@ -14,7 +14,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/cloustone/sentel/iotmanager/collector"
 	"github.com/cloustone/sentel/iotmanager/conductor"
@@ -32,24 +31,14 @@ func main() {
 	flag.Parse()
 
 	glog.Info("Initializing iotmanager...")
-	config := createConfig(*configFileName)
-	mgr, _ := service.NewServiceManager("iotmanager", config)
+	c := config.New("iotmanager")
+	c.AddConfig(defaultConfigs)
+	c.AddConfigFile(*configFileName)
+	service.UpdateServiceConfigs(c, "mongo", "kafka")
+
+	mgr, _ := service.NewServiceManager("iotmanager", c)
 	mgr.AddService(conductor.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	mgr.AddService(collector.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
-}
-
-func createConfig(fileName string) config.Config {
-	c := config.New("iotmanager")
-	c.AddConfig(defaultConfigs)
-	c.AddConfigFile(fileName)
-
-	k := os.Getenv("KAFKA_HOST")
-	m := os.Getenv("MONGO_HOST")
-	if k != "" && m != "" {
-		c.AddConfigItem("kafka", k)
-		c.AddConfigItem("mongo", m)
-	}
-	return c
 }

@@ -22,6 +22,6 @@ var defaultConfigs = config.M{
 		"connect_timeout": 5,
 	},
 	"restapi": {
-		"listen": "localhost:50060",
+		"listen": ":50060",
 	},
 }

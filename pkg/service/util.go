@@ -8,33 +8,31 @@
 //  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 //  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 //  License for the specific language governing permissions and limitations
-//  under the License.
 
-package main
+package service
 
 import (
-	"flag"
+	"net"
+	"os"
+	"strings"
 
-	"github.com/cloustone/sentel/mns/apiservice"
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/cloustone/sentel/pkg/service"
 	"github.com/golang/glog"
 )
 
-var (
-	configFileName = flag.String("c", "/etc/sentel/mns.conf", "config file")
-)
-
-func main() {
-	flag.Parse()
-	glog.Info("message notify service is starting...")
-
-	c := config.New("mns")
-	c.AddConfig(defaultConfigs)
-	c.AddConfigFile(*configFileName)
-	service.UpdateServiceConfigs(c, "mongo", "kafka")
-
-	mgr, _ := service.NewServiceManager("mns", c)
-	mgr.AddService(apiservice.ServiceFactory{})
-	glog.Error(mgr.RunAndWait())
+func UpdateServiceConfigs(c config.Config, services ...string) {
+	for _, serviceName := range services {
+		// in docker environment, check wether environment is set
+		servicePort := strings.ToUpper(serviceName) + "_PORT"
+		if v := os.Getenv(servicePort); v != "" {
+			c.AddConfigItem(serviceName, v)
+		} else {
+			// check /etc/hosts files
+			if _, err := net.LookupHost(serviceName); err == nil {
+				c.AddConfigItem(serviceName, serviceName)
+			}
+		}
+		v, _ := c.String(serviceName)
+		glog.Infof("##### updating service '%s = %s'\n", serviceName, v)
+	}
 }

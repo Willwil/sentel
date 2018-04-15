@@ -25,7 +25,7 @@ var defaultConfigs = config.M{
 		"network":         "sentel-front",
 	},
 	"collector": {
-		"listen": "localhost:8081",
+		"listen": ":8081",
 	},
 	"restapi": {
 		"listen":          ":8080",

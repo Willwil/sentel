@@ -71,7 +71,7 @@ func New(c config.Config) (*Registry, error) {
 	hosts := c.MustString("mongo")
 	session, err := mgo.DialWithTimeout(hosts, 5*time.Second)
 	if err != nil {
-		glog.Infof("Failed to initialize registry:%s", err.Error())
+		glog.Infof("registry '%s':%s", hosts, err.Error())
 		return nil, err
 	}
 	return &Registry{session: session, db: session.DB("registry"), config: c}, nil

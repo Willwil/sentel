@@ -72,13 +72,8 @@ func createConfig(fileName string, daemon bool) (config.Config, error) {
 	config := config.New("broker")
 	config.AddConfig(defaultConfigs)
 	config.AddConfigFile(fileName)
+	service.UpdateServiceConfigs(config, "mongo", "kafka")
 	if daemon {
-		kafka := os.Getenv("KAFKA_HOST")
-		mongo := os.Getenv("MONGO_HOST")
-		if kafka != "" && mongo != "" {
-			config.AddConfigItem("kafka", kafka)
-			config.AddConfigItem("mongo", mongo)
-		}
 		// tenant and product must be set
 		if *tenant == "" {
 			*tenant = os.Getenv("BROKER_TENANT")

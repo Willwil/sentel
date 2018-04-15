@@ -17,17 +17,20 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  elasticsearch:
-    image: elasticsearch 
-    ports:
-      - "9200:9200"
-      - "9300:9300"
+#  elasticsearch:
+#    image: elasticsearch 
+#    ports:
+#      - "9200:9200"
+#     - "9300:9300"
   apiserver:
     image: sentel/apiserver
     user: 777:777
     ports:
       - "4145:4145"
       - "4146:4146"
+    depends_on:
+        - mongo
+        - kafka
     links:
         - mongo:mongo
         - kafka:kafka
@@ -36,26 +39,30 @@ services:
     ports:
       - "8080:8080"
       - "8081:8081"
+    depends_on:
+      - mongo
+      - kafka
     links:
-        - mongo:mongo
-        - kafka:kafka
+      - mongo:mongo
+      - kafka:kafka
   mns:
     image: sentel/mns
     ports:
       - "50061:50061"
+    depends_on:
+      - mongo
+      - kafka
     links:
-        - mongo:mongo
-        - kafka:kafka
+      - mongo:mongo
+      - kafka:kafka
   whaler:
     image: sentel/whaler
     ports:
       - "50060:50060"
+    depends_on:
+      - mongo
+      - kafka
     links:
-        - mongo:mongo
-        - kafka:kafka
-
-
-
-
-
+      - mongo:mongo
+      - kafka:kafka
  

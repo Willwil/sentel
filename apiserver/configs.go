@@ -21,11 +21,7 @@ var defaultConfigs = config.M{
 		"version":  "v1",
 		"auth":     "jwt",
 		"mongo":    "localhost:27017",
-		"swagger":  "0.0.0.0:53384",
-	},
-	"registry": {
-		"hosts":    ":27017",
-		"loglevel": "debug",
+		"swagger":  ":53384",
 	},
 	"security": {
 		"cafile":              "",

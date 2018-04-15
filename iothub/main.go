@@ -14,10 +14,10 @@ package main
 import (
 	"flag"
 
+	"github.com/cloustone/sentel/pkg/config"
 	"github.com/golang/glog"
 
 	"github.com/cloustone/sentel/iothub/watcher"
-	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
 )
 
@@ -29,19 +29,15 @@ func main() {
 	flag.Parse()
 	glog.Info("Starting  iothub...")
 
-	config, _ := createConfig(*configFileName)
-	mgr, err := service.NewServiceManager("iothub", config)
+	c := config.New("iothub")
+	c.AddConfig(defaultConfigs)
+	c.AddConfigFile(*configFileName)
+	service.UpdateServiceConfigs(c, "zookeeper")
+
+	mgr, err := service.NewServiceManager("iothub", c)
 	if err != nil {
 		glog.Fatalf("iothub create failed: '%s'", err.Error())
 	}
 	mgr.AddService(watcher.ServiceFactory{})
 	glog.Fatal(mgr.RunAndWait())
-}
-
-func createConfig(fileName string) (config.Config, error) {
-	config := config.New("iothub")
-	config.AddConfig(defaultConfigs)
-	config.AddConfigFile(fileName)
-	//config.AddConfigItem("zookeeper", os.Getenv("ZOOKEEPER_HOST"))
-	return config, nil
 }

@@ -14,7 +14,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	"github.com/cloustone/sentel/pkg/config"
 	"github.com/cloustone/sentel/pkg/service"
@@ -24,29 +23,20 @@ import (
 )
 
 var (
-	configFile = flag.String("c", "/etc/sentel/whaler.conf", "config file")
+	configFileName = flag.String("c", "/etc/sentel/whaler.conf", "config file")
 )
 
 func main() {
 	flag.Parse()
 	glog.Info("whaler is starting...")
 
-	config, _ := createConfig(*configFile)
-	mgr, _ := service.NewServiceManager("whaler", config)
+	c := config.New("whaler")
+	c.AddConfig(defaultConfigs)
+	c.AddConfigFile(*configFileName)
+	service.UpdateServiceConfigs(c, "mongo", "kafka")
+
+	mgr, _ := service.NewServiceManager("whaler", c)
 	mgr.AddService(engine.ServiceFactory{})
 	mgr.AddService(restapi.ServiceFactory{})
 	glog.Error(mgr.RunAndWait())
-}
-
-func createConfig(fileName string) (config.Config, error) {
-	config := config.New("whaler")
-	config.AddConfig(defaultConfigs)
-	config.AddConfigFile(fileName)
-	k := os.Getenv("KAFKA_HOST")
-	m := os.Getenv("MONGO_HOST")
-	if k != "" && m != "" {
-		config.AddConfigItem("kafka", k)
-		config.AddConfigItem("mongo", m)
-	}
-	return config, nil
 }
