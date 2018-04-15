@@ -137,7 +137,7 @@ func (p *consoleService) Initialize() error {
 func (p *consoleService) Start() error {
 	p.waitgroup.Add(1)
 	go func(s *consoleService) {
-		addr := p.config.MustStringWithSection("console", "listen")
+		addr := p.config.MustString("listen")
 		p.echo.Start(addr)
 		p.waitgroup.Done()
 	}(p)

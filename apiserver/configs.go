@@ -21,7 +21,6 @@ var defaultConfigs = config.M{
 		"version":  "v1",
 		"auth":     "jwt",
 		"mongo":    "localhost:27017",
-		"swagger":  ":53384",
 	},
 	"security": {
 		"cafile":              "",
@@ -37,7 +36,9 @@ var defaultConfigs = config.M{
 		"listen": "0.0.0.0:4146",
 	},
 	"swagger": {
-		"open_browser": true,
+		"listen":       ":53384",
+		"open_browser": false,
+		"path":         "/etc/sentel/swagger.yaml",
 	},
 	"security_manager": {
 		"realms": "registry,sentel",

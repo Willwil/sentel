@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"github.com/cloustone/sentel/pkg/config"
-	"github.com/golang/glog"
 )
 
 func UpdateServiceConfigs(c config.Config, services ...string) {
@@ -32,7 +31,5 @@ func UpdateServiceConfigs(c config.Config, services ...string) {
 				c.AddConfigItem(serviceName, serviceName)
 			}
 		}
-		v, _ := c.String(serviceName)
-		glog.Infof("##### updating service '%s = %s'\n", serviceName, v)
 	}
 }

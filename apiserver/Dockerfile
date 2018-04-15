@@ -1,7 +1,9 @@
 FROM alpine
 RUN mkdir /sentel
-RUN mkdir /etc/sentel
-COPY bin/linux_amd64/apiserver /sentel/
-# COPY apiserver/apiserver.conf /etc/sentel
+RUN mkdir /sentel/bin
+RUN mkdir /sentel/etc
+COPY bin/linux_amd64/apiserver /sentel/bin/
+#COPY apiserver/apiserver.conf /sentel/etc/
+COPY apiserver/swagger.yaml /sentel/etc/
 
-ENTRYPOINT ["/sentel/apiserver"]
+ENTRYPOINT ["/sentel/bin/apiserver"]

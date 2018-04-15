@@ -34,7 +34,7 @@ func main() {
 	c := config.New("iotmanager")
 	c.AddConfig(defaultConfigs)
 	c.AddConfigFile(*configFileName)
-	service.UpdateServiceConfigs(c, "mongo", "kafka")
+	service.UpdateServiceConfigs(c, "mongo", "kafka", "zookeeper")
 
 	mgr, _ := service.NewServiceManager("iotmanager", c)
 	mgr.AddService(conductor.ServiceFactory{})

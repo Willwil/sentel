@@ -47,10 +47,7 @@ type ServiceDiscovery interface {
 
 // New create service discovery
 func New(c config.Config) (ServiceDiscovery, error) {
-	backend, err := c.StringWithSection("service-discovery", "backend")
-	if err != nil {
-		return nil, err
-	}
+	backend, _ := c.String("service_discovery_backend")
 	switch backend {
 	case BackendZookeeper:
 		return newServiceDiscoveryZK(c)

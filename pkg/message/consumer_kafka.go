@@ -46,6 +46,10 @@ func newKafkaConsumer(c config.Config, clientId string) (Consumer, error) {
 	if err != nil || khosts == "" {
 		return nil, errors.New("message service is not rightly configed")
 	}
+	names := strings.Split(khosts, ":")
+	if len(names) == 1 {
+		khosts = khosts + ":9092"
+	}
 	return &kafkaConsumer{
 		khosts:      khosts,
 		clientId:    clientId,
@@ -68,7 +72,7 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 	// config.kafkaConsumer.Offsets.Initial = sarama.OffsetNewest
 	consumer, err := sarama.NewConsumer(strings.Split(p.khosts, ","), config)
 	if err != nil {
-		return fmt.Errorf("message listener failed to connect with kafka server '%s'", p.khosts)
+		return fmt.Errorf("host = '%s', %s", p.khosts, err.Error())
 	}
 	p.subscribers[topic] = &subscriber{
 		topic:      topic,
@@ -90,7 +94,7 @@ func (p *kafkaConsumer) Start() error {
 			for partition := range partitionList {
 				pc, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
 				if err != nil {
-					return fmt.Errorf("messge listener subscribe kafka topic '%s' failed:%s", topic, err.Error())
+					return err
 				}
 				sub.pconsumers = append(sub.pconsumers, pc)
 				sub.waitgroup.Add(1)

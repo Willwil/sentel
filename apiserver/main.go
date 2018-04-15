@@ -26,7 +26,7 @@ import (
 
 var (
 	configFileName = flag.String("c", "/etc/sentel/apiserver.conf", "config file")
-	swaggerFile    = flag.String("s", "apiserver/swagger/console_swagger.yaml", "swagger file")
+	swaggerFile    = flag.String("s", "./swagger.yaml", "swagger file")
 )
 
 func main() {

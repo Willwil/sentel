@@ -1,7 +1,8 @@
 FROM alpine
 RUN mkdir /sentel
-# RUN mkdir /etc/sentel
-COPY bin/linux_amd64/mns /sentel/
-# COPY mns/mns.conf /etc/sentel
+RUN mkdir /sentel/bin
+RUN mkdir /sentel/etc
+COPY bin/linux_amd64/mns /sentel/bin/
+#COPY mns/mns.conf /sentel/etc/
 
-ENTRYPOINT ["/sentel/mns"]
+ENTRYPOINT ["/sentel/bin/mns"]

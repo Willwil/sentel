@@ -52,13 +52,12 @@ type swaggerService struct {
 type ServiceFactory struct{}
 
 func (p ServiceFactory) New(c config.Config) (service.Service, error) {
-	hosts := c.MustString("swagger")
+	hosts := c.MustStringWithSection("swagger", "listen")
 	names := strings.Split(hosts, ":")
 	if len(names) != 2 {
 		return nil, errors.New("swagger configuration error")
 	}
 	port, _ := strconv.Atoi(names[1])
-	// swagger file
 	return &swaggerService{
 		config:    c,
 		waitgroup: sync.WaitGroup{},

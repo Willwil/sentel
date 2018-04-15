@@ -36,15 +36,23 @@ type serviceDisZK struct {
 }
 
 func newServiceDiscoveryZK(c config.Config) (ServiceDiscovery, error) {
-	khosts, err1 := c.StringWithSection("service-discovery", "hosts")
-	rootPath, err2 := c.StringWithSection("service-discovery", "services_path")
+	khosts, err1 := c.String("zookeeper")
+	rootPath, err2 := c.String("service_discovery_path")
 	if err1 != nil || err2 != nil || khosts == "" || rootPath == "" {
 		return nil, errors.New("invalid service-discovery config")
 	}
+	hosts := []string{}
+	for _, names := range strings.Split(khosts, ",") {
+		if len(strings.Split(names, ":")) == 1 {
+			hosts = append(hosts, names+":2181")
+		} else {
+			hosts = append(hosts, names)
+		}
+	}
 
-	conn, _, err := zk.Connect(strings.Split(khosts, ","), time.Second*2)
+	conn, _, err := zk.Connect(hosts, time.Second*2)
 	if err != nil {
-		return nil, fmt.Errorf("service discovery can not connect with zk:%s", khosts)
+		return nil, fmt.Errorf("service discovery can not connect with %s", khosts)
 	}
 	return &serviceDisZK{
 		config:    c,

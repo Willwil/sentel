@@ -18,7 +18,7 @@ import "time"
 type Tenant struct {
 	TenantId  string    `bson:"TenantId"`
 	Password  string    `bson:"Password"`
-	SecretKey string    `bson:"secretKey"`
+	SecretKey string    `bson:"SecretKey"`
 	CreatedAt time.Time `bson:"CreatedAt"`
 	UpdatedAt time.Time `bson:"UpdatedAt"`
 	Roles     []string  `bons:"Roles"`

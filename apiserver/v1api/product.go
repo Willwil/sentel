@@ -113,7 +113,7 @@ func UpdateProduct(ctx echo.Context) error {
 		return ctx.JSON(BadRequest, apiResponse{Message: err.Error()})
 	}
 	productId := ctx.Param("productId")
-	if (productId == "" || productId != req.ProductId){
+	if productId == "" || productId != req.ProductId {
 		return ctx.JSON(BadRequest, apiResponse{Message: "invalid parameter"})
 	}
 

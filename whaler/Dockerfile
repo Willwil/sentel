@@ -1,7 +1,8 @@
 FROM alpine
 RUN mkdir /sentel
-# RUN mkdir /etc/sentel
-COPY bin/linux_amd64/whaler /sentel/
-# COPY whaler/whaler.conf /etc/sentel
+RUN mkdir /sentel/bin
+RUN mkdir /sentel/etc
+COPY bin/linux_amd64/whaler /sentel/bin/
+#COPY whaler/whaler.conf /sentel/etc/
 
-ENTRYPOINT ["/sentel/whaler"]
+ENTRYPOINT ["/sentel/bin/whaler"]

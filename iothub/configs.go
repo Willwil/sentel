@@ -16,15 +16,12 @@ import "github.com/cloustone/sentel/pkg/config"
 
 var defaultConfigs = config.M{
 	"iothub": {
-		"backend":   "zookeeper",
-		"loglevel":  "debug",
-		"version":   "v1",
-		"zookeeper": "localhost:2181",
-		"root_path": "/iotservices",
-	},
-	"service-discovery": {
-		"hosts":         "localhost:2181",
-		"backend":       "zookeeper",
-		"services_path": "/iotservices",
+		"backend":                   "zookeeper",
+		"loglevel":                  "debug",
+		"version":                   "v1",
+		"zookeeper":                 "localhost:2181",
+		"root_path":                 "/iotservices",
+		"service_discovery_backend": "zookeeper",
+		"service_discovery_path":    "/iotservices",
 	},
 }

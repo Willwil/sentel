@@ -1,4 +1,4 @@
-version: '2'
+version: '3'
 services:
   mongo:
     image: mongo
@@ -10,6 +10,8 @@ services:
       - "2181:2181"
   kafka:
     image: wurstmeister/kafka
+    depends_on:
+      - zookeeper
     ports:
       - "9092:9092"
     environment:
@@ -40,11 +42,13 @@ services:
       - "8080:8080"
       - "8081:8081"
     depends_on:
+      - zookeeper
       - mongo
       - kafka
     links:
       - mongo:mongo
       - kafka:kafka
+      - zookeeper:zookeeper
   mns:
     image: sentel/mns
     ports:
@@ -53,8 +57,8 @@ services:
       - mongo
       - kafka
     links:
-      - mongo:mongo
-      - kafka:kafka
+        - mongo:mongo
+        - kafka:kafka
   whaler:
     image: sentel/whaler
     ports:
@@ -63,6 +67,5 @@ services:
       - mongo
       - kafka
     links:
-      - mongo:mongo
-      - kafka:kafka
- 
+        - mongo:mongo
+        - kafka:kafka

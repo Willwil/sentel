@@ -16,13 +16,16 @@ import "github.com/cloustone/sentel/pkg/config"
 
 var defaultConfigs = config.M{
 	"iotmanager": {
-		"loglevel":        "debug",
-		"kafka":           "localhost:9092",
-		"mongo":           "localhost:27017",
-		"connect_timeout": 5,
-		"deploy-mode":     "swarm",
-		"docker-images":   "mongo,kafka,zookeeper, redis, sentel/broker",
-		"network":         "sentel-front",
+		"loglevel":                  "debug",
+		"kafka":                     "localhost:9092",
+		"mongo":                     "localhost:27017",
+		"connect_timeout":           5,
+		"deploy-mode":               "swarm",
+		"docker-images":             "mongo,kafka,zookeeper, redis, sentel/broker",
+		"network":                   "sentel-front",
+		"service_discovery_backend": "zookeeper",
+		"zookeeper":                 "localhost:2181",
+		"service_discovery_path":    "/iotservices",
 	},
 	"collector": {
 		"listen": ":8081",
@@ -31,10 +34,5 @@ var defaultConfigs = config.M{
 		"listen":          ":8080",
 		"loglevel":        "debug",
 		"connect_timeout": 2,
-	},
-	"service-discovery": {
-		"hosts":         "localhost:2181",
-		"backend":       "zookeeper",
-		"services_path": "/iotservices",
 	},
 }

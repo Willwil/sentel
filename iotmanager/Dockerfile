@@ -1,6 +1,8 @@
 FROM alpine
 RUN mkdir /sentel
-COPY bin/linux_amd64/iotmanager /sentel/
-# COPY iotmanager/iotmanager.conf /etc/sentel
+RUN mkdir /sentel/bin
+RUN mkdir /sentel/etc
+COPY bin/linux_amd64/iotmanager /sentel/bin/
+#COPY iotmanager/iotmanager.conf /sentel/etc/
 
-ENTRYPOINT ["/sentel/iotmanager"]
+ENTRYPOINT ["/sentel/bin/iotmanager"]

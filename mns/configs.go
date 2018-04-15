@@ -20,8 +20,6 @@ var defaultConfigs = config.M{
 		"kafka":           "localhost:9092",
 		"mongo":           "localhost:27017",
 		"connect_timeout": 5,
-	},
-	"restapi": {
-		"listen": ":50061",
+		"listen":          ":50061",
 	},
 }

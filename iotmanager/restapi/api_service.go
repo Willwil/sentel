@@ -53,6 +53,8 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 			return h(cc)
 		}
 	})
+
+	e.HideBanner = true
 	//Cross-Origin
 	e.Use(middleware.CORSWithConfig(middleware.DefaultCORSConfig))
 
