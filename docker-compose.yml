@@ -15,7 +15,7 @@ services:
     ports:
       - "9092:9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      HOSTNAME_COMMAND: "ifconfig eth0 | grep 'inet addr' | awk '{ print $$2}' | awk -F: '{print $$2}''"
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -49,6 +49,7 @@ services:
       - mongo:mongo
       - kafka:kafka
       - zookeeper:zookeeper
+    command: ["/sentel/bin/wait-for-it.sh", "kafka:9092", "--", "/sentel/bin/iotmanager"]
   mns:
     image: sentel/mns
     ports:
@@ -69,3 +70,4 @@ services:
     links:
         - mongo:mongo
         - kafka:kafka
+    command: ["/sentel/bin/wait-for-it.sh", "kafka:9092", "--", "/sentel/bin/whaler"]
