@@ -4,10 +4,12 @@ services:
     image: mongo
     ports:
       - "27017:27017"
+
   zookeeper:
     image: wurstmeister/zookeeper
-    ports:
-      - "2181:2181"
+    expose:
+      - "2181"
+
   kafka:
     image: wurstmeister/kafka
     depends_on:
@@ -19,47 +21,25 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-#  elasticsearch:
-#    image: elasticsearch 
-#    ports:
-#      - "9200:9200"
-#     - "9300:9300"
+
   apiserver:
     image: sentel/apiserver
     user: 777:777
     ports:
       - "4145:4145"
       - "4146:4146"
-    depends_on:
-        - mongo
-        - kafka
     links:
-        - mongo:mongo
-        - kafka:kafka
-  iotmanager:
-    image: sentel/iotmanager
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-    depends_on:
-      - zookeeper
       - mongo
       - kafka
-    links:
-      - mongo:mongo
-      - kafka:kafka
-      - zookeeper:zookeeper
-    command: ["/sentel/bin/wait-for-it.sh", "kafka:9092", "--", "/sentel/bin/iotmanager"]
+
   mns:
     image: sentel/mns
     ports:
       - "50061:50061"
-    depends_on:
+    links:
       - mongo
       - kafka
-    links:
-        - mongo:mongo
-        - kafka:kafka
+
   whaler:
     image: sentel/whaler
     ports:
@@ -67,7 +47,13 @@ services:
     depends_on:
       - mongo
       - kafka
-    links:
-        - mongo:mongo
-        - kafka:kafka
     command: ["/sentel/bin/wait-for-it.sh", "kafka:9092", "--", "/sentel/bin/whaler"]
+
+  broker:
+    image: sentel/broker
+    ports:
+      - "1883:1883"
+    depends_on:
+        - mongo
+        - kafka
+    command: ["/sentel/bin/wait-for-it.sh", "kafka:9092", "--", "/sentel/bin/broker",  "-d", "-t", "ssddn", "-P", "tcp", "-l", "0.0.0.0:1883"]

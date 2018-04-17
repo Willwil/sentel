@@ -50,9 +50,7 @@ var (
 func main() {
 	flag.Parse()
 
-	// go func() {
-	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
-	// }()
+	glog.Info("Initializing broker...")
 
 	config, err := createConfig(*configFile, *daemon)
 	if err != nil {
@@ -60,6 +58,7 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
+
 	if *daemon == true {
 		glog.Infof("Starting 'broker' server...")
 		glog.Fatal(runBrokerDaemon(config))
