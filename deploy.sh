@@ -17,11 +17,11 @@ USAGE
     exit 1
 }
 
-kubernetes() {
-    echo "hello k8s"
+dockerswarm() {
+    echo "hello dockerswarm"
 }
 
-dockerswarm() {
+kubernetes() {
     echo "starting services in kubernetes mode..."
     case $1 in
         "start")
