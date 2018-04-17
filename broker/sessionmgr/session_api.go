@@ -14,10 +14,10 @@ package sessionmgr
 
 import "github.com/cloustone/sentel/broker/base"
 
-// FindSesison return session object by clientId if existed
-func FindSession(clientId string) (Session, error) {
+// FindSesison return session object by clientID if existed
+func FindSession(clientID string) (Session, error) {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.findSession(clientId)
+	return sm.findSession(clientID)
 }
 
 // RegiserSession register session into session manager
@@ -27,25 +27,25 @@ func RegisterSession(s Session) error {
 }
 
 // RemoveSession remove session from session manager
-func RemoveSession(clientId string) error {
+func RemoveSession(clientID string) error {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.removeSession(clientId)
+	return sm.removeSession(clientID)
 }
 
 // DeleteMessageWithValidator delete message in session manager with condition
-func DeleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
+func DeleteMessageWithValidator(clientID string, validator func(*base.Message) bool) {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	sm.deleteMessageWithValidator(clientId, validator)
+	sm.deleteMessageWithValidator(clientID, validator)
 }
 
 // DeleteMessge delete message specified by id from session manager
-func DeleteMessage(clientId string, pid uint16, direction uint8) {
+func DeleteMessage(clientID string, pid uint16, direction uint8) {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	sm.deleteMessage(clientId, pid, direction)
+	sm.deleteMessage(clientID, pid, direction)
 }
 
 // FindMessage return message already existed in session manager
-func FindMessage(clientId string, pid uint16, dir uint8) *base.Message {
+func FindMessage(clientID string, pid uint16, dir uint8) *base.Message {
 	return nil
 }
 
@@ -56,9 +56,9 @@ func GetTopics() []*Topic {
 }
 
 // GetClientTopicss return client's subscribed topics
-func GetClientTopics(clientId string) []*Topic {
+func GetClientTopics(clientID string) []*Topic {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.getClientTopics(clientId)
+	return sm.getClientTopics(clientID)
 }
 
 // GetTopic return specified topic subscription info
@@ -74,9 +74,9 @@ func GetSubscriptions() []*Subscription {
 }
 
 // GetClientSubscriptions return client's subscription
-func GetClientSubscriptions(clientId string) []*Subscription {
+func GetClientSubscriptions(clientID string) []*Subscription {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.getClientSubscriptions(clientId)
+	return sm.getClientSubscriptions(clientID)
 }
 
 //  GetSession return all sessions in the broker
@@ -86,9 +86,9 @@ func GetSessions() []*Session {
 }
 
 // GetSessionInfo return client's session detail information
-func GetSessionInfo(clientId string) *Session {
+func GetSessionInfo(clientID string) *Session {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.getSessionInfo(clientId)
+	return sm.getSessionInfo(clientID)
 }
 
 // GetClients return all clients in broker cluster
@@ -98,7 +98,7 @@ func GetClients() []*Client {
 }
 
 // GetClient return client's detail information
-func GetClient(clientId string) *Client {
+func GetClient(clientID string) *Client {
 	sm := base.GetService(ServiceName).(*sessionManager)
-	return sm.getClient(clientId)
+	return sm.getClient(clientID)
 }

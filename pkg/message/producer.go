@@ -19,8 +19,8 @@ type Producer interface {
 	Close()
 }
 
-func NewProducer(c config.Config, clientId string, sync bool) (Producer, error) {
-	return newKafkaProducer(c, clientId, sync)
+func NewProducer(c config.Config, clientID string, sync bool) (Producer, error) {
+	return newKafkaProducer(c, clientID, sync)
 }
 
 func PostMessage(c config.Config, msg Message) (err error) {

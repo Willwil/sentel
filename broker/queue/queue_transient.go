@@ -20,16 +20,16 @@ import (
 
 type transientQueue struct {
 	config   config.Config
-	clientId string
+	clientID string
 	observer Observer
 	syncq    *syncQueue
 	list     List
 }
 
-func newTransientQueue(clientId string, c config.Config) (Queue, error) {
+func newTransientQueue(clientID string, c config.Config) (Queue, error) {
 	q := &transientQueue{
 		config:   c,
-		clientId: clientId,
+		clientID: clientID,
 		syncq:    newSyncQueue(),
 		observer: nil,
 		list:     newTransientList(),
@@ -38,7 +38,7 @@ func newTransientQueue(clientId string, c config.Config) (Queue, error) {
 }
 
 // Id return queue identifier
-func (p *transientQueue) ClientId() string     { return p.clientId }
+func (p *transientQueue) ClientId() string     { return p.clientID }
 func (p *transientQueue) Length() int          { return p.syncq.len() }
 func (p *transientQueue) Front() *base.Message { return p.syncq.front().(*base.Message) }
 func (p *transientQueue) Pop() *base.Message   { return p.syncq.pop().(*base.Message) }
@@ -58,7 +58,7 @@ func (p *transientQueue) Close() error {
 }
 
 func (p *transientQueue) IsPersistent() bool { return false }
-func (p *transientQueue) Name() string       { return p.clientId }
+func (p *transientQueue) Name() string       { return p.clientID }
 
 // RegisterObesrve register an observer on queue
 func (p *transientQueue) RegisterObserver(o Observer) {

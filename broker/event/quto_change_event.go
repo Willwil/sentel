@@ -15,14 +15,14 @@ package event
 type QutoChangeEvent struct {
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
-	ClientId   string `json:"clientId"`   // Client identifier where event come from
+	ClientId   string `json:"clientID"`   // Client identifier where event come from
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	QutoId     string `json:"qutoId"`
 }
 
 func (p *QutoChangeEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
 func (p *QutoChangeEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *QutoChangeEvent) SetClientId(clientId string) { p.ClientId = clientId }
+func (p *QutoChangeEvent) SetClientId(clientID string) { p.ClientId = clientID }
 func (p *QutoChangeEvent) GetBrokerId() string         { return p.BrokerId }
 func (p *QutoChangeEvent) GetType() uint32             { return QutoChange }
 func (p *QutoChangeEvent) GetClientId() string         { return p.ClientId }

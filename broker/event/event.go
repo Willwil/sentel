@@ -28,7 +28,7 @@ const (
 type Event interface {
 	SetBrokerId(brokerId string)
 	SetType(eventType uint32)
-	SetClientId(clientId string)
+	SetClientId(clientID string)
 	GetBrokerId() string
 	GetType() uint32
 	GetClientId() string

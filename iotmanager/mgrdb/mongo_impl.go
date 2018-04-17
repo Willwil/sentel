@@ -98,17 +98,17 @@ func (p *mgrdbMongo) GetNodesClientWithTimeScope(nodeId string, form time.Time, 
 	return clients
 }
 
-func (p *mgrdbMongo) GetClientWithNode(nodeId string, clientId string) (Client, error) {
+func (p *mgrdbMongo) GetClientWithNode(nodeId string, clientID string) (Client, error) {
 	client := Client{}
 	// TODO
 	return client, nil
 }
 
 // Session
-func (p *mgrdbMongo) GetSession(clientId string) (Session, error) {
+func (p *mgrdbMongo) GetSession(clientID string) (Session, error) {
 	c := p.session.C(collectionSessions)
 	session := Session{}
-	err := c.Find(bson.M{"ClientId": clientId}).One(&session)
+	err := c.Find(bson.M{"ClientId": clientID}).One(&session)
 	return session, err
 }
 
@@ -129,10 +129,10 @@ func (p *mgrdbMongo) GetNodeSessions(nodeId string) []Session {
 	return sessions
 }
 
-func (p *mgrdbMongo) GetSessionWithNode(nodeId string, clientId string) (Session, error) {
+func (p *mgrdbMongo) GetSessionWithNode(nodeId string, clientID string) (Session, error) {
 	c := p.session.C(collectionSessions)
 	session := Session{}
-	err := c.Find(bson.M{"NodeId": nodeId, "ClientId": clientId}).One(&session)
+	err := c.Find(bson.M{"NodeId": nodeId, "ClientId": clientID}).One(&session)
 	return session, err
 }
 
@@ -166,10 +166,10 @@ func (p *mgrdbMongo) RemoveProduct(tid string, pid string) error {
 		bson.M{"$pull": bson.M{"products": bson.M{"productId": pid}}})
 }
 
-func (p *mgrdbMongo) GetClient(clientId string) (Client, error) {
+func (p *mgrdbMongo) GetClient(clientID string) (Client, error) {
 	c := p.session.C(collectionClients)
 	client := Client{}
-	err := c.Find(bson.M{"ClientId": clientId}).One(&client)
+	err := c.Find(bson.M{"ClientId": clientID}).One(&client)
 	return client, err
 }
 

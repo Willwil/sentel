@@ -31,26 +31,26 @@ type topicTree interface {
 	addSubscription(sub *subscription) error
 
 	// getSubscriptions return client's all subscription topics
-	getSubscriptionTopics(clientId string) []string
+	getSubscriptionTopics(clientID string) []string
 
 	// getSubscription return client's subscription by topic
-	getSubscription(clientId, topic string) (*subscription, error)
+	getSubscription(clientID, topic string) (*subscription, error)
 
 	// removeSubscription remove a subscription from topic tree
-	removeSubscription(clientId, topic string) error
+	removeSubscription(clientID, topic string) error
 
 	// retainSubscription make a retain process on specified topic
-	retainSubscription(clientId, topic string) error
+	retainSubscription(clientID, topic string) error
 
 	// addMessage is called when message is published on topic, find the subscriber's queue
 	// and write the data to queue that will case queue observer to read data from queue
-	addMessage(clientId string, msg *base.Message)
+	addMessage(clientID string, msg *base.Message)
 
 	// retainMessage retain message on specified topic
-	retainMessage(clientId string, msg *base.Message)
+	retainMessage(clientID string, msg *base.Message)
 
 	// DeleteMessageWithValidator delete message in subdata with condition
-	deleteMessageWithValidator(clientId string, validator func(*base.Message) bool)
+	deleteMessageWithValidator(clientID string, validator func(*base.Message) bool)
 }
 
 func newTopicTree(c config.Config) (topicTree, error) {

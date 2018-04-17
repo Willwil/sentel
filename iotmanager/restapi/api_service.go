@@ -69,20 +69,20 @@ func (p ServiceFactory) New(c config.Config) (service.Service, error) {
 	g.GET("/nodes/:nodeId", getNodeInfo)
 	g.GET("/nodes/clients", getNodesClientInfo)
 	g.GET("/nodes/:nodeId/clients", getNodeClients)
-	g.GET("/nodes/:nodeId/clients/:clientId", getNodeClientInfo)
+	g.GET("/nodes/:nodeId/clients/:clientID", getNodeClientInfo)
 
 	// Client
-	g.GET("/clients/:clientId", getClientInfo)
+	g.GET("/clients/:clientID", getClientInfo)
 
 	// Session
 	g.GET("/nodes/:nodeId/sessions", getNodeSessions)
-	g.GET("/nodes/:nodeId/sessions/:clientId", getNodeSessionsClientInfo)
-	g.GET("/sessions/:clientId", getClusterSessionClientInfo)
+	g.GET("/nodes/:nodeId/sessions/:clientID", getNodeSessionsClientInfo)
+	g.GET("/sessions/:clientID", getClusterSessionClientInfo)
 
 	// Subscription
 	g.GET("/nodes/:nodeId/subscriptions", getNodeSubscriptions)
-	g.GET("/nodes/:nodeId/subscriptions/:clientId", getNodeSubscriptionsClientInfo)
-	g.GET("/subscriptions/:clientId", getClusterSubscriptionsInfo)
+	g.GET("/nodes/:nodeId/subscriptions/:clientID", getNodeSubscriptionsClientInfo)
+	g.GET("/subscriptions/:clientID", getClusterSubscriptionsInfo)
 
 	// Routes
 	g.GET("/routes", getClusterRoutes)
@@ -294,8 +294,8 @@ func getNodeClients(ctx echo.Context) error {
 // getNodeClientInfo return spcicified client infor on a node
 func getNodeClientInfo(ctx echo.Context) error {
 	nodeId := ctx.Param("nodeId")
-	clientId := ctx.Param("clientId")
-	if nodeId == "" || clientId == "" {
+	clientID := ctx.Param("clientID")
+	if nodeId == "" || clientID == "" {
 		return ctx.JSON(BadRequest, response{Message: "Invalid parameter"})
 	}
 	db, err := openManagerDB(ctx)
@@ -303,7 +303,7 @@ func getNodeClientInfo(ctx echo.Context) error {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
 	defer db.Close()
-	client, err := db.GetClientWithNode(nodeId, clientId)
+	client, err := db.GetClientWithNode(nodeId, clientID)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -313,13 +313,13 @@ func getNodeClientInfo(ctx echo.Context) error {
 // Clients
 // getClusterClientInfo return clients info in cluster
 func getClientInfo(ctx echo.Context) error {
-	clientId := ctx.Param("clientId")
+	clientID := ctx.Param("clientID")
 	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
 	defer db.Close()
-	client, err := db.GetClient(clientId)
+	client, err := db.GetClient(clientID)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -390,8 +390,8 @@ func getNodeSessionsClientInfo(ctx echo.Context) error {
 	defer db.Close()
 
 	nodeId := ctx.Param("nodeId")
-	clientId := ctx.Param("clientId")
-	session, err := db.GetSessionWithNode(nodeId, clientId)
+	clientID := ctx.Param("clientID")
+	session, err := db.GetSessionWithNode(nodeId, clientID)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}
@@ -400,13 +400,13 @@ func getNodeSessionsClientInfo(ctx echo.Context) error {
 
 // getClusterSessionInfor return client info in cluster session
 func getClusterSessionClientInfo(ctx echo.Context) error {
-	clientId := ctx.Param("clientId")
+	clientID := ctx.Param("clientID")
 	db, err := openManagerDB(ctx)
 	if err != nil {
 		return ctx.JSON(ServerError, response{Message: err.Error()})
 	}
 	defer db.Close()
-	session, err := db.GetSession(clientId)
+	session, err := db.GetSession(clientID)
 	if err != nil {
 		return ctx.JSON(NotFound, response{Message: err.Error()})
 	}

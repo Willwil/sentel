@@ -30,7 +30,7 @@ func sign(ctx Context) error {
 }
 
 func sha1mac(ctx Context) error {
-	content := "clientId" + ctx.ClientID + "deviceName" + ctx.DeviceName + "productId" + ctx.ProductID + "timestamp" + ctx.Timestamp
+	content := "clientID" + ctx.ClientID + "deviceName" + ctx.DeviceName + "productId" + ctx.ProductID + "timestamp" + ctx.Timestamp
 	mac := hmac.New(sha1.New, []byte(ctx.DeviceSecret))
 	mac.Write([]byte(content))
 	result := mac.Sum(nil)

@@ -22,13 +22,13 @@ import (
 )
 
 type mongoPlugin struct {
-	clientId   string
+	clientID   string
 	config     config.Config
 	session    *mgo.Session
 	collection *mgo.Collection
 }
 
-func newMongoPlugin(clientId string, c config.Config) (queuePlugin, error) {
+func newMongoPlugin(clientID string, c config.Config) (queuePlugin, error) {
 	// check mongo db configuration
 	hosts := c.MustString("mongo")
 	timeout := c.MustInt("connect_timeout")
@@ -37,10 +37,10 @@ func newMongoPlugin(clientId string, c config.Config) (queuePlugin, error) {
 		return nil, err
 	}
 	return &mongoPlugin{
-		clientId:   clientId,
+		clientID:   clientID,
 		config:     c,
 		session:    session,
-		collection: session.DB("persistent-session").C(clientId),
+		collection: session.DB("persistent-session").C(clientID),
 	}, nil
 }
 

@@ -15,34 +15,34 @@ package metadata
 import "github.com/cloustone/sentel/broker/base"
 
 // GetShadowDeviceStatus return shadow device's status
-func GetShadowDeviceStatus(clientId string) (*Device, error) {
+func GetShadowDeviceStatus(clientID string) (*Device, error) {
 	meta := base.GetService(ServiceName).(*metadataService)
-	return meta.getShadowDeviceStatus(clientId)
+	return meta.getShadowDeviceStatus(clientID)
 }
 
 // SyncShadowDeviceStatus synchronize shadow device's status
-func SyncShadowDeviceStatus(clientId string, d *Device) error {
+func SyncShadowDeviceStatus(clientID string, d *Device) error {
 	meta := base.GetService(ServiceName).(*metadataService)
-	return meta.syncShadowDeviceStatus(clientId, d)
+	return meta.syncShadowDeviceStatus(clientID, d)
 }
 
 // DeleteMessageWithValidator delete message in session manager with condition
-func DeleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
+func DeleteMessageWithValidator(clientID string, validator func(*base.Message) bool) {
 	meta := base.GetService(ServiceName).(*metadataService)
-	meta.deleteMessageWithValidator(clientId, validator)
+	meta.deleteMessageWithValidator(clientID, validator)
 }
 
 // DeleteMessge delete message specified by id from session manager
-func DeleteMessage(clientId string, pid uint16, direction uint8) {
+func DeleteMessage(clientID string, pid uint16, direction uint8) {
 	meta := base.GetService(ServiceName).(*metadataService)
-	meta.deleteMessage(clientId, pid, direction)
+	meta.deleteMessage(clientID, pid, direction)
 }
 
 // FindMessage return message already existed in session manager
-func FindMessage(clientId string, pid uint16, dir uint8) *base.Message {
+func FindMessage(clientID string, pid uint16, dir uint8) *base.Message {
 	return nil
 }
 
 // AddMessage save message in session's store queue
-func AddMessage(clientId string, msg *base.Message) {
+func AddMessage(clientID string, msg *base.Message) {
 }

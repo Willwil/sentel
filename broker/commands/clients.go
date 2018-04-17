@@ -33,7 +33,7 @@ var clientsCmd = &cobra.Command{
 			return
 		} else {
 			for _, info := range reply.Clients {
-				fmt.Printf("clientId:%s, cleanSession:%T, peername:%s, connectTime:%s",
+				fmt.Printf("clientID:%s, cleanSession:%T, peername:%s, connectTime:%s",
 					info.UserName, info.CleanSession, info.PeerName, info.ConnectTime)
 			}
 		}

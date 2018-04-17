@@ -17,7 +17,7 @@ import "github.com/cloustone/sentel/pkg/registry"
 type AuthChangeEvent struct {
 	BrokerID    string               `json:"brokerId"`   // Broker identifier where event come from
 	Type        uint32               `json:"type"`       // Event type
-	ClientID    string               `json:"clientId"`   // Client identifier where event come from
+	ClientID    string               `json:"clientID"`   // Client identifier where event come from
 	Persistent  bool                 `json:"persistent"` // Whether the session is persistent
 	ProductID   string               `json:"productId"`
 	TopicFlavor registry.TopicFlavor `json:"topicFlavor"`
@@ -25,7 +25,7 @@ type AuthChangeEvent struct {
 
 func (p *AuthChangeEvent) SetBrokerId(brokerId string) { p.BrokerID = brokerId }
 func (p *AuthChangeEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *AuthChangeEvent) SetClientId(clientId string) { p.ClientID = clientId }
+func (p *AuthChangeEvent) SetClientId(clientID string) { p.ClientID = clientID }
 func (p *AuthChangeEvent) GetBrokerId() string         { return p.BrokerID }
 func (p *AuthChangeEvent) GetType() uint32             { return AuthChange }
 func (p *AuthChangeEvent) GetClientId() string         { return p.ClientID }

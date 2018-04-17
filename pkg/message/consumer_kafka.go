@@ -26,7 +26,7 @@ type kafkaConsumer struct {
 	khosts      string                 // kafka server list
 	subscribers map[string]*subscriber // kafka client endpoint
 	mutex       sync.Mutex
-	clientId    string
+	clientID    string
 	msgFactory  MessageFactory
 }
 
@@ -36,12 +36,12 @@ type subscriber struct {
 	handler    MessageHandlerFunc
 	ctx        interface{}
 	consumer   sarama.Consumer
-	clientId   string
+	clientID   string
 	pconsumers []sarama.PartitionConsumer
 	quitChan   chan interface{}
 }
 
-func newKafkaConsumer(c config.Config, clientId string) (Consumer, error) {
+func newKafkaConsumer(c config.Config, clientID string) (Consumer, error) {
 	khosts, err := c.String("kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("message service is not rightly configed")
@@ -52,7 +52,7 @@ func newKafkaConsumer(c config.Config, clientId string) (Consumer, error) {
 	}
 	return &kafkaConsumer{
 		khosts:      khosts,
-		clientId:    clientId,
+		clientID:    clientID,
 		subscribers: make(map[string]*subscriber),
 		mutex:       sync.Mutex{},
 	}, nil
@@ -64,9 +64,9 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 	if _, found := p.subscribers[topic]; found {
 		return fmt.Errorf("topic '%s' already subcribed", topic)
 	}
-	clientId := fmt.Sprintf("%s_%d", p.clientId, len(p.subscribers))
+	clientID := fmt.Sprintf("%s_%d", p.clientID, len(p.subscribers))
 	config := sarama.NewConfig()
-	config.ClientID = clientId
+	config.ClientID = clientID
 	// config.kafkaConsumer.MaxWaitTime = time.Duration(5 * time.Second)
 	// config.kafkaConsumer.Offsets.CommitInterval = 1 * time.Second
 	// config.kafkaConsumer.Offsets.Initial = sarama.OffsetNewest
@@ -80,7 +80,7 @@ func (p *kafkaConsumer) Subscribe(topic string, handler MessageHandlerFunc, ctx 
 		handler:    handler,
 		ctx:        ctx,
 		consumer:   consumer,
-		clientId:   clientId,
+		clientID:   clientID,
 		pconsumers: []sarama.PartitionConsumer{},
 		quitChan:   make(chan interface{}, 1),
 	}

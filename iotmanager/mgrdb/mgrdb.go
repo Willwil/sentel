@@ -36,7 +36,7 @@ type Node struct {
 
 // Subscription
 type Subscription struct {
-	ClientId        string    `json:"clientId" bson:"ClientId"`
+	ClientId        string    `json:"clientID" bson:"ClientId"`
 	SubscribedTopic string    `json:"topic" bson:"Topic"`
 	Qos             int       `json:"qos" bson:"Qos"`
 	CreatedAt       time.Time `json:"createdAt" bson:"CreatedAt"`
@@ -45,7 +45,7 @@ type Subscription struct {
 
 // Client
 type Client struct {
-	ClientId        string `json:"clientId" bson:"ClientId"`
+	ClientId        string `json:"clientID" bson:"ClientId"`
 	UserName        string `json:"userName" bson:"UserName"`
 	IpAddress       string `json:"ipAddress" bson:"IpAddress"`
 	Port            uint16 `json:"port" bson:"Port"`
@@ -58,7 +58,7 @@ type Client struct {
 // Session
 type Session struct {
 	Action             string `json:"action" bson:"Action"`
-	ClientId           string `json:"clientId" bson:"ClientId"`
+	ClientId           string `json:"clientID" bson:"ClientId"`
 	CleanSession       bool   `json:"cleanSession" bson:"CleanSession"`
 	MessageMaxInflight uint64 `json:"messageMaxInflight" bson:"MessageMaxInflight"`
 	MessageInflight    uint64 `json:"messageInflight" bson:"MessageInflight"`
@@ -107,7 +107,7 @@ type Stats struct {
 
 // Publish
 type Publish struct {
-	ClientId        string `json:"clientId" bson:"ClientId"`
+	ClientId        string `json:"clientID" bson:"ClientId"`
 	SubscribedTopic string `json:"topic" bson:"SubscribedTopic"`
 	ProductId       string `json:"product" bson:"ProductId"`
 }
@@ -129,17 +129,17 @@ type ManagerDB interface {
 	// GetNodeClients retrieve clients info on specified broker node in duration
 	GetNodesClientWithTimeScope(nodeId string, from time.Time, to time.Time) []Client
 	// GetClientWithNode return specified client info on specified broker node
-	GetClientWithNode(nodeId string, clientId string) (Client, error)
+	GetClientWithNode(nodeId string, clientID string) (Client, error)
 
 	// Session
 	// GetSession return client's session info
-	GetSession(clientId string) (Session, error)
+	GetSession(clientID string) (Session, error)
 	// UpdateSession update session info
 	UpdateSession(s Session) error
 	// GetNodeSessions retrieve all sessions on specified broker node
 	GetNodeSessions(nodeId string) []Session
 	// GetSessionWithNode retrieve specifed client session on specifed broker node
-	GetSessionWithNode(nodeId string, clientId string) (Session, error)
+	GetSessionWithNode(nodeId string, clientID string) (Session, error)
 
 	// Tenants
 	// GetAllTenants retrieve all tenants in cluster
@@ -154,7 +154,7 @@ type ManagerDB interface {
 	RemoveProduct(tenantId string, productId string) error
 
 	// Client
-	GetClient(clientId string) (Client, error)
+	GetClient(clientID string) (Client, error)
 	AddClient(Client) error
 	RemoveClient(Client) error
 	UpdateClient(Client) error

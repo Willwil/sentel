@@ -45,8 +45,8 @@ func newRuleExecutor(c config.Config, productId string) (*ruleExecutor, error) {
 	}
 	defer r.Close()
 	if product, err := r.GetProduct(productId); err == nil {
-		clientId := fmt.Sprintf("whaler-rule-executor-%s", productId)
-		consumer, _ := message.NewConsumer(c, clientId)
+		clientID := fmt.Sprintf("whaler-rule-executor-%s", productId)
+		consumer, _ := message.NewConsumer(c, clientID)
 		return &ruleExecutor{
 			tenantId:  product.TenantId,
 			productId: productId,

@@ -16,14 +16,14 @@ package event
 type SessionCreateEvent struct {
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
-	ClientId   string `json:"clientId"`   // Client identifier where event come from
+	ClientId   string `json:"clientID"`   // Client identifier where event come from
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	Retain     bool   `json:"retain"`
 }
 
 func (p *SessionCreateEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
 func (p *SessionCreateEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *SessionCreateEvent) SetClientId(clientId string) { p.ClientId = clientId }
+func (p *SessionCreateEvent) SetClientId(clientID string) { p.ClientId = clientID }
 func (p *SessionCreateEvent) GetBrokerId() string         { return p.BrokerId }
 func (p *SessionCreateEvent) GetType() uint32             { return SessionCreate }
 func (p *SessionCreateEvent) GetClientId() string         { return p.ClientId }
@@ -33,14 +33,14 @@ func (p *SessionCreateEvent) Serialize() ([]byte, error)  { return nil, nil }
 type SessionDestroyEvent struct {
 	BrokerId   string `json:"brokerId"`   // Broker identifier where event come from
 	Type       uint32 `json:"type"`       // Event type
-	ClientId   string `json:"clientId"`   // Client identifier where event come from
+	ClientId   string `json:"clientID"`   // Client identifier where event come from
 	Persistent bool   `json:"persistent"` // Whether the session is persistent
 	Retain     bool   `json:"retain"`
 }
 
 func (p *SessionDestroyEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
 func (p *SessionDestroyEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *SessionDestroyEvent) SetClientId(clientId string) { p.ClientId = clientId }
+func (p *SessionDestroyEvent) SetClientId(clientID string) { p.ClientId = clientID }
 func (p *SessionDestroyEvent) GetBrokerId() string         { return p.BrokerId }
 func (p *SessionDestroyEvent) GetType() uint32             { return SessionDestroy }
 func (p *SessionDestroyEvent) GetClientId() string         { return p.ClientId }
@@ -50,12 +50,12 @@ func (p *SessionDestroyEvent) Serialize() ([]byte, error)  { return nil, nil }
 type SessionResumeEvent struct {
 	BrokerId string `json:"brokerId"` // Broker identifier where event come from
 	Type     uint32 `json:"type"`     // Event type
-	ClientId string `json:"clientId"` // Client identifier where event come from
+	ClientId string `json:"clientID"` // Client identifier where event come from
 }
 
 func (p *SessionResumeEvent) SetBrokerId(brokerId string) { p.BrokerId = brokerId }
 func (p *SessionResumeEvent) SetType(eventType uint32)    { p.Type = eventType }
-func (p *SessionResumeEvent) SetClientId(clientId string) { p.ClientId = clientId }
+func (p *SessionResumeEvent) SetClientId(clientID string) { p.ClientId = clientID }
 func (p *SessionResumeEvent) GetBrokerId() string         { return p.BrokerId }
 func (p *SessionResumeEvent) GetType() uint32             { return SessionResume }
 func (p *SessionResumeEvent) GetClientId() string         { return p.ClientId }

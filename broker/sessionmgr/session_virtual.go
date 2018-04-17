@@ -15,14 +15,14 @@ package sessionmgr
 import "github.com/cloustone/sentel/broker/queue"
 
 type virtualSession struct {
-	clientId   string
+	clientID   string
 	persistent bool
 	queue      queue.Queue
 	brokerId   string
 }
 
 // Id return identifier of session
-func (p *virtualSession) Id() string { return p.clientId }
+func (p *virtualSession) Id() string { return p.clientID }
 
 // IsPersistent return wether the session is persistent
 func (p *virtualSession) IsPersistent() bool { return p.persistent }
@@ -35,14 +35,14 @@ func (p *virtualSession) Info() *SessionInfo { return &SessionInfo{} }
 
 func (p *virtualSession) BrokerId() string { return p.brokerId }
 
-func newVirtualSession(brokerId, clientId string, persistent bool) (Session, error) {
-	q, err := queue.NewQueue(clientId, persistent)
+func newVirtualSession(brokerId, clientID string, persistent bool) (Session, error) {
+	q, err := queue.NewQueue(clientID, persistent)
 	if err != nil {
 		return nil, err
 	}
 	return &virtualSession{
 		brokerId:   brokerId,
-		clientId:   clientId,
+		clientID:   clientID,
 		persistent: persistent,
 		queue:      q,
 	}, nil

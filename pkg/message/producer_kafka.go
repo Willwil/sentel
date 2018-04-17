@@ -22,20 +22,25 @@ import (
 
 type kafkaProducer struct {
 	khosts        string
-	clientId      string
+	clientID      string
 	sync          bool
 	syncProducer  sarama.SyncProducer
 	asyncProducer sarama.AsyncProducer
 }
 
-func newKafkaProducer(c config.Config, clientId string, sync bool) (Producer, error) {
+func newKafkaProducer(c config.Config, clientID string, sync bool) (Producer, error) {
 	khosts, err := c.String("kafka")
 	if err != nil || khosts == "" {
 		return nil, errors.New("invalid kafka setting")
 	}
+	names := strings.Split(khosts, ":")
+	if len(names) == 1 {
+		khosts = khosts + ":9092"
+	}
+
 	p := &kafkaProducer{
 		khosts:   khosts,
-		clientId: clientId,
+		clientID: clientID,
 		sync:     sync,
 	}
 	config := sarama.NewConfig()

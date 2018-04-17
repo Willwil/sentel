@@ -156,22 +156,22 @@ func (p *sessionManager) onSessionCreate(e event.Event) {
 
 // onEventSessionDestroyed called when EventSessionDestroyed received
 func (p *sessionManager) onSessionDestroy(e event.Event) {
-	clientId := e.GetClientId()
-	session, _ := p.findSession(clientId)
+	clientID := e.GetClientId()
+	session, _ := p.findSession(clientID)
 	// For persistent session, change queue's observer
 	if session != nil && session.IsPersistent() {
-		if q := queue.GetQueue(clientId); q != nil {
+		if q := queue.GetQueue(clientID); q != nil {
 			q.RegisterObserver(nil)
 		}
 		return
 	}
 	// For transient session, just remove it from session manager
-	topics := p.tree.getSubscriptionTopics(clientId)
+	topics := p.tree.getSubscriptionTopics(clientID)
 	for _, topic := range topics {
-		p.tree.removeSubscription(clientId, topic)
+		p.tree.removeSubscription(clientID, topic)
 	}
-	p.removeSession(clientId)
-	queue.DestroyQueue(clientId)
+	p.removeSession(clientID)
+	queue.DestroyQueue(clientID)
 }
 
 // onEventTopicSubscribe called when EventTopicSubscribe received
@@ -225,25 +225,25 @@ func (p *sessionManager) onTopicPublish(e event.Event) {
 }
 
 // findSesison return session object by id if existed
-func (p *sessionManager) findSession(clientId string) (Session, error) {
-	glog.Infof("sessionmgr: find session '%s'", clientId)
-	if _, ok := p.sessions[clientId]; !ok {
+func (p *sessionManager) findSession(clientID string) (Session, error) {
+	glog.Infof("sessionmgr: find session '%s'", clientID)
+	if _, ok := p.sessions[clientID]; !ok {
 		return nil, errors.New("sessionmgr:Session id does not exist")
 	}
 
-	return p.sessions[clientId], nil
+	return p.sessions[clientID], nil
 
 }
 
-// deleteSession remove session specified by clientId from metadata
-func (p *sessionManager) removeSession(clientId string) error {
-	glog.Infof("sessionmgr: remove session for '%s'", clientId)
+// deleteSession remove session specified by clientID from metadata
+func (p *sessionManager) removeSession(clientID string) error {
+	glog.Infof("sessionmgr: remove session for '%s'", clientID)
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
-	if _, ok := p.sessions[clientId]; !ok {
-		return fmt.Errorf("Session '%s' does not exist", clientId)
+	if _, ok := p.sessions[clientID]; !ok {
+		return fmt.Errorf("Session '%s' does not exist", clientID)
 	}
-	delete(p.sessions, clientId)
+	delete(p.sessions, clientID)
 	return nil
 }
 
@@ -261,14 +261,14 @@ func (p *sessionManager) registerSession(s Session) error {
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
-func (p *sessionManager) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
-	glog.Infof("sessionmgr: delete message for %s", clientId)
-	p.tree.deleteMessageWithValidator(clientId, validator)
+func (p *sessionManager) deleteMessageWithValidator(clientID string, validator func(*base.Message) bool) {
+	glog.Infof("sessionmgr: delete message for %s", clientID)
+	p.tree.deleteMessageWithValidator(clientID, validator)
 }
 
 // deleteMessge delete message specified by idfrom metadata
-func (p *sessionManager) deleteMessage(clientId string, mid uint16, direction uint8) {
-	p.deleteMessageWithValidator(clientId, func(msg *base.Message) bool {
+func (p *sessionManager) deleteMessage(clientID string, mid uint16, direction uint8) {
+	p.deleteMessageWithValidator(clientID, func(msg *base.Message) bool {
 		return msg.PacketId == mid && msg.Direction == direction
 	})
 }
@@ -279,7 +279,7 @@ func (p *sessionManager) getTopics() []*Topic {
 }
 
 // getClientTopicss return client's subscribed topics
-func (p *sessionManager) getClientTopics(clientId string) []*Topic {
+func (p *sessionManager) getClientTopics(clientID string) []*Topic {
 	return nil
 }
 
@@ -294,7 +294,7 @@ func (p *sessionManager) getSubscriptions() []*Subscription {
 }
 
 // getClientSubscriptions return client's subscription
-func (p *sessionManager) getClientSubscriptions(clientId string) []*Subscription {
+func (p *sessionManager) getClientSubscriptions(clientID string) []*Subscription {
 	return nil
 }
 
@@ -304,7 +304,7 @@ func (p *sessionManager) getSessions() []*Session {
 }
 
 // getSessionInfo return client's session detail information
-func (p *sessionManager) getSessionInfo(clientId string) *Session {
+func (p *sessionManager) getSessionInfo(clientID string) *Session {
 	return nil
 }
 
@@ -314,6 +314,6 @@ func (p *sessionManager) getClients() []*Client {
 }
 
 // getClient return client's detail information
-func (p *sessionManager) getClient(clientId string) *Client {
+func (p *sessionManager) getClient(clientID string) *Client {
 	return nil
 }

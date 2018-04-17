@@ -175,7 +175,7 @@ func (p *mqttSession) Handle() error {
 
 // handleMqttInPacket handle all mqtt in packet
 func (p *mqttSession) handleMqttPacket(packet *mqttPacket) error {
-	glog.Infof("mqtt packet type:%s, clientId:%s, session state:%s, message state:%s",
+	glog.Infof("mqtt packet type:%s, clientID:%s, session state:%s, message state:%s",
 		nameOfPacket(packet),
 		p.clientID,
 		nameOfSessionState(p.sessionState),
@@ -714,7 +714,7 @@ func (p *mqttSession) handlePubRel(packet *mqttPacket) error {
 		return err
 	}
 
-	//sm.DeleteMessage(p.clientId, pid, sm.MessageDirectionIn) // TODO:Qos2
+	//sm.DeleteMessage(p.clientID, pid, sm.MessageDirectionIn) // TODO:Qos2
 	return p.sendPubComp(pid)
 }
 
@@ -852,7 +852,7 @@ func (p *mqttSession) writePacket(packet *mqttPacket) error {
 }
 
 // getAuthOptions return authentication options from user's request
-// mqttClientId:clientId +"|securemode=3,signmethod=hmacsha1,timestampe=xxxxx|"
+// mqttClientId:clientID +"|securemode=3,signmethod=hmacsha1,timestampe=xxxxx|"
 // mqttUserName:deviceName+"&"+productKey
 func (p *mqttSession) parseRequestOptions(clientID, userName, password string) (auth.Context, error) {
 	ctx := auth.Context{}
@@ -866,31 +866,31 @@ func (p *mqttSession) parseRequestOptions(clientID, userName, password string) (
 
 	names = strings.Split(clientID, "|")
 	if len(names) != 2 {
-		return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", clientID)
+		return ctx, fmt.Errorf("Invalid authentication clientID options:'%s'", clientID)
 	}
 	ctx.ClientID = names[0]
 	names = strings.Split(names[1], ",")
 	for _, pair := range names {
 		values := strings.Split(pair, "=")
 		if len(values) != 2 {
-			return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+			return ctx, fmt.Errorf("Invalid authentication clientID options:'%s'", pair)
 		}
 		switch values[0] {
 		case auth.SecurityMode:
 			val, err := strconv.Atoi(values[1])
 			if err != nil {
-				return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+				return ctx, fmt.Errorf("Invalid authentication clientID options:'%s'", pair)
 			}
 			ctx.SecurityMode = val
 		case auth.SignMethod:
 			ctx.SignMethod = values[1]
 		case auth.Timestamp:
 			if _, err := strconv.ParseUint(values[1], 10, 64); err != nil {
-				return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+				return ctx, fmt.Errorf("Invalid authentication clientID options:'%s'", pair)
 			}
 			ctx.Timestamp = values[1]
 		default:
-			return ctx, fmt.Errorf("Invalid authentication clientId options:'%s'", pair)
+			return ctx, fmt.Errorf("Invalid authentication clientID options:'%s'", pair)
 		}
 	}
 	return ctx, nil

@@ -19,20 +19,20 @@ import (
 
 type persistentQueue struct {
 	config   config.Config // Configuration
-	clientId string        // Queue identifier
+	clientID string        // Queue identifier
 	observer Observer      // Queue observer when data is available
 	plugin   queuePlugin   // backend queue plugin
 	list     List
 }
 
-func newPersistentQueue(clientId string, c config.Config) (Queue, error) {
-	plugin, err := newPlugin(clientId, c)
+func newPersistentQueue(clientID string, c config.Config) (Queue, error) {
+	plugin, err := newPlugin(clientID, c)
 	if err != nil {
 		return nil, err
 	}
 	q := &persistentQueue{
 		config:   c,
-		clientId: clientId,
+		clientID: clientID,
 		plugin:   plugin,
 		observer: nil,
 		list:     newTransientList(),
@@ -40,7 +40,7 @@ func newPersistentQueue(clientId string, c config.Config) (Queue, error) {
 	return q, nil
 }
 
-func (p *persistentQueue) ClientId() string     { return p.clientId }
+func (p *persistentQueue) ClientId() string     { return p.clientID }
 func (p *persistentQueue) Length() int          { return p.plugin.length() }
 func (p *persistentQueue) Front() *base.Message { return p.plugin.front() }
 
@@ -54,7 +54,7 @@ func (p *persistentQueue) Pushback(msg *base.Message) {
 func (p *persistentQueue) Pop() *base.Message          { return p.plugin.pop() }
 func (p *persistentQueue) Close() error                { return p.plugin.close() }
 func (p *persistentQueue) IsPersistent() bool          { return true }
-func (p *persistentQueue) Name() string                { return p.clientId }
+func (p *persistentQueue) Name() string                { return p.clientID }
 func (p *persistentQueue) RegisterObserver(o Observer) { p.observer = o }
 
 func (p *persistentQueue) GetRetainList() List { return p.list }

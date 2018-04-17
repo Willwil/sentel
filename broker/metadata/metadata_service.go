@@ -138,22 +138,22 @@ func (p *metadataService) onTopicUnsubscribe(e event.Event) {
 }
 
 // getShadowDeviceStatus return shadow device's status
-func (p *metadataService) getShadowDeviceStatus(clientId string) (*Device, error) {
+func (p *metadataService) getShadowDeviceStatus(clientID string) (*Device, error) {
 	return nil, nil
 }
 
 // syncShadowDeviceStatus synchronize shadow device's status
-func (p *metadataService) syncShadowDeviceStatus(clientId string, d *Device) error {
+func (p *metadataService) syncShadowDeviceStatus(clientID string, d *Device) error {
 	return nil
 }
 
 // deleteMessageWithValidator delete message in metadata with confition
-func (p *metadataService) deleteMessageWithValidator(clientId string, validator func(*base.Message) bool) {
+func (p *metadataService) deleteMessageWithValidator(clientID string, validator func(*base.Message) bool) {
 }
 
 // deleteMessge delete message specified by idfrom metadata
-func (p *metadataService) deleteMessage(clientId string, pid uint16, direction uint8) {
-	p.deleteMessageWithValidator(clientId, func(msg *base.Message) bool {
+func (p *metadataService) deleteMessage(clientID string, pid uint16, direction uint8) {
+	p.deleteMessageWithValidator(clientID, func(msg *base.Message) bool {
 		return msg.PacketId == pid && msg.Direction == direction
 	})
 }

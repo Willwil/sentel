@@ -26,8 +26,8 @@ type Consumer interface {
 	SetMessageFactory(factory MessageFactory)
 }
 
-func NewConsumer(c config.Config, clientId string) (Consumer, error) {
-	consumer, err := newKafkaConsumer(c, clientId)
+func NewConsumer(c config.Config, clientID string) (Consumer, error) {
+	consumer, err := newKafkaConsumer(c, clientID)
 	if consumer != nil {
 		consumer.SetMessageFactory(&builtinFactory{})
 	}

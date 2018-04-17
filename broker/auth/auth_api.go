@@ -51,9 +51,9 @@ func GetVersion() string {
 	return AuthServiceVersion
 }
 
-func Authorize(ctx Context, clientId string, topic string, access uint8) error {
+func Authorize(ctx Context, clientID string, topic string, access uint8) error {
 	auth := base.GetService(ServiceName).(*authService)
-	return auth.authorize(ctx, clientId, topic, access)
+	return auth.authorize(ctx, clientID, topic, access)
 }
 
 func Authenticate(ctx Context) error {

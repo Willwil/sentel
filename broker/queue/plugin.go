@@ -37,8 +37,8 @@ type queuePlugin interface {
 }
 
 // newPlugin return backend queue plugin accoriding to configuration and id
-func newPlugin(clientId string, c config.Config) (queuePlugin, error) {
-	q, err := newMongoPlugin(clientId, c)
+func newPlugin(clientID string, c config.Config) (queuePlugin, error) {
+	q, err := newMongoPlugin(clientID, c)
 	if q != nil {
 		err = q.initialize()
 		return q, err
