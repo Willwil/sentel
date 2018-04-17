@@ -57,7 +57,7 @@ func CreateProduct(ctx echo.Context) error {
 	// Create resource in security manager
 	principal := shiro.NewPrincipal(accessId)
 	permissions := []shiro.Permission{
-		shiro.NewPermission(shiro.WritePermission, "/products/"+p.ProductId),
+		shiro.NewPermission(shiro.AllPermission, "/products/"+p.ProductId),
 	}
 	securityManager := base.GetSecurityManager(ctx)
 	securityManager.AddPrincipalPermissions(principal, permissions)
@@ -74,20 +74,12 @@ func CreateProduct(ctx echo.Context) error {
 
 // removeProduct delete product from registry store
 func RemoveProduct(ctx echo.Context) error {
-	accessId := getAccessId(ctx)
 	productId := ctx.Param("productId")
 
 	r := getRegistry(ctx)
 	if err := r.DeleteProduct(productId); err != nil {
 		return ctx.JSON(ServerError, apiResponse{Message: err.Error()})
 	}
-	// Remove resource in security manager
-	principal := shiro.NewPrincipal(accessId)
-	permissions := []shiro.Permission{
-		shiro.NewPermission(shiro.WritePermission, "/products/"+productId),
-	}
-	securityManager := base.GetSecurityManager(ctx)
-	securityManager.RemovePrincipalPermissions(principal, permissions)
 
 	asyncProduceMessage(ctx,
 		&message.Product{

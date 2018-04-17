@@ -57,7 +57,6 @@ func GetRequestInfo(ctx echo.Context, resourceMaps map[string]string) (string, s
 			case ':':
 				val := ctx.Param(item[1:])
 				resource += val
-				resource += "/"
 			default:
 				resource += item
 			}
