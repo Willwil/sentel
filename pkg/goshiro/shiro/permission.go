@@ -44,8 +44,20 @@ func (p Permission) Implies(resource string, action string) bool {
 	for _, res := range p.Resources {
 		if resource == res {
 			for _, val := range actions {
-				if val == action {
+				switch val {
+				case AllPermission:
 					return true
+				case WritePermission:
+					if action==ActionWrite ||
+					   action==ActionCreate ||
+					   action==ActionRemove{
+					return true
+					}
+				case ReadPermission:
+					if action==ActionRead{
+					return true
+					}
+				default:
 				}
 			}
 		}

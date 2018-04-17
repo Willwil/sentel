@@ -48,7 +48,7 @@ func RegisterTenant(ctx echo.Context) error {
 	// Create relative resource in security manager
 	principal := shiro.NewPrincipal(t.TenantId)
 	permissions := []shiro.Permission{
-		shiro.NewPermission(shiro.AllPermission, "/products/", "/topicflavors"),
+		shiro.NewPermission(shiro.AllPermission, "/products", "/topicflavors"),
 	}
 	securityManager := base.GetSecurityManager(ctx)
 	securityManager.AddPrincipalPermissions(principal, permissions)
