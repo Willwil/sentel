@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-#   Use this script to test if a given TCP host/port are available
-
-cmdname=$(basename $0)
-
-echoerr() { if [[ $QUIET -ne 1 ]]; then echo "$@" 1>&2; fi }
 
 usage() {
     cat << USAGE >&2
@@ -17,11 +12,20 @@ USAGE
     exit 1
 }
 
-kubernetes() {
-    echo "hello k8s"
+dockerswarm() {
+    echo "starting services in docker-swarm mode..."
+    case $1 in
+        "start")./deploy/swarm/swarm-deploy.sh $1;;
+        "stop")./deploy/swarm/swarm-deploy.sh $1;;
+        "rm")./deploy/swarm/swarm-deploy.sh $1;;
+        *)
+            echo "invalid action '$1'"
+            usage;;
+    esac
+
 }
 
-dockerswarm() {
+kubernetes() {
     echo "starting services in kubernetes mode..."
     case $1 in
         "start")
@@ -68,7 +72,7 @@ dockercompose() {
 if [ "$#" = "2" ];then
     case $1 in
         "kubernetes") kubernetes $2;;
-        "dockerwarm") dockersarm $2;;
+        "swarm") dockerswarm $2;;
         "dockercompose") dockercompose $2;;
         *) 
             echo "invalid mode parameter '$1'"
