@@ -1,0 +1,20 @@
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: kafka-deployment
+spec:
+  selector:
+    matchLabels:
+      app: kafka 
+  replicas: 1
+  template: 
+    metadata:
+      labels:
+        app: kafka 
+    spec:
+      containers:
+      - name: kafka 
+        image: sentel/kafka
+        ports:
+        - containerPort: 9092 
+
