@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu
 RUN mkdir /sentel
 RUN mkdir /sentel/bin
 RUN mkdir /sentel/etc
