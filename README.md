@@ -41,6 +41,7 @@ Building
 > cd $GOPATH/src/github.com/cloustone/sentel  
 > make   
 > make docker GOOS=linux  
+> docker-compose up  
 
 Technology items
 ==========================
