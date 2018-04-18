@@ -4,55 +4,55 @@ nodes_nbr=4
 env_already_exist=false
 
 check_environment_already_exist() {
-    # nodes_names hold all nodes's name, such as node-1
-    declare -a node_names
+    echo "checking swarm environment..."
     # get all nodes
-    nodes=$(docker-machine ls -q)
+    nodes=($(docker-machine ls -q))
     # for each node, check wether the well-formed node exist
-    nodes_count=0
-    for ((i = 0; i < ${#nodes}; ++i))
-    do
+    count=0
+    for node in ${nodes[@]}; do
         # save node-n into nodes_names
-        if [[ ${nodes[i]} =~ "node-[0-$nodes_nbr]" ]]; then
-            ${node_names[$nodes_index]} = ${nodes[i]}
-            ++$nodes_count
-        fi
-        if [[ $nodes_count -eq $nodes_nbr ]]; then
-            $env_already_exit = true
+        if [[ $node =~ node-[0-$nodes_nbr] ]]; then
+            ((count=count+1))
         fi
     done
+    if [[ $nodes_nbr -eq $count ]]; then
+        env_already_exist=true
+        echo "iot swarm environment already exist with $count nodes"
+    fi
 }
 
 ready_environment() {
-    if [[ $env_already_exist = true ]]; then
-        echo "environment already exist"
-    else 
-        echo "readying environment..."
-        for i in seq $nodes_nbr;
-        do
-            docker-machine create -d virtualbox node-$i;
+    if [[ $env_already_exist = false ]]; then
+        echo "no environment exist, making environment..."
+        # create node
+        for i in `seq $nodes_nbr`; do
+            docker-machine create -d virtualbox node-$i
         done
-        # setup docker swarm manager (node-1's ip address is 192.168.99.100)
+        # setup docker swarm manager 
         eval $(docker-machine env node-1)
-        token=$(docker swarm init --advertise-addr 192.168.99.100 | grep 'token' )
-        #| awk '{print $$2}')
-        echo "#######"
-        echo $token
+        ip=$(docker-machine ip node-1)
+        token=$(docker swarm init --advertise-addr $ip | grep 'token' | head -n 1 | awk '{print $5}')
+        echo "swarm token:$token"
         # add swarm worker nodes
-        for ((i = 1; i < $nodes_nbr;++i)); 
-        do
-            docker-machine ssh node-$i "docker swarm join --token $token 192.168.99.100:2377";
+        for i in `seq $nodes_nbr`; do
+            docker-machine ssh node-$i "docker swarm join --token $token $ip:2377";
         done
         # list nodes status
         docker node ls
         # update docker image registry
-        for i in `seq $nodes_nbr`; 
-        do   
+        for i in `seq $nodes_nbr`; do   
            docker-machine ssh node-$i \
                "echo 'EXTRA_ARGS="--registry-mirror=https://registry.docker-cn.com"' | sudo tee -a /var/lib/boot2docker/profile"; 
         done
-        # restart woker node
-        docker-machine restart $(docker-machine ls -q)
+    else
+        for i in `seq $nodes_nbr`;do
+            node_status=$(docker-machine status node-$i)
+            echo "node-$i status is $node_status"
+            if [[ $node_status != "Running" ]]; then
+                echo "starting node-$i..."
+                docker-machine start node-$i
+            fi
+        done
     fi
 }
 
@@ -60,18 +60,21 @@ swarm_start_service() {
     check_environment_already_exist
     ready_environment
     echo "swarm starting service..."
-    docker stack deploy -c swarm-deploy.yaml sentel
+    docker stack deploy -c ./deploy/swarm/swarm-deploy.yaml sentel
     docker stack ps sentel 
-    docker stack service sentel 
+    docker stack services sentel 
 }
 
 swarm_stop_service() {
     echo "swarm stop service..."
+    docker stack rm sentel 
 }
 
 swarm_remove_service() {
     echo "swarm remove service..."
-    docker stack rm sentel 
+    for i in `seq $nodes_nbr`;do
+            docker-machine rm node-$i
+    done
 }
 
 if [ "$#" = "1" ];then
